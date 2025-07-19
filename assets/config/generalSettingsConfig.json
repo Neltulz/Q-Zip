@@ -1,0 +1,78 @@
+{
+  "general": {
+    "title": "General",
+    "fields": [
+      {
+        "id": "useInputLocationsForOutput",
+        "type": "select",
+        "label": "Output Location:",
+        "options": [
+          { "value": "use_input", "text": "* Use Input Locations" },
+          { "value": "use_specified", "text": "Use Specified Folder" }
+        ],
+        "default": "use_input",
+        "data-field-name": "use-input-locations-for-output-field"
+      },
+      {
+        "id": "outputFolder",
+        "type": "text-area",
+        "label": "Output Folder:",
+        "dependsOn": {
+          "field": "useInputLocationsForOutput",
+          "value": "use_specified"
+        },
+        "default": "",
+        "data-field-name": "output-folder-field"
+      },
+      {
+        "id": "createMultipleArchives",
+        "type": "select",
+        "label": "Archives Per File/Folder:",
+        "options": [
+          { "value": "single", "text": "* Single" },
+          { "value": "multiple", "text": "Multiple" }
+        ],
+        "default": "single",
+        "data-field-name": "create-multiple-archives-field"
+      },
+      {
+        "id": "ifArchiveExists",
+        "type": "select",
+        "label": "If Archive Exists:",
+        "options": [
+          { "value": "rename_new", "text": "* Rename New" },
+          { "value": "rename_existing", "text": "Rename Existing" },
+          { "value": "overwrite", "text": "Overwrite" },
+          { "value": "skip", "text": "Skip" }
+        ],
+        "default": "rename_new",
+        "data-field-name": "if-archive-exists-field"
+      },
+      {
+        "id": "updateMode",
+        "type": "select",
+        "label": "Update Mode:",
+        "options": [
+          { "value": "add_replace", "text": "* Add and Replace Files" },
+          { "value": "update", "text": "Update and Add Files" },
+          { "value": "freshen", "text": "Freshen Existing Files" },
+          { "value": "synchronize", "text": "Synchronize Files" }
+        ],
+        "default": "add_replace",
+        "data-field-name": "update-mode-field"
+      },
+      {
+        "id": "pathMode",
+        "type": "select",
+        "label": "Path Mode:",
+        "options": [
+          { "value": "relative", "text": "* Relative Paths" },
+          { "value": "full", "text": "Full Paths" },
+          { "value": "no_paths", "text": "No Paths" }
+        ],
+        "default": "relative",
+        "data-field-name": "path-mode-field"
+      }
+    ]
+  }
+}

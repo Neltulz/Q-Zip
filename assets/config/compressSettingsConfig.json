@@ -1,0 +1,156 @@
+{
+  "compress": {
+    "title": "Compress",
+    "fields": [
+      {
+        "id": "archiveFormat",
+        "type": "select",
+        "label": "Archive Format:",
+        "options": [
+          { "value": "7z", "text": "7z" },
+          { "value": "bzip2", "text": "bzip2" },
+          { "value": "gzip", "text": "gzip" },
+          { "value": "tar", "text": "tar" },
+          { "value": "wim", "text": "wim" },
+          { "value": "xz", "text": "xz" },
+          { "value": "zip", "text": "zip" }
+        ],
+        "default": "7z",
+        "data-field-name": "archive-format-field"
+      },
+      {
+        "id": "compressionLevel",
+        "type": "select",
+        "label": "Compression Level:",
+        "options": [],
+        "default": 5,
+        "data-field-name": "compression-level-field"
+      },
+      {
+        "id": "compressionMethod",
+        "type": "select",
+        "label": "Compression Method:",
+        "options": [],
+        "default": "LZMA2",
+        "data-field-name": "compression-method-field"
+      },
+      {
+        "id": "dictionarySize",
+        "type": "select",
+        "label": "Dictionary Size:",
+        "options": [],
+        "default": "32 MB",
+        "data-field-name": "dictionary-size-field"
+      },
+      {
+        "id": "wordSize",
+        "type": "select",
+        "label": "Word Size:",
+        "options": [],
+        "default": 32,
+        "data-field-name": "word-size-field"
+      },
+      {
+        "id": "solidBlockSize",
+        "type": "select",
+        "label": "Solid Block Size:",
+        "options": [],
+        "default": "4 GB",
+        "data-field-name": "solid-block-size-field"
+      },
+      {
+        "id": "numCpuThreads",
+        "type": "input",
+        "label": "Number of CPU Threads:",
+        "default": "Auto",
+        "data-field-name": "num-cpu-threads-field"
+      },
+      {
+        "id": "memoryUsage",
+        "type": "input",
+        "label": "Memory Usage (%):",
+        "default": "80%",
+        "data-field-name": "memory-usage-field"
+      },
+      {
+        "id": "useCustomExtension",
+        "type": "checkbox",
+        "label": "Use Custom File Extension",
+        "default": false,
+        "data-field-name": "use-custom-extension-field"
+      },
+      {
+        "id": "customExtension",
+        "type": "input",
+        "label": "Custom Extension:",
+        "default": "",
+        "data-field-name": "custom-extension-field",
+        "dependsOn": {
+          "field": "useCustomExtension",
+          "value": true
+        }
+      }
+    ],
+    "formats": {
+      "7z": {
+        "compressionLevels": [
+          { "value": 0, "label": "0 - Store" },
+          { "value": 1, "label": "1 - Fastest" },
+          { "value": 2, "label": "2" },
+          { "value": 3, "label": "3 - Fast" },
+          { "value": 4, "label": "4" },
+          { "value": 5, "label": "5 - Normal" },
+          { "value": 6, "label": "6" },
+          { "value": 7, "label": "7 - Maximum" },
+          { "value": 8, "label": "8" },
+          { "value": 9, "label": "9 - Ultra" }
+        ],
+        "compressionMethods": ["LZMA2", "LZMA", "PPMd", "BZip2"],
+        "defaultCompressionLevel": 5,
+        "defaultCompressionMethod": "LZMA2"
+      },
+      "zip": {
+        "compressionLevels": [
+          { "value": 0, "label": "0 - Store" },
+          { "value": 1, "label": "1 - Fastest" },
+          { "value": 3, "label": "3 - Fast" },
+          { "value": 5, "label": "5 - Normal" },
+          { "value": 7, "label": "7 - Maximum" },
+          { "value": 9, "label": "9 - Ultra" }
+        ],
+        "compressionMethods": ["LZMA", "PPMd", "BZip2", "Deflate64", "Deflate"],
+        "defaultCompressionLevel": 5,
+        "defaultCompressionMethod": "Deflate"
+      }
+    },
+    "dictionarySizes": {
+      "LZMA": ["64 KB", "256 KB", "1 MB", "2 MB", "4 MB", "8 MB", "16 MB", "32 MB", "64 MB"],
+      "LZMA2": ["64 KB", "256 KB", "1 MB", "2 MB", "4 MB", "8 MB", "16 MB", "32 MB", "64 MB"],
+      "PPMd-7z": ["1 MB", "2 MB", "4 MB", "8 MB", "16 MB", "32 MB", "64 MB"],
+      "PPMd-zip": ["1 MB", "2 MB", "4 MB", "8 MB", "16 MB", "32 MB"],
+      "BZip2": ["100 KB", "200 KB", "300 KB", "400 KB", "500 KB", "600 KB", "700 KB", "800 KB", "900 KB"],
+      "Deflate": ["32 KB"],
+      "Deflate64": ["64 KB"]
+    },
+    "wordSizes": {
+      "LZMA": [8, 12, 16, 24, 32, 48, 64],
+      "LZMA2": [8, 12, 16, 24, 32, 48, 64],
+      "PPMd": [2, 3, 4, 5, 6, 7, 8, 10, 12, 16, 32],
+      "Deflate": [8, 12, 16, 24, 32, 48, 64],
+      "Deflate64": [8, 12, 16, 24, 32, 48, 64]
+    },
+    "solidBlockSizes": [
+      "Non-solid", "1 MB", "2 MB", "4 MB", "8 MB", "16 MB", "32 MB", "64 MB",
+      "128 MB", "256 MB", "512 MB", "1 GB", "2 GB", "4 GB", "8 GB", "16 GB"
+    ],
+    "defaultExtensions": {
+      "7z": ".7z",
+      "bzip2": ".bz2",
+      "gzip": ".gz",
+      "tar": ".tar",
+      "wim": ".wim",
+      "xz": ".xz",
+      "zip": ".zip"
+    }
+  }
+}

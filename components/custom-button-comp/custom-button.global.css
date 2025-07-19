@@ -1,0 +1,210 @@
+/* "components/custom-button-comp/custom-button.global.css" --for-- "components/CustomButton.vue" */
+
+:root {
+  /* Base Variables */
+  --btn-trans-dur-start: 125ms;
+  --btn-trans-dur-end: 250ms;
+  --visual-style-inset: 3px;
+  --btn-line-thickness: 3px;
+  --btn-pad-blok: 5px;
+  --btn-pad-in: 10px;
+  --btn-border-radius: 4px;
+
+  /* Shadow */
+  --btn-box-shdw-lum: 0%;
+  --btn-box-shdw-clr: hsla(0, 0%, var(--btn-box-shdw-lum), 0.4);
+
+  /* Alpha Channels */
+  --btn-txt-alph: 1;
+  --btn-txt-hvr-alph: 1;
+  --btn-txt-activ-alph: 1;
+  --btn-bg-alph: 1;
+  --btn-bg-hvr-alph: 1;
+  --btn-bg-activ-alph: 1;
+  --btn-brdr-alph: 1;
+  --btn-brdr-hvr-alph: 1;
+  --btn-brdr-activ-alph: 1;
+
+  /* Theme Colors */
+  --success-hue: 134;
+  --success-sat: 61%;
+  --success-lum-activ: 41%;
+  --success-lum: calc(var(--success-lum-activ) * 0.5);
+  --success-lum-hvr: calc(var(--success-lum-activ) * 0.75);
+  --success-clr: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 1);
+
+  --danger-hue: 0;
+  --danger-sat: 79%;
+  --danger-lum-activ: 63%;
+  --danger-lum: calc(var(--danger-lum-activ) * 0.5);
+  --danger-lum-hvr: calc(var(--danger-lum-activ) * 0.75);
+  --danger-clr: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum), 1);
+
+  --warn-hue: 35;
+  --warn-sat: 89%;
+  --warn-lum-activ: 60%;
+  --warn-lum: calc(var(--warn-lum-activ) * 0.5);
+  --warn-lum-hvr: calc(var(--warn-lum-activ) * 0.75);
+  --warning-clr: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum), 1);
+
+  --info-hue: 205;
+  --info-sat: 82%;
+  --info-lum-activ: 55%;
+  --info-lum: calc(var(--info-lum-activ) * 0.5);
+  --info-lum-hvr: calc(var(--info-lum-activ) * 0.75);
+  --info-clr: hsla(var(--info-hue), var(--info-sat), var(--info-lum), 1);
+
+  /* Light Theme Button Colors (Default) */
+  --btn-txt-lum: 27%;
+  --btn-txt-clr: hsla(0, 0%, var(--btn-txt-lum), var(--btn-txt-alph));
+  --btn-txt-clr-dark: hsla(0, 0%, calc(var(--btn-txt-lum) + 2%), var(--btn-txt-alph));
+  --btn-txt-clr-darkr: hsla(0, 0%, calc(var(--btn-txt-lum) + 5%), var(--btn-txt-alph));
+  --btn-txt-clr-lite: hsla(0, 0%, calc(var(--btn-txt-lum) - 4%), var(--btn-txt-alph));
+  --btn-txt-clr-liter: hsla(0, 0%, calc(var(--btn-txt-lum) - 7%), var(--btn-txt-alph));
+
+  --btn-txt-hvr-lum: 12%;
+  --btn-txt-hvr-clr: hsla(0, 0%, var(--btn-txt-hvr-lum), var(--btn-txt-hvr-alph));
+  --btn-txt-hvr-clr-dark: hsla(0, 0%, calc(var(--btn-txt-hvr-lum) + 11%), var(--btn-txt-hvr-alph));
+  --btn-txt-hvr-clr-darkr: hsla(0, 0%, calc(var(--btn-txt-hvr-lum) + 15%), var(--btn-txt-hvr-alph));
+  --btn-txt-hvr-clr-lite: hsla(0, 0%, calc(var(--btn-txt-hvr-lum) - 12%), var(--btn-txt-hvr-alph));
+  --btn-txt-hvr-clr-liter: hsla(0, 0%, calc(var(--btn-txt-hvr-lum) - 12%), var(--btn-txt-hvr-alph));
+
+  --btn-txt-activ-lum: var(--btn-txt-hvr-lum);
+  --btn-txt-activ-clr: hsla(0, 0%, var(--btn-txt-activ-lum), var(--btn-txt-activ-alph));
+  --btn-txt-activ-clr-dark: hsla(0, 0%, calc(var(--btn-txt-activ-lum) + 11%), var(--btn-txt-activ-alph));
+  --btn-txt-activ-clr-darkr: hsla(0, 0%, calc(var(--btn-txt-activ-lum) + 15%), var(--btn-txt-activ-alph));
+  --btn-txt-activ-clr-lite: hsla(0, 0%, calc(var(--btn-txt-activ-lum) - 12%), var(--btn-txt-activ-alph));
+  --btn-txt-activ-clr-liter: hsla(0, 0%, calc(var(--btn-txt-activ-lum) - 12%), var(--btn-txt-activ-alph));
+
+  /* Light Theme Backgrounds */
+  --btn-bg-lum: 92%;
+  --btn-bg-hvr-lum: 88%;
+  --btn-bg-activ-lum: 84%;
+
+  --btn-bg-clr: hsla(0, 0%, var(--btn-bg-lum), var(--btn-bg-alph));
+  --btn-bg-clr-dark: hsla(0, 0%, calc(var(--btn-bg-lum) - 5%), var(--btn-bg-alph));
+  --btn-bg-clr-darkr: hsla(0, 0%, calc(var(--btn-bg-lum) - 10%), var(--btn-bg-alph));
+  --btn-bg-clr-lite: hsla(0, 0%, calc(var(--btn-bg-lum) + 2%), var(--btn-bg-alph));
+  --btn-bg-clr-liter: hsla(0, 0%, calc(var(--btn-bg-lum) + 4%), var(--btn-bg-alph));
+
+  --btn-bg-hvr-clr: hsla(0, 0%, var(--btn-bg-hvr-lum), var(--btn-bg-hvr-alph));
+  --btn-bg-hvr-clr-dark: hsla(0, 0%, calc(var(--btn-bg-hvr-lum) - 5%), var(--btn-bg-hvr-alph));
+  --btn-bg-hvr-clr-darkr: hsla(0, 0%, calc(var(--btn-bg-hvr-lum) - 10%), var(--btn-bg-hvr-alph));
+  --btn-bg-hvr-clr-lite: hsla(0, 0%, calc(var(--btn-bg-hvr-lum) + 2%), var(--btn-bg-hvr-alph));
+  --btn-bg-hvr-clr-liter: hsla(0, 0%, calc(var(--btn-bg-hvr-lum) + 4%), var(--btn-bg-hvr-alph));
+
+  --btn-bg-activ-clr: hsla(0, 0%, var(--btn-bg-activ-lum), var(--btn-bg-activ-alph));
+  --btn-bg-activ-clr-dark: hsla(0, 0%, calc(var(--btn-bg-activ-lum) - 5%), var(--btn-bg-activ-alph));
+  --btn-bg-activ-clr-darkr: hsla(0, 0%, calc(var(--btn-bg-activ-lum) - 10%), var(--btn-bg-activ-alph));
+  --btn-bg-activ-clr-lite: hsla(0, 0%, calc(var(--btn-bg-activ-lum) + 2%), var(--btn-bg-activ-alph));
+  --btn-bg-activ-clr-liter: hsla(0, 0%, calc(var(--btn-bg-activ-lum) + 4%), var(--btn-bg-activ-alph));
+
+  /* Light Theme Borders */
+  --btn-brdr-lum: 80%;
+  --btn-brdr-hvr-lum: 75%;
+  --btn-brdr-activ-lum: 70%;
+
+  --btn-brdr-clr: hsla(0, 0%, var(--btn-brdr-lum), var(--btn-brdr-alph));
+  --btn-brdr-clr-dark: hsla(0, 0%, calc(var(--btn-brdr-lum) - 5%), var(--btn-brdr-alph));
+  --btn-brdr-clr-darkr: hsla(0, 0%, calc(var(--btn-brdr-lum) - 10%), var(--btn-brdr-alph));
+  --btn-brdr-clr-lite: hsla(0, 0%, calc(var(--btn-brdr-lum) + 2%), var(--btn-brdr-alph));
+  --btn-brdr-clr-liter: hsla(0, 0%, calc(var(--btn-brdr-lum) + 4%), var(--btn-brdr-alph));
+
+  --btn-brdr-hvr-clr: hsla(0, 0%, var(--btn-brdr-hvr-lum), var(--btn-brdr-hvr-alph));
+  --btn-brdr-hvr-clr-dark: hsla(0, 0%, calc(var(--btn-brdr-hvr-lum) - 5%), var(--btn-brdr-hvr-alph));
+  --btn-brdr-hvr-clr-darkr: hsla(0, 0%, calc(var(--btn-brdr-hvr-lum) - 10%), var(--btn-brdr-hvr-alph));
+  --btn-brdr-hvr-clr-lite: hsla(0, 0%, calc(var(--btn-brdr-hvr-lum) + 2%), var(--btn-brdr-hvr-alph));
+  --btn-brdr-hvr-clr-liter: hsla(0, 0%, calc(var(--btn-brdr-hvr-lum) + 4%), var(--btn-brdr-hvr-alph));
+
+  --btn-brdr-activ-clr: hsla(0, 0%, var(--btn-brdr-activ-lum), var(--btn-brdr-activ-alph));
+  --btn-brdr-activ-clr-dark: hsla(0, 0%, calc(var(--btn-brdr-activ-lum) - 5%), var(--btn-brdr-activ-alph));
+  --btn-brdr-activ-clr-darkr: hsla(0, 0%, calc(var(--btn-brdr-activ-lum) - 10%), var(--btn-brdr-activ-alph));
+  --btn-brdr-activ-clr-lite: hsla(0, 0%, calc(var(--btn-brdr-activ-lum) + 2%), var(--btn-brdr-activ-alph));
+  --btn-brdr-activ-clr-liter: hsla(0, 0%, calc(var(--btn-brdr-activ-lum) + 4%), var(--btn-brdr-activ-alph));
+}
+
+:is(.dark, .dark-theme) {
+  /* Theme Colors */
+  --success-clr: hsla(var(--success-hue), 50%, 50%, 1);
+  --danger-clr: hsla(var(--danger-hue), 65%, 55%, 1);
+  --warning-clr: hsla(var(--warn-hue), 75%, 55%, 1);
+  --info-clr: hsla(var(--info-hue), 70%, 50%, 1);
+
+  /* Dark Theme Button Colors */
+  --btn-txt-lum: 73%;
+  --btn-txt-clr: hsla(0, 0%, var(--btn-txt-lum), var(--btn-txt-alph));
+  --btn-txt-clr-dark: hsla(0, 0%, calc(var(--btn-txt-lum) * 0.973), var(--btn-txt-alph));
+  --btn-txt-clr-darkr: hsla(0, 0%, calc(var(--btn-txt-lum) * 0.932), var(--btn-txt-alph));
+  --btn-txt-clr-lite: hsla(0, 0%, calc(var(--btn-txt-lum) * 1.055), var(--btn-txt-alph));
+  --btn-txt-clr-liter: hsla(0, 0%, calc(var(--btn-txt-lum) * 1.096), var(--btn-txt-alph));
+
+  --btn-txt-hvr-lum: 88%;
+  --btn-txt-hvr-clr: hsla(0, 0%, var(--btn-txt-hvr-lum), var(--btn-txt-hvr-alph));
+  --btn-txt-hvr-clr-dark: hsla(0, 0%, calc(var(--btn-txt-hvr-lum) * 0.875), var(--btn-txt-hvr-alph));
+  --btn-txt-hvr-clr-darkr: hsla(0, 0%, calc(var(--btn-txt-hvr-lum) * 0.83), var(--btn-txt-hvr-alph));
+  --btn-txt-hvr-clr-lite: hsla(0, 0%, calc(var(--btn-txt-hvr-lum) * 1.136), var(--btn-txt-hvr-alph));
+  --btn-txt-hvr-clr-liter: hsla(0, 0%, calc(var(--btn-txt-hvr-lum) * 1.136), var(--btn-txt-hvr-alph));
+
+  --btn-txt-activ-lum: var(--btn-txt-hvr-lum);
+  --btn-txt-activ-clr: hsla(0, 0%, var(--btn-txt-activ-lum), var(--btn-txt-activ-alph));
+  --btn-txt-activ-clr-dark: hsla(0, 0%, calc(var(--btn-txt-activ-lum) * 0.875), var(--btn-txt-activ-alph));
+  --btn-txt-activ-clr-darkr: hsla(0, 0%, calc(var(--btn-txt-activ-lum) * 0.83), var(--btn-txt-activ-alph));
+  --btn-txt-activ-clr-lite: hsla(0, 0%, calc(var(--btn-txt-activ-lum) * 1.136), var(--btn-txt-activ-alph));
+  --btn-txt-activ-clr-liter: hsla(0, 0%, calc(var(--btn-txt-activ-lum) * 1.136), var(--btn-txt-activ-alph));
+
+  --btn-bg-activ-lum: 27%;
+  --btn-bg-hvr-lum: calc(var(--btn-bg-activ-lum) * 0.75);
+  --btn-bg-lum: calc(var(--btn-bg-activ-lum) * 0.5);
+
+  --btn-bg-clr: hsla(0, 0%, var(--btn-bg-lum), var(--btn-bg-alph));
+  --btn-bg-clr-dark: hsla(0, 0%, calc(var(--btn-bg-lum) * 0.9), var(--btn-bg-alph));
+  --btn-bg-clr-darkr: hsla(0, 0%, calc(var(--btn-bg-lum) * 0.75), var(--btn-bg-alph));
+  --btn-bg-clr-lite: hsla(0, 0%, calc(var(--btn-bg-lum) * 1.125), var(--btn-bg-alph));
+  --btn-bg-clr-liter: hsla(0, 0%, calc(var(--btn-bg-lum) * 1.25), var(--btn-bg-alph));
+
+  --btn-bg-hvr-clr: hsla(0, 0%, var(--btn-bg-hvr-lum), var(--btn-bg-hvr-alph));
+  --btn-bg-hvr-clr-dark: hsla(0, 0%, calc(var(--btn-bg-hvr-lum) * 0.75), var(--btn-bg-hvr-alph));
+  --btn-bg-hvr-clr-darkr: hsla(0, 0%, calc(var(--btn-bg-hvr-lum) * 0.667), var(--btn-bg-hvr-alph));
+  --btn-bg-hvr-clr-lite: hsla(0, 0%, calc(var(--btn-bg-hvr-lum) * 1.167), var(--btn-bg-hvr-alph));
+  --btn-bg-hvr-clr-liter: hsla(0, 0%, calc(var(--btn-bg-hvr-lum) * 1.333), var(--btn-bg-hvr-alph));
+
+  --btn-bg-activ-clr: hsla(0, 0%, var(--btn-bg-activ-lum), var(--btn-bg-activ-alph));
+  --btn-bg-activ-clr-dark: hsla(0, 0%, calc(var(--btn-bg-activ-lum) * 0.75), var(--btn-bg-activ-alph));
+  --btn-bg-activ-clr-darkr: hsla(0, 0%, calc(var(--btn-bg-activ-lum) * 0.667), var(--btn-bg-activ-alph));
+  --btn-bg-activ-clr-lite: hsla(0, 0%, calc(var(--btn-bg-activ-lum) * 1.167), var(--btn-bg-activ-alph));
+  --btn-bg-activ-clr-liter: hsla(0, 0%, calc(var(--btn-bg-activ-lum) * 1.333), var(--btn-bg-activ-alph));
+
+  --btn-brdr-activ-lum: 40%;
+  --btn-brdr-hvr-lum: calc(var(--btn-brdr-activ-lum) * 0.75);
+  --btn-brdr-lum: calc(var(--btn-brdr-activ-lum) * 0.5);
+
+  --btn-brdr-clr: hsla(0, 0%, var(--btn-brdr-lum), var(--btn-brdr-alph));
+  --btn-brdr-clr-dark: hsla(0, 0%, calc(var(--btn-brdr-lum) * 0.889), var(--btn-brdr-alph));
+  --btn-brdr-clr-darkr: hsla(0, 0%, calc(var(--btn-brdr-lum) * 0.8), var(--btn-brdr-alph));
+  --btn-brdr-clr-lite: hsla(0, 0%, calc(var(--btn-brdr-lum) * 1.111), var(--btn-brdr-alph));
+  --btn-brdr-clr-liter: hsla(0, 0%, calc(var(--btn-brdr-lum) * 1.333), var(--btn-brdr-alph));
+
+  --btn-brdr-hvr-clr: hsla(0, 0%, var(--btn-brdr-hvr-lum), var(--btn-brdr-hvr-alph));
+  --btn-brdr-hvr-clr-dark: hsla(0, 0%, calc(var(--btn-brdr-hvr-lum) * 1.2), var(--btn-brdr-hvr-alph));
+  --btn-brdr-hvr-clr-darkr: hsla(0, 0%, var(--btn-brdr-hvr-lum), var(--btn-brdr-hvr-alph));
+  --btn-brdr-hvr-clr-lite: hsla(0, 0%, calc(var(--btn-brdr-hvr-lum) * 1.2), var(--btn-brdr-hvr-alph));
+  --btn-brdr-hvr-clr-liter: hsla(0, 0%, calc(var(--btn-brdr-hvr-lum) * 1.6), var(--btn-brdr-hvr-alph));
+
+  --btn-brdr-activ-clr: hsla(0, 0%, var(--btn-brdr-activ-lum), var(--btn-brdr-activ-alph));
+  --btn-brdr-activ-clr-dark: hsla(0, 0%, calc(var(--btn-brdr-activ-lum) * 1.2), var(--btn-brdr-activ-alph));
+  --btn-brdr-activ-clr-darkr: hsla(0, 0%, var(--btn-brdr-activ-lum), var(--btn-brdr-activ-alph));
+  --btn-brdr-activ-clr-lite: hsla(0, 0%, calc(var(--btn-brdr-activ-lum) * 1.2), var(--btn-brdr-activ-alph));
+  --btn-brdr-activ-clr-liter: hsla(0, 0%, calc(var(--btn-brdr-activ-lum) * 1.6), var(--btn-brdr-activ-alph));
+}
+
+@keyframes bounce {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}

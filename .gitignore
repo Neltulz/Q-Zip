@@ -1,0 +1,46 @@
+# Logs
+logs
+*.log
+
+# Local .env files
+.env
+.env.*
+!.env.example
+
+# Node dependencies
+/node_modules
+
+# Nuxt dev/build outputs
+/.output
+/.data
+/.nuxt
+/.nitro
+/.cache
+/dist
+
+# Tauri build artifacts and logs
+/src-tauri/target
+/src-tauri/Cargo.lock
+/src-tauri/tauri.conf.json.bk
+/src-tauri/gen
+/src-tauri/assets
+
+# IDE / Editor configuration
+# VSCode, JetBrains, etc.
+/.vscode
+/.idea
+/.fleet
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Misc Visual Studio files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+temp_grok_prompt.txt
+temp_grok_prompt_002.txt
+creepios_notes.md

@@ -1,0 +1,66 @@
+{
+    "advanced": {
+      "title": "Advanced",
+      "fields": [
+        {
+          "id": "sfxArchive",
+          "type": "select",
+          "label": "Archive Type:",
+          "options": [
+            { "value": "archive", "text": "* Archive" },
+            { "value": "sfx", "text": "Self Extracting EXE" }
+          ],
+          "default": "archive",
+          "data-field-name": "archive-type-field"
+        },
+        {
+          "id": "sharedFiles",
+          "type": "select",
+          "label": "Shared Files:",
+          "options": [
+            { "value": "no_compression", "text": "* No Compression" },
+            { "value": "compress", "text": "Compress" }
+          ],
+          "default": "no_compression",
+          "data-field-name": "shared-files-field"
+        },
+        {
+          "id": "fileDeletion",
+          "type": "select",
+          "label": "File Deletion:",
+          "options": [
+            { "value": "no_deletion", "text": "* No Deletion" },
+            { "value": "delete_after", "text": "Delete After Compression" }
+          ],
+          "default": "no_deletion",
+          "data-field-name": "file-deletion-field"
+        },
+        {
+          "id": "splitToVolumes",
+          "type": "select",
+          "label": "Split to Volumes, bytes:",
+          "options": [
+            { "value": "", "text": "* None" },
+            { "value": "10M", "text": "10M" },
+            { "value": "100M", "text": "100M" },
+            { "value": "1000M", "text": "1000M" },
+            { "value": "650M", "text": "650M - CD" },
+            { "value": "700M", "text": "700M - CD" },
+            { "value": "4092M", "text": "4092M - FAT" },
+            { "value": "4480M", "text": "4480M - DVD" },
+            { "value": "8128M", "text": "8128M - DVD DL" },
+            { "value": "23040M", "text": "23040M - BD" }
+          ],
+          "default": "",
+          "data-field-name": "split-to-volumes-field"
+        },
+        {
+          "id": "parameters",
+          "type": "input",
+          "label": "Custom Parameters:",
+          "default": "",
+          "data-field-name": "custom-parameters-field"
+        }
+      ]
+    }
+  }

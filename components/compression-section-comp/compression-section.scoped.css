@@ -1,0 +1,108 @@
+/* "components/compression-section-comp/compression-section.scoped.css" --for-- "components/CompressionSectionNew.vue" */
+
+#compression-section {
+  background-color: var(--bg-clr-lite);
+  border: 1px solid var(--brdr-clr);
+  border-radius: var(--brdr-rad);
+  container-name: compression-section;
+  container-type: inline-size;
+  display: grid;
+  grid-area: compression-section;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  overflow: clip;
+
+  .tabs {
+    border-block-end: 1px solid var(--brdr-clr-lite);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    &:deep(> .custom-button) {
+      --btn-border-radius: 0;
+      --btn-line-thickness: 2px;
+      --visual-style-inset: 0px;
+
+      cursor: pointer;
+      margin-block-end: -1px;
+      z-index: 10;
+
+      .visual-style {
+        border: none;
+        box-shadow: none;
+      }
+
+      &.active:not(:hover) {
+        .visual-style {
+          background-color: transparent;
+        }
+      }
+    }
+  }
+
+  .content {
+    padding-block-start: var(--pad-blok);
+    padding-inline: var(--pad-in);
+
+    .accordion {
+      display: grid;
+      grid-template-columns: 1fr;
+
+      &:deep(.accordion-item) {
+        container-name: accordion-item;
+        container-type: inline-size;
+      }
+    }
+
+    .settings-form {
+      display: grid;
+      row-gap: var(--pad-in);
+
+      .output-location {
+        border: 1px solid transparent;
+        padding: 0;
+
+        .custom-field-new {
+          &[data-field-context="job-specific"] {
+            .lock-and-input-wrapper {
+              align-items: center;
+              border: 1px solid hsl(0 0% 50%);
+              display: grid;
+              gap: var(--pad-in);
+              grid-template-columns: auto 1fr;
+              padding: 1rem;
+
+              .lock-btn {
+                block-size: 1.5rem;
+                inline-size: 1.5rem;
+              }
+
+              .input-assembly {
+                .input-wrapper-deep {
+                  &.input-type-input,
+                  &.input-type-select {
+                    .field-title {
+                      display: none;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .settings-form:has(.custom-field-new[data-field-name$="-field"]) {
+      .custom-field-new {
+        margin-block-end: var(--pad-in);
+      }
+    }
+  }
+}
+
+@media (width < 1024px) {
+  #compression-section {
+    border-inline-end: 0;
+    border-radius: 0;
+  }
+}

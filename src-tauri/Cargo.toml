@@ -1,0 +1,32 @@
+[package]
+name = "q-zip"
+version = "0.1.2"
+description = "Q-Zip (Queue-Zip), Batch Process Archive Creation"
+authors = ["Neil \"Creepio\" Moore"]
+license = "GPL-3.0"
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "q_zip_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.2.0", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.5.0", features = [] }
+tauri-plugin-log = "2.0.0-rc"
+tauri-plugin-fs = "2.0.0-beta.8"
+tauri-plugin-decorum = "1.1.1"
+tauri-plugin-dialog = "2.0.0"
+
+# Add tauri-plugin-window-state with target configuration
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-window-state = "2.2.2"

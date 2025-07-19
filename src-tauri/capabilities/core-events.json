@@ -1,0 +1,10 @@
+{
+    "identifier": "core-events",
+    "description": "Allows listening to core events and path operations",
+    "windows": ["main"],
+    "permissions": [
+        "core:event:allow-listen",
+        "core:path:allow-basename",
+        "core:path:allow-dirname"
+    ]
+}

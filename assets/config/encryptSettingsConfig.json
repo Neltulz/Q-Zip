@@ -1,0 +1,37 @@
+{
+  "encrypt": {
+    "title": "Encrypt",
+    "fields": [
+      {
+        "id": "password",
+        "type": "input",
+        "label": "Password:",
+        "default": "",
+        "data-field-name": "password-field"
+      },
+      {
+        "id": "encryptionMethod",
+        "type": "select",
+        "label": "Encryption Method:",
+        "options": [],
+        "default": "AES-256",
+        "data-field-name": "encryption-method-field"
+      },
+      {
+        "id": "fileNameEncryption",
+        "type": "select",
+        "label": "File Name Encryption:",
+        "options": [
+          { "value": "use_encryption", "text": "Use Encryption" },
+          { "value": "no_encryption", "text": "No Encryption" }
+        ],
+        "default": "use_encryption",
+        "data-field-name": "file-name-encryption-field",
+        "dependsOn": {
+          "field": "archiveFormat",
+          "value": "7z"
+        }
+      }
+    ]
+  }
+}

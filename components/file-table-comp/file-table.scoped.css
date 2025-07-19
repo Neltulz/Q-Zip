@@ -1,0 +1,180 @@
+/* "components/file-table-comp/file-table.scoped.css" --for-- "components/FileTable.vue" */
+
+.file-table-comp {
+  display: grid;
+  position: relative;
+
+  .file-table-toolbar {
+    --bg-clr: transparent;
+    margin-bottom: 4px;
+    padding: 0;
+  }
+
+  .file-table {
+    --file-table-pad-in: 4px;
+    --file-table-pad-blok: 4px;
+    --file-check-col-width: auto;
+    --file-name-col-width: 1fr;
+    --file-size-col-width: auto;
+    --file-type-col-width: auto;
+    --file-parent-path-col-width: 1fr;
+
+    border-collapse: collapse;
+    color: hsl(0, 0%, 55%);
+    display: grid;
+    font-size: 1rem;
+    grid-template-areas: "file-check file-name file-size file-type file-parent-path";
+    grid-template-columns:
+      var(--file-check-col-width) var(--file-name-col-width)
+      var(--file-size-col-width) var(--file-size-col-width) var(--file-parent-path-col-width);
+    grid-template-rows: auto 1fr;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+
+    thead,
+    tbody {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
+    }
+
+    thead {
+      grid-row: 1;
+    }
+
+    tbody {
+      grid-row: 2;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    tr {
+      display: contents;
+      grid-template-columns: subgrid;
+      width: 100%;
+    }
+
+    th,
+    td {
+      align-items: center;
+      display: flex;
+      min-height: auto;
+      padding: 0;
+      text-align: start;
+      user-select: none;
+
+      &.item-checkbox {
+        grid-column: file-check;
+        justify-content: center;
+        padding-inline: var(--file-table-pad-in);
+
+        &:deep(.custom-button .button-content) {
+          justify-content: center;
+        }
+      }
+
+      &.item-name {
+        grid-column: file-name;
+      }
+
+      &.item-size {
+        grid-column: file-size;
+        justify-content: end;
+      }
+
+      &.item-type {
+        grid-column: file-type;
+        justify-content: center;
+      }
+
+      &.item-parent-path {
+        grid-column: file-parent-path;
+      }
+    }
+
+    .cell-content {
+      overflow: hidden;
+      padding-block: var(--file-table-pad-blok);
+      padding-inline: var(--file-table-pad-in);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    th {
+      background-color: var(--bg-clr-liter);
+      color: hsl(0, 0%, 75%);
+      cursor: default;
+
+      &:first-child {
+        border-end-start-radius: 4px;
+        border-start-start-radius: 4px;
+      }
+
+      &:last-child {
+        border-end-end-radius: 4px;
+        border-start-end-radius: 4px;
+      }
+    }
+
+    td {
+      border-bottom: 1px solid var(--brdr-clr);
+
+      &.item-name {
+        .cell-content {
+          align-items: center;
+          column-gap: 8px;
+          display: flex;
+          justify-content: start;
+          width: 100%;
+
+          .item-name-text {
+            cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .row-actions {
+            flex-shrink: 0;
+          }
+        }
+      }
+    }
+
+    tr.selected {
+      td {
+        background-color: hsla(204, 100%, 40%, 0.5);
+        color: hsl(0, 0%, 87%);
+      }
+    }
+
+    .row-actions {
+      display: flex;
+      justify-content: flex-end;
+      opacity: 0;
+      transition: opacity 150ms ease-in-out;
+
+      &:deep(.custom-button) {
+        padding-block: 0.25em;
+        padding-inline: 0.5em;
+      }
+
+      /* This prevents the '...' icon from changing color on hover, as the button's appearance is enough feedback. */
+      &:deep(.custom-button:hover) {
+        color: var(--btn-txt-clr);
+      }
+    }
+
+    /* Hide row actions during drag selection */
+    .is-dragging tr:hover .row-actions {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  &:not(.is-dragging) tr:hover .row-actions,
+  .row-actions:has(.dropdown-menu.active) {
+    opacity: 1;
+  }
+}

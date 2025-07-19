@@ -1,0 +1,107 @@
+/* "components/title-bar-comp/title-bar.scoped.css" --for-- "components/TitleBar.vue" */
+
+#title-bar {
+  align-items: center;
+  display: flex;
+  height: var(--title-bar-height);
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  justify-content: center;
+  overflow: hidden;
+  padding-block: 0;
+  padding-inline: 3px;
+  pointer-events: none;
+  position: fixed;
+  width: 100vw;
+  z-index: 100000;
+}
+
+#title-bar:deep(.custom-button) {
+  z-index: 100;
+}
+
+#title-bar:deep(.custom-button:not(:disabled):not(.disabled)) {
+  pointer-events: all;
+}
+
+#title-bar .header-content {
+  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-content: center;
+  width: 100%;
+}
+
+#title-bar .header-content > .dropdown-and-app-title-wrapper {
+  align-items: center;
+  display: flex;
+  font-size: 1rem;
+  gap: 3px;
+  grid-column: 1 / span all;
+  grid-row: 1;
+  justify-content: center;
+  justify-self: start;
+  z-index: 100;
+}
+
+#title-bar .header-content > .dropdown-and-app-title-wrapper .app-title-wrapper {
+  align-items: baseline;
+  column-gap: 0.3em;
+  display: flex;
+}
+
+#title-bar .header-content > .dropdown-and-app-title-wrapper .app-title-wrapper .ver-num {
+  color: var(--blu-lite);
+  font-size: 0.8em;
+  font-style: oblique;
+}
+
+#title-bar > .header-content > .center-nav-btns {
+  display: flex;
+  grid-column: 1 / span all;
+  grid-row: 1;
+  justify-self: center;
+  position: relative;
+  transition: opacity 500ms ease;
+  z-index: 100;
+}
+
+#title-bar > .header-content > .center-nav-btns.disabled {
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+#title-bar > .header-content > .center-nav-btns .btn-group {
+  --btn-line-thickness: 2px;
+
+  display: flex;
+  padding-inline: 3px;
+  position: relative;
+}
+
+#title-bar > .header-content > .center-nav-btns .btn-group:before {
+  background-color: var(--bg-clr-liter);
+  border-radius: var(--brdr-rad-smalr);
+  content: "";
+  inset: 2px;
+  position: absolute;
+}
+
+#title-bar > .header-content > .center-nav-btns .btn-group .divider {
+  border-inline-start: 1px solid var(--brdr-clr-liter);
+  margin-block: 8px;
+  transition: opacity 500ms ease;
+  z-index: 100;
+}
+
+#title-bar > .header-content > .center-nav-btns .btn-group .custom-button {
+  margin-inline: -3px;
+  padding-inline: 2em;
+}
+
+#title-bar > .header-content > .center-nav-btns .btn-group .custom-button:hover + .divider,
+#title-bar > .header-content > .center-nav-btns .btn-group .divider:has(+ .custom-button:hover),
+#title-bar > .header-content > .center-nav-btns .btn-group .custom-button.active + .divider,
+#title-bar > .header-content > .center-nav-btns .btn-group .divider:has(+ .custom-button.active) {
+  opacity: 0;
+}

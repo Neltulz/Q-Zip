@@ -1,0 +1,7 @@
+{
+    "identifier": "fs-all",
+    "description": "Allows file system operations including stat",
+    "windows": ["main"],
+    "permissions": ["fs:default", "fs:allow-stat"],
+    "scope": { "allow": ["**"] }
+}
