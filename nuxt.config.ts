@@ -9,12 +9,14 @@ export default {
   ssr: false,
   devServer: {
     host: process.env.TAURI_DEV_HOST || 'localhost',
+    port: 9001,
   },
   vite: {
     clearScreen: false,
     envPrefix: ['VITE_', 'TAURI_'],
     server: {
       strictPort: true,
+      
     },
     optimizeDeps: {
       exclude: ['@tauri-apps/api'],

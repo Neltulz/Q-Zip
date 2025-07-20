@@ -5,7 +5,7 @@
   "identifier": "com.creepio.q-zip",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:3000",
+    "devUrl": "http://localhost:9001",
     "beforeDevCommand": "pnpm dev",
     "beforeBuildCommand": "pnpm generate"
   },

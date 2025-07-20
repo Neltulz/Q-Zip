@@ -1,23 +1,24 @@
 <!-- components/JobArea.vue @preserve -->
 <!--
   Description:
-  This component displays the active job's files and contains the primary
-  logic for handling external file drag-and-drop operations. It handles
-  the native 'dragover' event to fix the cursor and listens for Tauri events
-  to show/hide the overlay and process dropped files. Enhanced error handling
-  ensures the drag-over state is reset even if file addition fails, with
-  additional logging for debugging drop event issues. The external drag overlay
-  now uses `data-is-external-drag-over` and dynamic styling for visibility
-  and fade effects, allowing for easier inspection in the browser's developer tools.
-  Global window listeners for 'dragover' and 'drop' are managed here to ensure
-  the OS correctly recognizes the app as a drop target.
+  This component displays the active job's files and manages the job area's
+  state, including external drag-and-drop and internal drag-to-select.
+  It now tracks an 'active' state, adding an 'is-active' class when the user
+  clicks within the component. This state is used to show a visual border
+  around the content area. Includes enhanced logging to debug active state changes.
 
   Usage Example:
   This component is rendered within the `JobsSection` component, receiving
   the `isExternalDragOver` prop from the `dragDropStore`.
 -->
 <template>
-  <div ref="jobAreaRef" class="job-area" data-component-name="JobArea" @mousedown="handleMouseDown">
+  <div
+    ref="jobAreaRef"
+    class="job-area"
+    :class="{ 'is-active': isJobAreaActive }"
+    data-component-name="JobArea"
+    @mousedown="handleMouseDown"
+  >
     <div v-if="selectionBox.visible" class="selection-box" :style="selectionBoxStyle" />
 
     <!--
@@ -97,9 +98,9 @@
         <div class="job-content">
           <FileTable
             ref="fileTableRef"
-            :job-id="activeJob.id"
             :files="activeJob.files"
             :is-dragging="selectionBox.visible"
+            :job-id="activeJob.id"
             @copy-files="confirmCopyFiles"
             @copy-to-new-job="confirmCopyToNewJob"
             @move-files="confirmMoveFiles"
@@ -109,6 +110,7 @@
           />
           <DropZone :job-id="activeJob.id" @add-files="addItemsToJob" @add-folders="addItemsToJob" />
         </div>
+        <div class="job-area-visual-select" />
       </div>
     </transition>
   </div>
@@ -155,6 +157,7 @@ const selectedFilePaths = ref<string[]>([]);
 const isDragSelecting = ref<boolean>(false);
 const activeDropZone = ref<"current" | "new" | "separate" | null>(null);
 const dropError = ref<string | null>(null);
+const isJobAreaActive = ref<boolean>(false);
 
 const mouseMoved = ref<boolean>(false);
 const startPoint = reactive({ x: 0, y: 0 });
@@ -198,10 +201,30 @@ const handleWindowDrop = (event: DragEvent) => {
   event.preventDefault();
 };
 
+const handleWindowClick = (event: MouseEvent) => {
+  if (!jobAreaRef.value) {
+    logFailsafe("JobArea:handleWindowClick", "Fired but jobAreaRef is null.");
+    return;
+  }
+
+  const clickedInside = jobAreaRef.value.contains(event.target as Node);
+
+  if (!clickedInside) {
+    if (isJobAreaActive.value) {
+      logInteraction("JobArea", "Click outside detected. Setting job area to inactive.");
+      isJobAreaActive.value = false;
+    }
+  } else {
+    // This case is for debugging. It confirms the click was correctly identified as inside.
+    logInteraction("JobArea", "handleWindowClick detected click inside. No state change.");
+  }
+};
+
 onMounted(async () => {
   // Add global listeners to ensure the OS recognizes the window as a drop target
   window.addEventListener("dragover", handleWindowDragOver);
   window.addEventListener("drop", handleWindowDrop);
+  window.addEventListener("mousedown", handleWindowClick);
 
   // Centralize all Tauri drag-and-drop listeners here
   unlistenDragEnter = await listen("tauri://drag-enter", (event) => {
@@ -229,12 +252,17 @@ onUnmounted(() => {
   // Clean up global listeners
   window.removeEventListener("dragover", handleWindowDragOver);
   window.removeEventListener("drop", handleWindowDrop);
+  window.removeEventListener("mousedown", handleWindowClick);
 
   // Clean up Tauri listeners
   if (unlistenDragEnter) unlistenDragEnter();
   if (unlistenDragLeave) unlistenDragLeave();
   if (unlistenDragOver) unlistenDragOver();
   if (unlistenDrop) unlistenDrop();
+});
+
+watch(isJobAreaActive, (newValue, oldValue) => {
+  logInteraction("JobArea", `isJobAreaActive state changed from ${oldValue} to ${newValue}`);
 });
 
 watch(
@@ -270,6 +298,14 @@ const getFileNames = (paths: string[]): string[] => {
 };
 
 const handleMouseDown = (event: MouseEvent): void => {
+  // Always set the area as active on any mousedown within it.
+  if (!isJobAreaActive.value) {
+    logInteraction("JobArea", "Setting job area to active.");
+    isJobAreaActive.value = true;
+  }
+
+  // Check if we should start a drag-selection.
+  // If the click is on an interactive element, do nothing further.
   if (
     event.button !== 0 ||
     (event.target instanceof Element &&
@@ -277,6 +313,8 @@ const handleMouseDown = (event: MouseEvent): void => {
   ) {
     return;
   }
+
+  // If we're here, it's a valid mousedown to start a drag.
   event.preventDefault();
   mouseMoved.value = false;
   startPoint.x = event.clientX;

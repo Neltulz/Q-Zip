@@ -1,5 +1,13 @@
 /* components/job-area-comp/job-area.scoped.css */
 
+/*
+  Description:
+  Styles for the JobArea component, including the main layout,
+  drag-and-drop overlay, and job content view. Uses native syntactical
+  CSS nesting and grid areas for layout management. Includes an active
+  state to show a visual selection border.
+*/
+
 /* Updated pulse-glow animation to pulse from 0.5 to 1 opacity */
 @keyframes pulse-glow {
   0%,
@@ -11,174 +19,200 @@
   }
 }
 
+/* --- Root Container --- */
 .job-area {
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
+  overflow: hidden;
   position: relative;
-  overflow: hidden;
-}
 
-.job-area > * {
-  grid-column: 1 / -1;
-  grid-row: 1 / -1;
-}
+  /* Make all direct children occupy the same grid cell */
+  & > * {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+  }
 
-.job {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  height: 100%;
-  overflow: hidden;
-  z-index: 1;
-}
+  /* --- Active State Styling --- */
+  &.is-active {
+    .job {
+      .job-area-visual-select {
+        opacity: 0.5;
+      }
+    }
+  }
 
-.job-header {
-  padding: 10px;
-  border-bottom: 1px solid var(--brdr-clr);
-  flex-shrink: 0;
-}
+  /* --- Selection Box (for drag-to-select) --- */
+  .selection-box {
+    background-color: hsla(210, 100%, 50%, 0.2);
+    border: 1px solid hsla(210, 100%, 70%, 0.5);
+    pointer-events: none;
+    position: absolute;
+    z-index: 10;
+  }
 
-.job-content {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  overflow: hidden;
-  padding: 10px;
-  gap: 10px;
-}
+  /* --- Standard Job View --- */
+  .job {
+    display: grid;
+    grid-template-areas:
+      "header"
+      "content";
+    grid-template-rows: auto 1fr;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
 
-.selection-box {
-  position: absolute;
-  background-color: hsla(210, 100%, 50%, 0.2);
-  border: 1px solid hsla(210, 100%, 70%, 0.5);
-  z-index: 10;
-  pointer-events: none;
-}
+    .job-header {
+      border-block-end: 1px solid var(--brdr-clr);
+      flex-shrink: 0;
+      grid-area: header;
+      padding: 10px;
+    }
 
-.external-drag-overlay {
-  position: absolute;
-  inset: 0;
-  background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.6), 0.8);
-  backdrop-filter: blur(10px);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 0;
-  transition: opacity 0.2s ease-in-out;
-  container-type: inline-size;
-  cursor: not-allowed;
-}
+    .job-content {
+      display: grid;
+      gap: 10px;
+      grid-area: content;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+      padding: 10px;
+    }
 
-@container style(--theme: light) {
+    .job-area-visual-select {
+      border: 1px solid var(--blu-lite);
+      border-end-end-radius: var(--brdr-rad);
+      border-end-start-radius: var(--brdr-rad);
+      grid-column: 1 / -1;
+      grid-row: 1 / -1;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-in-out;
+      z-index: 2;
+    }
+  }
+
+  /* --- External Drag Overlay --- */
   .external-drag-overlay {
-    background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) + 3.6%), 0.8);
+    backdrop-filter: blur(10px);
+    background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.6), 0.8);
+    container-type: inline-size;
+    cursor: not-allowed;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    inset: 0;
+    padding: 0;
+    position: absolute;
+    transition: opacity 0.2s ease-in-out;
+    z-index: 100;
+
+    /* Light theme adjustment for overlay */
+    @container style(--theme: light) {
+      & {
+        background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) + 3.6%), 0.8);
+      }
+    }
+
+    /* --- Drop Zones within Overlay --- */
+    .external-drop-zone {
+      align-items: center;
+      color: var(--txt-clr-liter);
+      cursor: copy;
+      display: flex;
+      flex-basis: 50%;
+      justify-content: center;
+      padding: 2cqw;
+      position: relative;
+      transition: opacity 0.2s ease-in-out;
+
+      .drop-zone-visual {
+        align-items: center;
+        background-color: hsla(var(--bg-hue), var(--bg-sat), var(--bg-lum), 0.1);
+        border: 2px dashed var(--brdr-clr-liter);
+        border-radius: var(--brdr-rad);
+        block-size: 100%;
+        display: flex;
+        inline-size: 100%;
+        justify-content: center;
+        transform: scale(0.975);
+        transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease-in-out,
+          background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+      }
+
+      .drop-zone-content {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        font-size: 1.5rem;
+        font-weight: bold;
+        gap: 16px;
+        justify-content: center;
+        transition: color 0.2s ease-in-out;
+      }
+
+      /* --- Drop Zone Interaction Logic --- */
+      /* 1. Universal hover/active state for ALL zones: scale up, add glow, and change to light blue. */
+      &:hover .drop-zone-visual,
+      &.drop-target-active .drop-zone-visual {
+        animation: pulse-glow 4s infinite ease-in-out;
+        background-color: hsla(210, 100%, 50%, 0.25);
+        border-color: hsla(210, 100%, 75%, 0.8);
+        transform: scale(1);
+      }
+
+      /* Make text brighter on hover/active */
+      &:hover .drop-zone-content,
+      &.drop-target-active .drop-zone-content {
+        color: hsl(0, 0%, 100%);
+      }
+
+      /* --- Drop Zone Layout & Theming --- */
+      &.new-job,
+      &.separate-jobs {
+        flex-basis: 25%;
+      }
+
+      &.current-job {
+        flex-basis: 50%;
+      }
+    }
+
+    /* 2. When the overlay has a hovered OR active drop zone, affect the OTHER zones. */
+    &:has(.external-drop-zone:hover) .external-drop-zone:not(:hover),
+    &:has(.external-drop-zone.drop-target-active) .external-drop-zone:not(.drop-target-active) {
+      opacity: 0.5;
+
+      .drop-zone-visual {
+        transform: scale(0.95);
+      }
+    }
+
+    /* --- Error State --- */
+    &.has-error {
+      border: 2px dashed hsla(0, 70%, 60%, 0.8);
+    }
+
+    .drop-error-message {
+      align-items: center;
+      background-color: hsla(0, 70%, 30%, 0.5);
+      color: hsl(0, 100%, 85%);
+      display: flex;
+      flex-direction: column;
+      font-size: 1.5rem;
+      font-weight: bold;
+      gap: 16px;
+      inset: 0;
+      justify-content: center;
+      padding: 20px;
+      pointer-events: none;
+      position: absolute;
+      text-align: center;
+      z-index: 101; /* Ensure it's on top of the drop zones */
+    }
   }
 }
 
-.external-drop-zone {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  color: var(--txt-clr-liter);
-  cursor: copy;
-  padding: 2cqw;
-  transition: opacity 0.2s ease-in-out;
-}
-
-.drop-zone-visual {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  /* All zones now start with the same neutral border and transparent background */
-  border: 2px dashed var(--brdr-clr-liter);
-  background-color: hsla(var(--bg-hue), var(--bg-sat), var(--bg-lum), 0.1);
-  border-radius: var(--brdr-rad);
-  transform: scale(0.975);
-  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease-in-out,
-    background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.drop-zone-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  font-size: 1.5rem;
-  font-weight: bold;
-  /* Add transition for smooth color change */
-  transition: color 0.2s ease-in-out;
-}
-
-/* --- Interaction Logic --- */
-
-/* 1. Universal hover/active state for ALL zones: scale up, add glow, and change to light blue. */
-.external-drop-zone:hover .drop-zone-visual,
-.external-drop-zone.drop-target-active .drop-zone-visual {
-  transform: scale(1);
-  animation: pulse-glow 4s infinite ease-in-out;
-  background-color: hsla(210, 100%, 50%, 0.25);
-  border-color: hsla(210, 100%, 75%, 0.8);
-}
-
-/* Make text brighter on hover/active */
-.external-drop-zone:hover .drop-zone-content,
-.external-drop-zone.drop-target-active .drop-zone-content {
-  color: #fff;
-}
-
-/* 2. When the overlay has a hovered OR active drop zone, affect the OTHER zones. */
-.external-drag-overlay:has(.external-drop-zone:hover) .external-drop-zone:not(:hover),
-.external-drag-overlay:has(.external-drop-zone.drop-target-active) .external-drop-zone:not(.drop-target-active) {
-  opacity: 0.5;
-}
-
-.external-drag-overlay:has(.external-drop-zone:hover) .external-drop-zone:not(:hover) .drop-zone-visual,
-.external-drag-overlay:has(.external-drop-zone.drop-target-active)
-  .external-drop-zone:not(.drop-target-active)
-  .drop-zone-visual {
-  transform: scale(0.95);
-}
-
-/* --- Error State --- */
-.external-drag-overlay.has-error {
-  border: 2px dashed hsla(0, 70%, 60%, 0.8);
-}
-
-.drop-error-message {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  color: hsl(0, 100%, 85%);
-  font-size: 1.5rem;
-  font-weight: bold;
-  background-color: hsla(0, 70%, 30%, 0.5);
-  z-index: 101; /* Ensure it's on top of the drop zones */
-  text-align: center;
-  padding: 20px;
-  pointer-events: none;
-}
-
-/* --- Layout and Theming --- */
-
-.external-drop-zone.new-job,
-.external-drop-zone.separate-jobs {
-  flex-basis: 25%;
-}
-
-.external-drop-zone.current-job {
-  flex-basis: 50%;
-}
-
-/* The default blue styling for the primary zone has been removed. */
-
+/* --- Vue Transition --- */
 .job-fade-enter-active,
 .job-fade-leave-active {
   transition: opacity 0.15s ease-in-out;
