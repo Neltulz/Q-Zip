@@ -291,72 +291,86 @@ const handleKeyDown = (event: KeyboardEvent) => {
       const isCutOperation = clipboardStore.isCut;
       const targetJobId = activeJob.value.id;
 
-      if (isCutOperation && sourceJob !== null && sourceJob !== targetJobId) {
-        // Confirm move operation
-        const fileNames = filesToPaste.map((f: FileItem) => f.name);
-        const modalOptions: ModalOptions = {
-          icon: "mdi:content-cut",
-          title: "Confirm Move Items",
-          description: [`Are you sure you want to move ${fileNames.length} item(s) from Job ${sourceJob} to Job ${targetJobId}?`],
-          buttons: [
-            { action: "proceed", text: "Move Items", theme: "warning", styleClass: "bordered-btn" },
-            { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
-          ],
-          footerJustifyContent: "center",
-        };
-        modalsStore.openModal(
-          "ResetConfirmationModalContent",
-          modalOptions,
-          { description: modalOptions.description, fileList: fileNames },
-          (action: string) => {
-            if (action === "proceed") {
-              jobsStore.moveFilesBetweenJobs(
-                sourceJob,
-                targetJobId,
-                filesToPaste.map((f: FileItem) => f.path)
-              ); // Pass file paths
-              clipboardStore.clear(); // Clear clipboard after successful move (only for cut operations)
-              fileTableRef.value?.deselectAll();
-              logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Move Confirmed)");
-            } else {
-              logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Move Cancelled)");
+      if (isCutOperation) {
+        if (sourceJob !== null && sourceJob === targetJobId) {
+          // Case 1: Cut and paste within the same job -> no-op, just clear clipboard
+          console.log("[JobArea] Cut and paste within the same job. Clearing clipboard.");
+          clipboardStore.clear();
+          logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Cut - Same Job) - No-op, clipboard cleared.");
+        } else if (sourceJob !== null && sourceJob !== targetJobId) {
+          // Case 2: Cut and paste to a different job -> confirm move
+          const fileNames = filesToPaste.map((f: FileItem) => f.name);
+          const modalOptions: ModalOptions = {
+            icon: "mdi:content-cut",
+            title: "Confirm Move Items",
+            description: [
+              `Are you sure you want to move ${fileNames.length} item(s) from Job ${sourceJob} to Job ${targetJobId}?`,
+            ],
+            buttons: [
+              { action: "proceed", text: "Move Items", theme: "warning", styleClass: "bordered-btn" },
+              { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
+            ],
+            footerJustifyContent: "center",
+          };
+          modalsStore.openModal(
+            "ResetConfirmationModalContent",
+            modalOptions,
+            { description: modalOptions.description, fileList: fileNames },
+            (action: string) => {
+              if (action === "proceed") {
+                jobsStore.moveFilesBetweenJobs(
+                  sourceJob,
+                  targetJobId,
+                  filesToPaste.map((f: FileItem) => f.path)
+                ); // Pass file paths
+                clipboardStore.clear(); // Clear clipboard after successful move (only for cut operations)
+                fileTableRef.value?.deselectAll();
+                logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Move Confirmed)");
+              } else {
+                logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Move Cancelled)");
+              }
             }
-          }
-        );
-      } else if (!isCutOperation) {
-        // Confirm copy operation
-        const fileNames = filesToPaste.map((f: FileItem) => f.name);
-        const modalOptions: ModalOptions = {
-          icon: "mdi:content-copy",
-          title: "Confirm Copy Items",
-          description: [`Are you sure you want to copy ${fileNames.length} item(s) to Job ${targetJobId}?`],
-          buttons: [
-            { action: "proceed", text: "Copy Items", theme: "primary", styleClass: "bordered-btn" },
-            { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
-          ],
-          footerJustifyContent: "center",
-        };
-        modalsStore.openModal(
-          "ResetConfirmationModalContent",
-          modalOptions,
-          { description: modalOptions.description, fileList: fileNames },
-          (action: string) => {
-            if (action === "proceed") {
-              // Use the new action to directly add FileItem objects from clipboard
-              jobsStore.addClipboardFilesToJob(targetJobId, filesToPaste);
-              // DO NOT clear clipboard here, allowing multiple pastes for copy operations
-              fileTableRef.value?.deselectAll();
-              logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy Confirmed)");
-            } else {
-              logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy Cancelled)");
-            }
-          }
-        );
+          );
+        }
       } else {
-        logInteraction(
-          "JobArea",
-          "Keyboard shortcut: Ctrl+V (Paste) - No valid paste operation or source/target job is the same for cut."
-        );
+        // Copy operation
+        if (sourceJob !== null && sourceJob === targetJobId) {
+          // Case 3: Copy and paste within the same job -> silently add files
+          console.log("[JobArea] Copy and paste within the same job. Silently adding files.");
+          jobsStore.addClipboardFilesToJob(targetJobId, filesToPaste);
+          // DO NOT clear clipboard here, allowing multiple pastes for copy operations
+          fileTableRef.value?.deselectAll();
+          logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy - Same Job) - Silently added.");
+        } else {
+          // Case 4: Copy and paste to a different job -> confirm copy
+          const fileNames = filesToPaste.map((f: FileItem) => f.name);
+          const modalOptions: ModalOptions = {
+            icon: "mdi:content-copy",
+            title: "Confirm Copy Items",
+            description: [`Are you sure you want to copy ${fileNames.length} item(s) to Job ${targetJobId}?`],
+            buttons: [
+              { action: "proceed", text: "Copy Items", theme: "primary", styleClass: "bordered-btn" },
+              { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
+            ],
+            footerJustifyContent: "center",
+          };
+          modalsStore.openModal(
+            "ResetConfirmationModalContent",
+            modalOptions,
+            { description: modalOptions.description, fileList: fileNames },
+            (action: string) => {
+              if (action === "proceed") {
+                // Use the new action to directly add FileItem objects from clipboard
+                jobsStore.addClipboardFilesToJob(targetJobId, filesToPaste);
+                // DO NOT clear clipboard here, allowing multiple pastes for copy operations
+                fileTableRef.value?.deselectAll();
+                logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy Confirmed)");
+              } else {
+                logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy Cancelled)");
+              }
+            }
+          );
+        }
       }
     } else {
       logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste) - Clipboard is empty.");
@@ -415,7 +429,7 @@ watch(isJobAreaActive, (newValue, oldValue) => {
 watch(
   selectedFilePaths,
   (newPaths: string[], oldPaths: string[]) => {
-    if (DEBUG && debugConfig.logFileSelection && !isDragSelecting.value) {
+    if (DEBUG && debugConfig.logFileSelection) {
       const newSet = new Set(newPaths);
       const oldSet = new Set(oldPaths);
       const getFileName = (path: string) => path.split(/[\\/]/).pop() || path;

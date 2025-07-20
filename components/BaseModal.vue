@@ -122,11 +122,18 @@ const isVisible = ref(false);
 const animationState = ref("");
 
 const handleKeydown = (event: KeyboardEvent): void => {
-  // Only handle ESC if this is the topmost modal
+  // Only handle ESC and Enter if this is the topmost modal
   const allModals = modalsStore.activeModals;
   if (allModals.length > 0 && allModals[allModals.length - 1].id === props.modalId) {
     if (event.key === "Escape") {
       handleClose("cancel");
+    } else if (event.key === "Enter") {
+      // Find the "proceed" button and trigger its action
+      const proceedButton = props.options.buttons?.find((button) => button.action === "proceed");
+      if (proceedButton) {
+        handleClose("proceed");
+        event.preventDefault(); // Prevent default Enter key behavior (e.g., submitting a form)
+      }
     }
   }
 };
