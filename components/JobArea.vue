@@ -101,6 +101,8 @@
             :files="activeJob.files"
             :is-dragging="selectionBox.visible"
             :job-id="activeJob.id"
+            :cut-files="clipboardStore.cutFilePaths"
+            :cut-source-job-id="clipboardStore.sourceJobId"
             @copy-files="confirmCopyFiles"
             @copy-to-new-job="confirmCopyToNewJob"
             @move-files="confirmMoveFiles"
@@ -124,11 +126,13 @@ import type { PhysicalPosition } from "@tauri-apps/api/window";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useModalsStore } from "@/stores/modalsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
+import { useClipboardStore } from "@/stores/clipboardStore"; // Import the new clipboard store
 import type { ModalOptions } from "@/types/modal";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logDragDropEvent, logDropZoneEvent, logSelectionChange, logInteraction, logFailsafe } from "@/utils/loggers";
 import FileTable from "@/components/FileTable.vue";
 import DropZone from "@/components/DropZone.vue";
+import type { FileItem } from "@/types/types";
 
 type FileOperationPayload = {
   targetJobId: number;
@@ -147,6 +151,7 @@ defineProps<{
 const jobsStore = useJobsStore();
 const modalsStore = useModalsStore();
 const dragDropStore = useDragDropStore();
+const clipboardStore = useClipboardStore(); // Initialize the clipboard store
 
 const fileTableRef = ref<InstanceType<typeof FileTable> | null>(null);
 const jobAreaRef = ref<HTMLElement | null>(null);
@@ -220,17 +225,158 @@ const handleWindowClick = (event: MouseEvent) => {
   }
 };
 
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (!isJobAreaActive.value || !activeJob.value || !fileTableRef.value) {
+    return; // Only process shortcuts if job area is active and a job is selected
+  }
+
+  // Prevent default behavior for handled shortcuts
+  if ((event.ctrlKey || event.metaKey) && (event.key === "a" || event.key === "c" || event.key === "x" || event.key === "v")) {
+    event.preventDefault();
+  } else if (event.key === "Delete") {
+    event.preventDefault();
+  }
+
+  if ((event.ctrlKey || event.metaKey) && event.key === "a") {
+    // Ctrl+A: Select all
+    if (event.shiftKey) {
+      // Ctrl+Shift+A: Deselect all
+      fileTableRef.value.deselectAll();
+      logInteraction("JobArea", "Keyboard shortcut: Ctrl+Shift+A (Deselect All)");
+    } else {
+      fileTableRef.value.toggleAll();
+      logInteraction("JobArea", "Keyboard shortcut: Ctrl+A (Select All)");
+    }
+  } else if (event.key === "Delete") {
+    // Delete key: Remove selected items
+    if (selectedFilePaths.value.length > 0) {
+      confirmRemoveFiles(selectedFilePaths.value);
+      logInteraction("JobArea", "Keyboard shortcut: Delete (Remove Selected Items)");
+    }
+  } else if ((event.ctrlKey || event.metaKey) && event.key === "c") {
+    // Ctrl+C: Copy selected items
+    if (selectedFilePaths.value.length > 0) {
+      const filesToCopy: FileItem[] = selectedFilePaths.value
+        .map((path) => activeJob.value?.files.find((file) => file.path === path))
+        .filter(Boolean) as FileItem[];
+      console.log(
+        "[JobArea] Attempting to copy files:",
+        filesToCopy.map((f) => f.name)
+      ); // Added log
+      clipboardStore.copy(filesToCopy, activeJob.value.id); // Pass current activeJob.value.id as source
+      logInteraction("JobArea", "Keyboard shortcut: Ctrl+C (Copy Selected Items)");
+    }
+  } else if ((event.ctrlKey || event.metaKey) && event.key === "x") {
+    // Ctrl+X: Cut selected items
+    if (selectedFilePaths.value.length > 0) {
+      const filesToCut: FileItem[] = selectedFilePaths.value
+        .map((path) => activeJob.value?.files.find((file) => file.path === path))
+        .filter(Boolean) as FileItem[];
+      console.log(
+        "[JobArea] Attempting to cut files:",
+        filesToCut.map((f) => f.name)
+      ); // Added log
+      clipboardStore.cut(filesToCut, activeJob.value.id); // Pass current activeJob.value.id as source
+      logInteraction("JobArea", "Keyboard shortcut: Ctrl+X (Cut Selected Items)");
+    }
+  } else if ((event.ctrlKey || event.metaKey) && event.key === "v") {
+    // Ctrl+V: Paste items
+    console.log(
+      "[JobArea] Attempting to paste. Clipboard items:",
+      clipboardStore.clipboard.map((f) => f.name)
+    ); // Added log
+    if (clipboardStore.hasClipboardItems() && activeJob.value) {
+      const filesToPaste = clipboardStore.clipboard;
+      const sourceJob = clipboardStore.sourceJobId;
+      const isCutOperation = clipboardStore.isCut;
+      const targetJobId = activeJob.value.id;
+
+      if (isCutOperation && sourceJob !== null && sourceJob !== targetJobId) {
+        // Confirm move operation
+        const fileNames = filesToPaste.map((f: FileItem) => f.name);
+        const modalOptions: ModalOptions = {
+          icon: "mdi:content-cut",
+          title: "Confirm Move Items",
+          description: [`Are you sure you want to move ${fileNames.length} item(s) from Job ${sourceJob} to Job ${targetJobId}?`],
+          buttons: [
+            { action: "proceed", text: "Move Items", theme: "warning", styleClass: "bordered-btn" },
+            { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
+          ],
+          footerJustifyContent: "center",
+        };
+        modalsStore.openModal(
+          "ResetConfirmationModalContent",
+          modalOptions,
+          { description: modalOptions.description, fileList: fileNames },
+          (action: string) => {
+            if (action === "proceed") {
+              jobsStore.moveFilesBetweenJobs(
+                sourceJob,
+                targetJobId,
+                filesToPaste.map((f: FileItem) => f.path)
+              ); // Pass file paths
+              clipboardStore.clear(); // Clear clipboard after successful move (only for cut operations)
+              fileTableRef.value?.deselectAll();
+              logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Move Confirmed)");
+            } else {
+              logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Move Cancelled)");
+            }
+          }
+        );
+      } else if (!isCutOperation) {
+        // Confirm copy operation
+        const fileNames = filesToPaste.map((f: FileItem) => f.name);
+        const modalOptions: ModalOptions = {
+          icon: "mdi:content-copy",
+          title: "Confirm Copy Items",
+          description: [`Are you sure you want to copy ${fileNames.length} item(s) to Job ${targetJobId}?`],
+          buttons: [
+            { action: "proceed", text: "Copy Items", theme: "primary", styleClass: "bordered-btn" },
+            { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
+          ],
+          footerJustifyContent: "center",
+        };
+        modalsStore.openModal(
+          "ResetConfirmationModalContent",
+          modalOptions,
+          { description: modalOptions.description, fileList: fileNames },
+          (action: string) => {
+            if (action === "proceed") {
+              // Use the new action to directly add FileItem objects from clipboard
+              jobsStore.addClipboardFilesToJob(targetJobId, filesToPaste);
+              // DO NOT clear clipboard here, allowing multiple pastes for copy operations
+              fileTableRef.value?.deselectAll();
+              logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy Confirmed)");
+            } else {
+              logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy Cancelled)");
+            }
+          }
+        );
+      } else {
+        logInteraction(
+          "JobArea",
+          "Keyboard shortcut: Ctrl+V (Paste) - No valid paste operation or source/target job is the same for cut."
+        );
+      }
+    } else {
+      logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste) - Clipboard is empty.");
+    }
+  }
+};
+
 onMounted(async () => {
   // Add global listeners to ensure the OS recognizes the window as a drop target
   window.addEventListener("dragover", handleWindowDragOver);
   window.addEventListener("drop", handleWindowDrop);
   window.addEventListener("mousedown", handleWindowClick);
+  window.addEventListener("keydown", handleKeyDown); // Add keyboard shortcut listener
 
   // Centralize all Tauri drag-and-drop listeners here
-  unlistenDragEnter = await listen("tauri://drag-enter", (event) => {
-    // Check if the event payload contains items. If not, it might be an invalid drag source.
-    const items = (event.payload as any)?.items;
-    if (items === undefined || items.length > 0) {
+  unlistenDragEnter = await listen("tauri://drag-enter", (event: TauriEvent<{ items?: string[] }>) => {
+    // Explicitly type payload
+    const items = event.payload?.items; // Access safely
+    if (items === undefined || (Array.isArray(items) && items.length > 0)) {
+      // Add Array.isArray check
       logDragDropEvent("JobArea", "Event: tauri://drag-enter -> setting global state to true");
       dragDropStore.setExternalDragOver(true);
     } else {
@@ -253,6 +399,7 @@ onUnmounted(() => {
   window.removeEventListener("dragover", handleWindowDragOver);
   window.removeEventListener("drop", handleWindowDrop);
   window.removeEventListener("mousedown", handleWindowClick);
+  window.removeEventListener("keydown", handleKeyDown); // Remove keyboard shortcut listener
 
   // Clean up Tauri listeners
   if (unlistenDragEnter) unlistenDragEnter();

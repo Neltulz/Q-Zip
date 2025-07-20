@@ -135,7 +135,10 @@
           v-for="(file, index) in sortedFiles"
           :key="file.path"
           class="file-row"
-          :class="{ selected: selectedFiles.includes(file.path) }"
+          :class="{
+            selected: selectedFiles.includes(file.path),
+            'is-cut': cutFiles.includes(file.path) && jobId === cutSourceJobId, // Added condition
+          }"
           :data-path="file.path"
           data-has-context-menu="true"
           @contextmenu.prevent="showFileContextMenu(file, $event)"
@@ -317,6 +320,8 @@ const props = defineProps<{
   jobId: number;
   files: FileItem[];
   isDragging: boolean;
+  cutFiles: string[];
+  cutSourceJobId: number | null; // New prop for the source job ID of cut files
 }>();
 
 const emit = defineEmits(["selection-changed", "remove-files", "move-files", "move-to-new-job", "copy-files", "copy-to-new-job"]);
@@ -528,6 +533,8 @@ defineExpose({
   deselectAll,
   updateSelectionByRect,
   clickRowByPath,
+  toggleAll,
+  selectedFiles,
 });
 </script>
 

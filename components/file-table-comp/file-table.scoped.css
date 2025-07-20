@@ -149,6 +149,14 @@
       }
     }
 
+    /* Enhanced style for cut files: target icon and text directly */
+    tr.is-cut .item-name .cell-content .iconify,
+    tr.is-cut .item-name .cell-content .item-name-text {
+      opacity: 0.3; /* More aggressive dimming */
+      filter: grayscale(70%); /* Add a grayscale filter for extra visual cue */
+      transition: opacity 0.2s ease-in-out, filter 0.2s ease-in-out;
+    }
+
     .row-actions {
       display: flex;
       justify-content: flex-end;

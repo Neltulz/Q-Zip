@@ -174,6 +174,28 @@ export const useJobsStore = defineStore(
       }
     }
 
+    /**
+     * Adds FileItem objects directly to a job.
+     * Used for pasting from clipboard where FileItem details are already known.
+     * @param jobId The ID of the job to add files to.
+     * @param files The FileItem objects to add.
+     */
+    function addClipboardFilesToJob(jobId: number, files: FileItem[]): void {
+      const job = jobs.value.find((j) => j.id === jobId);
+      if (job) {
+        let addedCount = 0; // Changed from const to let
+        files.forEach((fileToAdd: FileItem) => {
+          if (!job.files.some((file: FileItem) => file.path === fileToAdd.path)) {
+            job.files.push(fileToAdd);
+            addedCount++;
+          }
+        });
+        if (DEBUG && debugConfig.logStoreActions) {
+          console.log(`Added ${addedCount} files from clipboard to job ${jobId}`);
+        }
+      }
+    }
+
     function removeJobs(idsToRemove: number[], currentSelectedJobId: number | null): void {
       const oldJobs = [...jobs.value];
       const filteredJobs = jobs.value.filter((job) => !idsToRemove.includes(job.id));
@@ -339,6 +361,7 @@ export const useJobsStore = defineStore(
       initialize,
       addJob,
       addFilesToJob,
+      addClipboardFilesToJob, // Expose the new action
       removeJobs,
       removeAllJobs,
       resetJobs,
