@@ -26,7 +26,7 @@
           :class="{
             active: jobsStore.selectedJobId === job.id,
             'is-dragged': job.id === draggedJobId,
-            'drag-over': job.id === dragOverJobId,
+            'drop-target-hover': hoveredJobId === job.id && dragDropStore.isInternalDragActive,
           }"
           button-style-class="trans-btn btn-darkr can-become-active"
           :data-job-id="job.id"
@@ -35,7 +35,9 @@
           @click="selectJob(job.id)"
           @dragend="onDragEnd"
           @dragstart="onDragStart($event, job.id)"
-          @drop.stop.prevent="onDrop(job.id)"
+          @dragover.prevent="handleJobTabDragOver($event, job.id)"
+          @dragleave="handleJobTabDragLeave"
+          @drop.prevent="handleJobTabDrop($event, job.id)"
         >
           <span class="job-sel-icon">
             <Icon name="mdi:briefcase" size="20" />
@@ -101,6 +103,44 @@
               </template>
             </DropdownMenu>
           </div>
+          <DropdownMenu
+            v-show="dragHoverTargetJobId === job.id"
+            :ref="(el) => setDragActionMenuRef(job.id, el)"
+            :hide-trigger="true"
+            :dropdown-data-name="`drag-action-dropdown-${job.id}`"
+            placement="bottom-end"
+          >
+            <template #default="{ close }">
+              <CustomButton
+                button-style-class="trans-btn btn-lite"
+                data-name="drag-move-option"
+                first-icon-name="mdi:arrow-right"
+                :first-icon-size="20"
+                @click="
+                  () => {
+                    handleDragAction('move', job.id);
+                    close();
+                  }
+                "
+              >
+                Move Here
+              </CustomButton>
+              <CustomButton
+                button-style-class="trans-btn btn-lite"
+                data-name="drag-copy-option"
+                first-icon-name="mdi:content-copy"
+                :first-icon-size="20"
+                @click="
+                  () => {
+                    handleDragAction('copy', job.id);
+                    close();
+                  }
+                "
+              >
+                Copy Here
+              </CustomButton>
+            </template>
+          </DropdownMenu>
         </CustomButton>
       </div>
     </OverlayScrollbarsComponent>
@@ -114,7 +154,48 @@
           first-icon-name="mdi:add"
           :first-icon-size="24"
           @click="addJob"
+          @dragover.prevent="handleJobTabDragOver($event, 'new-job')"
+          @dragleave="handleJobTabDragLeave"
+          @drop.prevent="handleJobTabDrop($event, 'new-job')"
         />
+        <DropdownMenu
+          v-show="dragHoverTargetJobId === 'new-job'"
+          :ref="(el) => setDragActionMenuRef('new-job', el)"
+          :hide-trigger="true"
+          dropdown-data-name="drag-action-dropdown-new-job"
+          placement="bottom-end"
+        >
+          <template #default="{ close }">
+            <CustomButton
+              button-style-class="trans-btn btn-lite"
+              data-name="drag-move-to-new-job-option"
+              first-icon-name="mdi:arrow-right"
+              :first-icon-size="20"
+              @click="
+                () => {
+                  handleDragAction('move', 'new-job');
+                  close();
+                }
+              "
+            >
+              Move to New Job
+            </CustomButton>
+            <CustomButton
+              button-style-class="trans-btn btn-lite"
+              data-name="drag-copy-to-new-job-option"
+              first-icon-name="mdi:content-copy"
+              :first-icon-size="20"
+              @click="
+                () => {
+                  handleDragAction('copy', 'new-job');
+                  close();
+                }
+              "
+            >
+              Copy to New Job
+            </CustomButton>
+          </template>
+        </DropdownMenu>
       </div>
 
       <div class="job-selector-btns-end">
@@ -169,27 +250,48 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch, type ComponentPublicInstance } from "vue";
 import { useJobsStore } from "@/stores/jobsStore";
 import type { Job } from "@/stores/jobsStore";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
 import { useUiStore } from "@/stores/uiStore";
 import { useModalsStore } from "@/stores/modalsStore";
+import { useDragDropStore } from "@/stores/dragDropStore";
+import { useClipboardStore } from "@/stores/clipboardStore";
 import type { ModalOptions } from "@/types/modal";
-import { DEBUG, debugConfig } from "@/utils/debugConfig";
-import { logInteraction } from "@/utils/loggers";
+import type { FileItem } from "@/types/types";
+import { logInteraction, logDragDropEvent, logDropZoneEvent } from "@/utils/loggers";
+import DropdownMenu from "@/components/DropdownMenu.vue";
 
 const themeStore = useThemeStore();
 const jobsStore = useJobsStore();
 const uiStore = useUiStore();
 const modalsStore = useModalsStore();
+const dragDropStore = useDragDropStore();
+const clipboardStore = useClipboardStore();
 
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
 const jobsList = computed(() => jobsStore.jobs);
 
 const draggedJobId = ref<number | null>(null);
 const dragOverJobId = ref<number | null>(null);
+const hoveredJobId = ref<number | "new-job" | null>(null);
+
+const dragActionDropdownRefs = ref(new Map<number | "new-job", InstanceType<typeof DropdownMenu>>());
+const dragHoverTargetJobId = ref<number | "new-job" | null>(null);
+
+// --- FIX for Internal DnD Race Condition ---
+// Local state to hold drag info after drop, immune to the dragend event clearing the store
+const pendingDropFilePaths = ref<string[]>([]);
+const pendingDropSourceJobId = ref<number | null>(null);
+// ---
+
+const setDragActionMenuRef = (jobId: number | "new-job", el: Element | ComponentPublicInstance | null) => {
+  if (el) {
+    dragActionDropdownRefs.value.set(jobId, el as InstanceType<typeof DropdownMenu>);
+  }
+};
 
 onMounted(() => {
   jobsStore.initialize();
@@ -207,25 +309,48 @@ watch(
   { immediate: true, deep: true }
 );
 
-// Add/remove a global class when dragging starts/ends.
 watch(draggedJobId, (currentValue, oldValue) => {
   if (currentValue !== null && oldValue === null) {
-    document.body.classList.add("is-dragging");
+    document.body.classList.add("is-job-reordering");
+    logDragDropEvent("JobSelectorArea", `Body class 'is-job-reordering' added. draggedJobId: ${currentValue}`);
   } else if (currentValue === null && oldValue !== null) {
-    document.body.classList.remove("is-dragging");
+    document.body.classList.remove("is-job-reordering");
+    logDragDropEvent("JobSelectorArea", `Body class 'is-job-reordering' removed. draggedJobId: ${currentValue}`);
   }
 });
 
+watch(
+  () => dragDropStore.isExternalDragOver,
+  (isExternalDragActive) => {
+    if (isExternalDragActive) {
+      document.body.classList.add("is-external-drag-over");
+      logDragDropEvent("JobSelectorArea", `Body class 'is-external-drag-over' added.`);
+    } else {
+      document.body.classList.remove("is-external-drag-over");
+      logDragDropEvent("JobSelectorArea", `Body class 'is-external-drag-over' removed.`);
+    }
+  }
+);
+
 const selectJob = (jobId: number): void => {
-  // Prevent selection change when dragging
-  if (draggedJobId.value !== null) return;
+  if (draggedJobId.value !== null) {
+    logInteraction("JobSelectorArea", `Select job aborted: Dragging job ID ${draggedJobId.value}.`);
+    return;
+  }
+  if (dragDropStore.isInternalDragActive) {
+    logInteraction("JobSelectorArea", `Select job aborted: Internal file drag active.`);
+    return;
+  }
+
   jobsStore.selectJob(jobId);
+  logInteraction("JobSelectorArea", `Job ${jobId} selected.`);
 };
 
 const addJob = (): void => {
   jobsStore.addJob();
   const newJobId: number = Math.max(...jobsStore.jobs.map((j: Job) => j.id));
   jobsStore.selectJob(newJobId);
+  logInteraction("JobSelectorArea", `New job (ID: ${newJobId}) added and selected.`);
 };
 
 const removeJob = (jobId: number): void => {
@@ -245,6 +370,9 @@ const removeJob = (jobId: number): void => {
       const currentSelectedJobId = jobsStore.selectedJobId;
       jobsStore.removeJobs([jobId], currentSelectedJobId);
       nextTick();
+      logInteraction("JobSelectorArea", `Job ${jobId} removal confirmed.`);
+    } else {
+      logInteraction("JobSelectorArea", `Job ${jobId} removal cancelled.`);
     }
   });
 };
@@ -265,16 +393,21 @@ const confirmRemoveAllJobs = (): void => {
     if (action === "proceed") {
       jobsStore.removeAllJobs();
       nextTick();
+      logInteraction("JobSelectorArea", `All jobs removal confirmed.`);
+    } else {
+      logInteraction("JobSelectorArea", `All jobs removal cancelled.`);
     }
   });
 };
 
-// --- Drag and Drop Handlers ---
-
 const onDragStart = (event: DragEvent, jobId: number): void => {
-  if (DEBUG && debugConfig.logDragAndDrop) logInteraction("JobSelectorArea", `Drag Start for job ID: ${jobId}`);
+  if (dragDropStore.isInternalDragActive) {
+    logDragDropEvent("JobSelectorArea", `Job drag start prevented: Internal file drag active.`);
+    event.preventDefault();
+    return;
+  }
+  logDragDropEvent("JobSelectorArea", `Job drag start for job ID: ${jobId}`);
 
-  // This is necessary to initiate the drag operation and set the cursor correctly.
   if (event.dataTransfer) {
     event.dataTransfer.setData("text/plain", String(jobId));
     event.dataTransfer.effectAllowed = "move";
@@ -284,6 +417,17 @@ const onDragStart = (event: DragEvent, jobId: number): void => {
 };
 
 const handleDragOver = (event: DragEvent): void => {
+  if (dragDropStore.isInternalDragActive) {
+    const target = (event.target as HTMLElement).closest(".job-selector, .add-job-btn");
+    if (target instanceof HTMLElement) {
+      const targetIdentifier = target.dataset.jobId ? Number(target.dataset.jobId) : "new-job";
+      handleJobTabDragOver(event, targetIdentifier);
+    } else {
+      handleJobTabDragLeave();
+    }
+    return;
+  }
+
   const target = (event.target as HTMLElement).closest(".job-selector");
 
   if (target instanceof HTMLElement && target.dataset.jobId) {
@@ -291,30 +435,41 @@ const handleDragOver = (event: DragEvent): void => {
     if (targetId !== draggedJobId.value) {
       if (dragOverJobId.value !== targetId) {
         dragOverJobId.value = targetId;
+        logDragDropEvent("JobSelectorArea", `Job drag over target: ${targetId}`);
       }
     }
   } else {
     if (dragOverJobId.value !== null) {
+      logDragDropEvent("JobSelectorArea", `Job drag left all job targets.`);
       dragOverJobId.value = null;
     }
   }
 };
 
 const handleDragLeave = (): void => {
-  if (DEBUG && debugConfig.logDragAndDrop) logInteraction("JobSelectorArea", `Drag Leave`);
+  if (dragDropStore.isInternalDragActive) {
+    handleJobTabDragLeave();
+    return;
+  }
   dragOverJobId.value = null;
 };
 
 const onDrop = (targetJobId: number | null): void => {
-  if (DEBUG && debugConfig.logDragAndDrop)
-    logInteraction("JobSelectorArea", `Drop on job ID: ${targetJobId}. Dragged job ID: ${draggedJobId.value}`);
+  if (dragDropStore.isInternalDragActive) {
+    logDragDropEvent("JobSelectorArea", "File drag drop occurred outside specific tab. Ending drag.");
+    dragDropStore.endInternalDrag();
+    hoveredJobId.value = null;
+    return;
+  }
+
   if (draggedJobId.value === null) return;
 
-  const fromIndex = jobsStore.jobs.findIndex((j) => j.id === draggedJobId.value);
-  const toIndex = targetJobId === null ? jobsStore.jobs.length - 1 : jobsStore.jobs.findIndex((j) => j.id === targetJobId);
+  const fromIndex = jobsStore.jobs.findIndex((j: Job) => j.id === draggedJobId.value);
+  const toIndex = targetJobId === null ? jobsStore.jobs.length - 1 : jobsStore.jobs.findIndex((j: Job) => j.id === targetJobId);
 
   if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
     jobsStore.moveJob(fromIndex, toIndex);
+    logInteraction("JobSelectorArea", `Job ${draggedJobId.value} moved from index ${fromIndex} to ${toIndex}.`);
   }
 
   draggedJobId.value = null;
@@ -322,17 +477,158 @@ const onDrop = (targetJobId: number | null): void => {
 };
 
 const onDragEnd = (): void => {
-  if (DEBUG && debugConfig.logDragAndDrop) logInteraction("JobSelectorArea", `Drag End`);
+  logDragDropEvent("JobSelectorArea", `Job drag end.`);
   draggedJobId.value = null;
   dragOverJobId.value = null;
+  // Also clear internal file drag state if it hasn't been handled by a drop
+  if (dragDropStore.isInternalDragActive) {
+    dragDropStore.endInternalDrag();
+  }
 };
 
-// --- Dropdown Reorder Handler ---
+const handleJobTabDragOver = (event: DragEvent, targetIdentifier: number | "new-job") => {
+  if (dragDropStore.isInternalDragActive) {
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = "copy";
+
+    if (hoveredJobId.value !== targetIdentifier) {
+      logDropZoneEvent("JobSelectorArea", `Job tab drag over: ${targetIdentifier}.`);
+      hoveredJobId.value = targetIdentifier;
+      dragHoverTargetJobId.value = targetIdentifier;
+    }
+  }
+};
+
+const handleJobTabDragLeave = () => {
+  if (dragDropStore.isInternalDragActive) {
+    logDropZoneEvent("JobSelectorArea", `Job tab drag leave: ${hoveredJobId.value}.`);
+    hoveredJobId.value = null;
+    dragHoverTargetJobId.value = null;
+  }
+};
+
+const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job") => {
+  event.preventDefault();
+  event.stopPropagation();
+  logDragDropEvent("JobSelectorArea", `File drop detected on tab: ${targetIdentifier}.`);
+
+  // --- FIX ---
+  // Capture drag data from the store now, before dragend can clear it.
+  pendingDropFilePaths.value = [...dragDropStore.internalDraggedFiles];
+  pendingDropSourceJobId.value = dragDropStore.internalDragSourceJobId;
+  // ---
+
+  hoveredJobId.value = null;
+
+  nextTick(() => {
+    const dropdown = dragActionDropdownRefs.value.get(targetIdentifier);
+    if (dropdown) {
+      dropdown.openDropdown({ x: event.clientX, y: event.clientY });
+      logInteraction(
+        "JobSelectorArea",
+        `Opened dropdown on drop for target: ${targetIdentifier} at coords (${event.clientX}, ${event.clientY}).`
+      );
+    } else {
+      logInteraction("JobSelectorArea", `Dropdown ref not found for target ${targetIdentifier} after drop.`);
+      dragDropStore.endInternalDrag();
+    }
+  });
+};
+
+const handleDragAction = (operation: "move" | "copy", targetIdentifier: number | "new-job") => {
+  // --- FIX ---
+  // Use the locally stored pending drop data instead of the global store
+  const droppedFilePaths = pendingDropFilePaths.value;
+  const sourceJobId = pendingDropSourceJobId.value;
+  // ---
+
+  logInteraction(
+    "JobSelectorArea",
+    `handleDragAction called: Operation=${operation}, Target=${targetIdentifier}, Files=${droppedFilePaths.length}, SourceJob=${sourceJobId}`
+  );
+
+  if (!sourceJobId || droppedFilePaths.length === 0) {
+    logInteraction("JobSelectorArea", "Drag action: Missing drag data in local state. Aborting.");
+    dragDropStore.endInternalDrag();
+    return;
+  }
+
+  const filesToConfirm: FileItem[] =
+    jobsStore.jobs.find((j: Job) => j.id === sourceJobId)?.files.filter((f) => droppedFilePaths.includes(f.path)) || [];
+  const fileNames: string[] = filesToConfirm.map((f) => f.name);
+
+  const onModalClose = (confirmed: boolean) => {
+    if (confirmed) {
+      if (targetIdentifier === "new-job") {
+        const newJobId = jobsStore.addJob();
+        if (operation === "move") {
+          jobsStore.moveFilesBetweenJobs(sourceJobId, newJobId, droppedFilePaths);
+        } else {
+          jobsStore.copyFilesToJob(sourceJobId, newJobId, droppedFilePaths);
+        }
+        jobsStore.selectJob(newJobId);
+      } else {
+        const targetJobId = targetIdentifier as number;
+        if (sourceJobId !== targetJobId) {
+          if (operation === "move") {
+            jobsStore.moveFilesBetweenJobs(sourceJobId, targetJobId, droppedFilePaths);
+          } else {
+            jobsStore.copyFilesToJob(sourceJobId, targetJobId, droppedFilePaths);
+          }
+        }
+      }
+      if (operation === "move" && clipboardStore.isCut && clipboardStore.sourceJobId === sourceJobId) {
+        clipboardStore.clear();
+      }
+    }
+    logInteraction("JobSelectorArea", `File drag: ${operation} ${confirmed ? "confirmed" : "cancelled"}.`);
+    dragDropStore.endInternalDrag();
+    // Clear the pending state
+    pendingDropFilePaths.value = [];
+    pendingDropSourceJobId.value = null;
+  };
+
+  const isMoveToSameJob = operation === "move" && targetIdentifier !== "new-job" && sourceJobId === targetIdentifier;
+
+  if (isMoveToSameJob) {
+    logInteraction("JobSelectorArea", "File drag: Move to same job. No action needed.");
+    dragDropStore.endInternalDrag();
+    return;
+  }
+
+  const title = operation === "move" ? "Confirm Move Items" : "Confirm Copy Items";
+  const targetName = targetIdentifier === "new-job" ? "a new job" : `Job ${targetIdentifier}`;
+  const description = `Are you sure you want to ${operation} ${fileNames.length} item(s) to <strong>${targetName}</strong>?`;
+
+  const modalOptions: ModalOptions = {
+    icon: operation === "move" ? "mdi:arrow-right" : "mdi:content-copy",
+    title,
+    description: [description],
+    buttons: [
+      {
+        action: "proceed",
+        text: operation === "move" ? "Move Items" : "Copy Items",
+        theme: "primary",
+        styleClass: "bordered-btn",
+      },
+      { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
+    ],
+    footerJustifyContent: "center",
+  };
+
+  modalsStore.openModal(
+    "ResetConfirmationModalContent",
+    modalOptions,
+    { description: modalOptions.description, fileList: fileNames },
+    (action: string) => onModalClose(action === "proceed")
+  );
+};
 
 const reorderJob = (index: number, direction: "left" | "right"): void => {
   const fromIndex = index;
   const toIndex = direction === "left" ? index - 1 : index + 1;
   jobsStore.moveJob(fromIndex, toIndex);
+  logInteraction("JobSelectorArea", `Job reordered: From index ${fromIndex} to ${toIndex}.`);
 };
 </script>
 
@@ -345,11 +641,7 @@ const reorderJob = (index: number, direction: "left" | "right"): void => {
   grid-template-rows: 1fr;
   padding-inline: var(--pad-in);
 
-  /*
-    This rule prevents the OverlayScrollbars viewport from intercepting
-    drag events, which would otherwise prevent drop from working.
-  */
-  :deep(body.is-dragging .os-viewport) {
+  :deep(body.is-external-drag-over .os-viewport) {
     pointer-events: none;
   }
 
@@ -382,6 +674,11 @@ const reorderJob = (index: number, direction: "left" | "right"): void => {
   .add-job-btn {
     --btn-pad-blok: 0;
     --btn-pad-in: 0;
+    &.drop-target-hover {
+      background-color: hsla(145, 63%, 40%, 0.2);
+      border-color: hsla(145, 63%, 70%, 0.5);
+      box-shadow: 0 0 10px hsla(145, 63%, 70%, 0.5);
+    }
   }
 
   .remove-all-jobs-btn {
@@ -407,12 +704,16 @@ const reorderJob = (index: number, direction: "left" | "right"): void => {
       position: relative;
       transition: opacity 0.2s ease-in-out;
 
-      /* Style for the job being dragged */
       &.is-dragged {
         opacity: 0.4;
       }
 
-      /* Style for the potential drop target */
+      &.drop-target-hover {
+        background-color: hsla(204, 100%, 40%, 0.2);
+        border-color: hsla(204, 100%, 70%, 0.5);
+        box-shadow: 0 0 10px hsla(204, 100%, 70%, 0.5);
+      }
+
       &.drag-over {
         &::after {
           background-color: hsla(var(--accent-hsl), 0.75);
@@ -500,7 +801,6 @@ const reorderJob = (index: number, direction: "left" | "right"): void => {
             }
           }
 
-          /* the dropdown options-btn inside the job-selector button */
           &:deep(.dropdown-menu) {
             .custom-button {
               &:deep(.visual-style) {

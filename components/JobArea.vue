@@ -6,10 +6,7 @@
   It now tracks an 'active' state, adding an 'is-active' class when the user
   clicks within the component. This state is used to show a visual border
   around the content area. Includes enhanced logging to debug active state changes.
-
-  Usage Example:
-  This component is rendered within the `JobsSection` component, receiving
-  the `isExternalDragOver` prop from the `dragDropStore`.
+  Mouse down on file name text skips selection box to allow native drag from name.
 -->
 <template>
   <div
@@ -18,33 +15,23 @@
     :class="{ 'is-active': isJobAreaActive }"
     data-component-name="JobArea"
     @mousedown="handleMouseDown"
+    @dragover.prevent="handleDragOver"
+    @drop.prevent="handleExternalDrop"
   >
     <div v-if="selectionBox.visible" class="selection-box" :style="selectionBoxStyle" />
 
-    <!--
-      External Drag Overlay
-      The visibility of this overlay is controlled by the `isExternalDragOver`
-      prop, which originates from the `dragDropStore`. Its internal state
-      (which zone is active) is managed locally.
-      The overlay is always rendered but its opacity and pointer-events are
-      controlled by the `externalOverlayStyle` computed property for smooth
-      fade transitions and inspectability.
-    -->
     <div
       class="external-drag-overlay"
       :class="{ 'has-active-target': activeDropZone !== null, 'has-error': dropError }"
       :data-is-external-drag-over="isExternalDragOver"
       :style="externalOverlayStyle"
     >
-      <!-- Error Message Overlay -->
       <div v-if="dropError" class="drop-error-message">
         <Icon name="mdi:alert-circle-outline" size="48" />
         <span>{{ dropError }}</span>
       </div>
 
-      <!-- Standard Drop Zones -->
       <template v-else>
-        <!-- "Add to New Job" is now the first item -->
         <div
           ref="newJobDropZone"
           class="external-drop-zone new-job"
@@ -58,7 +45,6 @@
             </div>
           </div>
         </div>
-        <!-- "Add to Current Job" is now the second/middle item -->
         <div
           ref="currentJobDropZone"
           class="external-drop-zone current-job"
@@ -72,7 +58,6 @@
             </div>
           </div>
         </div>
-        <!-- "Add to Separate Jobs" is now the third item -->
         <div
           ref="separateJobsDropZone"
           class="external-drop-zone separate-jobs"
@@ -89,7 +74,6 @@
       </template>
     </div>
 
-    <!-- Standard Job View -->
     <transition name="job-fade">
       <div v-if="activeJob" :key="activeJob.id" class="job">
         <div class="job-header">
@@ -120,19 +104,20 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch, type CSSProperties } from "vue";
-import { listen } from "@tauri-apps/api/event";
-import type { Event as TauriEvent, UnlistenFn } from "@tauri-apps/api/event";
-import type { PhysicalPosition } from "@tauri-apps/api/window";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useModalsStore } from "@/stores/modalsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
-import { useClipboardStore } from "@/stores/clipboardStore"; // Import the new clipboard store
+import { useClipboardStore } from "@/stores/clipboardStore";
 import type { ModalOptions } from "@/types/modal";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logDragDropEvent, logDropZoneEvent, logSelectionChange, logInteraction, logFailsafe } from "@/utils/loggers";
 import FileTable from "@/components/FileTable.vue";
 import DropZone from "@/components/DropZone.vue";
 import type { FileItem } from "@/types/types";
+
+interface FileWithTauriPath extends File {
+  readonly path: string;
+}
 
 type FileOperationPayload = {
   targetJobId: number;
@@ -151,7 +136,7 @@ defineProps<{
 const jobsStore = useJobsStore();
 const modalsStore = useModalsStore();
 const dragDropStore = useDragDropStore();
-const clipboardStore = useClipboardStore(); // Initialize the clipboard store
+const clipboardStore = useClipboardStore();
 
 const fileTableRef = ref<InstanceType<typeof FileTable> | null>(null);
 const jobAreaRef = ref<HTMLElement | null>(null);
@@ -192,18 +177,101 @@ const activeJob = computed(() => {
   return jobsStore.jobs.find((job: Job) => job.id === jobsStore.selectedJobId);
 });
 
-let unlistenDragEnter: UnlistenFn | undefined;
-let unlistenDragLeave: UnlistenFn | undefined;
-let unlistenDragOver: UnlistenFn | undefined;
-let unlistenDrop: UnlistenFn | undefined;
-
-// --- Global Event Handlers for Drag/Drop ---
-const handleWindowDragOver = (event: DragEvent) => {
+const handleWindowDragEnter = (event: DragEvent) => {
   event.preventDefault();
+  if (!dragDropStore.isInternalDragActive && event.dataTransfer?.types.includes("Files")) {
+    logDragDropEvent("JobArea", "External drag entered window.");
+    dragDropStore.setExternalDragOver(true);
+  }
 };
 
-const handleWindowDrop = (event: DragEvent) => {
+const handleWindowDragLeave = (event: DragEvent) => {
+  if (event.relatedTarget === null) {
+    logDragDropEvent("JobArea", "External drag left window.");
+    dragDropStore.setExternalDragOver(false);
+    activeDropZone.value = null;
+  }
+};
+
+const handleDragOver = (event: DragEvent) => {
   event.preventDefault();
+  if (!dragDropStore.isExternalDragOver) return;
+
+  event.dataTransfer!.dropEffect = "copy";
+  const position = { x: event.clientX, y: event.clientY };
+
+  if (isWithinBounds(currentJobDropZone.value, position)) {
+    if (activeDropZone.value !== "current") {
+      logDropZoneEvent("JobArea", "Hovering 'current job' drop zone");
+      activeDropZone.value = "current";
+    }
+  } else if (isWithinBounds(newJobDropZone.value, position)) {
+    if (activeDropZone.value !== "new") {
+      logDropZoneEvent("JobArea", "Hovering 'new job' drop zone");
+      activeDropZone.value = "new";
+    }
+  } else if (isWithinBounds(separateJobsDropZone.value, position)) {
+    if (activeDropZone.value !== "separate") {
+      logDropZoneEvent("JobArea", "Hovering 'separate jobs' drop zone");
+      activeDropZone.value = "separate";
+    }
+  } else if (activeDropZone.value !== null) {
+    logDropZoneEvent("JobArea", "Left all drop zones");
+    activeDropZone.value = null;
+  }
+};
+
+const handleExternalDrop = async (event: DragEvent): Promise<void> => {
+  event.preventDefault();
+  if (!dragDropStore.isExternalDragOver) return;
+
+  logDragDropEvent("JobArea", `External drop event fired.`);
+  dragDropStore.setExternalDragOver(false);
+
+  const files = event.dataTransfer?.files;
+  const paths = files ? Array.from(files).map((file) => (file as FileWithTauriPath).path || file.name) : [];
+
+  if (!paths || paths.length === 0 || paths.every((p) => !p)) {
+    logFailsafe("JobArea", "Drop event received with no valid file paths. Aborting.", { files });
+    dropError.value = "Cannot drop files from archives. Please extract them first.";
+    activeDropZone.value = null;
+
+    setTimeout(() => {
+      dropError.value = null;
+    }, 3000);
+    return;
+  }
+
+  logDragDropEvent("JobArea", `Paths from drop: ${paths.length}`, paths);
+
+  const dropTarget = activeDropZone.value;
+
+  try {
+    if (dropTarget === "current") {
+      if (activeJob.value) {
+        logDropZoneEvent("JobArea", `Attempting to add ${paths.length} files to current job (ID: ${activeJob.value.id})`);
+        const addedCount = await jobsStore.addFilesToJob(activeJob.value.id, paths);
+        logDropZoneEvent("JobArea", `Successfully added ${addedCount} files to current job (ID: ${activeJob.value.id})`);
+      } else {
+        logFailsafe("JobArea", "No active job available for drop in 'current' zone");
+      }
+    } else if (dropTarget === "new") {
+      logDropZoneEvent("JobArea", `Attempting to create new job and add ${paths.length} files`);
+      const newJobId: number = jobsStore.addJob();
+      const addedCount = await jobsStore.addFilesToJob(newJobId, paths);
+      jobsStore.selectJob(newJobId);
+      logDropZoneEvent("JobArea", `Successfully created new job (ID: ${newJobId}) and added ${addedCount} files`);
+    } else if (dropTarget === "separate") {
+      logDropZoneEvent("JobArea", `Confirming creation of ${paths.length} separate jobs.`);
+      confirmCreateSeparateJobs(paths);
+    } else {
+      logDragDropEvent("JobArea", "External drop occurred but not on a valid drop zone.");
+    }
+  } catch (error: unknown) {
+    logFailsafe("JobArea", `Error during drop operation: ${error instanceof Error ? error.message : String(error)}`, error);
+  }
+
+  activeDropZone.value = null;
 };
 
 const handleWindowClick = (event: MouseEvent) => {
@@ -220,17 +288,15 @@ const handleWindowClick = (event: MouseEvent) => {
       isJobAreaActive.value = false;
     }
   } else {
-    // This case is for debugging. It confirms the click was correctly identified as inside.
     logInteraction("JobArea", "handleWindowClick detected click inside. No state change.");
   }
 };
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (!isJobAreaActive.value || !activeJob.value || !fileTableRef.value) {
-    return; // Only process shortcuts if job area is active and a job is selected
+    return;
   }
 
-  // Prevent default behavior for handled shortcuts
   if ((event.ctrlKey || event.metaKey) && (event.key === "a" || event.key === "c" || event.key === "x" || event.key === "v")) {
     event.preventDefault();
   } else if (event.key === "Delete") {
@@ -238,9 +304,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
   }
 
   if ((event.ctrlKey || event.metaKey) && event.key === "a") {
-    // Ctrl+A: Select all
     if (event.shiftKey) {
-      // Ctrl+Shift+A: Deselect all
       fileTableRef.value.deselectAll();
       logInteraction("JobArea", "Keyboard shortcut: Ctrl+Shift+A (Deselect All)");
     } else {
@@ -248,13 +312,11 @@ const handleKeyDown = (event: KeyboardEvent) => {
       logInteraction("JobArea", "Keyboard shortcut: Ctrl+A (Select All)");
     }
   } else if (event.key === "Delete") {
-    // Delete key: Remove selected items
     if (selectedFilePaths.value.length > 0) {
       confirmRemoveFiles(selectedFilePaths.value);
       logInteraction("JobArea", "Keyboard shortcut: Delete (Remove Selected Items)");
     }
   } else if ((event.ctrlKey || event.metaKey) && event.key === "c") {
-    // Ctrl+C: Copy selected items
     if (selectedFilePaths.value.length > 0) {
       const filesToCopy: FileItem[] = selectedFilePaths.value
         .map((path) => activeJob.value?.files.find((file) => file.path === path))
@@ -262,12 +324,11 @@ const handleKeyDown = (event: KeyboardEvent) => {
       console.log(
         "[JobArea] Attempting to copy files:",
         filesToCopy.map((f) => f.name)
-      ); // Added log
-      clipboardStore.copy(filesToCopy, activeJob.value.id); // Pass current activeJob.value.id as source
+      );
+      clipboardStore.copy(filesToCopy, activeJob.value.id);
       logInteraction("JobArea", "Keyboard shortcut: Ctrl+C (Copy Selected Items)");
     }
   } else if ((event.ctrlKey || event.metaKey) && event.key === "x") {
-    // Ctrl+X: Cut selected items
     if (selectedFilePaths.value.length > 0) {
       const filesToCut: FileItem[] = selectedFilePaths.value
         .map((path) => activeJob.value?.files.find((file) => file.path === path))
@@ -275,16 +336,15 @@ const handleKeyDown = (event: KeyboardEvent) => {
       console.log(
         "[JobArea] Attempting to cut files:",
         filesToCut.map((f) => f.name)
-      ); // Added log
-      clipboardStore.cut(filesToCut, activeJob.value.id); // Pass current activeJob.value.id as source
+      );
+      clipboardStore.cut(filesToCut, activeJob.value.id);
       logInteraction("JobArea", "Keyboard shortcut: Ctrl+X (Cut Selected Items)");
     }
   } else if ((event.ctrlKey || event.metaKey) && event.key === "v") {
-    // Ctrl+V: Paste items
     console.log(
       "[JobArea] Attempting to paste. Clipboard items:",
       clipboardStore.clipboard.map((f) => f.name)
-    ); // Added log
+    );
     if (clipboardStore.hasClipboardItems() && activeJob.value) {
       const filesToPaste = clipboardStore.clipboard;
       const sourceJob = clipboardStore.sourceJobId;
@@ -293,12 +353,10 @@ const handleKeyDown = (event: KeyboardEvent) => {
 
       if (isCutOperation) {
         if (sourceJob !== null && sourceJob === targetJobId) {
-          // Case 1: Cut and paste within the same job -> no-op, just clear clipboard
           console.log("[JobArea] Cut and paste within the same job. Clearing clipboard.");
           clipboardStore.clear();
           logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Cut - Same Job) - No-op, clipboard cleared.");
         } else if (sourceJob !== null && sourceJob !== targetJobId) {
-          // Case 2: Cut and paste to a different job -> confirm move
           const fileNames = filesToPaste.map((f: FileItem) => f.name);
           const modalOptions: ModalOptions = {
             icon: "mdi:content-cut",
@@ -322,8 +380,8 @@ const handleKeyDown = (event: KeyboardEvent) => {
                   sourceJob,
                   targetJobId,
                   filesToPaste.map((f: FileItem) => f.path)
-                ); // Pass file paths
-                clipboardStore.clear(); // Clear clipboard after successful move (only for cut operations)
+                );
+                clipboardStore.clear();
                 fileTableRef.value?.deselectAll();
                 logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Move Confirmed)");
               } else {
@@ -333,16 +391,12 @@ const handleKeyDown = (event: KeyboardEvent) => {
           );
         }
       } else {
-        // Copy operation
         if (sourceJob !== null && sourceJob === targetJobId) {
-          // Case 3: Copy and paste within the same job -> silently add files
           console.log("[JobArea] Copy and paste within the same job. Silently adding files.");
           jobsStore.addClipboardFilesToJob(targetJobId, filesToPaste);
-          // DO NOT clear clipboard here, allowing multiple pastes for copy operations
           fileTableRef.value?.deselectAll();
           logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy - Same Job) - Silently added.");
         } else {
-          // Case 4: Copy and paste to a different job -> confirm copy
           const fileNames = filesToPaste.map((f: FileItem) => f.name);
           const modalOptions: ModalOptions = {
             icon: "mdi:content-copy",
@@ -360,9 +414,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
             { description: modalOptions.description, fileList: fileNames },
             (action: string) => {
               if (action === "proceed") {
-                // Use the new action to directly add FileItem objects from clipboard
                 jobsStore.addClipboardFilesToJob(targetJobId, filesToPaste);
-                // DO NOT clear clipboard here, allowing multiple pastes for copy operations
                 fileTableRef.value?.deselectAll();
                 logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy Confirmed)");
               } else {
@@ -379,47 +431,19 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 onMounted(async () => {
-  // Add global listeners to ensure the OS recognizes the window as a drop target
-  window.addEventListener("dragover", handleWindowDragOver);
-  window.addEventListener("drop", handleWindowDrop);
+  window.addEventListener("dragenter", handleWindowDragEnter);
+  window.addEventListener("dragleave", handleWindowDragLeave);
+
   window.addEventListener("mousedown", handleWindowClick);
-  window.addEventListener("keydown", handleKeyDown); // Add keyboard shortcut listener
-
-  // Centralize all Tauri drag-and-drop listeners here
-  unlistenDragEnter = await listen("tauri://drag-enter", (event: TauriEvent<{ items?: string[] }>) => {
-    // Explicitly type payload
-    const items = event.payload?.items; // Access safely
-    if (items === undefined || (Array.isArray(items) && items.length > 0)) {
-      // Add Array.isArray check
-      logDragDropEvent("JobArea", "Event: tauri://drag-enter -> setting global state to true");
-      dragDropStore.setExternalDragOver(true);
-    } else {
-      logFailsafe("JobArea", "Drag enter event with no items, likely invalid source. Ignoring.");
-    }
-  });
-
-  unlistenDragLeave = await listen("tauri://drag-leave", () => {
-    logDragDropEvent("JobArea", "Event: tauri://drag-leave -> setting global state to false");
-    dragDropStore.setExternalDragOver(false);
-    activeDropZone.value = null;
-  });
-
-  unlistenDragOver = await listen("tauri://drag-over", handleDragOver);
-  unlistenDrop = await listen("tauri://drag-drop", handleExternalDrop);
+  window.addEventListener("keydown", handleKeyDown);
 });
 
 onUnmounted(() => {
-  // Clean up global listeners
-  window.removeEventListener("dragover", handleWindowDragOver);
-  window.removeEventListener("drop", handleWindowDrop);
-  window.removeEventListener("mousedown", handleWindowClick);
-  window.removeEventListener("keydown", handleKeyDown); // Remove keyboard shortcut listener
+  window.removeEventListener("dragenter", handleWindowDragEnter);
+  window.removeEventListener("dragleave", handleWindowDragLeave);
 
-  // Clean up Tauri listeners
-  if (unlistenDragEnter) unlistenDragEnter();
-  if (unlistenDragLeave) unlistenDragLeave();
-  if (unlistenDragOver) unlistenDragOver();
-  if (unlistenDrop) unlistenDrop();
+  window.removeEventListener("mousedown", handleWindowClick);
+  window.removeEventListener("keydown", handleKeyDown);
 });
 
 watch(isJobAreaActive, (newValue, oldValue) => {
@@ -459,23 +483,21 @@ const getFileNames = (paths: string[]): string[] => {
 };
 
 const handleMouseDown = (event: MouseEvent): void => {
-  // Always set the area as active on any mousedown within it.
   if (!isJobAreaActive.value) {
     logInteraction("JobArea", "Setting job area to active.");
     isJobAreaActive.value = true;
   }
 
-  // Check if we should start a drag-selection.
-  // If the click is on an interactive element, do nothing further.
-  if (
-    event.button !== 0 ||
-    (event.target instanceof Element &&
-      event.target.closest("button, a, input, select, textarea, .dropdown-content, .row-actions, .file-table-toolbar"))
-  ) {
+  const targetElement = event.target as Element;
+  const isInteractiveElement = targetElement.closest(
+    "button, a, input, select, textarea, .dropdown-content, .row-actions, .file-table-toolbar"
+  );
+  const isNameText = targetElement.closest(".item-name-text");
+
+  if (event.button !== 0 || dragDropStore.isInternalDragActive || isInteractiveElement || isNameText) {
     return;
   }
 
-  // If we're here, it's a valid mousedown to start a drag.
   event.preventDefault();
   mouseMoved.value = false;
   startPoint.x = event.clientX;
@@ -500,15 +522,12 @@ const handleMouseMove = (event: MouseEvent): void => {
     const areaRect = jobAreaRef.value?.getBoundingClientRect();
     if (!areaRect) return;
 
-    // Clamp current mouse position to the job area's bounds (in viewport coordinates)
     const currentX = Math.max(areaRect.left, Math.min(event.clientX, areaRect.right));
     const currentY = Math.max(areaRect.top, Math.min(event.clientY, areaRect.bottom));
 
-    // Clamp the start point as well to ensure the selection originates within the area.
     const startX = Math.max(areaRect.left, Math.min(startPoint.x, areaRect.right));
     const startY = Math.max(areaRect.top, Math.min(startPoint.y, areaRect.bottom));
 
-    // Calculate the viewport-relative box for the selection logic
     const viewportSelection = {
       x: Math.min(startX, currentX),
       y: Math.min(startY, currentY),
@@ -516,10 +535,8 @@ const handleMouseMove = (event: MouseEvent): void => {
       height: Math.abs(startY - currentY),
     };
 
-    // Pass the calculated viewport coordinates to the FileTable for intersection checks
     fileTableRef.value?.updateSelectionByRect(viewportSelection, event.ctrlKey || event.metaKey);
 
-    // Calculate and store coordinates relative to the jobArea for visual styling
     selectionBox.x = viewportSelection.x - areaRect.left;
     selectionBox.y = viewportSelection.y - areaRect.top;
     selectionBox.width = viewportSelection.width;
@@ -554,7 +571,7 @@ const handleMouseUp = (event: MouseEvent): void => {
           const fileName: string = (rowEl.querySelector(".item-name-text")?.textContent || "unknown file").trim();
           logInteraction("JobArea", `File row clicked${modifierString} on "${fileName}".`);
         }
-        fileTableRef.value?.clickRowByPath(event, rowEl.getAttribute("data-path") || "");
+        fileTableRef.value?.onFileClick(event, rowEl.getAttribute("data-path") || "");
       }
     } else if (!isCheckbox && !target.closest(".file-table-toolbar")) {
       fileTableRef.value?.deselectAll();
@@ -564,86 +581,10 @@ const handleMouseUp = (event: MouseEvent): void => {
   isDragSelecting.value = false;
 };
 
-// --- External Drag and Drop Handlers ---
-
-const isWithinBounds = (el: HTMLElement | null, pos: PhysicalPosition): boolean => {
+const isWithinBounds = (el: HTMLElement | null, pos: { x: number; y: number }): boolean => {
   if (!el) return false;
   const rect = el.getBoundingClientRect();
   return pos.x > rect.left && pos.x < rect.right && pos.y > rect.top && pos.y < rect.bottom;
-};
-
-const handleDragOver = (event: TauriEvent<{ position: PhysicalPosition }>): void => {
-  const { position } = event.payload;
-
-  if (isWithinBounds(currentJobDropZone.value, position)) {
-    if (activeDropZone.value !== "current") {
-      logDropZoneEvent("JobArea", "Hovering 'current job' drop zone");
-      activeDropZone.value = "current";
-    }
-  } else if (isWithinBounds(newJobDropZone.value, position)) {
-    if (activeDropZone.value !== "new") {
-      logDropZoneEvent("JobArea", "Hovering 'new job' drop zone");
-      activeDropZone.value = "new";
-    }
-  } else if (isWithinBounds(separateJobsDropZone.value, position)) {
-    if (activeDropZone.value !== "separate") {
-      logDropZoneEvent("JobArea", "Hovering 'separate jobs' drop zone");
-      activeDropZone.value = "separate";
-    }
-  } else if (activeDropZone.value !== null) {
-    logDropZoneEvent("JobArea", "Left all drop zones");
-    activeDropZone.value = null;
-  }
-};
-
-const handleExternalDrop = async (event: TauriEvent<{ paths: string[] }>): Promise<void> => {
-  logDragDropEvent("JobArea", `Event: tauri://drag-drop, paths: ${event.payload.paths.length}`, event.payload.paths);
-  const { paths } = event.payload;
-
-  // If no valid paths are received (e.g., dragging from a zip file), show an error and abort.
-  if (!paths || paths.length === 0) {
-    logFailsafe("JobArea", "Drop event received with no valid file paths. Aborting.");
-    dropError.value = "Cannot drop files from archives. Please extract them first.";
-    activeDropZone.value = null;
-
-    // Keep the overlay visible to show the error, then hide everything.
-    setTimeout(() => {
-      dropError.value = null;
-      dragDropStore.setExternalDragOver(false);
-    }, 3000);
-    return;
-  }
-
-  const dropTarget = activeDropZone.value;
-
-  try {
-    if (dropTarget === "current") {
-      if (activeJob.value) {
-        logDropZoneEvent("JobArea", `Attempting to add ${paths.length} files to current job (ID: ${activeJob.value.id})`);
-        await jobsStore.addFilesToJob(activeJob.value.id, paths);
-        logDropZoneEvent("JobArea", `Successfully added ${paths.length} files to current job (ID: ${activeJob.value.id})`);
-      } else {
-        logFailsafe("JobArea", "No active job available for drop in 'current' zone");
-      }
-    } else if (dropTarget === "new") {
-      logDropZoneEvent("JobArea", `Attempting to create new job and add ${paths.length} files`);
-      const newJobId: number = jobsStore.addJob();
-      await jobsStore.addFilesToJob(newJobId, paths);
-      jobsStore.selectJob(newJobId);
-      logDropZoneEvent("JobArea", `Successfully created new job (ID: ${newJobId}) and added ${paths.length} files`);
-    } else if (dropTarget === "separate") {
-      logDropZoneEvent("JobArea", `Confirming creation of ${paths.length} separate jobs.`);
-      confirmCreateSeparateJobs(paths);
-    } else {
-      logDragDropEvent("JobArea", "External drop occurred but not on a valid drop zone.");
-    }
-  } catch (error: unknown) {
-    logFailsafe("JobArea", `Error during drop operation: ${error instanceof Error ? error.message : String(error)}`, error);
-  }
-
-  // This cleanup now only runs for successful drops.
-  dragDropStore.setExternalDragOver(false);
-  activeDropZone.value = null;
 };
 
 const confirmCreateSeparateJobs = (paths: string[]): void => {

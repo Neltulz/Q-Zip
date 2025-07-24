@@ -1,7 +1,29 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- components/FileTable.vue @preserve -->
+<!--
+  Description:
+  A table component for displaying and managing files in a job. Supports multi-select, context menus, and native HTML5 drag-and-drop for moving or copying selected files to other jobs, initiated only from the file name text. Dragging handles multi-selection if the dragged item is selected, or single item otherwise. Sorting prioritizes folders over files, both alphabetically.
+  Usage Example:
+  <FileTable
+    :job-id="activeJob.id"
+    :files="activeJob.files"
+    :is-dragging="isDragging"
+    :cut-files="cutFiles"
+    :cut-source-job-id="cutSourceJobId"
+    @remove-files="confirmRemoveFiles"
+    @move-files="confirmMoveFiles"
+    @move-to-new-job="confirmMoveToNewJob"
+    @copy-files="confirmCopyFiles"
+    @copy-to-new-job="confirmCopyToNewJob"
+    @selection-changed="handleSelectionChange"
+  />
+-->
 <template>
-  <div class="file-table-comp" :class="{ 'is-dragging': isDragging }" data-component-name="FileTable">
+  <div
+    class="file-table-comp"
+    :class="{ 'is-dragging': isDragging || dragDropStore.isInternalDragActive }"
+    data-component-name="FileTable"
+  >
     <ToolBar v-if="files.length >= 1" class="file-table-toolbar">
       <template #start>
         <CustomButton
@@ -28,7 +50,7 @@
           <template #button-content> Move to </template>
           <template #default="{ close }">
             <CustomButton
-              v-for="job in jobs.filter((j) => j.id !== props.jobId)"
+              v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
               :key="job.id"
               button-style-class="trans-btn"
               :data-name="`move-to-job-${job.id}-btn`"
@@ -73,7 +95,7 @@
           <template #button-content> Copy to </template>
           <template #default="{ close }">
             <CustomButton
-              v-for="job in jobs.filter((j) => j.id !== props.jobId)"
+              v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
               :key="job.id"
               button-style-class="trans-btn"
               :data-name="`copy-to-job-${job.id}-btn`"
@@ -137,7 +159,7 @@
           class="file-row"
           :class="{
             selected: selectedFiles.includes(file.path),
-            'is-cut': cutFiles.includes(file.path) && jobId === cutSourceJobId, // Added condition
+            'is-cut': cutFiles.includes(file.path) && jobId === cutSourceJobId,
           }"
           :data-path="file.path"
           data-has-context-menu="true"
@@ -157,7 +179,12 @@
           <td class="item-name">
             <div class="cell-content">
               <Icon :name="file.type === 'Folder' ? 'mdi:folder' : 'mdi:file-outline'" size="16" />
-              <div class="item-name-text">
+              <div
+                class="item-name-text"
+                draggable="true"
+                @dragstart="handleDragStart($event, file.path)"
+                @dragend="handleDragEnd"
+              >
                 {{ file.name }}
               </div>
               <div class="row-actions" @click.stop>
@@ -187,7 +214,6 @@
                       Remove
                     </CustomButton>
                     <hr />
-                    <!-- Move To Submenu -->
                     <DropdownMenu
                       :button-style-class="'trans-btn'"
                       :dropdown-data-name="`move-file-${index}-submenu`"
@@ -201,7 +227,7 @@
                       <template #button-content>Move to</template>
                       <template #default="{ close: closeSub }">
                         <CustomButton
-                          v-for="job in jobs.filter((j) => j.id !== props.jobId)"
+                          v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
                           :key="job.id"
                           button-style-class="trans-btn"
                           :data-name="`move-file-${index}-to-job-${job.id}-btn`"
@@ -220,7 +246,7 @@
                         <hr />
                         <CustomButton
                           button-style-class="trans-btn"
-                          :data-name="`move-file-${index}-to-new-job-btn`"
+                          data-name="move-to-new-job-btn"
                           first-icon-name="mdi:plus"
                           :first-icon-size="20"
                           @click="
@@ -235,7 +261,6 @@
                         </CustomButton>
                       </template>
                     </DropdownMenu>
-                    <!-- Copy To Submenu -->
                     <DropdownMenu
                       :button-style-class="'trans-btn'"
                       :dropdown-data-name="`copy-file-${index}-submenu`"
@@ -249,7 +274,7 @@
                       <template #button-content>Copy to</template>
                       <template #default="{ close: closeSub }">
                         <CustomButton
-                          v-for="job in jobs.filter((j) => j.id !== props.jobId)"
+                          v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
                           :key="job.id"
                           button-style-class="trans-btn"
                           :data-name="`copy-file-${index}-to-job-${job.id}-btn`"
@@ -268,7 +293,7 @@
                         <hr />
                         <CustomButton
                           button-style-class="trans-btn"
-                          :data-name="`copy-file-${index}-to-new-job-btn`"
+                          data-name="copy-to-new-job-btn"
                           first-icon-name="mdi:plus"
                           :first-icon-size="20"
                           @click="
@@ -305,9 +330,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUpdate, type ComponentPublicInstance } from "vue";
-import { useJobsStore } from "@/stores/jobsStore";
+import { useJobsStore, type Job } from "@/stores/jobsStore";
+import { useDragDropStore } from "@/stores/dragDropStore";
 import type { FileItem } from "@/types/types";
-import type DropdownMenu from "./DropdownMenu.vue";
+import DropdownMenu from "./DropdownMenu.vue";
+import { logDragDropEvent } from "@/utils/loggers";
 
 interface SelectionBox {
   x: number;
@@ -321,12 +348,13 @@ const props = defineProps<{
   files: FileItem[];
   isDragging: boolean;
   cutFiles: string[];
-  cutSourceJobId: number | null; // New prop for the source job ID of cut files
+  cutSourceJobId: number | null;
 }>();
 
 const emit = defineEmits(["selection-changed", "remove-files", "move-files", "move-to-new-job", "copy-files", "copy-to-new-job"]);
 
 const jobsStore = useJobsStore();
+const dragDropStore = useDragDropStore();
 const jobs = computed(() => jobsStore.jobs);
 
 const selectedFiles = ref<string[]>([]);
@@ -334,18 +362,25 @@ const lastClickedIndex = ref<number | null>(null);
 const fileTable = ref<HTMLElement | null>(null);
 const fileMenuRefs = ref(new Map<string, InstanceType<typeof DropdownMenu>>());
 
-// Clear refs before each update to prevent memory leaks from old elements
 onBeforeUpdate(() => {
   fileMenuRefs.value.clear();
 });
 
-// Watch for changes in the local selection and emit an event to the parent.
 watch(
   selectedFiles,
   (newSelection) => {
     emit("selection-changed", newSelection);
   },
   { deep: true }
+);
+
+watch(
+  () => dragDropStore.isInternalDragActive,
+  (isActive) => {
+    if (!isActive) {
+      logDragDropEvent("FileTable", "Internal drag ended (via store change).");
+    }
+  }
 );
 
 const setFileMenuRef = (file: FileItem, el: Element | ComponentPublicInstance | null) => {
@@ -421,7 +456,7 @@ const updateSelectionByRect = (box: SelectionBox, isAdditive: boolean) => {
       bottom: box.y + box.height,
     };
 
-    selectableItems.forEach((itemEl) => {
+    selectableItems.forEach((itemEl: Element) => {
       const itemRect = itemEl.getBoundingClientRect();
       const rowEl = itemEl.closest(".file-row");
       const path = rowEl?.getAttribute("data-path");
@@ -471,7 +506,40 @@ const deselectAll = () => {
   lastClickedIndex.value = null;
 };
 
-// --- Batch Actions ---
+const handleDragStart = (event: DragEvent, path: string) => {
+  const paths: string[] = selectedFiles.value.includes(path) ? selectedFiles.value : [path];
+  event.dataTransfer?.setData("text/plain", JSON.stringify({ type: "internal-files", paths, sourceJobId: props.jobId }));
+  event.dataTransfer!.effectAllowed = "copyMove";
+
+  const count = paths.length;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 150;
+  canvas.height = 30;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    ctx.fillStyle = "hsla(210, 100%, 50%, 0.7)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
+    ctx.font = "bold 0.9rem sans-serif";
+    ctx.fillText(`${count} item(s)`, 10, 20);
+    ctx.fillRect(5, 5, 20, 20);
+  }
+
+  event.dataTransfer?.setDragImage(canvas, -10, -10);
+
+  dragDropStore.startInternalDrag(paths, null, props.jobId);
+  logDragDropEvent("FileTable", `Native drag started for ${paths.length} files from job ${props.jobId}.`);
+};
+
+const handleDragEnd = () => {
+  // FIX: Do NOT end the drag here. The drop target component (`JobSelectorArea`) is now
+  // responsible for ending the drag after an action is chosen from the dropdown menu.
+  // This prevents the drag state from being cleared prematurely.
+  // dragDropStore.endInternalDrag();
+  logDragDropEvent("FileTable", "Native drag ended.");
+};
+
 const removeSelectedFiles = (): void => {
   emit("remove-files", selectedFiles.value);
 };
@@ -492,7 +560,6 @@ const copyToNewJob = (): void => {
   emit("copy-to-new-job", selectedFiles.value);
 };
 
-// --- Single File Actions ---
 const removeFile = (path: string): void => {
   emit("remove-files", path);
 };
@@ -532,7 +599,7 @@ watch(
 defineExpose({
   deselectAll,
   updateSelectionByRect,
-  clickRowByPath,
+  onFileClick: clickRowByPath,
   toggleAll,
   selectedFiles,
 });

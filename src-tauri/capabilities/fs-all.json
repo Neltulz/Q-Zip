@@ -2,6 +2,17 @@
     "identifier": "fs-all",
     "description": "Allows file system operations including stat",
     "windows": ["main"],
-    "permissions": ["fs:default", "fs:allow-stat"],
-    "scope": { "allow": ["**"] }
+    "permissions": ["fs:default", "fs:allow-stat", "fs:allow-read-dir"],
+    "scope": { 
+        "allow": [
+            "$HOME/**",
+            "$DESKTOP/**",
+            "$DOCUMENT/**",
+            "$DOWNLOAD/**",
+            "$PICTURE/**",
+            "$VIDEO/**",
+            "$PUBLIC/**"
+        ],
+        "requireLiteralLeadingDot": false
+    }
 }

@@ -4,37 +4,6 @@
  * This store manages jobs and global compression settings for the
  * application. It handles job creation, file management within jobs,
  * reordering, and settings updates using Pinia.
- *
- * Key Features:
- * - `jobs`: Array of jobs, each containing files and settings.
- * - `globalSettings`: Default compression settings applied globally.
- * - `selectedJobId`: Tracks the currently selected job.
- * - Actions to add, remove, reorder, and manage jobs and files.
- *
- * Usage Example:
- *
- * vue
- * <template>
- * <div>
- * <button @click="addNewJob">Add Job</button>
- * <button @click="selectJob(1)">Select Job 1</button>
- * <button @click="moveJob(0, 1)">Move First Job</button>
- * </div>
- * </template>
- *
- * <script setup>
- * import { useJobsStore } from '@/stores/jobsStore'
- * const jobsStore = useJobsStore()
- *
- * const addNewJob = () => jobsStore.addJob()
- * const selectJob = (id: number) => jobsStore.selectJob(id)
- * const moveJob = (from, to) => jobsStore.moveJob(from, to)
- * </script>
- *
- * Used in files:
- * ArchiveConfigAdvanced.vue, ArchiveConfigCompress.vue,
- * ArchiveConfigEncrypt.vue, ArchiveConfigGeneral.vue,
- * CompressionSection.vue, JobSelectorArea.vue
  */
 // @preserve
 
@@ -150,40 +119,31 @@ export const useJobsStore = defineStore(
       return newId;
     }
 
-    async function addFilesToJob(jobId: number, paths: string[]): Promise<void> {
+    async function addFilesToJob(jobId: number, paths: string[]): Promise<number> {
       const job = jobs.value.find((j) => j.id === jobId);
       if (job) {
-        const newFiles = await Promise.all(paths.map(getFileDetails));
-        const validNewFiles = newFiles.filter(
-          (file): file is FileItem =>
-            file != null &&
-            typeof file.path === "string" &&
-            typeof file.name === "string" &&
-            typeof file.size === "number" &&
-            typeof file.type === "string" &&
-            typeof file.parentPath === "string"
-        );
-        validNewFiles.forEach((validFile: FileItem) => {
-          if (!job.files.some((file: FileItem) => file.path === validFile.path)) {
-            job.files.push(validFile);
+        let addedCount = 0;
+        for (const path of paths) {
+          const fileDetails = await getFileDetails(path);
+          // Check if getFileDetails returned a valid object (not null)
+          if (fileDetails && !job.files.some((file: FileItem) => file.path === fileDetails.path)) {
+            job.files.push(fileDetails);
+            addedCount++;
           }
-        });
-        if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Added ${validNewFiles.length} files to job ${jobId}`);
         }
+        
+        if (DEBUG && debugConfig.logStoreActions) {
+          console.log(`Added ${addedCount} of ${paths.length} attempted files to job ${jobId}`);
+        }
+        return addedCount;
       }
+      return 0;
     }
 
-    /**
-     * Adds FileItem objects directly to a job.
-     * Used for pasting from clipboard where FileItem details are already known.
-     * @param jobId The ID of the job to add files to.
-     * @param files The FileItem objects to add.
-     */
     function addClipboardFilesToJob(jobId: number, files: FileItem[]): void {
       const job = jobs.value.find((j) => j.id === jobId);
       if (job) {
-        let addedCount = 0; // Changed from const to let
+        let addedCount = 0;
         files.forEach((fileToAdd: FileItem) => {
           if (!job.files.some((file: FileItem) => file.path === fileToAdd.path)) {
             job.files.push(fileToAdd);
@@ -296,9 +256,7 @@ export const useJobsStore = defineStore(
 
       if (sourceJob && targetJob) {
         const filesToMove = sourceJob.files.filter((f) => filePaths.includes(f.path));
-        // Add files to target, preventing duplicates
         targetJob.files.push(...filesToMove.filter((file) => !targetJob.files.some((f) => f.path === file.path)));
-        // Remove files from source
         sourceJob.files = sourceJob.files.filter((f) => !filePaths.includes(f.path));
 
         if (DEBUG && debugConfig.logStoreActions) {
@@ -313,7 +271,6 @@ export const useJobsStore = defineStore(
 
       if (sourceJob && targetJob) {
         const filesToCopy = sourceJob.files.filter((f) => filePaths.includes(f.path));
-        // Add files to target, preventing duplicates
         targetJob.files.push(...filesToCopy.filter((file) => !targetJob.files.some((f) => f.path === file.path)));
         if (DEBUG && debugConfig.logStoreActions) {
           console.log(`Copied ${filesToCopy.length} files from job ${sourceJobId} to job ${targetJobId}`);
@@ -335,10 +292,6 @@ export const useJobsStore = defineStore(
       }
     }
 
-    /**
-     * Creates a new job for each path provided and adds the corresponding file.
-     * @param paths - An array of file/folder paths.
-     */
     async function createJobsFromPaths(paths: string[]): Promise<void> {
       const newJobIds: number[] = [];
       for (const path of paths) {
@@ -361,7 +314,7 @@ export const useJobsStore = defineStore(
       initialize,
       addJob,
       addFilesToJob,
-      addClipboardFilesToJob, // Expose the new action
+      addClipboardFilesToJob,
       removeJobs,
       removeAllJobs,
       resetJobs,

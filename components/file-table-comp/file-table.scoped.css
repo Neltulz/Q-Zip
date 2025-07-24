@@ -63,6 +63,7 @@
       padding: 0;
       text-align: start;
       user-select: none;
+      pointer-events: auto;
 
       &.item-checkbox {
         grid-column: file-check;
@@ -129,10 +130,12 @@
           width: 100%;
 
           .item-name-text {
-            cursor: pointer;
+            user-select: none;
+            cursor: default;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            pointer-events: auto;
           }
 
           .row-actions {
@@ -149,11 +152,10 @@
       }
     }
 
-    /* Enhanced style for cut files: target icon and text directly */
-    tr.is-cut .item-name .cell-content .iconify,
+    .is-cut .item-name .cell-content .iconify,
     tr.is-cut .item-name .cell-content .item-name-text {
-      opacity: 0.3; /* More aggressive dimming */
-      filter: grayscale(70%); /* Add a grayscale filter for extra visual cue */
+      opacity: 0.3;
+      filter: grayscale(70%);
       transition: opacity 0.2s ease-in-out, filter 0.2s ease-in-out;
     }
 
@@ -168,13 +170,11 @@
         padding-inline: 0.5em;
       }
 
-      /* This prevents the '...' icon from changing color on hover, as the button's appearance is enough feedback. */
       &:deep(.custom-button:hover) {
         color: var(--btn-txt-clr);
       }
     }
 
-    /* Hide row actions during drag selection */
     .is-dragging tr:hover .row-actions {
       opacity: 0;
       pointer-events: none;

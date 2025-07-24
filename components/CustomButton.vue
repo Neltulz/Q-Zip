@@ -5,12 +5,13 @@
   Description:
   A reusable button component with optional icons, customizable via props.
   It prevents content layout shift (CLS) from icon loading by using
-  fixed-size placeholders. It will now log a warning if an icon is used
+  fixed-size placeholders. It logs a warning if an icon is used
   without an explicit size prop to encourage best practices. All styles,
   both global variables and scoped rules, are externalized into separate
   CSS files for better organization. Color values use hsla() and include
   distinct variables for normal, hover, and active states. It also
   prevents the default browser context menu from appearing on right-click.
+  Interaction logging for press/release is now handled by the `v-flash-on-click` directive.
 
   Usage Example:
   <CustomButton
@@ -39,8 +40,6 @@
     v-bind="otherAttrs"
     data-component-name="CustomButton"
     @contextmenu.prevent
-    @mousedown="handleMouseDown"
-    @mouseup="handleMouseUp"
   >
     <div class="visual-style" />
     <div v-if="props.firstIconName" class="icon-placeholder first-icon" :style="firstIconPlaceholderStyle">
@@ -60,12 +59,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useAttrs } from "vue";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-import { logButtonPress, logButtonRelease, logWarning } from "@/utils/loggers";
 
 const attrs = useAttrs();
 const buttonRef = ref<HTMLElement | null>(null);
 
-// FIX: Added defaults for all optional props to satisfy the 'vue/require-default-prop' ESLint rule.
 const props = withDefaults(
   defineProps<{
     btnTheme?: "default" | "lite" | "liter" | "dark" | "darkr" | "primary" | "danger" | "warning" | "info";
@@ -106,23 +103,19 @@ const lastIconPlaceholderStyle = computed(() => {
   };
 });
 
-// Manually merge classes to prevent duplication from v-bind="$attrs"
 const buttonClasses = computed(() => {
   const classes: string[] = ["custom-button"];
   if (props.buttonStyleClass) {
     classes.push(props.buttonStyleClass);
   }
-  // Safely handle attrs.class which can be string, string[], or undefined
   if (typeof attrs.class === "string") {
     classes.push(attrs.class);
   } else if (Array.isArray(attrs.class)) {
-    // Spread the array of classes
     classes.push(...(attrs.class as string[]));
   }
   return classes.filter(Boolean).join(" ");
 });
 
-// Exclude 'class' from attributes passed to v-bind to avoid double application
 const otherAttrs = computed(() => {
   const { class: _, ...rest } = attrs;
   return rest;
@@ -132,26 +125,9 @@ defineExpose({
   buttonRef,
 });
 
-// Handle mousedown event for debug logging
-const handleMouseDown = (event: MouseEvent): void => {
-  const button = event.currentTarget as HTMLElement;
-  const buttonName: string = button.getAttribute("data-name") || "Unnamed Button";
-  logButtonPress("CustomButton", `PRESS: "${buttonName}"`);
-};
-
-// Handle mouseup event for debug logging
-const handleMouseUp = (event: MouseEvent): void => {
-  const button = event.currentTarget as HTMLElement;
-  const buttonName: string = button.getAttribute("data-name") || "Unnamed Button";
-  logButtonRelease("CustomButton", `RELEASE: "${buttonName}"`);
-};
-
-// Log component mount for debugging purposes.
 onMounted((): void => {
   if (DEBUG && debugConfig.logComponentMounts) {
-    // The ref is on a native <button>, so its value is a direct HTMLElement.
     const element: HTMLElement | null = buttonRef.value;
-
     if (element) {
       const _buttonName: string = element.getAttribute("data-name") || "Unnamed Button";
       const _tagName = element.tagName ?? "unknown";
