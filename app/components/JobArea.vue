@@ -760,4 +760,4 @@ const addItemsToJob = (paths: string[]): void => {
 };
 </script>
 
-<style src="~/components/job-area-comp/job-area.scoped.css" scoped></style>
+<style scoped src="./job-area-comp/job-area.scoped.css"></style>

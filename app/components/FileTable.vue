@@ -606,5 +606,5 @@ defineExpose({
 </script>
 
 <style scoped>
-@import "~/components/file-table-comp/file-table.scoped.css";
+@import "./file-table-comp/file-table.scoped.css";
 </style>

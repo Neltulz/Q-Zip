@@ -459,5 +459,5 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
 </style>
 
 <style scoped>
-@import "~/components/title-bar-comp/title-bar.scoped.css";
+@import "./title-bar-comp/title-bar.scoped.css";
 </style>

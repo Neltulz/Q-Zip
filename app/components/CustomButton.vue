@@ -141,11 +141,11 @@ onMounted((): void => {
 
 <!-- Global button styles -->
 <style>
-@import "~/components/custom-button-comp/custom-button.global.css";
+@import "./custom-button-comp/custom-button.global.css";
 </style>
 
 <!-- Scoped component styles -->
 <style scoped>
-@import "~/components/custom-button-comp/custom-button.scoped.css";
+@import "./custom-button-comp/custom-button.scoped.css";
 </style>
 <!-- #endregion -->

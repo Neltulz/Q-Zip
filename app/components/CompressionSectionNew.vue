@@ -713,5 +713,5 @@ const handleTransitionEnd = (): void => {
 </script>
 
 <style scoped>
-@import "~/components/compression-section-comp/compression-section.scoped.css";
+@import "./compression-section-comp/compression-section.scoped.css";
 </style>

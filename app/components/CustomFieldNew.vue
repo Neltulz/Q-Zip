@@ -350,5 +350,5 @@ onMounted((): void => {
 </script>
 
 <style scoped>
-@import "~/components/custom-field-comp/custom-field.scoped.css";
+@import "./custom-field-comp/custom-field.scoped.css";
 </style>

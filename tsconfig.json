@@ -4,8 +4,10 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "~/*": ["./*"]
+      // Updated: Explicitly tell TypeScript that @/ and ~/ should resolve from the 'app' directory.
+      // This aligns with srcDir: 'app/' in nuxt.config.ts.
+      "@/*": ["./app/*"],
+      "~/*": ["./app/*"]
     },
     "strict": true,
     "noImplicitAny": true
