@@ -265,14 +265,14 @@ import { logInteraction, logDragDropEvent, logDropZoneEvent } from "@/utils/logg
 import DropdownMenu from "@/components/DropdownMenu.vue";
 
 const themeStore = useThemeStore();
-const jobsStore = useJobsStore();
+const jobsStore = useJobsStore(); // jobsStore.jobs is already unwrapped here by Pinia
 const uiStore = useUiStore();
 const modalsStore = useModalsStore();
 const dragDropStore = useDragDropStore();
 const clipboardStore = useClipboardStore();
 
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
-const jobsList = computed(() => jobsStore.jobs);
+const jobsList = computed(() => jobsStore.jobs); // jobsList.value will be Job[]
 
 const draggedJobId = ref<number | null>(null);
 const dragOverJobId = ref<number | null>(null);
@@ -298,7 +298,7 @@ onMounted(() => {
 });
 
 watch(
-  () => jobsStore.jobs,
+  () => jobsStore.jobs, // This is the array (Job[])
   (newJobs: Job[]) => {
     if (!jobsStore.selectedJobId || !newJobs.some((job: Job) => job.id === jobsStore.selectedJobId)) {
       if (newJobs.length > 0) {
@@ -348,7 +348,8 @@ const selectJob = (jobId: number): void => {
 
 const addJob = (): void => {
   jobsStore.addJob();
-  const newJobId: number = Math.max(...jobsStore.jobs.map((j: Job) => j.id));
+  // MODIFIED: Explicitly cast jobsStore.jobs to Job[] for Math.max argument
+  const newJobId: number = Math.max(...(jobsStore.jobs as Job[]).map((j: Job) => j.id)) + 1;
   jobsStore.selectJob(newJobId);
   logInteraction("JobSelectorArea", `New job (ID: ${newJobId}) added and selected.`);
 };
@@ -462,10 +463,12 @@ const onDrop = (targetJobId: number | null): void => {
     return;
   }
 
-  if (draggedJobId.value === null) return;
-
-  const fromIndex = jobsStore.jobs.findIndex((j: Job) => j.id === draggedJobId.value);
-  const toIndex = targetJobId === null ? jobsStore.jobs.length - 1 : jobsStore.jobs.findIndex((j: Job) => j.id === targetJobId);
+  // MODIFIED: Explicitly cast jobsStore.jobs to Job[] for findIndex
+  const fromIndex = (jobsStore.jobs as Job[]).findIndex((j: Job) => j.id === draggedJobId.value);
+  const toIndex =
+    targetJobId === null
+      ? (jobsStore.jobs as Job[]).length - 1
+      : (jobsStore.jobs as Job[]).findIndex((j: Job) => j.id === targetJobId);
 
   if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
     jobsStore.moveJob(fromIndex, toIndex);
@@ -553,8 +556,10 @@ const handleDragAction = (operation: "move" | "copy", targetIdentifier: number |
     return;
   }
 
+  // MODIFIED: Explicitly cast jobsStore.jobs to Job[] for findIndex
   const filesToConfirm: FileItem[] =
-    jobsStore.jobs.find((j: Job) => j.id === sourceJobId)?.files.filter((f) => droppedFilePaths.includes(f.path)) || [];
+    (jobsStore.jobs as Job[]).find((j: Job) => j.id === sourceJobId)?.files.filter((f) => droppedFilePaths.includes(f.path)) ||
+    [];
   const fileNames: string[] = filesToConfirm.map((f) => f.name);
 
   const onModalClose = (confirmed: boolean) => {
@@ -605,12 +610,7 @@ const handleDragAction = (operation: "move" | "copy", targetIdentifier: number |
     title,
     description: [description],
     buttons: [
-      {
-        action: "proceed",
-        text: operation === "move" ? "Move Items" : "Copy Items",
-        theme: "primary",
-        styleClass: "bordered-btn",
-      },
+      { action: "proceed", text: "Move Items", theme: "primary", styleClass: "bordered-btn" },
       { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
     ],
     footerJustifyContent: "center",

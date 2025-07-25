@@ -50,7 +50,8 @@
           <template #general>
             <form class="settings-form" @submit.prevent>
               <fieldset class="output-location">
-                <template v-for="field in generalConfig.general.fields" :key="field.id">
+                <!-- MODIFIED: Use computed property `generalFields` for type safety -->
+                <template v-for="field in generalFields" :key="field.id">
                   <CustomFieldNew
                     v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'global')"
                     :data-field-name="field['data-field-name']"
@@ -97,7 +98,8 @@
           </template>
           <template #compression>
             <form class="settings-form" @submit.prevent>
-              <template v-for="field in compressConfig.compress.fields" :key="field.id">
+              <!-- MODIFIED: Use computed property `compressFields` for type safety -->
+              <template v-for="field in compressFields" :key="field.id">
                 <CustomFieldNew
                   v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'global')"
                   :data-field-name="field['data-field-name']"
@@ -117,7 +119,8 @@
           </template>
           <template #advanced>
             <form class="settings-form" @submit.prevent>
-              <template v-for="field in advancedConfig.advanced.fields" :key="field.id">
+              <!-- MODIFIED: Use computed property `advancedFields` for type safety -->
+              <template v-for="field in advancedFields" :key="field.id">
                 <CustomFieldNew
                   v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'global')"
                   :data-field-name="field['data-field-name']"
@@ -137,7 +140,8 @@
           </template>
           <template #encryption>
             <form class="settings-form" @submit.prevent>
-              <template v-for="field in encryptConfig.encrypt.fields" :key="field.id">
+              <!-- MODIFIED: Use computed property `encryptFields` for type safety -->
+              <template v-for="field in encryptFields" :key="field.id">
                 <CustomFieldNew
                   v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'global')"
                   :data-field-name="field['data-field-name']"
@@ -173,27 +177,21 @@
             <template #general>
               <form class="settings-form" @submit.prevent>
                 <fieldset class="output-location">
-                  <template v-for="field in generalConfig.general.fields" :key="field.id">
+                  <!-- MODIFIED: Use computed property `generalFields` for type safety -->
+                  <template v-for="field in generalFields" :key="field.id">
                     <CustomFieldNew
                       v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'job')"
                       :data-field-name="field['data-field-name']"
                       :default-value="field.default"
-                      :disabled="
-                        field.id === 'outputFolder'
-                          ? lockStates['useInputLocationsForOutput'] ||
-                            getDisplayValue('useInputLocationsForOutput', 'job') === 'use_input' ||
-                            lockStates[field.id] ||
-                            false
-                          : lockStates[field.id] || false
-                      "
+                      :disabled="getJobFieldDisabledState(field.id)"
                       :extra-classes="[`${field.id}-field`]"
                       :field-id="field.id"
                       :global-value="getDisplayValue(field.id, 'global')"
-                      :input-type="lockStates[field.id] ? 'input' : field.type"
+                      :input-type="getJobFieldInputType(field.id, field.type)"
                       :is-job-settings="true"
-                      :is-locked="lockStates[field.id] ?? false"
-                      :model-value="lockStates[field.id] ? getFormattedGlobalValue(field.id) : getDisplayValue(field.id, 'job')"
-                      :options="field.type === 'select' && !lockStates[field.id] ? field.options ?? [] : []"
+                      :is-locked="getJobFieldLockedState(field.id)"
+                      :model-value="getJobFieldModelValue(field.id)"
+                      :options="getJobFieldOptions(field.id, field.type, field.options)"
                       :show-wrapper="true"
                       :title="field.label"
                       @reset-to-global="handleResetToGlobal"
@@ -202,8 +200,8 @@
                     >
                       <template #before-input>
                         <LockButton
-                          v-if="field.type === 'select'"
-                          :is-locked="lockStates[field.id]"
+                          v-if="field.type === 'select' || field.id === 'parameters'"
+                          :is-locked="getJobFieldLockedState(field.id)"
                           @click="toggleLock(field.id)"
                         />
                       </template>
@@ -212,12 +210,7 @@
                           button-class="browse-btn"
                           button-style-class="trans-btn"
                           dropdown-data-name="browse-output-folder-job"
-                          :disabled="
-                            lockStates['useInputLocationsForOutput'] ||
-                            getDisplayValue('useInputLocationsForOutput', 'job') === 'use_input' ||
-                            lockStates[field.id] ||
-                            false
-                          "
+                          :disabled="getJobFieldDisabledState(field.id)"
                           placement="bottom-end"
                         >
                           <template #default="{ close }">
@@ -245,55 +238,21 @@
             </template>
             <template #compression>
               <form class="settings-form" @submit.prevent>
-                <template v-for="field in compressConfig.compress.fields" :key="field.id">
+                <!-- MODIFIED: Use computed property `compressFields` for type safety -->
+                <template v-for="field in compressFields" :key="field.id">
                   <CustomFieldNew
                     v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'job')"
                     :data-field-name="field['data-field-name']"
                     :default-value="field.default"
-                    :disabled="lockStates[field.id] || false"
+                    :disabled="getJobFieldDisabledState(field.id)"
                     :extra-classes="[`${field.id}-field`]"
                     :field-id="field.id"
                     :global-value="getDisplayValue(field.id, 'global')"
-                    :input-type="lockStates[field.id] ? 'input' : field.type"
+                    :input-type="getJobFieldInputType(field.id, field.type)"
                     :is-job-settings="true"
-                    :is-locked="lockStates[field.id] ?? false"
-                    :model-value="lockStates[field.id] ? getFormattedGlobalValue(field.id) : getDisplayValue(field.id, 'job')"
-                    :options="
-                      field.type === 'select' && !lockStates[field.id] ? field.options ?? getOptions(field.id, 'job') : []
-                    "
-                    :show-wrapper="true"
-                    :title="field.label"
-                    @reset-to-global="handleResetToGlobal"
-                    @unset-or-clear="handleJobUnsetOrClear"
-                    @update:model-value="updateSetting(field.id, $event, 'job')"
-                  >
-                    <template #before-input>
-                      <LockButton
-                        v-if="field.type === 'select'"
-                        :is-locked="lockStates[field.id]"
-                        @click="toggleLock(field.id)"
-                      />
-                    </template>
-                  </CustomFieldNew>
-                </template>
-              </form>
-            </template>
-            <template #advanced>
-              <form class="settings-form" @submit.prevent>
-                <template v-for="field in advancedConfig.advanced.fields" :key="field.id">
-                  <CustomFieldNew
-                    v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'job')"
-                    :data-field-name="field['data-field-name']"
-                    :default-value="field.default"
-                    :disabled="lockStates[field.id] || false"
-                    :extra-classes="[`${field.id}-field`]"
-                    :field-id="field.id"
-                    :global-value="getDisplayValue(field.id, 'global')"
-                    :input-type="lockStates[field.id] ? 'input' : field.type"
-                    :is-job-settings="true"
-                    :is-locked="lockStates[field.id] ?? false"
-                    :model-value="lockStates[field.id] ? getFormattedGlobalValue(field.id) : getDisplayValue(field.id, 'job')"
-                    :options="field.type === 'select' && !lockStates[field.id] ? field.options ?? [] : []"
+                    :is-locked="getJobFieldLockedState(field.id)"
+                    :model-value="getJobFieldModelValue(field.id)"
+                    :options="getJobFieldOptions(field.id, field.type, field.options)"
                     :show-wrapper="true"
                     :title="field.label"
                     @reset-to-global="handleResetToGlobal"
@@ -303,7 +262,41 @@
                     <template #before-input>
                       <LockButton
                         v-if="field.type === 'select' || field.id === 'parameters'"
-                        :is-locked="lockStates[field.id]"
+                        :is-locked="getJobFieldLockedState(field.id)"
+                        @click="toggleLock(field.id)"
+                      />
+                    </template>
+                  </CustomFieldNew>
+                </template>
+              </form>
+            </template>
+            <template #advanced>
+              <form class="settings-form" @submit.prevent>
+                <!-- MODIFIED: Use computed property `advancedFields` for type safety -->
+                <template v-for="field in advancedFields" :key="field.id">
+                  <CustomFieldNew
+                    v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'job')"
+                    :data-field-name="field['data-field-name']"
+                    :default-value="field.default"
+                    :disabled="getJobFieldDisabledState(field.id)"
+                    :extra-classes="[`${field.id}-field`]"
+                    :field-id="field.id"
+                    :global-value="getDisplayValue(field.id, 'global')"
+                    :input-type="getJobFieldInputType(field.id, field.type)"
+                    :is-job-settings="true"
+                    :is-locked="getJobFieldLockedState(field.id)"
+                    :model-value="getJobFieldModelValue(field.id)"
+                    :options="getJobFieldOptions(field.id, field.type, field.options)"
+                    :show-wrapper="true"
+                    :title="field.label"
+                    @reset-to-global="handleResetToGlobal"
+                    @unset-or-clear="handleJobUnsetOrClear"
+                    @update:model-value="updateSetting(field.id, $event, 'job')"
+                  >
+                    <template #before-input>
+                      <LockButton
+                        v-if="field.type === 'select' || field.id === 'parameters'"
+                        :is-locked="getJobFieldLockedState(field.id)"
                         @click="toggleLock(field.id)"
                       />
                     </template>
@@ -313,22 +306,21 @@
             </template>
             <template #encryption>
               <form class="settings-form" @submit.prevent>
-                <template v-for="field in encryptConfig.encrypt.fields" :key="field.id">
+                <!-- MODIFIED: Use computed property `encryptFields` for type safety -->
+                <template v-for="field in encryptFields" :key="field.id">
                   <CustomFieldNew
                     v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'job')"
                     :data-field-name="field['data-field-name']"
                     :default-value="field.default"
-                    :disabled="lockStates[field.id] || false"
+                    :disabled="getJobFieldDisabledState(field.id)"
                     :extra-classes="[`${field.id}-field`]"
                     :field-id="field.id"
                     :global-value="getDisplayValue(field.id, 'global')"
-                    :input-type="lockStates[field.id] ? 'input' : field.type"
+                    :input-type="getJobFieldInputType(field.id, field.type)"
                     :is-job-settings="true"
-                    :is-locked="lockStates[field.id] ?? false"
-                    :model-value="lockStates[field.id] ? getFormattedGlobalValue(field.id) : getDisplayValue(field.id, 'job')"
-                    :options="
-                      field.type === 'select' && !lockStates[field.id] ? field.options ?? getOptions(field.id, 'job') : []
-                    "
+                    :is-locked="getJobFieldLockedState(field.id)"
+                    :model-value="getJobFieldModelValue(field.id)"
+                    :options="getJobFieldOptions(field.id, field.type, field.options)"
                     :show-wrapper="true"
                     :title="field.label"
                     @reset-to-global="handleResetToGlobal"
@@ -338,7 +330,7 @@
                     <template #before-input>
                       <LockButton
                         v-if="field.type === 'select'"
-                        :is-locked="lockStates[field.id]"
+                        :is-locked="getJobFieldLockedState(field.id)"
                         @click="toggleLock(field.id)"
                       />
                     </template>
@@ -434,10 +426,11 @@ interface ExtendedInstance extends ComponentPublicInstance {
 }
 
 // Cast imported JSON to the defined types
-const generalConfig = generalConfigJson as SettingsConfig;
-const advancedConfig = advancedConfigJson as SettingsConfig;
+// MODIFIED: Added explicit type assertions to ensure the nested properties exist
+const generalConfig = generalConfigJson as { general: SettingsCategory };
+const advancedConfig = advancedConfigJson as { advanced: SettingsCategory };
 const compressConfig = compressConfigJson as CompressConfigData;
-const encryptConfig = encryptConfigJson as SettingsConfig;
+const encryptConfig = encryptConfigJson as { encrypt: SettingsCategory };
 
 const jobsStore = useJobsStore();
 const themeStore = useThemeStore();
@@ -448,6 +441,12 @@ const lockStates = ref<Record<string, boolean>>({});
 const selectedJob = computed(() => jobsStore.jobs.find((job: Job) => job.id === jobsStore.selectedJobId));
 const globalSettings = computed(() => jobsStore.globalSettings);
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
+
+// MODIFIED: Computed properties to safely access fields from config JSONs
+const generalFields = computed(() => generalConfig.general.fields || []);
+const advancedFields = computed(() => advancedConfig.advanced.fields || []);
+const compressFields = computed(() => compressConfig.compress.fields || []);
+const encryptFields = computed(() => encryptConfig.encrypt.fields || []);
 
 const categories: string[] = ["general", "compression", "advanced", "encryption"];
 const globalButtonNames: Record<string, string> = {
@@ -474,10 +473,10 @@ watch(
   (newJob) => {
     if (newJob) {
       const allFields = [
-        ...generalConfig.general.fields,
-        ...compressConfig.compress.fields,
-        ...advancedConfig.advanced.fields,
-        ...encryptConfig.encrypt.fields,
+        ...generalFields.value, // MODIFIED: Use computed properties
+        ...compressFields.value, // MODIFIED: Use computed properties
+        ...advancedFields.value, // MODIFIED: Use computed properties
+        ...encryptFields.value, // MODIFIED: Use computed properties
       ];
 
       const lockableFields = allFields.filter((f) => f.type === "select" || f.id === "parameters");
@@ -501,10 +500,10 @@ const handleScroll = (): void => {
 
 const getActualDefaultValue = (key: string): string | number | boolean | undefined => {
   const allFields: FieldConfig[] = [
-    ...generalConfig.general.fields,
-    ...advancedConfig.advanced.fields,
-    ...compressConfig.compress.fields,
-    ...encryptConfig.encrypt.fields,
+    ...generalFields.value, // MODIFIED: Use computed properties
+    ...advancedFields.value, // MODIFIED: Use computed properties
+    ...compressFields.value, // MODIFIED: Use computed properties
+    ...encryptFields.value, // MODIFIED: Use computed properties
   ];
   const field = allFields.find((f) => f.id === key);
   if (!field) return undefined;
@@ -519,10 +518,10 @@ const getActualDefaultValue = (key: string): string | number | boolean | undefin
 
 const getFormattedGlobalValue = (key: string): string => {
   const allFields: FieldConfig[] = [
-    ...generalConfig.general.fields,
-    ...advancedConfig.advanced.fields,
-    ...compressConfig.compress.fields,
-    ...encryptConfig.encrypt.fields,
+    ...generalFields.value, // MODIFIED: Use computed properties
+    ...advancedFields.value, // MODIFIED: Use computed properties
+    ...compressFields.value, // MODIFIED: Use computed properties
+    ...encryptFields.value, // MODIFIED: Use computed properties
   ];
   const field = allFields.find((f) => f.id === key);
   if (field && field.type === "select") {
@@ -692,6 +691,37 @@ const evaluateDependency = (dependsOn: FieldDependency | undefined, context: "gl
       : selectedJob.value?.settings[dependsOn.field as keyof CompressionSettings] ??
         globalSettings.value[dependsOn.field as keyof CompressionSettings];
   return fieldValue === dependsOn.value;
+};
+
+// MODIFIED: Helper functions to simplify template logic and improve type safety
+const getJobFieldDisabledState = (fieldId: string): boolean => {
+  if (fieldId === "outputFolder") {
+    return (
+      (lockStates.value["useInputLocationsForOutput"] ?? false) ||
+      getDisplayValue("useInputLocationsForOutput", "job") === "use_input" ||
+      (lockStates.value[fieldId] ?? false)
+    );
+  }
+  return lockStates.value[fieldId] ?? false;
+};
+
+const getJobFieldInputType = (fieldId: string, defaultType: InputType): InputType => {
+  return lockStates.value[fieldId] ?? false ? "input" : defaultType;
+};
+
+const getJobFieldLockedState = (fieldId: string): boolean => {
+  return lockStates.value[fieldId] ?? false;
+};
+
+const getJobFieldModelValue = (fieldId: string): string | number | boolean => {
+  return lockStates.value[fieldId] ?? false ? getFormattedGlobalValue(fieldId) : getDisplayValue(fieldId, "job");
+};
+
+const getJobFieldOptions = (fieldId: string, fieldType: InputType, defaultOptions: FieldOption[] | undefined): FieldOption[] => {
+  if (fieldType === "select" && !(lockStates.value[fieldId] ?? false)) {
+    return defaultOptions ?? getOptions(fieldId, "job");
+  }
+  return [];
 };
 
 const handleTransitionEnd = (): void => {

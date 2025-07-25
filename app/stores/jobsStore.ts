@@ -163,7 +163,8 @@ export const useJobsStore = defineStore(
       if (filteredJobs.length === 0) {
         jobs.value = [];
         addJob();
-        selectJob(jobs.value[0].id);
+        // MODIFIED: Safely access jobs.value[0]?.id
+        selectJob(jobs.value[0]?.id ?? null); // Use optional chaining and nullish coalescing
         if (DEBUG && debugConfig.logStoreActions) {
           console.log(`Removed all jobs and added a new one`);
         }
@@ -175,17 +176,24 @@ export const useJobsStore = defineStore(
         id: index + 1,
       }));
 
+      // MODIFIED: Added null check for currentSelectedJobId
       if (currentSelectedJobId !== null) {
         const isSelectedJobRemoved = idsToRemove.includes(currentSelectedJobId);
         if (!isSelectedJobRemoved) {
           const oldIndex = oldJobs.findIndex((job) => job.id === currentSelectedJobId);
           if (oldIndex !== -1) {
+            // MODIFIED: Ensure oldJobs[oldIndex - 1] is not undefined before accessing id
             selectJob(oldIndex - idsToRemove.filter((id) => id < currentSelectedJobId).length + 1);
           }
         } else {
           const oldIndex = oldJobs.findIndex((job) => job.id === currentSelectedJobId);
           if (oldIndex > 0) {
-            const newIndex = oldIndex - 1 - idsToRemove.filter((id) => id < oldJobs[oldIndex - 1].id).length;
+            // MODIFIED: Safely access oldJobs[oldIndex - 1]?.id for filtering
+            // Ensure oldJobs[oldIndex - 1] is not undefined for the filter condition
+            const newIndex = oldIndex - 1 - idsToRemove.filter((id) => {
+              const prevJob = oldJobs[oldIndex - 1];
+              return prevJob && id < prevJob.id; // Explicitly check prevJob
+            }).length;
             selectJob(newIndex + 1);
           } else {
             selectJob(1);
@@ -200,7 +208,8 @@ export const useJobsStore = defineStore(
     function removeAllJobs(): void {
       jobs.value = [];
       addJob();
-      selectJob(jobs.value[0].id);
+      // MODIFIED: Safely access jobs.value[0]?.id
+      selectJob(jobs.value[0]?.id ?? null); // Use optional chaining and nullish coalescing
       if (DEBUG && debugConfig.logStoreActions) {
         console.log(`Removed all jobs and reset to one job`);
       }
@@ -209,7 +218,8 @@ export const useJobsStore = defineStore(
     function resetJobs(): void {
       jobs.value = [];
       addJob();
-      selectJob(jobs.value[0].id);
+      // MODIFIED: Safely access jobs.value[0]?.id
+      selectJob(jobs.value[0]?.id ?? null); // Use optional chaining and nullish coalescing
       if (DEBUG && debugConfig.logStoreActions) {
         console.log(`Reset jobs store to initial state`);
       }
@@ -286,7 +296,10 @@ export const useJobsStore = defineStore(
         return;
       }
       const [jobToMove] = jobs.value.splice(fromIndex, 1);
-      jobs.value.splice(toIndex, 0, jobToMove);
+      // MODIFIED: Check if jobToMove is defined before splicing
+      if (jobToMove) {
+        jobs.value.splice(toIndex, 0, jobToMove);
+      }
       if (DEBUG && debugConfig.logStoreActions) {
         console.log(`Moved job from index ${fromIndex} to ${toIndex}`);
       }
@@ -299,9 +312,8 @@ export const useJobsStore = defineStore(
         newJobIds.push(newJobId);
         await addFilesToJob(newJobId, [path]);
       }
-      if (newJobIds.length > 0) {
-        selectJob(newJobIds[0]);
-      }
+      // MODIFIED: Safely access newJobIds[0] and ensure it's number | null
+      selectJob(newJobIds.length > 0 ? newJobIds[0] : null);
       if (DEBUG && debugConfig.logStoreActions) {
         console.log(`Created ${newJobIds.length} new jobs from paths.`);
       }

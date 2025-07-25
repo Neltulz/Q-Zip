@@ -59,11 +59,10 @@
               }"
             >
               <slot name="body-content">
-                <!-- Default body content if no slot is provided -->
-                <template v-if="Array.isArray(options?.description)">
-                  <p v-for="(line, index) in options.description" :key="index" v-html="line" />
+                <!-- MODIFIED: Use computed property `descriptionContent` for rendering -->
+                <template v-if="descriptionContent.length > 0">
+                  <p v-for="(line, index) in descriptionContent" :key="index" v-html="line" />
                 </template>
-                <p v-else v-html="options?.description" />
               </slot>
             </OverlayScrollbarsComponent>
           </div>
@@ -76,8 +75,9 @@
             }"
           >
             <slot name="footer-buttons">
+              <!-- MODIFIED: Use computed property `buttonsToRender` for rendering -->
               <CustomButton
-                v-for="button in options?.buttons"
+                v-for="button in buttonsToRender"
                 :key="button.text"
                 :btn-theme="button.theme"
                 :button-style-class="button.styleClass"
@@ -121,6 +121,21 @@ const closeDelay = 300; // Animation duration
 const isVisible = ref(false);
 const animationState = ref("");
 
+// New computed property to safely handle description content
+const descriptionContent = computed((): string[] => {
+  if (props.options?.description) {
+    if (Array.isArray(props.options.description)) {
+      return props.options.description;
+    }
+    // If it's a single string, wrap it in an array for consistent v-for iteration
+    return [props.options.description];
+  }
+  return []; // Return an empty array if no description is provided
+});
+
+// New computed property to safely handle buttons array
+const buttonsToRender = computed(() => props.options?.buttons || []);
+
 const handleKeydown = (event: KeyboardEvent): void => {
   // Only handle ESC and Enter if this is the topmost modal
   const allModals = modalsStore.activeModals;
@@ -129,7 +144,8 @@ const handleKeydown = (event: KeyboardEvent): void => {
       handleClose("cancel");
     } else if (event.key === "Enter") {
       // Find the "proceed" button and trigger its action
-      const proceedButton = props.options.buttons?.find((button) => button.action === "proceed");
+      // MODIFIED: Use buttonsToRender for finding the button
+      const proceedButton = buttonsToRender.value.find((button) => button.action === "proceed");
       if (proceedButton) {
         handleClose("proceed");
         event.preventDefault(); // Prevent default Enter key behavior (e.g., submitting a form)
