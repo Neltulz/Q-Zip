@@ -1,46 +1,39 @@
 <!-- eslint-disable vue/no-v-html @preserve -->
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- components/BaseModal.vue @preserve -->
-<!--
-  Description:
-  A generic, reusable modal component that provides the basic structure
-  (header, body, footer) and animations. It now manually handles its state
-  to prevent blocking interaction with the main application window.
--->
 <template>
   <teleport to="body">
     <div
       v-if="isMounted"
-      :id="modalId"
+      :id="props.modalId"
       class="modal-wrapper"
       :class="[animationState, { 'modal-open': isVisible }]"
-      :data-name="modalDataName"
+      :data-name="props.modalDataName"
       data-component-name="BaseModal"
-      @click="handleClose('cancel')"
+      @click="props.options?.closeOnClickOutside ? handleClose('cancel') : null"
     >
       <div class="modal-backdrop" />
       <dialog ref="dialog" class="modal-dialog">
-        <!-- @click.stop prevents clicks inside the modal from closing it -->
-        <div v-if="options" class="modal-content" @click.stop>
+        <div v-if="props.options" class="modal-content" @click.stop>
           <div class="modal-header">
             <div class="start-section">
               <slot name="header-icon">
-                <Icon v-if="options?.icon" :name="options.icon" size="24" />
+                <Icon v-if="props.options.icon" :name="props.options.icon" size="24" />
                 <Icon v-else name="mdi:information-outline" size="24" />
               </slot>
               <slot name="header-title">
-                <h2 class="title">{{ options?.title }}</h2>
+                <h2 class="title">{{ props.options.title }}</h2>
               </slot>
             </div>
-
             <div class="end-section">
               <slot name="end-buttons" />
               <CustomButton
+                v-if="props.options.showCloseButton"
                 button-style-class="trans-btn"
                 data-name="modal-close-btn"
                 first-icon-name="mdi:close"
                 :first-icon-size="24"
-                @click="handleClose('close')"
+                @click="handleClose('cancel')"
               />
             </div>
           </div>
@@ -59,7 +52,6 @@
               }"
             >
               <slot name="body-content">
-                <!-- MODIFIED: Use computed property `descriptionContent` for rendering -->
                 <template v-if="descriptionContent.length > 0">
                   <p v-for="(line, index) in descriptionContent" :key="index" v-html="line" />
                 </template>
@@ -68,16 +60,15 @@
           </div>
 
           <div
-            v-if="options?.buttons?.length"
+            v-if="props.options.buttons && props.options.buttons.length > 0"
             class="modal-footer"
             :style="{
-              justifyContent: options.footerJustifyContent || 'space-around',
+              justifyContent: props.options.footerJustifyContent || 'space-around',
             }"
           >
             <slot name="footer-buttons">
-              <!-- MODIFIED: Use computed property `buttonsToRender` for rendering -->
               <CustomButton
-                v-for="button in buttonsToRender"
+                v-for="button in props.options.buttons"
                 :key="button.text"
                 :btn-theme="button.theme"
                 :button-style-class="button.styleClass"
@@ -98,17 +89,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, computed, watchEffect } from "vue";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
 import { useModalsStore } from "@/stores/modalsStore";
 import { logLifecycle } from "@/utils/loggers";
-import type { ModalOptions } from "@/types/modal";
+import type { ModalOptions as OriginalModalOptions } from "@/types/modal";
+import CustomButton from "./CustomButton.vue";
 
+// Locally extend the global modal options type for component-specific props
+interface ModalOptions extends OriginalModalOptions {
+  closeOnClickOutside?: boolean;
+  closeOnEscape?: boolean;
+  showCloseButton?: boolean;
+}
+
+// Correctly define props without destructuring to preserve reactivity
 const props = defineProps<{
-  options: ModalOptions;
+  options?: ModalOptions;
   modalId: string;
   modalDataName?: string;
+  isActive: boolean; // New prop passed by ModalContainer
 }>();
 
 const themeStore = useThemeStore();
@@ -116,76 +117,77 @@ const modalsStore = useModalsStore();
 
 const dialog = ref<HTMLDialogElement | null>(null);
 const isMounted = ref(false);
-const closeDelay = 300; // Animation duration
-
 const isVisible = ref(false);
 const animationState = ref("");
+const closeDelay = 300;
 
-// New computed property to safely handle description content
-const descriptionContent = computed((): string[] => {
-  if (props.options?.description) {
-    if (Array.isArray(props.options.description)) {
-      return props.options.description;
-    }
-    // If it's a single string, wrap it in an array for consistent v-for iteration
-    return [props.options.description];
+// This computed property now explicitly returns a `readonly string[]`,
+// which resolves the TypeScript error in the template.
+const descriptionContent = computed((): readonly string[] => {
+  const desc = props.options?.description;
+  if (!desc) {
+    return [];
   }
-  return []; // Return an empty array if no description is provided
+  if (typeof desc === "string") {
+    return [desc];
+  }
+  return desc; // At this point, desc must be `readonly string[]`
 });
 
-// New computed property to safely handle buttons array
-const buttonsToRender = computed(() => props.options?.buttons || []);
+// Use watchEffect to safely manage the event listener's lifecycle
+watchEffect((onInvalidate) => {
+  // Only add the listener if the modal is active and has options
+  if (!props.isActive || !props.options) {
+    return;
+  }
 
-const handleKeydown = (event: KeyboardEvent): void => {
-  // Only handle ESC and Enter if this is the topmost modal
-  const allModals = modalsStore.activeModals;
-  if (allModals.length > 0 && allModals[allModals.length - 1].id === props.modalId) {
-    if (event.key === "Escape") {
+  // Create a stable copy of the options to satisfy TypeScript's control flow analysis
+  const stableOptions = { ...props.options };
+
+  const handleKeydown = (event: KeyboardEvent) => {
+    if (!props.isActive) return; // Re-check in case modal was closed
+
+    if (event.key === "Escape" && (stableOptions.closeOnEscape ?? true)) {
       handleClose("cancel");
     } else if (event.key === "Enter") {
-      // Find the "proceed" button and trigger its action
-      // MODIFIED: Use buttonsToRender for finding the button
-      const proceedButton = buttonsToRender.value.find((button) => button.action === "proceed");
-      if (proceedButton) {
-        handleClose("proceed");
-        event.preventDefault(); // Prevent default Enter key behavior (e.g., submitting a form)
+      const buttons = stableOptions.buttons;
+      if (buttons && buttons.length > 0) {
+        const defaultButton = buttons.find((b) => b.isDefault) || buttons.find((b) => b.action === "proceed");
+        if (defaultButton) {
+          handleClose(defaultButton.action);
+          event.preventDefault();
+        }
       }
     }
-  }
-};
+  };
 
-// When the component mounts, it's because it was added to the store.
-// We immediately start the entrance animation.
+  window.addEventListener("keydown", handleKeydown);
+
+  // The onInvalidate callback automatically cleans up the listener
+  onInvalidate(() => {
+    window.removeEventListener("keydown", handleKeydown);
+  });
+});
+
 onMounted(() => {
   logLifecycle("BaseModal", `Mounted with ID: ${props.modalId}`);
   isMounted.value = true;
   isVisible.value = true;
 
-  // After a short delay, add the entering class to trigger animations
   setTimeout(() => {
     animationState.value = "modal-is-entering";
-    logLifecycle("BaseModal", "Animation state set to 'modal-is-entering'", { modalId: props.modalId });
-  }, 50); // A small delay to ensure the element is in the DOM
-
-  // Manually handle the Escape key
-  window.addEventListener("keydown", handleKeydown);
+  }, 50);
 });
 
 const handleClose = (action: string): void => {
-  // Prevent multiple close calls
   if (animationState.value === "modal-is-leaving") return;
 
-  // 1. Add the leaving class to trigger exit animations
   animationState.value = "modal-is-leaving";
-  logLifecycle("BaseModal", `Closing with action: '${action}'. Animation state set to 'modal-is-leaving'`, {
-    modalId: props.modalId,
-  });
 
-  // 2. After animations are finished, tell the store to remove the modal.
   setTimeout(() => {
     isVisible.value = false;
     animationState.value = "";
-    modalsStore.closeModal(props.modalId, action); // This triggers the unmount
+    modalsStore.closeModal(props.modalId, action);
   }, closeDelay);
 };
 
@@ -201,12 +203,6 @@ const getDefaultButtonIcon = (action: string): string => {
       return "";
   }
 };
-
-onUnmounted(() => {
-  logLifecycle("BaseModal", `Unmounted ID: ${props.modalId}`);
-  // Clean up the event listener
-  window.removeEventListener("keydown", handleKeydown);
-});
 </script>
 
 <style scoped>
@@ -217,48 +213,35 @@ onUnmounted(() => {
   inset: 0;
   inset-block-start: var(--title-bar-height);
   justify-content: center;
-  /*
-    Make the wrapper non-interactive. This allows clicks to pass
-    through the backdrop to the title bar, enabling dragging.
-  */
-  pointer-events: all; /* required so that when we click the backdrop, the modal closes */
+  pointer-events: all;
   position: fixed;
-  /* The z-index must be lower than the title bar (100000). */
   z-index: 99999;
 }
 
-/* Hide the wrapper when it's not open */
 .modal-wrapper:not(.modal-open) {
   display: none;
 }
 
-/* --- Backdrop Styling --- */
 .modal-backdrop {
   backdrop-filter: blur(0px);
   background-color: hsla(0, 0%, 0%, 0.5);
   inset: 0;
   opacity: 0;
   position: absolute;
-  /* Transition properties are now triggered by the parent's classes */
   transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
   z-index: 1;
 }
 
-/* Fade in the backdrop during the entering phase */
 .modal-wrapper.modal-is-entering .modal-backdrop {
   backdrop-filter: blur(4px);
   opacity: 1;
 }
 
-/* Fade out the backdrop during the leaving phase */
 .modal-wrapper.modal-is-leaving .modal-backdrop {
   backdrop-filter: blur(0px);
   opacity: 0;
 }
 
-/* --- Dialog Styling --- */
-
-/* Hide the native backdrop */
 .modal-dialog::backdrop {
   display: none;
 }
@@ -286,10 +269,6 @@ onUnmounted(() => {
   opacity: 0;
   overflow: visible;
   padding: 0;
-  /*
-    Enable pointer events only for the dialog itself, allowing the backdrop
-    (part of the wrapper) to be non-interactive.
-  */
   pointer-events: auto;
   position: relative;
   transform: perspective(1000px) scale(0.7) rotateX(45deg);
@@ -298,7 +277,6 @@ onUnmounted(() => {
   z-index: 2;
 }
 
-/* Animate the dialog based on the wrapper's state */
 .modal-wrapper.modal-is-entering .modal-dialog {
   animation: modal-enter-3d 300ms ease-out forwards;
 }
@@ -432,7 +410,6 @@ onUnmounted(() => {
   }
 }
 
-/* --- Keyframes --- */
 @keyframes modal-enter-3d {
   from {
     opacity: 0;

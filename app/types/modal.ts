@@ -32,6 +32,7 @@ export interface ModalButton {
 export interface ModalOptions {
   readonly icon?: string;
   readonly title: string;
+  // FIX: Allow readonly arrays to be passed from the store.
   readonly description?: string | readonly string[];
   readonly buttons?: readonly ModalButton[];
   readonly footerJustifyContent?: string;

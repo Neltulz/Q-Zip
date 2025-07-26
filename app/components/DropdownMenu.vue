@@ -536,6 +536,23 @@ defineExpose({ openDropdown, closeDropdown });
     z-index: 1000;
   }
 
+  &:empty {
+    /*
+     * Hides the empty dropdown wrapper to prevent layout issues, such as
+     * unwanted grid gaps. This is critical in two main scenarios:
+     *
+     * 1. When the dropdown has no items to display.
+     * 2. When its content is teleported elsewhere in the DOM.
+     *
+     * Example: In JobSelectorArea.vue, when files are dragged over a
+     * job button, a DropdownMenu appears. Its content (the "Copy" or
+     * "Move" options) is teleported to the body. This rule hides the
+     * now-empty original wrapper, preventing it from breaking the
+     * button's layout.
+     */
+    display: none;
+  }
+
   .custom-button {
     min-height: var(--min-tch-tgt);
     min-width: var(--min-tch-tgt);

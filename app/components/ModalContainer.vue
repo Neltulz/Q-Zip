@@ -3,14 +3,19 @@
 <!--
   Description:
   This component acts as a container for all dynamically rendered modals.
-  It listens to the `modalsStore` and renders a `BaseModal` for each active
-  modal instance. Modal content components are asynchronously and manually
-  imported to ensure compatibility with the build environment.
+  It listens to the `modalsStore`, renders a `BaseModal` for each active
+  modal instance, and now explicitly tells each modal whether it is the
+  topmost one via the `is-active` prop.
 -->
 <template>
   <div id="modal-container" data-component-name="ModalContainer">
-    <template v-for="modal in modalsStore.activeModals" :key="modal.id">
-      <BaseModal :modal-data-name="modal.component" :modal-id="modal.id" :options="modal.options">
+    <template v-for="(modal, index) in modalsStore.activeModals" :key="modal.id">
+      <BaseModal
+        :is-active="index === modalsStore.activeModals.length - 1"
+        :modal-data-name="modal.component"
+        :modal-id="modal.id"
+        :options="modal.options"
+      >
         <template #body-content>
           <component :is="modalContentComponents[modal.component]" v-bind="modal.props" />
         </template>

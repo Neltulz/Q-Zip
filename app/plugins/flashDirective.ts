@@ -5,6 +5,8 @@
  * Adds a 'flashing' class on mousedown and removes it on mouseup or mouseout.
  * This version now includes logging for button presses and releases, and
  * is aware of active drag-and-drop operations to prevent interference.
+ * The global mouseup listener now checks if the mousedown originated on the element
+ * before logging and acting, preventing console flooding.
  *
  * Example:
  * <button v-flash-on-click class="button">Click Me</button>
@@ -30,7 +32,7 @@ export default defineNuxtPlugin((nuxtApp: NuxtApp) => {
     mounted(el: HTMLElement) {
       // Cast el to FlashElement once for type safety and clarity
       const flashEl = el as FlashElement;
-      let isMouseDown: boolean = false;
+      let isMouseDown = false;
       const dragDropStore = useDragDropStore(); // Get the store instance
 
       const onMouseDown = (event: MouseEvent) => {
@@ -51,19 +53,21 @@ export default defineNuxtPlugin((nuxtApp: NuxtApp) => {
       };
 
       const onMouseUp = (event: MouseEvent) => {
-        // Log button release before any checks
-        const buttonName: string = flashEl.getAttribute("data-name") || "Unnamed Button";
-        logButtonRelease("FlashDirective", `RELEASE: "${buttonName}"`);
+        // FIX: Only log and act if the mouse was initially pressed on this specific element.
+        // This prevents every button's mouseup listener from firing on a single global mouseup event.
+        if (isMouseDown) {
+          const buttonName: string = flashEl.getAttribute("data-name") || "Unnamed Button";
+          logButtonRelease("FlashDirective", `RELEASE: "${buttonName}"`);
 
-        // If an internal drag is active, prevent flashing and propagation
-        if (dragDropStore.isInternalDragActive) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
+          // If an internal drag is active, prevent default behaviors but still reset the state.
+          if (dragDropStore.isInternalDragActive) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+
+          isMouseDown = false;
+          flashEl.classList.remove("flashing");
         }
-
-        isMouseDown = false;
-        flashEl.classList.remove("flashing");
       };
 
       const onMouseOver = (_event: MouseEvent) => {

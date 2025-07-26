@@ -62,7 +62,6 @@ import { useLayoutStore } from "@/stores/layoutStore";
 import { useJobsStore, defaultGlobalSettings } from "@/stores/jobsStore";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { useUserPreferencesStore } from "@/stores/userPreferencesStore";
-// Removed explicit import for TitleBar as it's now global
 
 const layoutStore = useLayoutStore();
 const jobsStore = useJobsStore();
@@ -71,17 +70,11 @@ const userPreferencesStore = useUserPreferencesStore();
 
 /**
  * Determines if a previous session exists.
- * A session is considered "previous" if:
- * - There is more than one job.
- * - The single existing job has files added to it.
- * - The global settings have been changed from their defaults.
  */
 const hasPreviousSession = computed((): boolean => {
-  // The store initializes with one empty job.
   const hasMultipleJobs: boolean = jobsStore.jobs.length > 1;
-  const singleJobHasFiles: boolean = jobsStore.jobs.length === 1 && jobsStore.jobs[0].files.length > 0;
-
-  // Check if global settings have been modified from the default.
+  // FIX: Use optional chaining `?.` to safely access `files` on a potentially undefined job.
+  const singleJobHasFiles: boolean = jobsStore.jobs.length === 1 && (jobsStore.jobs[0]?.files.length ?? 0) > 0;
   const globalSettingsChanged: boolean = JSON.stringify(jobsStore.globalSettings) !== JSON.stringify(defaultGlobalSettings);
 
   return hasMultipleJobs || singleJobHasFiles || globalSettingsChanged;
@@ -89,17 +82,12 @@ const hasPreviousSession = computed((): boolean => {
 
 /**
  * Handles the "Start Fresh" action.
- * Resets the jobs and navigation stores, then proceeds to the default layout.
- * If "Remember My Choice" is checked and available, the app will skip the
- * welcome screen next time and default to starting fresh. Otherwise, it ensures
- * the welcome screen is shown on the next launch.
  */
 const handleStartFresh = (): void => {
   jobsStore.resetJobs();
   jobsStore.resetGlobalSettings();
-  navStore.setActivePage("JobSetup"); // Reset to the first page
+  navStore.setActivePage("JobSetup");
 
-  // Only remember the choice if the option was available to the user.
   if (userPreferencesStore.rememberChoicePreference && hasPreviousSession.value) {
     userPreferencesStore.setSkipWelcomeScreen(true);
     userPreferencesStore.setStartFreshDefault(true);
@@ -111,14 +99,8 @@ const handleStartFresh = (): void => {
 
 /**
  * Handles the "Restore Previous Session" action.
- * Proceeds to the default layout without resetting any data.
- * If "Remember My Choice" is checked, the app will skip the welcome screen
- * next time and default to restoring the previous session. Otherwise, it
- * ensures the welcome screen is shown on the next launch.
  */
 const handleRestoreSession = (): void => {
-  // The button is disabled if `!hasPreviousSession`, so this function only runs when a session exists.
-  // The check `hasPreviousSession.value` is implicitly true here, but we add it for clarity and safety.
   if (userPreferencesStore.rememberChoicePreference && hasPreviousSession.value) {
     userPreferencesStore.setSkipWelcomeScreen(true);
     userPreferencesStore.setStartFreshDefault(false);
@@ -145,7 +127,6 @@ const handleRestoreSession = (): void => {
   flex-direction: column;
   gap: 1.5rem;
   text-align: center;
-  /* Removed padding-block-start as TitleBar is now global */
 }
 
 .welcome-heading {
@@ -175,25 +156,24 @@ const handleRestoreSession = (): void => {
   gap: 0.5rem;
   justify-content: center;
   margin-block-start: 1rem;
+}
 
-  &:has(input:disabled) {
-    pointer-events: none;
-    opacity: 0.6;
-  }
+.remember-choice-wrapper:has(input:disabled) {
+  pointer-events: none;
+  opacity: 0.6;
+}
 
-  & > #remember-choice {
-    accent-color: var(--primary-clr);
-    align-items: center;
-    height: 1rem;
-    width: 1rem;
-  }
+.remember-choice-wrapper > #remember-choice {
+  accent-color: var(--primary-clr);
+  align-items: center;
+  height: 1rem;
+  width: 1rem;
+}
 
-  & > label[for="remember-choice"] {
-    align-items: center;
-    display: flex;
-    /* Disable text selection and dragging */
-    user-select: none;
-    -webkit-user-drag: none;
-  }
+.remember-choice-wrapper > label[for="remember-choice"] {
+  align-items: center;
+  display: flex;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 </style>

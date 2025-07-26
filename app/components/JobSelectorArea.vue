@@ -2,7 +2,11 @@
 <!-- components/JobSelectorArea.vue @preserve -->
 
 <template>
-  <nav class="job-selector-area" data-component-name="JobSelectorArea">
+  <nav
+    class="job-selector-area"
+    :class="{ 'internal-drag-active': dragDropStore.isInternalDragActive }"
+    data-component-name="JobSelectorArea"
+  >
     <OverlayScrollbarsComponent
       defer
       class="job-selector-scrollable"
@@ -36,7 +40,7 @@
           @dragend="onDragEnd"
           @dragstart="onDragStart($event, job.id)"
           @dragover.prevent="handleJobTabDragOver($event, job.id)"
-          @dragleave="handleJobTabDragLeave"
+          @dragleave="handleJobTabDragLeave($event)"
           @drop.prevent="handleJobTabDrop($event, job.id)"
         >
           <span class="job-sel-icon">
@@ -149,13 +153,14 @@
       <div class="job-selector-btns-start">
         <CustomButton
           class="add-job-btn"
+          :class="{ 'drop-target-hover': hoveredJobId === 'new-job' && dragDropStore.isInternalDragActive }"
           button-style-class="trans-btn"
           data-name="add-job-btn"
           first-icon-name="mdi:add"
           :first-icon-size="24"
           @click="addJob"
           @dragover.prevent="handleJobTabDragOver($event, 'new-job')"
-          @dragleave="handleJobTabDragLeave"
+          @dragleave="handleJobTabDragLeave($event)"
           @drop.prevent="handleJobTabDrop($event, 'new-job')"
         />
         <DropdownMenu
@@ -265,14 +270,14 @@ import { logInteraction, logDragDropEvent, logDropZoneEvent } from "@/utils/logg
 import DropdownMenu from "@/components/DropdownMenu.vue";
 
 const themeStore = useThemeStore();
-const jobsStore = useJobsStore(); // jobsStore.jobs is already unwrapped here by Pinia
+const jobsStore = useJobsStore();
 const uiStore = useUiStore();
 const modalsStore = useModalsStore();
 const dragDropStore = useDragDropStore();
 const clipboardStore = useClipboardStore();
 
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
-const jobsList = computed(() => jobsStore.jobs); // jobsList.value will be Job[]
+const jobsList = computed(() => jobsStore.jobs);
 
 const draggedJobId = ref<number | null>(null);
 const dragOverJobId = ref<number | null>(null);
@@ -281,11 +286,8 @@ const hoveredJobId = ref<number | "new-job" | null>(null);
 const dragActionDropdownRefs = ref(new Map<number | "new-job", InstanceType<typeof DropdownMenu>>());
 const dragHoverTargetJobId = ref<number | "new-job" | null>(null);
 
-// --- FIX for Internal DnD Race Condition ---
-// Local state to hold drag info after drop, immune to the dragend event clearing the store
 const pendingDropFilePaths = ref<string[]>([]);
 const pendingDropSourceJobId = ref<number | null>(null);
-// ---
 
 const setDragActionMenuRef = (jobId: number | "new-job", el: Element | ComponentPublicInstance | null) => {
   if (el) {
@@ -298,10 +300,10 @@ onMounted(() => {
 });
 
 watch(
-  () => jobsStore.jobs, // This is the array (Job[])
+  () => jobsStore.jobs,
   (newJobs: Job[]) => {
-    if (!jobsStore.selectedJobId || !newJobs.some((job: Job) => job.id === jobsStore.selectedJobId)) {
-      if (newJobs.length > 0) {
+    if (!jobsStore.selectedJobId || !newJobs.some((job) => job.id === jobsStore.selectedJobId)) {
+      if (newJobs.length > 0 && newJobs[0]) {
         jobsStore.selectJob(newJobs[0].id);
       }
     }
@@ -347,9 +349,7 @@ const selectJob = (jobId: number): void => {
 };
 
 const addJob = (): void => {
-  jobsStore.addJob();
-  // MODIFIED: Explicitly cast jobsStore.jobs to Job[] for Math.max argument
-  const newJobId: number = Math.max(...(jobsStore.jobs as Job[]).map((j: Job) => j.id)) + 1;
+  const newJobId = jobsStore.addJob();
   jobsStore.selectJob(newJobId);
   logInteraction("JobSelectorArea", `New job (ID: ${newJobId}) added and selected.`);
 };
@@ -424,7 +424,7 @@ const handleDragOver = (event: DragEvent): void => {
       const targetIdentifier = target.dataset.jobId ? Number(target.dataset.jobId) : "new-job";
       handleJobTabDragOver(event, targetIdentifier);
     } else {
-      handleJobTabDragLeave();
+      handleJobTabDragLeave(event);
     }
     return;
   }
@@ -447,9 +447,9 @@ const handleDragOver = (event: DragEvent): void => {
   }
 };
 
-const handleDragLeave = (): void => {
+const handleDragLeave = (event: DragEvent): void => {
   if (dragDropStore.isInternalDragActive) {
-    handleJobTabDragLeave();
+    handleJobTabDragLeave(event);
     return;
   }
   dragOverJobId.value = null;
@@ -463,12 +463,8 @@ const onDrop = (targetJobId: number | null): void => {
     return;
   }
 
-  // MODIFIED: Explicitly cast jobsStore.jobs to Job[] for findIndex
-  const fromIndex = (jobsStore.jobs as Job[]).findIndex((j: Job) => j.id === draggedJobId.value);
-  const toIndex =
-    targetJobId === null
-      ? (jobsStore.jobs as Job[]).length - 1
-      : (jobsStore.jobs as Job[]).findIndex((j: Job) => j.id === targetJobId);
+  const fromIndex = jobsStore.jobs.findIndex((j) => j.id === draggedJobId.value);
+  const toIndex = targetJobId === null ? jobsStore.jobs.length - 1 : jobsStore.jobs.findIndex((j) => j.id === targetJobId);
 
   if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
     jobsStore.moveJob(fromIndex, toIndex);
@@ -483,7 +479,6 @@ const onDragEnd = (): void => {
   logDragDropEvent("JobSelectorArea", `Job drag end.`);
   draggedJobId.value = null;
   dragOverJobId.value = null;
-  // Also clear internal file drag state if it hasn't been handled by a drop
   if (dragDropStore.isInternalDragActive) {
     dragDropStore.endInternalDrag();
   }
@@ -492,34 +487,56 @@ const onDragEnd = (): void => {
 const handleJobTabDragOver = (event: DragEvent, targetIdentifier: number | "new-job") => {
   if (dragDropStore.isInternalDragActive) {
     event.preventDefault();
-    event.dataTransfer!.dropEffect = "copy";
-
+    if (event.dataTransfer) {
+      // If dragging over the source job, indicate that it's not a valid drop target.
+      if (targetIdentifier === dragDropStore.internalDragSourceJobId) {
+        event.dataTransfer.dropEffect = "none";
+      } else {
+        event.dataTransfer.dropEffect = "copy";
+      }
+    }
+    // Only log and update state if the hovered job ID has changed
     if (hoveredJobId.value !== targetIdentifier) {
-      logDropZoneEvent("JobSelectorArea", `Job tab drag over: ${targetIdentifier}.`);
+      logDropZoneEvent("JobSelectorArea", `dragover: target changed from ${hoveredJobId.value} to ${targetIdentifier}`, {
+        eventTarget: event.target,
+      });
       hoveredJobId.value = targetIdentifier;
       dragHoverTargetJobId.value = targetIdentifier;
     }
   }
 };
 
-const handleJobTabDragLeave = () => {
+const handleJobTabDragLeave = (event: DragEvent) => {
   if (dragDropStore.isInternalDragActive) {
-    logDropZoneEvent("JobSelectorArea", `Job tab drag leave: ${hoveredJobId.value}.`);
-    hoveredJobId.value = null;
-    dragHoverTargetJobId.value = null;
+    const currentTarget = event.currentTarget as HTMLElement;
+    const relatedTarget = event.relatedTarget as HTMLElement | null;
+
+    // A leave event is valid if the mouse is moving to an element that is not a child of the current target.
+    if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+      logDropZoneEvent("JobSelectorArea", `dragleave: Left job tab: ${hoveredJobId.value}. Related target:`, {
+        relatedTarget: relatedTarget,
+      });
+      hoveredJobId.value = null;
+      dragHoverTargetJobId.value = null;
+    }
   }
 };
 
 const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job") => {
   event.preventDefault();
   event.stopPropagation();
+
+  // Prevent dropping onto the source job itself
+  if (targetIdentifier === dragDropStore.internalDragSourceJobId) {
+    logDragDropEvent("JobSelectorArea", `File drop prevented on source tab: ${targetIdentifier}.`);
+    dragDropStore.endInternalDrag();
+    return;
+  }
+
   logDragDropEvent("JobSelectorArea", `File drop detected on tab: ${targetIdentifier}.`);
 
-  // --- FIX ---
-  // Capture drag data from the store now, before dragend can clear it.
   pendingDropFilePaths.value = [...dragDropStore.internalDraggedFiles];
   pendingDropSourceJobId.value = dragDropStore.internalDragSourceJobId;
-  // ---
 
   hoveredJobId.value = null;
 
@@ -539,11 +556,8 @@ const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job"
 };
 
 const handleDragAction = (operation: "move" | "copy", targetIdentifier: number | "new-job") => {
-  // --- FIX ---
-  // Use the locally stored pending drop data instead of the global store
   const droppedFilePaths = pendingDropFilePaths.value;
   const sourceJobId = pendingDropSourceJobId.value;
-  // ---
 
   logInteraction(
     "JobSelectorArea",
@@ -556,10 +570,14 @@ const handleDragAction = (operation: "move" | "copy", targetIdentifier: number |
     return;
   }
 
-  // MODIFIED: Explicitly cast jobsStore.jobs to Job[] for findIndex
-  const filesToConfirm: FileItem[] =
-    (jobsStore.jobs as Job[]).find((j: Job) => j.id === sourceJobId)?.files.filter((f) => droppedFilePaths.includes(f.path)) ||
-    [];
+  const sourceJob = jobsStore.jobs.find((j) => j.id === sourceJobId);
+  if (!sourceJob) {
+    logInteraction("JobSelectorArea", `Drag action: Source job ${sourceJobId} not found. Aborting.`);
+    dragDropStore.endInternalDrag();
+    return;
+  }
+
+  const filesToConfirm: FileItem[] = sourceJob.files.filter((f) => droppedFilePaths.includes(f.path));
   const fileNames: string[] = filesToConfirm.map((f) => f.name);
 
   const onModalClose = (confirmed: boolean) => {
@@ -588,7 +606,6 @@ const handleDragAction = (operation: "move" | "copy", targetIdentifier: number |
     }
     logInteraction("JobSelectorArea", `File drag: ${operation} ${confirmed ? "confirmed" : "cancelled"}.`);
     dragDropStore.endInternalDrag();
-    // Clear the pending state
     pendingDropFilePaths.value = [];
     pendingDropSourceJobId.value = null;
   };
@@ -610,7 +627,12 @@ const handleDragAction = (operation: "move" | "copy", targetIdentifier: number |
     title,
     description: [description],
     buttons: [
-      { action: "proceed", text: "Move Items", theme: "primary", styleClass: "bordered-btn" },
+      {
+        action: "proceed",
+        text: operation === "move" ? "Move Items" : "Copy Items",
+        theme: operation === "move" ? "warning" : "primary",
+        styleClass: "bordered-btn",
+      },
       { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
     ],
     footerJustifyContent: "center",
@@ -632,6 +654,15 @@ const reorderJob = (index: number, direction: "left" | "right"): void => {
 };
 </script>
 
+<style>
+/* Global override to fix outline transition */
+.job-selector > .visual-style,
+.add-job-btn > .visual-style {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+</style>
+
 <style scoped>
 .job-selector-area {
   display: grid;
@@ -640,177 +671,207 @@ const reorderJob = (index: number, direction: "left" | "right"): void => {
   grid-template-columns: auto 1fr;
   grid-template-rows: 1fr;
   padding-inline: var(--pad-in);
+}
 
-  :deep(body.is-external-drag-over .os-viewport) {
-    pointer-events: none;
-  }
+.job-selector-area.internal-drag-active {
+  cursor: not-allowed;
+}
 
-  &:has(.job-selector-btn-wrapper:empty) {
-    grid-template-columns: auto auto;
-  }
+.job-selector-area.internal-drag-active :deep(.job-selector),
+.job-selector-area.internal-drag-active :deep(.add-job-btn) {
+  cursor: pointer;
+}
 
-  &:has(.job-selector-btn-wrapper:empty) {
-    grid-template-columns: 1fr;
-  }
+.job-selector-area.internal-drag-active :deep(.job-selector.active.drop-target-hover) {
+  cursor: not-allowed;
+}
 
-  .job-selector-btn-wrapper {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
+.job-selector-area.internal-drag-active :deep(button.job-selector *) {
+  pointer-events: none;
+}
 
-    .job-selector-btns-start {
-      display: flex;
-    }
+:deep(body.is-external-drag-over .os-viewport) {
+  pointer-events: none;
+}
 
-    .job-selector-btns-end {
-      display: flex;
-    }
+.job-selector-area:has(.job-selector-btn-wrapper:empty) {
+  grid-template-columns: auto auto;
+}
 
-    &:empty {
-      display: none;
-    }
-  }
+.job-selector-area:has(.job-selector-btn-wrapper:empty) {
+  grid-template-columns: 1fr;
+}
 
-  .add-job-btn {
-    --btn-pad-blok: 0;
-    --btn-pad-in: 0;
-    &.drop-target-hover {
-      background-color: hsla(145, 63%, 40%, 0.2);
-      border-color: hsla(145, 63%, 70%, 0.5);
-      box-shadow: 0 0 10px hsla(145, 63%, 70%, 0.5);
-    }
-  }
+.job-selector-btn-wrapper {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
 
-  .remove-all-jobs-btn {
-    --btn-pad-blok: 0;
-    --btn-pad-in: 0;
-  }
+.job-selector-btn-wrapper .job-selector-btns-start {
+  display: flex;
+}
 
-  .job-selector-list {
-    align-items: center;
-    display: inline-flex;
-    overflow-x: hidden;
-    overflow-y: auto;
+.job-selector-btn-wrapper .job-selector-btns-end {
+  display: flex;
+}
 
-    & > :deep(button.job-selector) {
-      --btn-line-thickness: 2px;
-      --line-orientation: horizontal;
-      --line-position: end;
+.job-selector-btn-wrapper:empty {
+  display: none;
+}
 
-      border-radius: var(--brdr-rad-smalr);
-      min-height: 50px;
-      min-width: fit-content;
-      padding: 0;
-      position: relative;
-      transition: opacity 0.2s ease-in-out;
+.add-job-btn {
+  --btn-pad-blok: 0;
+  --btn-pad-in: 0;
+}
 
-      &.is-dragged {
-        opacity: 0.4;
-      }
+.remove-all-jobs-btn {
+  --btn-pad-blok: 0;
+  --btn-pad-in: 0;
+}
 
-      &.drop-target-hover {
-        background-color: hsla(204, 100%, 40%, 0.2);
-        border-color: hsla(204, 100%, 70%, 0.5);
-        box-shadow: 0 0 10px hsla(204, 100%, 70%, 0.5);
-      }
+.job-selector-list {
+  align-items: center;
+  display: inline-flex;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
 
-      &.drag-over {
-        &::after {
-          background-color: hsla(var(--accent-hsl), 0.75);
-          block-size: 100%;
-          content: "";
-          inset-inline-start: -2px;
-          inline-size: 4px;
-          position: absolute;
-          z-index: 1;
-        }
-      }
+.job-selector-list > :deep(button.job-selector) {
+  --btn-line-thickness: 2px;
+  --line-orientation: horizontal;
+  --line-position: end;
+  border-radius: var(--brdr-rad-smalr);
+  min-height: 50px;
+  min-width: fit-content;
+  padding: 0;
+  position: relative;
+  transition: opacity 0.2s ease-in-out;
+}
 
-      > .visual-style,
-      &:before {
-        --visual-style-inset: 8px;
-      }
+.job-selector-list > :deep(button.job-selector.is-dragged) {
+  opacity: 0.4;
+}
 
-      > .visual-style {
-        transform-origin: bottom;
-      }
+/* --- Drag & Drop Hover Styles --- */
 
-      &.active {
-        > .visual-style {
-          background-color: var(--btn-bg-hvr-clr);
-          border-color: var(--btn-bg-hvr-clr);
-        }
-      }
+/* 1. Default state for all valid drop targets when a drag is active */
+.job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector:not(.active) > .visual-style),
+.job-selector-area.internal-drag-active :deep(.add-job-btn .visual-style) {
+  opacity: 1 !important; /* Override default transparency for non-active/trans-btns */
+  outline-color: hsla(0, 0%, 70%, 0.7);
+  box-shadow: none;
+  transition: all 0.2s ease-in-out;
+}
 
-      &:hover > .button-content .job-sel-options .dropdown-menu,
-      > .button-content .job-sel-options .dropdown-menu.active {
-        > button.options-btn {
-          opacity: 1;
-        }
-      }
+/* 2. Highlight the specific target being hovered over */
+.job-selector-area.internal-drag-active
+  :deep(.job-selector-list button.job-selector.drop-target-hover:not(.active) > .visual-style),
+.job-selector-area.internal-drag-active :deep(.add-job-btn.drop-target-hover .visual-style) {
+  outline-color: hsla(204, 100%, 70%, 0.7); /* Blue outline */
+  box-shadow: 0 0 12px 3px hsla(204, 100%, 70%, 0.4); /* Blue glow */
+}
 
-      > .button-content {
-        column-gap: 8px;
-        display: grid;
-        grid-row: 1;
-        grid-template-areas: "job-sel-icon job-sel-info job-sel-options";
-        grid-template-columns: auto 1fr auto;
-        grid-template-rows: auto;
-        padding-inline-end: var(--pad-in);
-        padding-inline-start: calc(var(--pad-in) * 1.5);
+/* 3. Style for the source job (active tab), indicating it's not a valid drop target */
+.job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector.active.drop-target-hover > .visual-style) {
+  opacity: 1 !important;
+  outline-color: transparent; /* Effectively hsla(..., 0) */
+  box-shadow: none; /* No glow */
+}
 
-        .job-sel-icon {
-          align-items: center;
-          display: flex;
-          grid-area: job-sel-icon;
-          justify-content: center;
-          width: 24px;
-        }
+/*
+ * FIX for flickering:
+ * When dragging over the button, make all of its children (icons, text)
+ * ignore pointer events. This ensures that the 'dragover' event is
+ * consistently registered on the button itself, not its children,
+ * preventing the 'drop-target-hover' class from toggling rapidly.
+*/
+.job-selector-list > :deep(button.job-selector.drop-target-hover *) {
+  pointer-events: none;
+}
 
-        .job-info {
-          align-items: start;
-          display: flex;
-          flex-direction: column;
-          grid-area: job-sel-info;
-          justify-content: center;
-          white-space: nowrap;
+.job-selector-list > :deep(button.job-selector.drag-over::after) {
+  background-color: hsla(var(--accent-hsl), 0.75);
+  block-size: 100%;
+  content: "";
+  inset-inline-start: -2px;
+  inline-size: 4px;
+  position: absolute;
+  z-index: 1;
+}
 
-          .job-sel-title {
-            line-height: 1;
-            white-space: nowrap;
-          }
+.job-selector-list > :deep(button.job-selector > .visual-style),
+.job-selector-list > :deep(button.job-selector:before) {
+  --visual-style-inset: 8px;
+}
 
-          .job-sel-num-files {
-            font-size: 0.8rem;
-            line-height: 1;
-            white-space: nowrap;
-          }
-        }
+.job-selector-list > :deep(button.job-selector > .visual-style) {
+  transform-origin: bottom;
+}
 
-        .job-sel-options {
-          align-items: center;
-          grid-area: job-sel-options;
-          justify-content: center;
-          line-height: 0;
-          padding: 0;
-          white-space: nowrap;
+.job-selector-list > :deep(button.job-selector.active > .visual-style) {
+  background-color: var(--btn-bg-hvr-clr);
+  border-color: var(--btn-bg-hvr-clr);
+}
 
-          .dropdown-menu {
-            &:deep(button.options-btn) {
-              opacity: 0;
-            }
-          }
+.job-selector-list > :deep(button.job-selector:hover > .button-content .job-sel-options .dropdown-menu > button.options-btn),
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu.active > button.options-btn) {
+  opacity: 1;
+}
 
-          &:deep(.dropdown-menu) {
-            .custom-button {
-              &:deep(.visual-style) {
-                --btn-bg-hvr-clr: var(--btn-bg-hvr-clr-liter);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+.job-selector-list > :deep(button.job-selector > .button-content) {
+  column-gap: 8px;
+  display: grid;
+  grid-row: 1;
+  grid-template-areas: "job-sel-icon job-sel-info job-sel-options";
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto;
+  padding-inline-end: var(--pad-in);
+  padding-inline-start: calc(var(--pad-in) * 1.5);
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-icon) {
+  align-items: center;
+  display: flex;
+  grid-area: job-sel-icon;
+  justify-content: center;
+  width: 24px;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-info) {
+  align-items: start;
+  display: flex;
+  flex-direction: column;
+  grid-area: job-sel-info;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-info .job-sel-title) {
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-info .job-sel-num-files) {
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-options) {
+  align-items: center;
+  grid-area: job-sel-options;
+  justify-content: center;
+  line-height: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu > button.options-btn) {
+  opacity: 0;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu .custom-button .visual-style) {
+  --btn-bg-hvr-clr: var(--btn-bg-hvr-clr-liter);
 }
 </style>

@@ -163,6 +163,7 @@
           }"
           :data-path="file.path"
           data-has-context-menu="true"
+          @click="clickRowByPath($event, file.path)"
           @contextmenu.prevent="showFileContextMenu(file, $event)"
         >
           <td class="item-checkbox">
@@ -533,11 +534,18 @@ const handleDragStart = (event: DragEvent, path: string) => {
 };
 
 const handleDragEnd = () => {
-  // FIX: Do NOT end the drag here. The drop target component (`JobSelectorArea`) is now
-  // responsible for ending the drag after an action is chosen from the dropdown menu.
-  // This prevents the drag state from being cleared prematurely.
-  // dragDropStore.endInternalDrag();
   logDragDropEvent("FileTable", "Native drag ended.");
+  // FIX: This is a failsafe. The `drop` event on the target fires *before* `dragend` on the source.
+  // We use a timeout to push this check to the end of the event queue. If a valid drop target
+  // has handled the drop, `isInternalDragActive` will be false by the time this runs.
+  // If the drop was on an invalid target (or cancelled), the state will still be active,
+  // and this will correctly clean it up.
+  setTimeout(() => {
+    if (dragDropStore.isInternalDragActive) {
+      logDragDropEvent("FileTable", "Drag ended on an invalid target. Cleaning up state.");
+      dragDropStore.endInternalDrag();
+    }
+  }, 50);
 };
 
 const removeSelectedFiles = (): void => {
@@ -565,7 +573,7 @@ const removeFile = (path: string): void => {
 };
 
 const moveFile = (targetJobId: number, path: string): void => {
-  emit("move-files", { targetJobId, rightClickedPath: path });
+  emit("move-files", { targetJobId, files: [path], rightClickedPath: path });
 };
 
 const moveFileToNewJob = (path: string): void => {
@@ -573,7 +581,7 @@ const moveFileToNewJob = (path: string): void => {
 };
 
 const copyFile = (targetJobId: number, path: string): void => {
-  emit("copy-files", { targetJobId, rightClickedPath: path });
+  emit("copy-files", { targetJobId, files: [path], rightClickedPath: path });
 };
 
 const copyFileToNewJob = (path: string): void => {
