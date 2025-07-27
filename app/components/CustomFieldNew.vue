@@ -170,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineEmits, defineProps, onMounted, ref, withDefaults } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logButtonPress, logButtonRelease, logInteraction } from "@/utils/loggers";
 

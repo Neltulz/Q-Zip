@@ -32,9 +32,6 @@ dependencies:
   '@pinia/nuxt':
     specifier: ^0.11.0
     version: 0.11.2(pinia@3.0.3)
-  '@tauri-apps/api':
-    specifier: ^2.6.0
-    version: 2.7.0
   '@tauri-apps/plugin-dialog':
     specifier: ^2.2.2
     version: 2.3.1
@@ -79,8 +76,11 @@ dependencies:
     version: 4.5.1(vue@3.5.18)
 
 devDependencies:
+  '@tauri-apps/api':
+    specifier: ^2.7.0
+    version: 2.7.0
   '@tauri-apps/cli':
-    specifier: ^2.6.0
+    specifier: ^2.7.1
     version: 2.7.1
   '@types/node':
     specifier: ^22.15.29
@@ -3508,7 +3508,6 @@ packages:
 
   /@tauri-apps/api@2.7.0:
     resolution: {integrity: sha512-v7fVE8jqBl8xJFOcBafDzXFc8FnicoH3j8o8DNNs0tHuEBmXUDqrCOAzMRX0UkfpwqZLqvrvK0GNQ45DfnoVDg==}
-    dev: false
 
   /@tauri-apps/cli-darwin-arm64@2.7.1:
     resolution: {integrity: sha512-j2NXQN6+08G03xYiyKDKqbCV2Txt+hUKg0a8hYr92AmoCU8fgCjHyva/p16lGFGUG3P2Yu0xiNe1hXL9ZuRMzA==}
