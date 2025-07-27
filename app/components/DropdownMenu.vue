@@ -49,13 +49,6 @@
     </template>
 
     <teleport to="body">
-      <!--
-        FIX: Replaced `v-if` with `v-show`.
-        `v-if` was destroying the component (and its children) on close, causing icons to reload.
-        `v-show` keeps the component in the DOM and simply toggles its `display` style,
-        preserving the state of the child components and preventing the icon flicker.
-        A `v-if="hasSlotContent"` wrapper is added to avoid rendering an empty div if there's no slot content.
-      -->
       <template v-if="hasSlotContent">
         <div
           v-show="isOpen"

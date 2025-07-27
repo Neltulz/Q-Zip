@@ -129,8 +129,7 @@
         </DropdownMenu>
       </template>
     </ToolBar>
-    <div v-if="files.length <= 0" class="no-files-message">No files added yet.</div>
-    <table v-else ref="fileTable" class="file-table">
+    <table v-if="files.length > 0" ref="fileTable" class="file-table">
       <thead>
         <tr>
           <th class="item-checkbox">

@@ -1,15 +1,8 @@
 <!-- components/DropZone.vue @preserve -->
 <template>
-  <div class="drop-zone" :data-job-id="jobId" data-component-name="DropZone">
-    <div class="drop-zone-inner">
-      <div class="drop-files-wrapper">
-        <Icon name="mdi:folder-arrow-down" size="24" /><span class="drop-files-text"
-          >Drop<span class="extended-text"> files/folders here</span></span
-        >
-      </div>
-
-      <div class="or-text">- or -</div>
-
+  <div class="drop-zone-wrapper" :data-job-id="jobId" data-component-name="DropZone">
+    <div class="drop-zone">
+      <div class="prompt-message">Add Files/Folders</div>
       <DropdownMenu
         first-icon-name="mdi:add"
         :first-icon-size="20"
@@ -78,63 +71,45 @@ const handleAddFolder = async (close: () => void): Promise<void> => {
 </script>
 
 <style scoped>
-.drop-zone {
-  align-items: center;
+.drop-zone-wrapper {
+  /* This element is the container for the container query. */
   container-type: size;
+  container-name: dropzone-wrapper;
+
+  /* This ensures the wrapper fills its grid cell and centers its content. */
   display: flex;
+  align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
   min-height: 40px;
+}
 
-  .drop-zone-inner {
-    align-items: center;
-    border: 2px dashed var(--brdr-clr);
-    border-radius: 15px;
-    display: flex;
-    flex-direction: column;
-    height: 50%;
-    justify-content: center;
-    max-height: 150px;
-    max-width: 500px;
-    min-height: 40px;
-    min-width: 250px;
-    padding-inline: var(--pad-in);
-    row-gap: var(--pad-blok);
-    width: 50%;
+.drop-zone {
+  /* This is the element that gets styled based on the wrapper's size. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding-block: 1rem;
 
-    .drop-files-wrapper {
-      column-gap: var(--pad-in);
-      display: flex;
-      font-size: 16px;
-    }
+  /* Default to a vertical layout (text above button). */
+  flex-direction: column;
+}
 
-    .or-text {
-      line-height: 1;
-      padding-block-end: calc(var(--pad-blok) / 2);
-    }
-  }
+.prompt-message {
+  font-size: 1.25rem;
+  color: var(--fg-clr-mute);
+  text-align: center;
+}
 
-  @container (height <= 250px) {
-    .drop-zone-inner {
-      column-gap: var(--pad-in);
-      flex-direction: row;
-      justify-content: center;
-    }
-  }
-
-  @container (width <= 800px) {
-    .drop-zone-inner {
-      .extended-text {
-        display: none;
-      }
-    }
-  }
-
-  @container (width <= 600px) {
-    .drop-zone-inner {
-      max-width: none;
-      min-width: auto;
-      width: 100%;
-    }
+/* When the WRAPPER's height is less than 90px, switch the INNER element
+  to a horizontal layout. This happens when the file table grows,
+  leaving less space for the dropzone.
+*/
+@container dropzone-wrapper (height < 90px) {
+  .drop-zone {
+    flex-direction: row;
   }
 }
 </style>

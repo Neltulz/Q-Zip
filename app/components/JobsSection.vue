@@ -1,12 +1,7 @@
 <!-- components/JobsSection.vue @preserve -->
 <!--
   Description:
-  This component is a container for the JobSelectorArea and JobArea. It passes
-  the `isExternalDragOver` state from the `dragDropStore` to `JobArea`, connecting
-  the global state to the component that handles the UI and events. Added logging
-  to debug `isExternalDragOver` state changes for drag-and-drop troubleshooting.
-  The @dragover.prevent and @drop.prevent handlers are added to ensure the OS
-  recognizes this entire section as a valid drop target.
+  This component is a container for the JobSelectorArea and JobArea.
 
   Usage Example:
   This component is used within a page layout to structure the main job
@@ -19,32 +14,18 @@
     :class="{
       'vertical-job-selector-list': uiStore.jobSelectorOrientation === 'vertical',
     }"
-    @dragover.prevent
-    @drop.prevent
   >
     <JobSelectorArea />
-    <JobArea :is-external-drag-over="isExternalDragOver" />
+    <JobArea />
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from "vue";
 import { useUiStore } from "@/stores/uiStore";
-import { useDragDropStore } from "@/stores/dragDropStore";
-import { logDragDropEvent } from "@/utils/loggers";
+import JobArea from "./JobArea.vue";
+import JobSelectorArea from "./JobSelectorArea.vue";
 
 const uiStore = useUiStore();
-const dragDropStore = useDragDropStore();
-const isExternalDragOver = computed(() => dragDropStore.isExternalDragOver);
-
-// Debug isExternalDragOver state changes
-watch(
-  isExternalDragOver,
-  (newValue) => {
-    logDragDropEvent("JobsSection", `isExternalDragOver prop changed to: ${newValue}`);
-  },
-  { immediate: true }
-);
 </script>
 
 <style scoped>

@@ -2,7 +2,7 @@
 <!--
   Description:
   This component displays the active job's files and manages the job area's
-  state, including external drag-and-drop and internal drag-to-select.
+  state, including internal drag-to-select.
   It now tracks an 'active' state, adding an 'is-active' class when the user
   clicks within the component. This state is used to show a visual border
   around the content area. Includes enhanced logging to debug active state changes.
@@ -15,64 +15,8 @@
     :class="{ 'is-active': isJobAreaActive }"
     data-component-name="JobArea"
     @mousedown="handleMouseDown"
-    @dragover.prevent="handleDragOver"
-    @drop.prevent="handleExternalDrop"
   >
     <div v-if="selectionBox.visible" class="selection-box" :style="selectionBoxStyle" />
-
-    <div
-      class="external-drag-overlay"
-      :class="{ 'has-active-target': activeDropZone !== null, 'has-error': dropError }"
-      :data-is-external-drag-over="isExternalDragOver"
-      :style="externalOverlayStyle"
-    >
-      <div v-if="dropError" class="drop-error-message">
-        <Icon name="mdi:alert-circle-outline" size="48" />
-        <span>{{ dropError }}</span>
-      </div>
-
-      <template v-else>
-        <div
-          ref="newJobDropZone"
-          class="external-drop-zone new-job"
-          :class="{ 'drop-target-active': activeDropZone === 'new' }"
-          data-zone-type="new"
-        >
-          <div class="drop-zone-visual">
-            <div class="drop-zone-content">
-              <Icon name="mdi:package-variant-plus" size="32" />
-              <span>Add to New Job</span>
-            </div>
-          </div>
-        </div>
-        <div
-          ref="currentJobDropZone"
-          class="external-drop-zone current-job"
-          :class="{ 'drop-target-active': activeDropZone === 'current' }"
-          data-zone-type="current"
-        >
-          <div class="drop-zone-visual">
-            <div class="drop-zone-content">
-              <Icon name="mdi:application-import" size="32" />
-              <span>Add to Current Job</span>
-            </div>
-          </div>
-        </div>
-        <div
-          ref="separateJobsDropZone"
-          class="external-drop-zone separate-jobs"
-          :class="{ 'drop-target-active': activeDropZone === 'separate' }"
-          data-zone-type="separate"
-        >
-          <div class="drop-zone-visual">
-            <div class="drop-zone-content">
-              <Icon name="mdi:file-multiple-outline" size="32" />
-              <span>Add to Separate Jobs</span>
-            </div>
-          </div>
-        </div>
-      </template>
-    </div>
 
     <transition name="job-fade">
       <div v-if="activeJob" :key="activeJob.id" class="job">
@@ -103,21 +47,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref, watch, type CSSProperties } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useModalsStore } from "@/stores/modalsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
 import type { ModalOptions } from "@/types/modal";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-import { logDragDropEvent, logDropZoneEvent, logSelectionChange, logInteraction, logFailsafe } from "@/utils/loggers";
+import { logSelectionChange, logInteraction, logFailsafe } from "@/utils/loggers";
 import FileTable from "@/components/FileTable.vue";
 import DropZone from "@/components/DropZone.vue";
 import type { FileItem } from "@/types/types";
-
-interface FileWithTauriPath extends File {
-  readonly path: string;
-}
 
 type FileOperationPayload = {
   targetJobId: number;
@@ -129,10 +69,6 @@ type ContextMenuFileOperationPayload = {
   rightClickedPath: string;
 };
 
-defineProps<{
-  isExternalDragOver: boolean;
-}>();
-
 const jobsStore = useJobsStore();
 const modalsStore = useModalsStore();
 const dragDropStore = useDragDropStore();
@@ -140,13 +76,8 @@ const clipboardStore = useClipboardStore();
 
 const fileTableRef = ref<InstanceType<typeof FileTable> | null>(null);
 const jobAreaRef = ref<HTMLElement | null>(null);
-const currentJobDropZone = ref<HTMLElement | null>(null);
-const newJobDropZone = ref<HTMLElement | null>(null);
-const separateJobsDropZone = ref<HTMLElement | null>(null);
 const selectedFilePaths = ref<string[]>([]);
 const isDragSelecting = ref<boolean>(false);
-const activeDropZone = ref<"current" | "new" | "separate" | null>(null);
-const dropError = ref<string | null>(null);
 const isJobAreaActive = ref<boolean>(false);
 
 const mouseMoved = ref<boolean>(false);
@@ -166,113 +97,9 @@ const selectionBoxStyle = computed(() => ({
   height: `${selectionBox.height}px`,
 }));
 
-const externalOverlayStyle = computed(
-  (): CSSProperties => ({
-    opacity: dragDropStore.isExternalDragOver ? 1 : 0,
-    pointerEvents: dragDropStore.isExternalDragOver ? "auto" : "none",
-  })
-);
-
 const activeJob = computed(() => {
   return jobsStore.jobs.find((job: Job) => job.id === jobsStore.selectedJobId);
 });
-
-const handleWindowDragEnter = (event: DragEvent) => {
-  event.preventDefault();
-  if (!dragDropStore.isInternalDragActive && event.dataTransfer?.types.includes("Files")) {
-    logDragDropEvent("JobArea", "External drag entered window.");
-    dragDropStore.setExternalDragOver(true);
-  }
-};
-
-const handleWindowDragLeave = (event: DragEvent) => {
-  if (event.relatedTarget === null) {
-    logDragDropEvent("JobArea", "External drag left window.");
-    dragDropStore.setExternalDragOver(false);
-    activeDropZone.value = null;
-  }
-};
-
-const handleDragOver = (event: DragEvent) => {
-  event.preventDefault();
-  if (!dragDropStore.isExternalDragOver) return;
-
-  event.dataTransfer!.dropEffect = "copy";
-  const position = { x: event.clientX, y: event.clientY };
-
-  if (isWithinBounds(currentJobDropZone.value, position)) {
-    if (activeDropZone.value !== "current") {
-      logDropZoneEvent("JobArea", "Hovering 'current job' drop zone");
-      activeDropZone.value = "current";
-    }
-  } else if (isWithinBounds(newJobDropZone.value, position)) {
-    if (activeDropZone.value !== "new") {
-      logDropZoneEvent("JobArea", "Hovering 'new job' drop zone");
-      activeDropZone.value = "new";
-    }
-  } else if (isWithinBounds(separateJobsDropZone.value, position)) {
-    if (activeDropZone.value !== "separate") {
-      logDropZoneEvent("JobArea", "Hovering 'separate jobs' drop zone");
-      activeDropZone.value = "separate";
-    }
-  } else if (activeDropZone.value !== null) {
-    logDropZoneEvent("JobArea", "Left all drop zones");
-    activeDropZone.value = null;
-  }
-};
-
-const handleExternalDrop = async (event: DragEvent): Promise<void> => {
-  event.preventDefault();
-  if (!dragDropStore.isExternalDragOver) return;
-
-  logDragDropEvent("JobArea", `External drop event fired.`);
-  dragDropStore.setExternalDragOver(false);
-
-  const files = event.dataTransfer?.files;
-  const paths = files ? Array.from(files).map((file) => (file as FileWithTauriPath).path || file.name) : [];
-
-  if (!paths || paths.length === 0 || paths.every((p) => !p)) {
-    logFailsafe("JobArea", "Drop event received with no valid file paths. Aborting.", { files });
-    dropError.value = "Cannot drop files from archives. Please extract them first.";
-    activeDropZone.value = null;
-
-    setTimeout(() => {
-      dropError.value = null;
-    }, 3000);
-    return;
-  }
-
-  logDragDropEvent("JobArea", `Paths from drop: ${paths.length}`, paths);
-
-  const dropTarget = activeDropZone.value;
-
-  try {
-    if (dropTarget === "current") {
-      if (activeJob.value) {
-        logDropZoneEvent("JobArea", `Attempting to add ${paths.length} files to current job (ID: ${activeJob.value.id})`);
-        const addedCount = await jobsStore.addFilesToJob(activeJob.value.id, paths);
-        logDropZoneEvent("JobArea", `Successfully added ${addedCount} files to current job (ID: ${activeJob.value.id})`);
-      } else {
-        logFailsafe("JobArea", "No active job available for drop in 'current' zone");
-      }
-    } else if (dropTarget === "new") {
-      logDropZoneEvent("JobArea", `Attempting to create new job and add ${paths.length} files`);
-      const newJobId: number = jobsStore.addJob();
-      const addedCount = await jobsStore.addFilesToJob(newJobId, paths);
-      jobsStore.selectJob(newJobId);
-      logDropZoneEvent("JobArea", `Successfully created new job (ID: ${newJobId}) and added ${addedCount} files`);
-    } else if (dropTarget === "separate") {
-      logDropZoneEvent("JobArea", `Confirming creation of ${paths.length} separate jobs.`);
-      confirmCreateSeparateJobs(paths);
-    } else {
-      logDragDropEvent("JobArea", "External drop occurred but not on a valid drop zone.");
-    }
-  } catch (error: unknown) {
-    logFailsafe("JobArea", `Error during drop operation: ${error instanceof Error ? error.message : String(error)}`, error);
-  }
-
-  activeDropZone.value = null;
-};
 
 const handleWindowClick = (event: MouseEvent) => {
   if (!jobAreaRef.value) {
@@ -431,17 +258,11 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 onMounted(async () => {
-  window.addEventListener("dragenter", handleWindowDragEnter);
-  window.addEventListener("dragleave", handleWindowDragLeave);
-
   window.addEventListener("mousedown", handleWindowClick);
   window.addEventListener("keydown", handleKeyDown);
 });
 
 onUnmounted(() => {
-  window.removeEventListener("dragenter", handleWindowDragEnter);
-  window.removeEventListener("dragleave", handleWindowDragLeave);
-
   window.removeEventListener("mousedown", handleWindowClick);
   window.removeEventListener("keydown", handleKeyDown);
 });
@@ -579,34 +400,6 @@ const handleMouseUp = (event: MouseEvent): void => {
   }
   selectionBox.visible = false;
   isDragSelecting.value = false;
-};
-
-const isWithinBounds = (el: HTMLElement | null, pos: { x: number; y: number }): boolean => {
-  if (!el) return false;
-  const rect = el.getBoundingClientRect();
-  return pos.x > rect.left && pos.x < rect.right && pos.y > rect.top && pos.y < rect.bottom;
-};
-
-const confirmCreateSeparateJobs = (paths: string[]): void => {
-  const modalOptions: ModalOptions = {
-    icon: "mdi:file-multiple-outline",
-    title: "Create Separate Jobs",
-    description: [
-      `You are about to create <strong>${paths.length}</strong> new job(s), one for each of the dropped items.`,
-      `Do you want to proceed?`,
-    ],
-    buttons: [
-      { action: "proceed", text: `Create ${paths.length} Jobs`, theme: "primary", styleClass: "bordered-btn" },
-      { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
-    ],
-    footerJustifyContent: "center",
-  };
-
-  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { description: modalOptions.description }, (action) => {
-    if (action === "proceed") {
-      jobsStore.createJobsFromPaths(paths);
-    }
-  });
 };
 
 const getPathsForAction = (payload: string | string[]): string[] => {
