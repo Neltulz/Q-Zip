@@ -1,0 +1,209 @@
+/* Global override to fix outline transition */
+:global(.job-selector > .visual-style),
+:global(.add-job-btn > .visual-style) {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.job-selector-area {
+  display: grid;
+  grid-column: 1;
+  grid-row: 1;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr;
+  padding-inline: var(--pad-in);
+}
+
+.job-selector-area.internal-drag-active {
+  cursor: not-allowed;
+}
+
+.job-selector-area.internal-drag-active :deep(.job-selector),
+.job-selector-area.internal-drag-active :deep(.add-job-btn) {
+  cursor: pointer;
+}
+
+.job-selector-area.internal-drag-active :deep(.job-selector.active.drop-target-hover) {
+  cursor: not-allowed;
+}
+
+.job-selector-area.internal-drag-active :deep(button.job-selector *) {
+  pointer-events: none;
+}
+
+:deep(body.is-external-drag-over .os-viewport) {
+  pointer-events: none;
+}
+
+.job-selector-area:has(.job-selector-btn-wrapper:empty) {
+  grid-template-columns: auto auto;
+}
+
+.job-selector-area:has(.job-selector-btn-wrapper:empty) {
+  grid-template-columns: 1fr;
+}
+
+.job-selector-btn-wrapper {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.job-selector-btn-wrapper .job-selector-btns-start {
+  display: flex;
+}
+
+.job-selector-btn-wrapper .job-selector-btns-end {
+  display: flex;
+}
+
+.job-selector-btn-wrapper:empty {
+  display: none;
+}
+
+.add-job-btn {
+  --btn-pad-blok: 0;
+  --btn-pad-in: 0;
+}
+
+.remove-all-jobs-btn {
+  --btn-pad-blok: 0;
+  --btn-pad-in: 0;
+}
+
+.job-selector-list {
+  align-items: center;
+  display: inline-flex;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.job-selector-list > :deep(button.job-selector) {
+  --btn-line-thickness: 2px;
+  --line-orientation: horizontal;
+  --line-position: end;
+  border-radius: var(--brdr-rad-smalr);
+  min-height: 50px;
+  min-width: fit-content;
+  padding: 0;
+  position: relative;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.job-selector-list > :deep(button.job-selector.is-dragged) {
+  opacity: 0.4;
+}
+
+/* --- Drag & Drop Hover Styles --- */
+.job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector:not(.active) > .visual-style),
+.job-selector-area.internal-drag-active :deep(.add-job-btn .visual-style) {
+  opacity: 1 !important;
+  outline-color: hsla(0, 0%, 70%, 0.7);
+  box-shadow: none;
+  transition: all 0.2s ease-in-out;
+}
+
+/* --- FIX START --- */
+.job-selector-area.internal-drag-active
+  :deep(.job-selector-list button.job-selector.drop-target-hover:not(.active) > .visual-style),
+.job-selector-area.internal-drag-active :deep(.add-job-btn.drop-target-hover .visual-style) {
+  /* "Goldilocks" value: less bright but still highly visible. */
+  outline-color: hsla(204, 80%, 60%, 0.85);
+  box-shadow: 0 0 12px 3px hsla(204, 80%, 60%, 0.4);
+}
+/* --- FIX END --- */
+
+.job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector.active.drop-target-hover > .visual-style) {
+  opacity: 1 !important;
+  outline-color: transparent;
+  box-shadow: none;
+}
+
+.job-selector-list > :deep(button.job-selector.drop-target-hover *) {
+  pointer-events: none;
+}
+
+.job-selector-list > :deep(button.job-selector.drag-over::after) {
+  background-color: hsla(var(--accent-hsl), 0.75);
+  block-size: 100%;
+  content: "";
+  inset-inline-start: -2px;
+  inline-size: 4px;
+  position: absolute;
+  z-index: 1;
+}
+
+.job-selector-list > :deep(button.job-selector > .visual-style),
+.job-selector-list > :deep(button.job-selector:before) {
+  --visual-style-inset: 8px;
+}
+
+.job-selector-list > :deep(button.job-selector > .visual-style) {
+  transform-origin: bottom;
+}
+
+.job-selector-list > :deep(button.job-selector.active > .visual-style) {
+  background-color: var(--btn-bg-hvr-clr);
+  border-color: var(--btn-bg-hvr-clr);
+}
+
+.job-selector-list > :deep(button.job-selector:hover > .button-content .job-sel-options .dropdown-menu > button.options-btn),
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu.active > button.options-btn) {
+  opacity: 1;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content) {
+  column-gap: 8px;
+  display: grid;
+  grid-row: 1;
+  grid-template-areas: "job-sel-icon job-sel-info job-sel-options";
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto;
+  padding-inline-end: var(--pad-in);
+  padding-inline-start: calc(var(--pad-in) * 1.5);
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-icon) {
+  align-items: center;
+  display: flex;
+  grid-area: job-sel-icon;
+  justify-content: center;
+  width: 24px;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-info) {
+  align-items: start;
+  display: flex;
+  flex-direction: column;
+  grid-area: job-sel-info;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-info .job-sel-title) {
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-info .job-sel-num-files) {
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-options) {
+  align-items: center;
+  grid-area: job-sel-options;
+  justify-content: center;
+  line-height: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu > button.options-btn) {
+  opacity: 0;
+}
+
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu .custom-button .visual-style) {
+  --btn-bg-hvr-clr: var(--btn-bg-hvr-clr-liter);
+}

@@ -4,27 +4,8 @@
 <!--
   Description:
   A reusable button component with optional icons, customizable via props.
-  It prevents content layout shift (CLS) from icon loading by using
-  fixed-size placeholders. It logs a warning if an icon is used
-  without an explicit size prop to encourage best practices. All styles,
-  both global variables and scoped rules, are externalized into separate
-  CSS files for better organization. Color values use hsla() and include
-  distinct variables for normal, hover, and active states. It also
-  prevents the default browser context menu from appearing on right-click.
-  Interaction logging for press/release is now handled by the `v-flash-on-click` directive.
-
-  Usage Example:
-  <CustomButton
-    btn-theme="primary"
-    button-style-class="bordered-btn"
-    data-name="add-item-button"
-    first-icon-name="mdi:plus"
-    :first-icon-size="24"
-    justify="center"
-    @click="handleClick"
-  >
-    Add Item
-  </CustomButton>
+  The anchor-name prop has been removed as it is no longer needed for the
+  notification system.
 -->
 <!-- #endregion -->
 

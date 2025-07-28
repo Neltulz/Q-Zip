@@ -52,4 +52,7 @@ export const debugConfig = {
 
   // Logs when a drag-and-drop operation is canceled by a failsafe.
   logDragDropFailsafe: true,
+
+  // Logs events related to the notification system.
+  logNotifications: true,
 };

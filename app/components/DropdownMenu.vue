@@ -30,9 +30,10 @@
     :data-dropdown-name="props.dropdownDataName"
   >
     <template v-if="!props.hideTrigger">
+      <!-- --- FIX: The :class binding now checks isOpenedByClick --- -->
       <CustomButton
         :btn-theme="props.btnTheme"
-        :class="{ active: isOpen }"
+        :class="{ active: isOpen && isOpenedByClick }"
         :button-style-class="customButtonStyles"
         :data-name="'options-btn-for-' + props.dropdownDataName"
         :disabled="props.disabled"
@@ -71,18 +72,7 @@
 
 <!-- #region script -->
 <script setup lang="ts">
-import {
-  computed,
-  nextTick,
-  onMounted,
-  onUnmounted,
-  ref,
-  useSlots,
-  watch,
-  type CSSProperties,
-  type PropType,
-  type Ref,
-} from "vue";
+import { computed, nextTick, onUnmounted, ref, useSlots, watch, type CSSProperties, type PropType, type Ref } from "vue";
 import { useDropdownManager, type Dropdown } from "@/composables/dropdownManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logInteraction, logTrace } from "@/utils/loggers";
@@ -146,15 +136,9 @@ const props = defineProps({
   },
 });
 
-// Use a Set to ensure class names are unique.
 const customButtonStyles = computed(() => {
-  // Split the incoming classes from the prop string into an array.
   const classes = new Set(props.buttonStyleClass ? props.buttonStyleClass.split(" ") : []);
-
-  // Add the 'options-btn' class. The Set will automatically prevent duplicates.
   classes.add("options-btn");
-
-  // Join the unique classes back into a single string.
   return Array.from(classes).filter(Boolean).join(" ");
 });
 
@@ -167,6 +151,8 @@ const dropdownContent: Ref<HTMLElement | null> = ref(null);
 const dropdownId: symbol = Symbol("dropdown");
 const openTimeoutId: Ref<number | null> = ref(null);
 const dropdownMenuRef = ref<HTMLDivElement | null>(null);
+
+const isOpenedByClick: Ref<boolean> = ref(false);
 
 const actualPlacement: Ref<Placement> = ref(props.placement);
 const dropdownTop: Ref<string> = ref("-9999px");
@@ -182,12 +168,11 @@ const dropdownContentStyle = computed(
 
 const transitionClass = computed((): string => {
   const [direction] = actualPlacement.value.split("-");
-  return `placement-${direction}`; // e.g., 'placement-top'
+  return `placement-${direction}`;
 });
 
 const adjustDropdownPosition = async (): Promise<void> => {
   await nextTick();
-
   const dropdownEl = dropdownContent.value;
   if (!dropdownEl) return;
 
@@ -195,11 +180,9 @@ const adjustDropdownPosition = async (): Promise<void> => {
   const isContextMenu = contextMenuCoords.value !== null;
 
   if (isContextMenu) {
-    // For context menus, the anchor is the cursor position.
     const { x, y } = contextMenuCoords.value!;
     anchorRect = new DOMRect(x, y, 0, 0);
   } else {
-    // For regular dropdowns, the anchor is the button.
     const buttonEl = document.querySelector(`[data-name='options-btn-for-${props.dropdownDataName}']`);
     const anchorEl = buttonEl?.querySelector(".visual-style");
     if (!buttonEl || !anchorEl) return;
@@ -209,13 +192,11 @@ const adjustDropdownPosition = async (): Promise<void> => {
   const dropdownRect = dropdownEl.getBoundingClientRect();
   const viewHeight = window.innerHeight;
   const viewWidth = window.innerWidth;
-  const margin = 8; // Keep for collision detection
-  const gap = 2; // 2px gap between button and dropdown content
+  const margin = 8;
+  const gap = 2;
 
-  // Get the computed padding from the dropdown content element
   const computedDropdownStyle: CSSStyleDeclaration = getComputedStyle(dropdownEl);
   const dropdownPaddingPx: number = parseFloat(computedDropdownStyle.getPropertyValue("--dropdown-pad") || "0");
-  // Get the computed border width from the dropdown content element
   const dropdownBorderWidthPx: number = parseFloat(computedDropdownStyle.getPropertyValue("--dropdown-border-width") || "0");
 
   let visualStyleInsetPx = 0;
@@ -234,7 +215,6 @@ const adjustDropdownPosition = async (): Promise<void> => {
 
   let [primary, secondary] = (isContextMenu ? "bottom-start" : props.placement).split("-") as [string, string];
 
-  // Adjust primary placement (block axis for top/bottom, inline for left/right)
   if (primary === "bottom" && anchorRect.bottom + dropdownRect.height + margin > viewHeight) {
     primary = "top";
   } else if (primary === "top" && anchorRect.top - dropdownRect.height - margin < 0) {
@@ -245,16 +225,13 @@ const adjustDropdownPosition = async (): Promise<void> => {
     primary = "right";
   }
 
-  // Adjust secondary placement (alignment)
   if (primary === "top" || primary === "bottom") {
-    // Horizontal alignment check
     if (secondary === "start" && anchorRect.left + dropdownRect.width + margin > viewWidth) {
       secondary = "end";
     } else if (secondary === "end" && anchorRect.right - dropdownRect.width - margin < 0) {
       secondary = "start";
     }
   } else {
-    // Vertical alignment check
     if (secondary === "start" && anchorRect.top + dropdownRect.height + margin > viewHeight) {
       secondary = "end";
     } else if (secondary === "end" && anchorRect.bottom - dropdownRect.height - margin < 0) {
@@ -306,8 +283,6 @@ const adjustDropdownPosition = async (): Promise<void> => {
       break;
   }
 
-  // Apply negative vertical offset for submenus based on the dropdown padding
-  // AND the visual-style-inset of the button, AND the dropdown border width.
   if (props.isSubmenu && !isContextMenu) {
     if (newPlacement.startsWith("left") || newPlacement.startsWith("right")) {
       top -= dropdownPaddingPx + visualStyleInsetPx + dropdownBorderWidthPx;
@@ -331,36 +306,29 @@ const {
 const openDropdown = async (coords?: { x: number; y: number }): Promise<void> => {
   const isContextMenuCall = !!coords;
 
-  // For regular button clicks, if it's already open, do nothing.
   if (isOpen.value && !isContextMenuCall) {
     return;
   }
 
-  // If a context menu is already open and we get another context menu click,
-  // or if a regular dropdown is open and we get a context menu click,
-  // we need to close everything first before reopening at the new coordinates.
   if (isOpen.value) {
     isOpen.value = false;
-    await nextTick(); // Let Vue process the closure and run watchers.
+    await nextTick();
   }
 
-  // If this is a context menu call, ensure all other dropdowns are also closed.
-  // This is slightly redundant if the above block ran, but it's a safe catch-all.
   if (isContextMenuCall) {
     closeAllDropdowns("Opening new context menu");
     await nextTick();
   }
 
-  // Now, proceed with opening.
+  isOpenedByClick.value = !isContextMenuCall;
+
   if (debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Opening "${props.dropdownDataName}"`);
   isOpen.value = true;
-  isContentLoaded.value = false; // Content is not ready yet
+  isContentLoaded.value = false;
   contextMenuCoords.value = coords || null;
 
-  await nextTick(); // Wait for the dropdown content to be rendered in the DOM
+  await nextTick();
 
-  // For context menus, we need a dummy button element for the manager.
-  // The dropdownMenuRef itself can serve this purpose.
   const buttonEl = props.hideTrigger
     ? dropdownMenuRef.value
     : (document.querySelector(`[data-name="options-btn-for-${props.dropdownDataName}"]`) as HTMLElement | null);
@@ -379,18 +347,14 @@ const openDropdown = async (coords?: { x: number; y: number }): Promise<void> =>
   };
   registerDropdown(dropdown);
 
-  // Only close unrelated dropdowns for non-context menus.
-  // Context menus should close everything, which is handled above.
   if (!isContextMenuCall) {
     closeUnrelatedDropdowns(dropdown);
   }
 
-  // Wait for content (e.g., icons) to fully render, then position and show.
-  // Using two animation frames is a reliable heuristic to wait for the browser's paint cycle.
   requestAnimationFrame(() => {
     requestAnimationFrame(async () => {
-      await adjustDropdownPosition(); // Calculate position now that content size is stable
-      isContentLoaded.value = true; // Make the content visible with a fade-in
+      await adjustDropdownPosition();
+      isContentLoaded.value = true;
       if (debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Content is ready for "${props.dropdownDataName}"`);
     });
   });
@@ -406,8 +370,9 @@ const closeDropdown = (): void => {
   }
 
   isOpen.value = false;
-  isContentLoaded.value = false; // Reset content loaded state
-  contextMenuCoords.value = null; // Reset context menu state
+  isContentLoaded.value = false;
+  contextMenuCoords.value = null;
+  isOpenedByClick.value = false;
 };
 
 const handleButtonClick = async (_event: MouseEvent): Promise<void> => {
@@ -432,7 +397,6 @@ const handleButtonClick = async (_event: MouseEvent): Promise<void> => {
 const handleMouseEnter = (): void => {
   cancelSubmenuClosure();
 
-  // Handle submenus with a delay (existing logic)
   if (props.isSubmenu) {
     if (openTimeoutId.value) clearTimeout(openTimeoutId.value);
     openTimeoutId.value = window.setTimeout(() => {
@@ -441,7 +405,6 @@ const handleMouseEnter = (): void => {
     return;
   }
 
-  // If this dropdown is already open, do nothing.
   if (isOpen.value) {
     return;
   }
@@ -449,25 +412,20 @@ const handleMouseEnter = (): void => {
   const thisDropdownEl = dropdownMenuRef.value;
   if (!thisDropdownEl) return;
 
-  // Check if any currently open dropdown is an immediate sibling.
   const openSiblingExists = openDropdowns.value.some((openDropdown) => {
-    // We only care about other top-level dropdowns.
     if (openDropdown.isSubmenu) return false;
 
-    // Find the root element of the already-open dropdown.
     const openDropdownRootEl = openDropdown.button.closest(".dropdown-menu");
     if (!openDropdownRootEl || openDropdownRootEl === thisDropdownEl) {
       return false;
     }
 
-    // Check for immediate sibling relationship in the same parent.
     return (
       thisDropdownEl.parentElement === openDropdownRootEl.parentElement &&
       (thisDropdownEl.previousElementSibling === openDropdownRootEl || thisDropdownEl.nextElementSibling === openDropdownRootEl)
     );
   });
 
-  // If an open sibling is found, open this dropdown.
   if (openSiblingExists) {
     openDropdown();
   }
@@ -485,7 +443,6 @@ const handleContentMouseEnter = (): void => {
 };
 
 const handleContentMouseLeave = (): void => {
-  // This should only trigger for actual submenus, not the main context menu.
   if (props.isSubmenu) {
     scheduleSubmenuClosure();
   }
@@ -503,15 +460,9 @@ watch(isOpen, (newIsOpen: boolean): void => {
   }
 });
 
-onMounted((): void => {
-  // Removed logging to reduce console noise
-});
-
 onUnmounted((): void => {
   window.removeEventListener("resize", adjustDropdownPosition);
-
   if (openTimeoutId.value) clearTimeout(openTimeoutId.value);
-
   if (isOpen.value) unregisterDropdown(dropdownId);
 });
 
@@ -530,19 +481,6 @@ defineExpose({ openDropdown, closeDropdown });
   }
 
   &:empty {
-    /*
-     * Hides the empty dropdown wrapper to prevent layout issues, such as
-     * unwanted grid gaps. This is critical in two main scenarios:
-     *
-     * 1. When the dropdown has no items to display.
-     * 2. When its content is teleported elsewhere in the DOM.
-     *
-     * Example: In JobSelectorArea.vue, when files are dragged over a
-     * job button, a DropdownMenu appears. Its content (the "Copy" or
-     * "Move" options) is teleported to the body. This rule hides the
-     * now-empty original wrapper, preventing it from breaking the
-     * button's layout.
-     */
     display: none;
   }
 
@@ -605,10 +543,6 @@ defineExpose({ openDropdown, closeDropdown });
   }
 }
 
-/*
-  This class is added after the content has rendered and the dropdown
-  has been positioned, triggering the fade-in transition.
-*/
 .dropdown-content.content-ready {
   opacity: 1;
   pointer-events: all;

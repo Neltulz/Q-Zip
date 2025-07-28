@@ -5,7 +5,7 @@
  * A collection of styled logger functions for browser console debugging.
  * Using CSS in console logs helps to visually distinguish different types
  * of events, making the debugging process more efficient. This update adds a
- * dedicated logger for failsafe cancellation events.
+ * dedicated logger for notifications.
  *
  * How to use:
  * import { logInteraction } from '~/utils/loggers';
@@ -165,6 +165,18 @@ export const logWarning = (callerName: string, message: string, data?: unknown):
       console.warn(`%c[${callerName}] %c${message}`, callerStyle, warningStyle, data);
     } else {
       console.warn(`%c[${callerName}] %c${message}`, callerStyle, warningStyle);
+    }
+  }
+};
+
+// --- Logger for Notification Events ---
+const notificationStyle: string = `${baseStyle} background-color: #2196f3;`; // Blue
+export const logNotification = (callerName: string, message: string, data?: unknown): void => {
+  if (DEBUG && debugConfig.logNotifications) {
+    if (data) {
+      console.log(`%c[${callerName}] %c${message}`, callerStyle, notificationStyle, data);
+    } else {
+      console.log(`%c[${callerName}] %c${message}`, callerStyle, notificationStyle);
     }
   }
 };

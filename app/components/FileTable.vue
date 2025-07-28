@@ -80,6 +80,18 @@
             >
               New Job
             </CustomButton>
+            <!-- --- FIX START --- -->
+            <hr />
+            <CustomButton
+              button-style-class="trans-btn btn-lite"
+              data-name="cancel-move-to-btn"
+              first-icon-name="mdi:cancel"
+              :first-icon-size="20"
+              @click="close()"
+            >
+              Cancel
+            </CustomButton>
+            <!-- --- FIX END --- -->
           </template>
         </DropdownMenu>
         <DropdownMenu
@@ -125,6 +137,18 @@
             >
               New Job
             </CustomButton>
+            <!-- --- FIX START --- -->
+            <hr />
+            <CustomButton
+              button-style-class="trans-btn btn-lite"
+              data-name="cancel-copy-to-btn"
+              first-icon-name="mdi:cancel"
+              :first-icon-size="20"
+              @click="close()"
+            >
+              Cancel
+            </CustomButton>
+            <!-- --- FIX END --- -->
           </template>
         </DropdownMenu>
       </template>
@@ -162,7 +186,6 @@
           }"
           :data-path="file.path"
           data-has-context-menu="true"
-          @click="clickRowByPath($event, file.path)"
           @contextmenu.prevent="showFileContextMenu(file, $event)"
         >
           <td class="item-checkbox">
@@ -178,14 +201,17 @@
           </td>
           <td class="item-name">
             <div class="cell-content">
-              <Icon :name="file.type === 'Folder' ? 'mdi:folder' : 'mdi:file-outline'" size="16" />
               <div
-                class="item-name-text"
+                class="item-name-content"
                 draggable="true"
                 @dragstart="handleDragStart($event, file.path)"
                 @dragend="handleDragEnd"
+                @click="clickRowByPath($event, file.path)"
               >
-                {{ file.name }}
+                <Icon :name="file.type === 'Folder' ? 'mdi:folder' : 'mdi:file-outline'" size="16" />
+                <div class="item-name-text">
+                  {{ file.name }}
+                </div>
               </div>
               <div class="row-actions" @click.stop>
                 <DropdownMenu
@@ -308,6 +334,16 @@
                         </CustomButton>
                       </template>
                     </DropdownMenu>
+                    <hr />
+                    <CustomButton
+                      button-style-class="trans-btn btn-lite"
+                      :data-name="`cancel-file-action-${index}-btn`"
+                      first-icon-name="mdi:cancel"
+                      :first-icon-size="20"
+                      @click="closeMain()"
+                    >
+                      Cancel
+                    </CustomButton>
                   </template>
                 </DropdownMenu>
               </div>
@@ -507,11 +543,26 @@ const deselectAll = () => {
 };
 
 const handleDragStart = (event: DragEvent, path: string) => {
-  const paths: string[] = selectedFiles.value.includes(path) ? selectedFiles.value : [path];
-  event.dataTransfer?.setData("text/plain", JSON.stringify({ type: "internal-files", paths, sourceJobId: props.jobId }));
+  let pathsToDrag: string[];
+
+  if (!selectedFiles.value.includes(path)) {
+    selectedFiles.value = [path];
+    pathsToDrag = [path];
+    const fileIndex = sortedFiles.value.findIndex((f) => f.path === path);
+    if (fileIndex !== -1) {
+      lastClickedIndex.value = fileIndex;
+    }
+  } else {
+    pathsToDrag = selectedFiles.value;
+  }
+
+  event.dataTransfer?.setData(
+    "text/plain",
+    JSON.stringify({ type: "internal-files", paths: pathsToDrag, sourceJobId: props.jobId })
+  );
   event.dataTransfer!.effectAllowed = "copyMove";
 
-  const count = paths.length;
+  const count = pathsToDrag.length;
 
   const canvas = document.createElement("canvas");
   canvas.width = 150;
@@ -528,17 +579,12 @@ const handleDragStart = (event: DragEvent, path: string) => {
 
   event.dataTransfer?.setDragImage(canvas, -10, -10);
 
-  dragDropStore.startInternalDrag(paths, null, props.jobId);
-  logDragDropEvent("FileTable", `Native drag started for ${paths.length} files from job ${props.jobId}.`);
+  dragDropStore.startInternalDrag(pathsToDrag, null, props.jobId);
+  logDragDropEvent("FileTable", `Native drag started for ${pathsToDrag.length} files from job ${props.jobId}.`);
 };
 
 const handleDragEnd = () => {
   logDragDropEvent("FileTable", "Native drag ended.");
-  // FIX: This is a failsafe. The `drop` event on the target fires *before* `dragend` on the source.
-  // We use a timeout to push this check to the end of the event queue. If a valid drop target
-  // has handled the drop, `isInternalDragActive` will be false by the time this runs.
-  // If the drop was on an invalid target (or cancelled), the state will still be active,
-  // and this will correctly clean it up.
   setTimeout(() => {
     if (dragDropStore.isInternalDragActive) {
       logDragDropEvent("FileTable", "Drag ended on an invalid target. Cleaning up state.");
@@ -612,6 +658,4 @@ defineExpose({
 });
 </script>
 
-<style scoped>
-@import "./file-table-comp/file-table.scoped.css";
-</style>
+<style scoped src="./file-table-comp/file-table.scoped.css"></style>

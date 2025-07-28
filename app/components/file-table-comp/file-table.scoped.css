@@ -73,10 +73,15 @@
         &:deep(.custom-button .button-content) {
           justify-content: center;
         }
+
+        &:deep(.custom-button) {
+          padding-block: var(--file-table-pad-blok);
+        }
       }
 
       &.item-name {
         grid-column: file-name;
+        padding: 0;
       }
 
       &.item-size {
@@ -96,16 +101,20 @@
 
     .cell-content {
       overflow: hidden;
-      padding-block: var(--file-table-pad-blok);
       padding-inline: var(--file-table-pad-in);
       text-overflow: ellipsis;
       white-space: nowrap;
+      padding-block: var(--file-table-pad-blok);
     }
 
     th {
       background-color: var(--bg-clr-liter);
       color: hsl(0, 0%, 75%);
       cursor: default;
+
+      .cell-content {
+        padding-block: var(--file-table-pad-blok);
+      }
 
       &:first-child {
         border-end-start-radius: 4px;
@@ -124,18 +133,33 @@
       &.item-name {
         .cell-content {
           align-items: center;
-          column-gap: 8px;
           display: flex;
           justify-content: start;
           width: 100%;
+          align-self: stretch;
+          padding: 0;
+
+          .item-name-content {
+            display: flex;
+            align-items: center;
+            column-gap: 8px;
+            width: auto;
+            max-width: 100%;
+            align-self: stretch;
+            /* --- FIX: Removed grab cursor --- */
+            cursor: default;
+            padding-block: var(--file-table-pad-blok);
+            padding-inline: var(--file-table-pad-in);
+          }
 
           .item-name-text {
             user-select: none;
-            cursor: default;
+            cursor: inherit;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             pointer-events: auto;
+            flex-grow: 1;
           }
 
           .row-actions {

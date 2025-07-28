@@ -313,11 +313,15 @@ const handleMouseDown = (event: MouseEvent): void => {
   const isInteractiveElement = targetElement.closest(
     "button, a, input, select, textarea, .dropdown-content, .row-actions, .file-table-toolbar"
   );
-  const isNameText = targetElement.closest(".item-name-text");
+  // --- FIX START ---
+  // Check for the draggable container, not just the text, to prevent the
+  // selection box from appearing when clicking the padding area.
+  const isDraggableItem = targetElement.closest(".item-name-content");
 
-  if (event.button !== 0 || dragDropStore.isInternalDragActive || isInteractiveElement || isNameText) {
+  if (event.button !== 0 || dragDropStore.isInternalDragActive || isInteractiveElement || isDraggableItem) {
     return;
   }
+  // --- FIX END ---
 
   event.preventDefault();
   mouseMoved.value = false;

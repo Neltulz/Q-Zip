@@ -1,19 +1,10 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- app.vue @preserve -->
-<!--
-  Description:
-  The root component of the application. It includes a 'keydown' event listener
-  for the Escape key to act as a manual failsafe for a stuck drag-and-drop
-  overlay. The global @dragover.prevent handler has been removed and relocated
-  to JobArea.vue to properly handle the drop cursor.
-
-  Usage Example:
-  This component is the main entry point managed by Nuxt.
--->
 <template>
   <div class="app-container" @contextmenu="handleContextMenu">
     <TitleBar />
     <ModalContainer />
+    <NotificationContainer />
     <Transition name="layout-fade" mode="out-in">
       <!--
         Wrap NuxtLayout in a div with a key to ensure a single root element
@@ -67,13 +58,26 @@ import { useLayoutStore } from "@/stores/layoutStore";
 import { useUserPreferencesStore } from "@/stores/userPreferencesStore";
 import { useJobsStore } from "@/stores/jobsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
+// --- FIX START ---
+// Import the uiStore to manage notifications
+import { useUiStore } from "@/stores/uiStore";
+// --- FIX END ---
 import { logGlobalEvent, logStoreAction, logFailsafe } from "@/utils/loggers";
 import DropdownMenu from "@/components/DropdownMenu.vue";
+import NotificationContainer from "@/components/NotificationContainer.vue";
+import { provideScrollContainer } from "@/composables/useScrollContainer";
+
+// Establish the communication channel for the scroll container.
+provideScrollContainer();
 
 const layoutStore = useLayoutStore();
 const userPreferencesStore = useUserPreferencesStore();
 const jobsStore = useJobsStore();
 const dragDropStore = useDragDropStore();
+// --- FIX START ---
+// Get an instance of the uiStore
+const uiStore = useUiStore();
+// --- FIX END ---
 
 const contextMenuRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
 
@@ -128,6 +132,12 @@ onBeforeMount((): void => {
 });
 
 onMounted(() => {
+  // --- FIX START ---
+  // Ensure a clean slate for notifications on every application start.
+  // This prevents "zombie" notifications from persisting after a refresh.
+  uiStore.notifications = [];
+  // --- FIX END ---
+
   // Failsafe: Ensure the drag-over state is always false on startup.
   dragDropStore.setExternalDragOver(false);
   logStoreAction("app.vue", `Initial value of isExternalDragOver on mount: ${dragDropStore.isExternalDragOver}`);
