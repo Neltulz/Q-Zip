@@ -254,6 +254,7 @@
                       placement="right-start"
                     >
                       <template #button-content>Move to</template>
+                      <!-- --- FIX START: Correctly handle nested close functions --- -->
                       <template #default="{ close: closeSub }">
                         <CustomButton
                           v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
@@ -266,12 +267,14 @@
                             () => {
                               moveFile(job.id, file.path);
                               closeSub();
-                              closeMain();
+                              closeMain(); // closeMain is available from the parent scope
                             }
                           "
                         >
                           Job {{ job.id }}
                         </CustomButton>
+                      </template>
+                      <template #content-bottom="{ close: closeSub }">
                         <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
                         <CustomButton
                           button-style-class="trans-btn"
@@ -282,13 +285,14 @@
                             () => {
                               moveFileToNewJob(file.path);
                               closeSub();
-                              closeMain();
+                              closeMain(); // closeMain is available from the parent scope
                             }
                           "
                         >
                           New Job
                         </CustomButton>
                       </template>
+                      <!-- --- FIX END --- -->
                     </DropdownMenu>
                     <DropdownMenu
                       :button-style-class="'trans-btn'"
@@ -301,6 +305,7 @@
                       placement="right-start"
                     >
                       <template #button-content>Copy to</template>
+                      <!-- --- FIX START: Correctly handle nested close functions --- -->
                       <template #default="{ close: closeSub }">
                         <CustomButton
                           v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
@@ -313,12 +318,14 @@
                             () => {
                               copyFile(job.id, file.path);
                               closeSub();
-                              closeMain();
+                              closeMain(); // closeMain is available from the parent scope
                             }
                           "
                         >
                           Job {{ job.id }}
                         </CustomButton>
+                      </template>
+                      <template #content-bottom="{ close: closeSub }">
                         <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
                         <CustomButton
                           button-style-class="trans-btn"
@@ -329,13 +336,14 @@
                             () => {
                               copyFileToNewJob(file.path);
                               closeSub();
-                              closeMain();
+                              closeMain(); // closeMain is available from the parent scope
                             }
                           "
                         >
                           New Job
                         </CustomButton>
                       </template>
+                      <!-- --- FIX END --- -->
                     </DropdownMenu>
                     <hr />
                     <CustomButton

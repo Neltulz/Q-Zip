@@ -18,16 +18,22 @@
     <p v-else-if="props.description" v-html="props.description"></p>
 
     <!-- Two-column layout for showing files to be processed vs. skipped -->
-    <div v-if="hasFileLists" class="two-column-grid">
+    <div
+      v-if="hasFileLists"
+      class="two-column-grid"
+      :class="{
+        'has-both-columns': showProcessColumn && showSkipColumn,
+      }"
+    >
       <!-- FEAT: This column is now hidden if there are no items to process -->
-      <div v-if="props.itemsToProcess && props.itemsToProcess.length > 0" class="column process-column">
+      <div v-if="showProcessColumn" class="column process-column">
         <h3>To Be Processed ({{ props.itemsToProcess.length }})</h3>
         <ul class="file-list">
           <li v-for="item in props.itemsToProcess" :key="item">{{ getFileName(item) }}</li>
         </ul>
       </div>
       <!-- FEAT: This column is now hidden if there are no items to skip -->
-      <div v-if="props.itemsToSkip && props.itemsToSkip.length > 0" class="column skip-column">
+      <div v-if="showSkipColumn" class="column skip-column">
         <h3>To Be Skipped ({{ props.itemsToSkip.length }})</h3>
         <ul class="file-list">
           <li v-for="item in props.itemsToSkip" :key="item">{{ getFileName(item) }}</li>
@@ -67,7 +73,9 @@ const props = defineProps({
   },
 });
 
-const hasFileLists = computed(() => (props.itemsToProcess?.length ?? 0) > 0 || (props.itemsToSkip?.length ?? 0) > 0);
+const showProcessColumn = computed(() => (props.itemsToProcess?.length ?? 0) > 0);
+const showSkipColumn = computed(() => (props.itemsToSkip?.length ?? 0) > 0);
+const hasFileLists = computed(() => showProcessColumn.value || showSkipColumn.value);
 
 const getFileName = (path: string): string => {
   if (!path) return "";
@@ -92,7 +100,7 @@ const getFileName = (path: string): string => {
 }
 
 /* Use two columns on wider screens only if both columns are present */
-.two-column-grid:has(.process-column):has(.skip-column) {
+.two-column-grid.has-both-columns {
   @media (min-width: 500px) {
     grid-template-columns: 1fr 1fr;
   }

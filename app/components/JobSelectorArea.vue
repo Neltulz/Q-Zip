@@ -168,7 +168,7 @@
     </OverlayScrollbarsComponent>
 
     <div class="job-selector-btn-wrapper">
-      <div class="job-selector-btns-start">
+      <div class="job-selector-btns-start" @mouseenter="showAddJobTooltip = true" @mouseleave="showAddJobTooltip = false">
         <CustomButton
           :ref="(el) => setJobButtonRef('new-job', el)"
           class="add-job-btn"
@@ -184,6 +184,11 @@
           @dragover.prevent="handleJobTabDragOver($event, 'new-job')"
           @dragleave="handleJobTabDragLeave($event)"
           @drop.prevent="handleJobTabDrop($event, 'new-job')"
+        />
+        <InfoTooltip
+          :visible="showAddJobTooltip"
+          :content="{ text: 'Create New Job (Ctrl+T)' }"
+          :target-rect="addJobButtonRect"
         />
         <DropdownMenu
           v-show="dragHoverTargetJobId === 'new-job'"
@@ -305,6 +310,7 @@ import { useClipboardStore } from "@/stores/clipboardStore";
 import type { ModalOptions } from "@/types/modal";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import CustomButton from "./CustomButton.vue";
+import InfoTooltip from "./InfoTooltip.vue"; // Import InfoTooltip
 import { useScrollContainer } from "@/composables/useScrollContainer";
 
 interface ScrollableOverlayScrollbars extends OverlayScrollbars {
@@ -337,6 +343,22 @@ const pendingDropFilePaths = ref<string[]>([]);
 const pendingDropSourceJobId = ref<number | null>(null);
 
 const jobNotificationStates = ref<Map<number | "new-job", NotificationType>>(new Map());
+
+// --- FEAT: Add Job Tooltip State ---
+const showAddJobTooltip = ref(false);
+const addJobButtonRect = ref<DOMRect | null>(null);
+
+watch(showAddJobTooltip, (visible) => {
+  if (visible) {
+    nextTick(() => {
+      const buttonRef = jobButtonRefs.value.get("new-job");
+      if (buttonRef && buttonRef.buttonRef) {
+        addJobButtonRect.value = buttonRef.buttonRef.getBoundingClientRect();
+      }
+    });
+  }
+});
+// --- End of Add Job Tooltip State ---
 
 watch(
   () => uiStore.notifications,
@@ -407,6 +429,7 @@ watch(
 
 onUnmounted(() => {
   setScrollContainer(null);
+  window.removeEventListener("keydown", handleKeyDown);
 });
 
 const setJobButtonRef = (jobId: number | "new-job", el: Element | ComponentPublicInstance | null) => {
@@ -426,9 +449,19 @@ onBeforeUpdate(() => {
   dragActionDropdownRefs.value.clear();
 });
 
+// --- FEAT: Hotkey for creating a new job ---
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.ctrlKey && event.key.toLowerCase() === "t") {
+    event.preventDefault();
+    addJob();
+  }
+};
+
 onMounted(() => {
   jobsStore.initialize();
+  window.addEventListener("keydown", handleKeyDown);
 });
+// --- End of Hotkey feature ---
 
 watch(
   jobsList,
@@ -493,7 +526,10 @@ const removeJob = (jobId: number): void => {
   const modalOptions: ModalOptions = {
     icon: "mdi:alert-outline",
     title: "Confirm Remove Job",
-    description: [`Are you sure you want to permanently remove <strong>Job ${jobId}</strong>?`],
+    description: [
+      `Are you sure you want to permanently remove <strong>Job ${jobId}</strong>?`,
+      "All files and any job-specific settings (like compression or encryption) will be lost.",
+    ],
     buttons: [
       { action: "proceed", text: "Remove Job", theme: "danger", styleClass: "bordered-btn", icon: "mdi:trash-can-outline" },
       { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
@@ -769,10 +805,8 @@ const handleDragAction = (operation: "move" | "copy", targetIdentifier: number |
     itemsToProcess.push(...droppedFilePaths);
   }
 
-  if (itemsToProcess.length === 0 && itemsToSkip.length > 0) {
-    onModalClose(true); // Treat as confirmed, but only skipped items will be processed
-    return;
-  }
+  // FEAT: Always show confirmation modal for drag-drop.
+  // The old logic to bypass the modal has been removed.
 
   const opString = operation.charAt(0).toUpperCase() + operation.slice(1);
   const targetName = targetIdentifier === "new-job" ? "a new job" : `Job ${targetIdentifier}`;

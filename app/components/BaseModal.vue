@@ -51,11 +51,13 @@
                 },
               }"
             >
-              <slot name="body-content">
-                <template v-if="descriptionContent.length > 0">
-                  <p v-for="(line, index) in descriptionContent" :key="index" v-html="line" />
-                </template>
-              </slot>
+              <!-- --- FIX START --- -->
+              <!-- Render the description from props BEFORE the slot content -->
+              <template v-if="descriptionContent.length > 0">
+                <p v-for="(line, index) in descriptionContent" :key="index" v-html="line" />
+              </template>
+              <slot name="body-content" />
+              <!-- --- FIX END --- -->
             </OverlayScrollbarsComponent>
           </div>
 

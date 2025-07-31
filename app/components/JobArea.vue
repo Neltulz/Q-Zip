@@ -214,27 +214,13 @@ const handlePaste = () => {
       itemCount: filesToPaste.length,
     });
 
-    if (isCutOperation) {
-      if (sourceJobId !== null && sourceJobId !== targetJobId) {
-        // For a cut operation, we can directly move the files without confirmation.
-        handleFileOperation(
-          "move",
-          filesToPaste.map((f: FileItem) => f.path),
-          targetJobId,
-          { sourceJobId }
-        );
-      }
-      // Clear clipboard after any paste attempt for a cut operation.
-      clipboardStore.clear();
-    } else {
-      // FEAT: For a copy operation, show the confirmation modal.
-      openOperationConfirmModal(
-        "copy",
-        filesToPaste.map((f) => f.path),
-        targetJobId,
-        sourceJobId
-      );
-    }
+    // FEAT: For both copy and cut, always show the confirmation modal.
+    openOperationConfirmModal(
+      isCutOperation ? "move" : "copy",
+      filesToPaste.map((f) => f.path),
+      targetJobId,
+      sourceJobId
+    );
   }
 };
 
@@ -430,6 +416,10 @@ const handleFileOperation = (
     try {
       if (operation === "move") {
         jobsStore.moveFilesBetweenJobs(sourceJobId, numericTargetId, newFilePaths);
+        // After a successful move (cut/paste), clear the clipboard.
+        if (clipboardStore.isCut) {
+          clipboardStore.clear();
+        }
       } else {
         jobsStore.copyFilesToJob(sourceJobId, numericTargetId, newFilePaths);
       }
@@ -465,6 +455,11 @@ const handleFileOperation = (
       type: "warning",
       details: { sourceJobId, destinationJobId: numericTargetId, filePaths: skippedFilePaths, reasons },
     });
+    // If it was a cut operation and some items were skipped, we should still clear the clipboard
+    // because the user's intent was to paste.
+    if (operation === "move" && clipboardStore.isCut) {
+      clipboardStore.clear();
+    }
   }
 
   if (operationFailed) {
@@ -537,31 +532,8 @@ const openOperationConfirmModal = (
     itemsToProcessPaths.push(...paths);
   }
 
-  if (itemsToProcessPaths.length === 0 && itemsToSkipPaths.length > 0) {
-    const numSkipped = itemsToSkipPaths.length;
-    uiStore.triggerJobNotification({
-      title: "Operation Skipped",
-      messages: [
-        {
-          text: `${numSkipped} item${numSkipped > 1 ? "s" : ""} were skipped.`,
-          type: "warning",
-          details: {
-            sourceJobId,
-            destinationJobId: targetJobId as number,
-            filePaths: itemsToSkipPaths,
-            reasons: Object.fromEntries(itemsToSkipPaths.map((path) => [path, "Already exists in destination"])),
-          },
-        },
-      ],
-      glowType: "warning",
-      targetId: targetJobId,
-      duration: 5000,
-    });
-    if (typeof targetJobId === "number") {
-      jobsStore.selectJob(targetJobId);
-    }
-    return;
-  }
+  // FEAT: Always show confirmation modal, even if all items would be skipped.
+  // The old logic to bypass the modal has been removed.
 
   const opString = operation === "move" ? "Move" : "Copy";
   const targetName = targetJobId === "new-job" ? "a new job" : `Job ${targetJobId}`;
@@ -591,6 +563,11 @@ const openOperationConfirmModal = (
     (action: string) => {
       if (action === "proceed") {
         handleFileOperation(operation, paths, targetJobId, { sourceJobId });
+      } else {
+        // If user cancels a 'cut' operation, clear the clipboard
+        if (operation === "move" && clipboardStore.isCut) {
+          clipboardStore.clear();
+        }
       }
     }
   );

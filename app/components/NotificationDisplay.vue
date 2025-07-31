@@ -28,7 +28,7 @@
         <Icon :name="getIconForType(msg.type)" :class="`icon-${msg.type}`" size="18" />
         <p :class="`text-${msg.type}`">{{ msg.text }}</p>
         <Icon
-          v-if="msg.details && msg.details.filePaths.length > 0"
+          v-if="msg.details && msg.details.filePaths && msg.details.filePaths.length > 0"
           name="mdi:information-outline"
           class="info-icon"
           size="16"
@@ -77,6 +77,9 @@ const scrollTop = ref(0);
 let isUpdateThrottled = false;
 let remainingScaleX = 1;
 let hideTooltipTimeout: number | null = null;
+// --- FIX START: Removed unused variable ---
+// let isHoveringTooltip = false; // This variable was unused.
+// --- FIX END ---
 
 const tooltip = reactive<{
   visible: boolean;

@@ -4,20 +4,30 @@
   <teleport to="body">
     <div v-if="visible" ref="tooltipRef" class="info-tooltip" :style="tooltipStyle">
       <div class="tooltip-content">
-        <div v-if="content.sourceJobId" class="info-line"><strong>Source:</strong> Job {{ content.sourceJobId }}</div>
-        <div v-if="content.destinationJobId" class="info-line">
-          <strong>Destination:</strong> Job {{ content.destinationJobId }}
-        </div>
-        <hr v-if="content.sourceJobId || content.destinationJobId" />
-        <div v-if="content.filePaths && content.filePaths.length > 0" class="file-list-container">
-          <strong>Affected Items:</strong>
-          <ul class="file-list">
-            <li v-for="path in content.filePaths" :key="path">
-              <span class="file-name">{{ getFileName(path) }}</span>
-              <span v-if="content.reasons && content.reasons[path]" class="reason"> - {{ content.reasons[path] }} </span>
-            </li>
-          </ul>
-        </div>
+        <!-- --- FIX START: Use v-if to correctly handle the union type for the 'content' prop --- -->
+        <!-- Display simple text content -->
+        <template v-if="'text' in content">
+          <div class="info-line">{{ content.text }}</div>
+        </template>
+
+        <!-- Display structured notification details -->
+        <template v-else>
+          <div v-if="content.sourceJobId" class="info-line"><strong>Source:</strong> Job {{ content.sourceJobId }}</div>
+          <div v-if="content.destinationJobId" class="info-line">
+            <strong>Destination:</strong> Job {{ content.destinationJobId }}
+          </div>
+          <hr v-if="content.sourceJobId || content.destinationJobId" />
+          <div v-if="content.filePaths && content.filePaths.length > 0" class="file-list-container">
+            <strong>Affected Items:</strong>
+            <ul class="file-list">
+              <li v-for="path in content.filePaths" :key="path">
+                <span class="file-name">{{ getFileName(path) }}</span>
+                <span v-if="content.reasons && content.reasons[path]" class="reason"> - {{ content.reasons[path] }} </span>
+              </li>
+            </ul>
+          </div>
+        </template>
+        <!-- --- FIX END --- -->
       </div>
     </div>
   </teleport>
@@ -27,13 +37,16 @@
 import { ref, computed, watch, nextTick, type PropType, type StyleValue } from "vue";
 import type { NotificationMessageDetails } from "@/stores/uiStore";
 
+// Allow a simple text property for more generic tooltips
+type TooltipContent = NotificationMessageDetails | { text: string };
+
 const props = defineProps({
   visible: {
     type: Boolean,
     required: true,
   },
   content: {
-    type: Object as PropType<NotificationMessageDetails>,
+    type: Object as PropType<TooltipContent>,
     required: true,
   },
   targetRect: {
@@ -64,8 +77,9 @@ const tooltipStyle = computed((): StyleValue => {
   }
 
   const { top, right, height } = props.targetRect;
+  // Position tooltip to the right of the target, centered vertically.
   const tooltipTop = top + height / 2 - tooltipHeight.value / 2;
-  const tooltipLeft = right + 8; // 8px gap
+  const tooltipLeft = right + 12; // 12px gap
 
   return {
     top: `${tooltipTop}px`,
@@ -89,9 +103,10 @@ const getFileName = (path: string) => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   padding: 8px 12px;
   width: max-content; /* Allow width to grow based on content */
-  min-width: 200px; /* Set a minimum width */
+  min-width: 150px; /* Set a minimum width */
   max-width: 500px; /* Set a maximum width */
   pointer-events: auto; /* Allow mouse interaction */
+  white-space: nowrap;
 }
 
 .tooltip-content {
