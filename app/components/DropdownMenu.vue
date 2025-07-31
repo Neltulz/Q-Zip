@@ -8,15 +8,8 @@
   button click or programmatically (e.g., for a context menu).
   It supports nested submenus, dynamic positioning to stay
   within the viewport, and is managed by a global dropdown manager.
-  To prevent layout shifts from slow-loading content like icons,
-  the dropdown's content is kept hidden until the browser has finished
-  rendering, at which point it fades into view.
-  It also prevents the default system context menu from appearing
-  when right-clicking anywhere on the dropdown's content area.
-
-  When used as a context menu, the trigger button is hidden, and
-  the menu is opened via an exposed `openDropdown` method,
-  positioning itself at the provided coordinates.
+  All dropdowns now include a scrollable area by default, with
+  optional slots for non-scrolling content at the top and bottom.
 -->
 <!-- #endregion -->
 
@@ -30,7 +23,6 @@
     :data-dropdown-name="props.dropdownDataName"
   >
     <template v-if="!props.hideTrigger">
-      <!-- --- FIX: The :class binding now checks isOpenedByClick --- -->
       <CustomButton
         :btn-theme="props.btnTheme"
         :class="{ active: isOpen && isOpenedByClick }"
@@ -62,7 +54,21 @@
           @mouseenter="handleContentMouseEnter"
           @mouseleave="handleContentMouseLeave"
         >
-          <slot :close="closeDropdown" />
+          <slot name="content-top" :close="closeDropdown" />
+          <OverlayScrollbarsComponent
+            :options="{
+              scrollbars: {
+                visibility: 'auto',
+                autoHide: 'move',
+                autoHideSuspend: true,
+                theme: currentTheme,
+              },
+            }"
+            defer
+          >
+            <slot :close="closeDropdown" />
+          </OverlayScrollbarsComponent>
+          <slot name="content-bottom" :close="closeDropdown" />
         </div>
       </template>
     </teleport>
@@ -76,6 +82,8 @@ import { computed, nextTick, onUnmounted, ref, useSlots, watch, type CSSProperti
 import { useDropdownManager, type Dropdown } from "@/composables/dropdownManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logInteraction, logTrace } from "@/utils/loggers";
+import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
+import { useThemeStore } from "@/stores/themeStore";
 
 type Placement =
   | "top-start"
@@ -136,6 +144,9 @@ const props = defineProps({
   },
 });
 
+const themeStore = useThemeStore();
+const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
+
 const customButtonStyles = computed(() => {
   const classes = new Set(props.buttonStyleClass ? props.buttonStyleClass.split(" ") : []);
   classes.add("options-btn");
@@ -143,7 +154,7 @@ const customButtonStyles = computed(() => {
 });
 
 const slots = useSlots();
-const hasSlotContent: boolean = !!slots.default;
+const hasSlotContent: boolean = !!slots.default || !!slots["content-top"] || !!slots["content-bottom"];
 
 const isOpen: Ref<boolean> = ref(false);
 const isContentLoaded: Ref<boolean> = ref(false);
@@ -194,20 +205,6 @@ const adjustDropdownPosition = async (): Promise<void> => {
   const viewWidth = window.innerWidth;
   const margin = 8;
   const gap = 2;
-
-  const computedDropdownStyle: CSSStyleDeclaration = getComputedStyle(dropdownEl);
-  const dropdownPaddingPx: number = parseFloat(computedDropdownStyle.getPropertyValue("--dropdown-pad") || "0");
-  const dropdownBorderWidthPx: number = parseFloat(computedDropdownStyle.getPropertyValue("--dropdown-border-width") || "0");
-
-  let visualStyleInsetPx = 0;
-  if (!isContextMenu) {
-    const buttonEl = document.querySelector(`[data-name='options-btn-for-${props.dropdownDataName}']`);
-    if (buttonEl) {
-      const computedButtonStyle: CSSStyleDeclaration = getComputedStyle(buttonEl);
-      const visualStyleInset: string = computedButtonStyle.getPropertyValue("--visual-style-inset");
-      visualStyleInsetPx = parseFloat(visualStyleInset);
-    }
-  }
 
   if (DEBUG && debugConfig.logDropdownEvents) {
     logTrace("DropdownMenu", `Adjusting position for "${props.dropdownDataName}"`);
@@ -283,10 +280,19 @@ const adjustDropdownPosition = async (): Promise<void> => {
       break;
   }
 
-  if (props.isSubmenu && !isContextMenu) {
-    if (newPlacement.startsWith("left") || newPlacement.startsWith("right")) {
-      top -= dropdownPaddingPx + visualStyleInsetPx + dropdownBorderWidthPx;
-    }
+  // Clamp the calculated position to ensure the dropdown stays within the viewport.
+  if (left + ddWidth + margin > viewWidth) {
+    left = viewWidth - ddWidth - margin;
+  }
+  if (left < margin) {
+    left = margin;
+  }
+
+  if (top + ddHeight + margin > viewHeight) {
+    top = viewHeight - ddHeight - margin;
+  }
+  if (top < margin) {
+    top = margin;
   }
 
   dropdownTop.value = `${top}px`;
@@ -506,41 +512,48 @@ defineExpose({ openDropdown, closeDropdown });
   border: var(--dropdown-border-width) solid var(--brdr-clr-liter);
   border-radius: var(--brdr-rad-smal);
   box-shadow: 0 5px 10px hsla(0, 0%, 0%, 0.75);
-  display: grid;
+  display: flex;
+  flex-direction: column;
   inline-size: max-content;
   justify-content: stretch;
   margin-block-start: 0;
+  max-height: 90vh;
   min-height: var(--min-tch-tgt);
   min-width: 200px;
   opacity: 0; /* Initially hidden */
   padding: var(--dropdown-pad);
   pointer-events: none; /* Initially non-interactive */
   transition: opacity 150ms ease-in-out;
+}
 
-  > hr {
-    background-color: var(--brdr-clr-liter);
-    border: 0;
-    block-size: 1px;
-    display: block;
-    margin-inline: calc(var(--dropdown-pad) * -1);
-    margin-block: 2px;
-  }
+/* --- FIX START --- */
+/* Use a descendant selector (space) instead of a direct child selector (>)
+   to ensure the style applies to <hr> elements inside slots.
+   Also, remove the negative margin to prevent overflow. */
+.dropdown-content hr {
+  background-color: var(--brdr-clr-liter);
+  border: 0;
+  block-size: 1px;
+  display: block;
+  /* margin-inline: calc(var(--dropdown-pad) * -1); */ /* This was causing the overflow */
+  margin-block: 2px;
+}
+/* --- FIX END --- */
 
-  > hr:first-child,
-  > hr:last-child {
-    display: none;
-  }
+.dropdown-content hr:first-child,
+.dropdown-content hr:last-child {
+  display: none;
+}
 
-  > .custom-button > .visual-style,
-  > .dropdown-menu > .custom-button > .visual-style {
-    box-shadow: none;
-  }
+.dropdown-content > .custom-button > .visual-style,
+.dropdown-content > .dropdown-menu > .custom-button > .visual-style {
+  box-shadow: none;
+}
 
-  > .custom-button.can-become-active,
-  > .dropdown-menu > .custom-button.can-become-active {
-    --line-orientation: vertical;
-    --line-position: start;
-  }
+.dropdown-content > .custom-button.can-become-active,
+.dropdown-content > .dropdown-menu > .custom-button.can-become-active {
+  --line-orientation: vertical;
+  --line-position: start;
 }
 
 .dropdown-content.content-ready {

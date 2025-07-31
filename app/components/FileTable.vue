@@ -65,7 +65,9 @@
             >
               Job {{ job.id }}
             </CustomButton>
-            <hr />
+          </template>
+          <template #content-bottom="{ close }">
+            <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
             <CustomButton
               button-style-class="trans-btn"
               data-name="move-to-new-job-btn"
@@ -80,7 +82,6 @@
             >
               New Job
             </CustomButton>
-            <!-- --- FIX START --- -->
             <hr />
             <CustomButton
               button-style-class="trans-btn btn-lite"
@@ -92,7 +93,6 @@
             >
               Cancel
             </CustomButton>
-            <!-- --- FIX END --- -->
           </template>
         </DropdownMenu>
         <DropdownMenu
@@ -123,7 +123,9 @@
             >
               Job {{ job.id }}
             </CustomButton>
-            <hr />
+          </template>
+          <template #content-bottom="{ close }">
+            <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
             <CustomButton
               button-style-class="trans-btn"
               data-name="copy-to-new-job-btn"
@@ -138,7 +140,6 @@
             >
               New Job
             </CustomButton>
-            <!-- --- FIX START --- -->
             <hr />
             <CustomButton
               button-style-class="trans-btn btn-lite"
@@ -150,7 +151,6 @@
             >
               Cancel
             </CustomButton>
-            <!-- --- FIX END --- -->
           </template>
         </DropdownMenu>
       </template>
@@ -272,7 +272,7 @@
                         >
                           Job {{ job.id }}
                         </CustomButton>
-                        <hr />
+                        <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
                         <CustomButton
                           button-style-class="trans-btn"
                           data-name="move-to-new-job-btn"
@@ -319,7 +319,7 @@
                         >
                           Job {{ job.id }}
                         </CustomButton>
-                        <hr />
+                        <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
                         <CustomButton
                           button-style-class="trans-btn"
                           data-name="copy-to-new-job-btn"
@@ -424,6 +424,7 @@ import { ref, computed, watch, onBeforeUpdate, type ComponentPublicInstance } fr
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
+import "overlayscrollbars/styles/overlayscrollbars.css";
 import type { FileItem } from "@/types/types";
 import DropdownMenu from "./DropdownMenu.vue";
 import { logDragDropEvent } from "@/utils/loggers";
