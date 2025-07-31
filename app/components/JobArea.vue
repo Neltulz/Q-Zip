@@ -1,8 +1,9 @@
+<!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- components/JobArea.vue @preserve -->
 <!--
   Description:
   This component displays the active job's files and manages the job area's
-  state, including internal drag-to-select.
+  state, including internal drag-to-select and a context menu on the job content area.
   It now tracks an 'active' state, adding an 'is-active' class when the user
   clicks within the component. This state is used to show a visual border
   around the content area. Includes enhanced logging to debug active state changes.
@@ -18,12 +19,88 @@
   >
     <div v-if="selectionBox.visible" class="selection-box" :style="selectionBoxStyle" />
 
+    <!-- Context menu for the job area -->
+    <DropdownMenu ref="jobContextMenuRef" dropdown-data-name="job-area-context-menu" :hide-trigger="true">
+      <template #default="{ close }">
+        <CustomButton
+          button-style-class="trans-btn"
+          data-name="context-paste-btn"
+          first-icon-name="mdi:content-paste"
+          :first-icon-size="20"
+          shortcut-text="Ctrl+V"
+          :disabled="!clipboardStore.hasClipboardItems()"
+          @click="
+            () => {
+              handlePaste();
+              close();
+            }
+          "
+        >
+          Paste
+        </CustomButton>
+        <hr />
+        <CustomButton
+          button-style-class="trans-btn"
+          data-name="context-settings-btn"
+          first-icon-name="mdi:cog"
+          :first-icon-size="20"
+          @click="
+            () => {
+              console.log('Settings clicked');
+              close();
+            }
+          "
+        >
+          Settings
+        </CustomButton>
+        <CustomButton
+          button-style-class="trans-btn"
+          data-name="context-about-btn"
+          first-icon-name="mdi:information-outline"
+          :first-icon-size="20"
+          @click="
+            () => {
+              console.log('About clicked');
+              close();
+            }
+          "
+        >
+          About
+        </CustomButton>
+        <CustomButton
+          button-style-class="trans-btn"
+          data-name="context-help-btn"
+          first-icon-name="mdi:help-circle-outline"
+          :first-icon-size="20"
+          @click="
+            () => {
+              console.log('Help clicked');
+              close();
+            }
+          "
+        >
+          Help
+        </CustomButton>
+        <hr />
+        <CustomButton
+          button-style-class="trans-btn btn-lite"
+          data-name="context-cancel-btn"
+          first-icon-name="mdi:cancel"
+          :first-icon-size="20"
+          shortcut-text="Esc"
+          @click="close()"
+        >
+          Cancel
+        </CustomButton>
+      </template>
+    </DropdownMenu>
+
     <transition name="job-fade">
       <div v-if="activeJob" :key="activeJob.id" class="job">
         <div class="job-header">
           <h2>Job {{ activeJob.id }}</h2>
         </div>
-        <div class="job-content">
+        <div class="job-content" @contextmenu.prevent.stop="showJobContextMenu">
           <FileTable
             ref="fileTableRef"
             :files="activeJob.files"
@@ -52,11 +129,13 @@ import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useModalsStore } from "@/stores/modalsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
+import { useUiStore, type NotificationMessage, type NotificationType } from "@/stores/uiStore";
 import type { ModalOptions } from "@/types/modal";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-import { logSelectionChange, logInteraction, logFailsafe } from "@/utils/loggers";
+import { logSelectionChange, logFailsafe, logStoreAction } from "@/utils/loggers";
 import FileTable from "@/components/FileTable.vue";
 import DropZone from "@/components/DropZone.vue";
+import DropdownMenu from "@/components/DropdownMenu.vue";
 import type { FileItem } from "@/types/types";
 
 type FileOperationPayload = {
@@ -73,9 +152,11 @@ const jobsStore = useJobsStore();
 const modalsStore = useModalsStore();
 const dragDropStore = useDragDropStore();
 const clipboardStore = useClipboardStore();
+const uiStore = useUiStore();
 
 const fileTableRef = ref<InstanceType<typeof FileTable> | null>(null);
 const jobAreaRef = ref<HTMLElement | null>(null);
+const jobContextMenuRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
 const selectedFilePaths = ref<string[]>([]);
 const isDragSelecting = ref<boolean>(false);
 const isJobAreaActive = ref<boolean>(false);
@@ -101,21 +182,59 @@ const activeJob = computed(() => {
   return jobsStore.jobs.find((job: Job) => job.id === jobsStore.selectedJobId);
 });
 
+const showJobContextMenu = (event: MouseEvent) => {
+  if ((event.target as Element).closest('.file-row[data-has-context-menu="true"]')) {
+    return;
+  }
+  jobContextMenuRef.value?.openDropdown({ x: event.clientX, y: event.clientY });
+};
+
 const handleWindowClick = (event: MouseEvent) => {
   if (!jobAreaRef.value) {
     logFailsafe("JobArea:handleWindowClick", "Fired but jobAreaRef is null.");
     return;
   }
-
   const clickedInside = jobAreaRef.value.contains(event.target as Node);
+  if (!clickedInside && isJobAreaActive.value) {
+    isJobAreaActive.value = false;
+  }
+};
 
-  if (!clickedInside) {
-    if (isJobAreaActive.value) {
-      logInteraction("JobArea", "Click outside detected. Setting job area to inactive.");
-      isJobAreaActive.value = false;
+const handlePaste = () => {
+  if (clipboardStore.hasClipboardItems() && activeJob.value) {
+    const filesToPaste = clipboardStore.clipboard;
+    const sourceJobId = clipboardStore.sourceJobId;
+    const isCutOperation = clipboardStore.isCut;
+    const targetJobId = activeJob.value.id;
+
+    logStoreAction("JobArea", "Pasting items", {
+      sourceJobId,
+      targetJobId,
+      isCut: isCutOperation,
+      itemCount: filesToPaste.length,
+    });
+
+    if (isCutOperation) {
+      if (sourceJobId !== null && sourceJobId !== targetJobId) {
+        // For a cut operation, we can directly move the files without confirmation.
+        handleFileOperation(
+          "move",
+          filesToPaste.map((f: FileItem) => f.path),
+          targetJobId,
+          { sourceJobId }
+        );
+      }
+      // Clear clipboard after any paste attempt for a cut operation.
+      clipboardStore.clear();
+    } else {
+      // FEAT: For a copy operation, show the confirmation modal.
+      openOperationConfirmModal(
+        "copy",
+        filesToPaste.map((f) => f.path),
+        targetJobId,
+        sourceJobId
+      );
     }
-  } else {
-    logInteraction("JobArea", "handleWindowClick detected click inside. No state change.");
   }
 };
 
@@ -124,136 +243,37 @@ const handleKeyDown = (event: KeyboardEvent) => {
     return;
   }
 
-  if ((event.ctrlKey || event.metaKey) && (event.key === "a" || event.key === "c" || event.key === "x" || event.key === "v")) {
-    event.preventDefault();
-  } else if (event.key === "Delete") {
+  const isShortcutKey = (event.ctrlKey || event.metaKey) && ["a", "c", "x", "v"].includes(event.key);
+  if (isShortcutKey || event.key === "Delete") {
     event.preventDefault();
   }
 
   if ((event.ctrlKey || event.metaKey) && event.key === "a") {
     if (event.shiftKey) {
       fileTableRef.value.deselectAll();
-      logInteraction("JobArea", "Keyboard shortcut: Ctrl+Shift+A (Deselect All)");
     } else {
       fileTableRef.value.toggleAll();
-      logInteraction("JobArea", "Keyboard shortcut: Ctrl+A (Select All)");
     }
   } else if (event.key === "Delete") {
     if (selectedFilePaths.value.length > 0) {
       confirmRemoveFiles(selectedFilePaths.value);
-      logInteraction("JobArea", "Keyboard shortcut: Delete (Remove Selected Items)");
     }
   } else if ((event.ctrlKey || event.metaKey) && event.key === "c") {
     if (selectedFilePaths.value.length > 0) {
       const filesToCopy: FileItem[] = selectedFilePaths.value
         .map((path) => activeJob.value?.files.find((file) => file.path === path))
         .filter(Boolean) as FileItem[];
-      console.log(
-        "[JobArea] Attempting to copy files:",
-        filesToCopy.map((f) => f.name)
-      );
       clipboardStore.copy(filesToCopy, activeJob.value.id);
-      logInteraction("JobArea", "Keyboard shortcut: Ctrl+C (Copy Selected Items)");
     }
   } else if ((event.ctrlKey || event.metaKey) && event.key === "x") {
     if (selectedFilePaths.value.length > 0) {
       const filesToCut: FileItem[] = selectedFilePaths.value
         .map((path) => activeJob.value?.files.find((file) => file.path === path))
         .filter(Boolean) as FileItem[];
-      console.log(
-        "[JobArea] Attempting to cut files:",
-        filesToCut.map((f) => f.name)
-      );
       clipboardStore.cut(filesToCut, activeJob.value.id);
-      logInteraction("JobArea", "Keyboard shortcut: Ctrl+X (Cut Selected Items)");
     }
   } else if ((event.ctrlKey || event.metaKey) && event.key === "v") {
-    console.log(
-      "[JobArea] Attempting to paste. Clipboard items:",
-      clipboardStore.clipboard.map((f) => f.name)
-    );
-    if (clipboardStore.hasClipboardItems() && activeJob.value) {
-      const filesToPaste = clipboardStore.clipboard;
-      const sourceJob = clipboardStore.sourceJobId;
-      const isCutOperation = clipboardStore.isCut;
-      const targetJobId = activeJob.value.id;
-
-      if (isCutOperation) {
-        if (sourceJob !== null && sourceJob === targetJobId) {
-          console.log("[JobArea] Cut and paste within the same job. Clearing clipboard.");
-          clipboardStore.clear();
-          logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Cut - Same Job) - No-op, clipboard cleared.");
-        } else if (sourceJob !== null && sourceJob !== targetJobId) {
-          const fileNames = filesToPaste.map((f: FileItem) => f.name);
-          const modalOptions: ModalOptions = {
-            icon: "mdi:content-cut",
-            title: "Confirm Move Items",
-            description: [
-              `Are you sure you want to move ${fileNames.length} item(s) from Job ${sourceJob} to Job ${targetJobId}?`,
-            ],
-            buttons: [
-              { action: "proceed", text: "Move Items", theme: "warning", styleClass: "bordered-btn" },
-              { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
-            ],
-            footerJustifyContent: "center",
-          };
-          modalsStore.openModal(
-            "ResetConfirmationModalContent",
-            modalOptions,
-            { description: modalOptions.description, fileList: fileNames },
-            (action: string) => {
-              if (action === "proceed") {
-                jobsStore.moveFilesBetweenJobs(
-                  sourceJob,
-                  targetJobId,
-                  filesToPaste.map((f: FileItem) => f.path)
-                );
-                clipboardStore.clear();
-                fileTableRef.value?.deselectAll();
-                logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Move Confirmed)");
-              } else {
-                logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Move Cancelled)");
-              }
-            }
-          );
-        }
-      } else {
-        if (sourceJob !== null && sourceJob === targetJobId) {
-          console.log("[JobArea] Copy and paste within the same job. Silently adding files.");
-          jobsStore.addClipboardFilesToJob(targetJobId, filesToPaste);
-          fileTableRef.value?.deselectAll();
-          logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy - Same Job) - Silently added.");
-        } else {
-          const fileNames = filesToPaste.map((f: FileItem) => f.name);
-          const modalOptions: ModalOptions = {
-            icon: "mdi:content-copy",
-            title: "Confirm Copy Items",
-            description: [`Are you sure you want to copy ${fileNames.length} item(s) to Job ${targetJobId}?`],
-            buttons: [
-              { action: "proceed", text: "Copy Items", theme: "primary", styleClass: "bordered-btn" },
-              { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
-            ],
-            footerJustifyContent: "center",
-          };
-          modalsStore.openModal(
-            "ResetConfirmationModalContent",
-            modalOptions,
-            { description: modalOptions.description, fileList: fileNames },
-            (action: string) => {
-              if (action === "proceed") {
-                jobsStore.addClipboardFilesToJob(targetJobId, filesToPaste);
-                fileTableRef.value?.deselectAll();
-                logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy Confirmed)");
-              } else {
-                logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste/Copy Cancelled)");
-              }
-            }
-          );
-        }
-      }
-    } else {
-      logInteraction("JobArea", "Keyboard shortcut: Ctrl+V (Paste) - Clipboard is empty.");
-    }
+    handlePaste();
   }
 };
 
@@ -267,10 +287,6 @@ onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
 });
 
-watch(isJobAreaActive, (newValue, oldValue) => {
-  logInteraction("JobArea", `isJobAreaActive state changed from ${oldValue} to ${newValue}`);
-});
-
 watch(
   selectedFilePaths,
   (newPaths: string[], oldPaths: string[]) => {
@@ -278,13 +294,10 @@ watch(
       const newSet = new Set(newPaths);
       const oldSet = new Set(oldPaths);
       const getFileName = (path: string) => path.split(/[\\/]/).pop() || path;
-
       const added = newPaths.filter((path: string) => !oldSet.has(path));
       added.forEach((path: string) => logSelectionChange("JobArea", `"${getFileName(path)}" was added to the selection.`));
-
       const removed = oldPaths.filter((path: string) => !newSet.has(path));
       removed.forEach((path: string) => logSelectionChange("JobArea", `"${getFileName(path)}" was removed from the selection.`));
-
       if (added.length > 0 || removed.length > 0) {
         logSelectionChange("JobArea", `Current selection (${newPaths.length} items):`, newPaths.map(getFileName));
       }
@@ -297,32 +310,26 @@ const handleSelectionChange = (newSelection: string[]) => {
   selectedFilePaths.value = newSelection;
 };
 
-const getFileNames = (paths: string[]): string[] => {
-  if (!activeJob.value) return [];
-  const allFiles = activeJob.value.files;
+const getFileNamesFromPaths = (paths: string[], sourceJobId: number | null): string[] => {
+  if (sourceJobId === null) return [];
+  const sourceJob = jobsStore.jobs.find((j) => j.id === sourceJobId);
+  if (!sourceJob) return [];
+  const allFiles = sourceJob.files;
   return paths.map((path: string) => allFiles.find((file) => file.path === path)?.name).filter(Boolean) as string[];
 };
 
 const handleMouseDown = (event: MouseEvent): void => {
   if (!isJobAreaActive.value) {
-    logInteraction("JobArea", "Setting job area to active.");
     isJobAreaActive.value = true;
   }
-
   const targetElement = event.target as Element;
   const isInteractiveElement = targetElement.closest(
     "button, a, input, select, textarea, .dropdown-content, .row-actions, .file-table-toolbar"
   );
-  // --- FIX START ---
-  // Check for the draggable container, not just the text, to prevent the
-  // selection box from appearing when clicking the padding area.
   const isDraggableItem = targetElement.closest(".item-name-content");
-
   if (event.button !== 0 || dragDropStore.isInternalDragActive || isInteractiveElement || isDraggableItem) {
     return;
   }
-  // --- FIX END ---
-
   event.preventDefault();
   mouseMoved.value = false;
   startPoint.x = event.clientX;
@@ -337,31 +344,22 @@ const handleMouseMove = (event: MouseEvent): void => {
   if (!mouseMoved.value && (dx > 5 || dy > 5)) {
     mouseMoved.value = true;
     isDragSelecting.value = true;
-    if (DEBUG && debugConfig.logFileSelection) {
-      logInteraction("JobArea", "Selection box drag started.");
-    }
   }
-
   if (mouseMoved.value) {
     selectionBox.visible = true;
     const areaRect = jobAreaRef.value?.getBoundingClientRect();
     if (!areaRect) return;
-
     const currentX = Math.max(areaRect.left, Math.min(event.clientX, areaRect.right));
     const currentY = Math.max(areaRect.top, Math.min(event.clientY, areaRect.bottom));
-
     const startX = Math.max(areaRect.left, Math.min(startPoint.x, areaRect.right));
     const startY = Math.max(areaRect.top, Math.min(startPoint.y, areaRect.bottom));
-
     const viewportSelection = {
       x: Math.min(startX, currentX),
       y: Math.min(startY, currentY),
       width: Math.abs(startX - currentX),
       height: Math.abs(startY - currentY),
     };
-
     fileTableRef.value?.updateSelectionByRect(viewportSelection, event.ctrlKey || event.metaKey);
-
     selectionBox.x = viewportSelection.x - areaRect.left;
     selectionBox.y = viewportSelection.y - areaRect.top;
     selectionBox.width = viewportSelection.width;
@@ -372,30 +370,13 @@ const handleMouseMove = (event: MouseEvent): void => {
 const handleMouseUp = (event: MouseEvent): void => {
   window.removeEventListener("mousemove", handleMouseMove);
   window.removeEventListener("mouseup", handleMouseUp);
-  if (mouseMoved.value) {
-    if (DEBUG && debugConfig.logFileSelection) {
-      logInteraction("JobArea", "Selection box drag ended.");
-      logSelectionChange(
-        "JobArea",
-        `Final selection (${selectedFilePaths.value.length} items):`,
-        selectedFilePaths.value.map((p: string) => p.split(/[\\/]/).pop() || p)
-      );
-    }
-  } else if (event.target instanceof Element) {
+  if (!mouseMoved.value && event.target instanceof Element) {
     const target: Element = event.target;
     const nameTextEl: Element | null = target.closest(".item-name-text");
     const isCheckbox: Element | null = target.closest(".item-checkbox .custom-button");
     if (nameTextEl) {
       const rowEl: Element | null = nameTextEl.closest(".file-row");
       if (rowEl) {
-        if (DEBUG && debugConfig.logFileSelection) {
-          const modifiers: string[] = [];
-          if (event.ctrlKey || event.metaKey) modifiers.push("CTRL");
-          if (event.shiftKey) modifiers.push("SHIFT");
-          const modifierString: string = modifiers.length > 0 ? ` with [${modifiers.join(" + ")}]` : "";
-          const fileName: string = (rowEl.querySelector(".item-name-text")?.textContent || "unknown file").trim();
-          logInteraction("JobArea", `File row clicked${modifierString} on "${fileName}".`);
-        }
         fileTableRef.value?.onFileClick(event, rowEl.getAttribute("data-path") || "");
       }
     } else if (!isCheckbox && !target.closest(".file-table-toolbar")) {
@@ -407,16 +388,114 @@ const handleMouseUp = (event: MouseEvent): void => {
 };
 
 const getPathsForAction = (payload: string | string[]): string[] => {
-  if (Array.isArray(payload)) {
-    return payload;
-  }
+  if (Array.isArray(payload)) return payload;
   const isRightClickedInSelection: boolean = selectedFilePaths.value.includes(payload);
   return isRightClickedInSelection && selectedFilePaths.value.length > 0 ? selectedFilePaths.value : [payload];
 };
 
+const handleFileOperation = (
+  operation: "move" | "copy",
+  paths: string[],
+  targetJobId: number | "new-job",
+  options: { sourceJobId?: number | null } = {}
+) => {
+  const sourceJobId = options.sourceJobId ?? activeJob.value?.id;
+  if (!sourceJobId) return;
+
+  const sourceJob = jobsStore.jobs.find((j) => j.id === sourceJobId);
+  if (!sourceJob) return;
+
+  let numericTargetId: number;
+
+  if (targetJobId === "new-job") {
+    numericTargetId = jobsStore.addJob();
+  } else {
+    numericTargetId = targetJobId;
+  }
+
+  const targetJob = jobsStore.jobs.find((j) => j.id === numericTargetId);
+  if (!targetJob) return;
+
+  const targetFilePaths = new Set(targetJob.files.map((f) => f.path));
+  const newFilePaths = paths.filter((path) => !targetFilePaths.has(path));
+  const skippedFilePaths = paths.filter((path) => targetFilePaths.has(path));
+  const opPastTense = operation === "move" ? "moved" : "copied";
+
+  const messages: NotificationMessage[] = [];
+  let glowType: NotificationType = "info";
+  let operationSucceeded = false;
+  let operationFailed = false;
+
+  if (newFilePaths.length > 0) {
+    try {
+      if (operation === "move") {
+        jobsStore.moveFilesBetweenJobs(sourceJobId, numericTargetId, newFilePaths);
+      } else {
+        jobsStore.copyFilesToJob(sourceJobId, numericTargetId, newFilePaths);
+      }
+      operationSucceeded = true;
+      messages.push({
+        text: `${newFilePaths.length} item${newFilePaths.length > 1 ? "s" : ""} successfully ${opPastTense}.`,
+        type: "success",
+        details: { sourceJobId, destinationJobId: numericTargetId, filePaths: newFilePaths },
+      });
+    } catch (e) {
+      operationFailed = true;
+      console.error(`Failed to ${operation} files:`, e);
+      messages.push({
+        text: `Failed to ${operation} ${newFilePaths.length} items.`,
+        type: "error",
+        details: {
+          sourceJobId,
+          destinationJobId: numericTargetId,
+          filePaths: newFilePaths,
+          reasons: Object.fromEntries(newFilePaths.map((path) => [path, "Operation failed. See console for details."])),
+        },
+      });
+    }
+  }
+
+  if (skippedFilePaths.length > 0) {
+    const reasons: Record<string, string> = {};
+    skippedFilePaths.forEach((path) => {
+      reasons[path] = "Already exists in destination";
+    });
+    messages.push({
+      text: `${skippedFilePaths.length} item${skippedFilePaths.length > 1 ? "s" : ""} were skipped.`,
+      type: "warning",
+      details: { sourceJobId, destinationJobId: numericTargetId, filePaths: skippedFilePaths, reasons },
+    });
+  }
+
+  if (operationFailed) {
+    glowType = "error";
+  } else if (operationSucceeded) {
+    glowType = skippedFilePaths.length > 0 ? "warning" : "success";
+  } else if (skippedFilePaths.length > 0) {
+    glowType = "warning";
+  }
+
+  if (messages.length > 0) {
+    const title = `${operation.charAt(0).toUpperCase() + operation.slice(1)} Complete`;
+    uiStore.triggerJobNotification({
+      title,
+      messages,
+      glowType,
+      targetId: numericTargetId,
+      duration: 8000,
+    });
+  }
+
+  if (operationSucceeded || (targetJobId !== "new-job" && skippedFilePaths.length > 0)) {
+    jobsStore.selectJob(numericTargetId);
+  }
+
+  fileTableRef.value?.deselectAll();
+};
+
 const confirmRemoveFiles = (paths: string | string[]): void => {
   const pathsToRemove: string[] = getPathsForAction(paths);
-  const fileList: string[] = getFileNames(pathsToRemove);
+  const fileList: string[] = getFileNamesFromPaths(pathsToRemove, activeJob.value?.id ?? null);
   const modalOptions: ModalOptions = {
     icon: "mdi:alert-outline",
     title: "Confirm Remove Items",
@@ -427,14 +506,91 @@ const confirmRemoveFiles = (paths: string | string[]): void => {
     ],
     footerJustifyContent: "center",
   };
+  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { fileList }, (action: string) => {
+    if (action === "proceed" && activeJob.value) {
+      jobsStore.removeFilesFromJob(activeJob.value.id, pathsToRemove);
+      fileTableRef.value?.deselectAll();
+    }
+  });
+};
+
+const openOperationConfirmModal = (
+  operation: "move" | "copy",
+  paths: string[],
+  targetJobId: number | "new-job",
+  sourceJobId: number | null
+) => {
+  const targetJob = jobsStore.jobs.find((j) => j.id === targetJobId);
+  const itemsToProcessPaths: string[] = [];
+  const itemsToSkipPaths: string[] = [];
+
+  if (targetJob) {
+    const targetFilePaths = new Set(targetJob.files.map((f) => f.path));
+    for (const path of paths) {
+      if (targetFilePaths.has(path)) {
+        itemsToSkipPaths.push(path);
+      } else {
+        itemsToProcessPaths.push(path);
+      }
+    }
+  } else {
+    itemsToProcessPaths.push(...paths);
+  }
+
+  if (itemsToProcessPaths.length === 0 && itemsToSkipPaths.length > 0) {
+    const numSkipped = itemsToSkipPaths.length;
+    uiStore.triggerJobNotification({
+      title: "Operation Skipped",
+      messages: [
+        {
+          text: `${numSkipped} item${numSkipped > 1 ? "s" : ""} were skipped.`,
+          type: "warning",
+          details: {
+            sourceJobId,
+            destinationJobId: targetJobId as number,
+            filePaths: itemsToSkipPaths,
+            reasons: Object.fromEntries(itemsToSkipPaths.map((path) => [path, "Already exists in destination"])),
+          },
+        },
+      ],
+      glowType: "warning",
+      targetId: targetJobId,
+      duration: 5000,
+    });
+    if (typeof targetJobId === "number") {
+      jobsStore.selectJob(targetJobId);
+    }
+    return;
+  }
+
+  const opString = operation === "move" ? "Move" : "Copy";
+  const targetName = targetJobId === "new-job" ? "a new job" : `Job ${targetJobId}`;
+  const modalOptions: ModalOptions = {
+    icon: operation === "move" ? "mdi:arrow-right" : "mdi:content-copy",
+    title: `Confirm ${opString} Items`,
+    description: [`Are you sure you want to ${operation} the following item(s) to <strong>${targetName}</strong>?`],
+    buttons: [
+      {
+        action: "proceed",
+        text: `${opString} Items`,
+        theme: operation === "move" ? "warning" : "primary",
+        styleClass: "bordered-btn",
+      },
+      { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
+    ],
+    footerJustifyContent: "center",
+  };
+
   modalsStore.openModal(
     "ResetConfirmationModalContent",
     modalOptions,
-    { description: modalOptions.description, fileList },
+    {
+      itemsToProcess: itemsToProcessPaths,
+      itemsToSkip: itemsToSkipPaths,
+    },
     (action: string) => {
-      if (action === "proceed" && activeJob.value) {
-        jobsStore.removeFilesFromJob(activeJob.value.id, pathsToRemove);
-        fileTableRef.value?.deselectAll();
+      if (action === "proceed") {
+        handleFileOperation(operation, paths, targetJobId, { sourceJobId });
       }
     }
   );
@@ -443,111 +599,23 @@ const confirmRemoveFiles = (paths: string | string[]): void => {
 const confirmMoveFiles = (payload: FileOperationPayload | ContextMenuFileOperationPayload): void => {
   const { targetJobId } = payload;
   const pathsToMove: string[] = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath);
-  const fileList: string[] = getFileNames(pathsToMove);
-  const modalOptions: ModalOptions = {
-    icon: "mdi:alert-outline",
-    title: "Confirm Move Items",
-    description: [`Are you sure you want to move ${pathsToMove.length} selected item(s) to <strong>Job ${targetJobId}</strong>?`],
-    buttons: [
-      { action: "proceed", text: "Move Items", theme: "warning", styleClass: "bordered-btn" },
-      { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
-    ],
-    footerJustifyContent: "center",
-  };
-  modalsStore.openModal(
-    "ResetConfirmationModalContent",
-    modalOptions,
-    { description: modalOptions.description, fileList },
-    (action: string) => {
-      if (action === "proceed" && activeJob.value) {
-        jobsStore.moveFilesBetweenJobs(activeJob.value.id, targetJobId, pathsToMove);
-        fileTableRef.value?.deselectAll();
-      }
-    }
-  );
+  openOperationConfirmModal("move", pathsToMove, targetJobId, activeJob.value?.id ?? null);
 };
 
 const confirmMoveToNewJob = (paths: string | string[]): void => {
   const pathsToMove: string[] = getPathsForAction(paths);
-  const fileList: string[] = getFileNames(pathsToMove);
-  const modalOptions: ModalOptions = {
-    icon: "mdi:alert-outline",
-    title: "Confirm Move to New Job",
-    description: [`Are you sure you want to move ${pathsToMove.length} selected item(s) to a new job?`],
-    buttons: [
-      { action: "proceed", text: "Move to New Job", theme: "warning", styleClass: "bordered-btn" },
-      { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
-    ],
-    footerJustifyContent: "center",
-  };
-  modalsStore.openModal(
-    "ResetConfirmationModalContent",
-    modalOptions,
-    { description: modalOptions.description, fileList },
-    (action: string) => {
-      if (action === "proceed" && activeJob.value) {
-        const newJobId: number = jobsStore.addJob();
-        jobsStore.moveFilesBetweenJobs(activeJob.value.id, newJobId, pathsToMove);
-        jobsStore.selectJob(newJobId);
-        fileTableRef.value?.deselectAll();
-      }
-    }
-  );
+  openOperationConfirmModal("move", pathsToMove, "new-job", activeJob.value?.id ?? null);
 };
 
 const confirmCopyFiles = (payload: FileOperationPayload | ContextMenuFileOperationPayload): void => {
   const { targetJobId } = payload;
   const pathsToCopy: string[] = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath);
-  const fileList: string[] = getFileNames(pathsToCopy);
-  const modalOptions: ModalOptions = {
-    icon: "mdi:alert-outline",
-    title: "Confirm Copy Items",
-    description: [`Are you sure you want to copy ${pathsToCopy.length} selected item(s) to <strong>Job ${targetJobId}</strong>?`],
-    buttons: [
-      { action: "proceed", text: "Copy Items", theme: "warning", styleClass: "bordered-btn" },
-      { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
-    ],
-    footerJustifyContent: "center",
-  };
-  modalsStore.openModal(
-    "ResetConfirmationModalContent",
-    modalOptions,
-    { description: modalOptions.description, fileList },
-    (action: string) => {
-      if (action === "proceed" && activeJob.value) {
-        jobsStore.copyFilesToJob(activeJob.value.id, targetJobId, pathsToCopy);
-        fileTableRef.value?.deselectAll();
-      }
-    }
-  );
+  openOperationConfirmModal("copy", pathsToCopy, targetJobId, activeJob.value?.id ?? null);
 };
 
 const confirmCopyToNewJob = (paths: string | string[]): void => {
   const pathsToCopy: string[] = getPathsForAction(paths);
-  const fileList: string[] = getFileNames(pathsToCopy);
-  const modalOptions: ModalOptions = {
-    icon: "mdi:alert-outline",
-    title: "Confirm Copy to New Job",
-    description: [`Are you sure you want to copy ${pathsToCopy.length} selected item(s) to a new job?`],
-    buttons: [
-      { action: "proceed", text: "Copy to New Job", theme: "primary", styleClass: "bordered-btn" },
-      { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
-    ],
-    footerJustifyContent: "center",
-  };
-  modalsStore.openModal(
-    "ResetConfirmationModalContent",
-    modalOptions,
-    { description: modalOptions.description, fileList },
-    (action: string) => {
-      if (action === "proceed" && activeJob.value) {
-        const newJobId: number = jobsStore.addJob();
-        jobsStore.copyFilesToJob(activeJob.value.id, newJobId, pathsToCopy);
-        jobsStore.selectJob(newJobId);
-        fileTableRef.value?.deselectAll();
-      }
-    }
-  );
+  openOperationConfirmModal("copy", pathsToCopy, "new-job", activeJob.value?.id ?? null);
 };
 
 const addItemsToJob = (paths: string[]): void => {

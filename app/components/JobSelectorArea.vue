@@ -32,6 +32,7 @@
             active: jobsStore.selectedJobId === job.id,
             'is-dragged': job.id === draggedJobId,
             'drop-target-hover': hoveredJobId === job.id && dragDropStore.isInternalDragActive,
+            [`has-notification-${jobNotificationStates.get(job.id)}`]: jobNotificationStates.has(job.id),
           }"
           button-style-class="trans-btn btn-darkr can-become-active"
           :data-job-id="job.id"
@@ -150,6 +151,7 @@
                 data-name="drag-cancel-option"
                 first-icon-name="mdi:cancel"
                 :first-icon-size="20"
+                shortcut-text="Esc"
                 @click="
                   () => {
                     dragDropStore.endInternalDrag();
@@ -170,7 +172,10 @@
         <CustomButton
           :ref="(el) => setJobButtonRef('new-job', el)"
           class="add-job-btn"
-          :class="{ 'drop-target-hover': hoveredJobId === 'new-job' && dragDropStore.isInternalDragActive }"
+          :class="{
+            'drop-target-hover': hoveredJobId === 'new-job' && dragDropStore.isInternalDragActive,
+            [`has-notification-${jobNotificationStates.get('new-job')}`]: jobNotificationStates.has('new-job'),
+          }"
           button-style-class="trans-btn"
           data-name="add-job-btn"
           first-icon-name="mdi:add"
@@ -222,6 +227,7 @@
               data-name="drag-cancel-new-job-option"
               first-icon-name="mdi:cancel"
               :first-icon-size="20"
+              shortcut-text="Esc"
               @click="
                 () => {
                   dragDropStore.endInternalDrag();
@@ -292,23 +298,18 @@ import { useJobsStore } from "@/stores/jobsStore";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import type { OverlayScrollbars } from "overlayscrollbars";
 import { useThemeStore } from "@/stores/themeStore";
-import { useUiStore } from "@/stores/uiStore";
+import { useUiStore, type NotificationType, type NotificationMessage } from "@/stores/uiStore";
 import { useModalsStore } from "@/stores/modalsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
 import type { ModalOptions } from "@/types/modal";
-import type { FileItem } from "@/types/types";
-import { logInteraction, logDragDropEvent, logDropZoneEvent, logNotification, logTrace } from "@/utils/loggers";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import CustomButton from "./CustomButton.vue";
 import { useScrollContainer } from "@/composables/useScrollContainer";
 
-// --- FIX START ---
-// Define a local interface that extends the base type with the missing `scroll` method.
 interface ScrollableOverlayScrollbars extends OverlayScrollbars {
   scroll: (destination: { x?: string | number; y?: string | number }, duration?: number) => void;
 }
-// --- FIX END ---
 
 const { setScrollContainer } = useScrollContainer();
 
@@ -335,6 +336,61 @@ const dragHoverTargetJobId = ref<number | "new-job" | null>(null);
 const pendingDropFilePaths = ref<string[]>([]);
 const pendingDropSourceJobId = ref<number | null>(null);
 
+const jobNotificationStates = ref<Map<number | "new-job", NotificationType>>(new Map());
+
+watch(
+  () => uiStore.notifications,
+  (notifications, oldNotifications) => {
+    const newNotifications = notifications.filter((n) => !oldNotifications.some((on) => on.id === n.id));
+
+    newNotifications.forEach((notification) => {
+      if (notification.targetId) {
+        jobNotificationStates.value.set(notification.targetId, notification.glowType);
+        setTimeout(() => {
+          jobNotificationStates.value.delete(notification.targetId);
+        }, notification.duration);
+      }
+    });
+  },
+  { deep: true }
+);
+
+watch(
+  () => uiStore.pendingNotification,
+  (notification) => {
+    if (notification) {
+      const { targetId } = notification;
+      nextTick(() => {
+        const buttonRef = jobButtonRefs.value.get(targetId);
+        const buttonEl = buttonRef?.buttonRef;
+        if (buttonEl) {
+          buttonEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+
+          const visualStyleEl = buttonEl.querySelector(".visual-style");
+          const rect = visualStyleEl?.getBoundingClientRect();
+          const scrollEl = scrollComponentRef.value?.osInstance()?.elements().viewport;
+
+          if (rect && scrollEl) {
+            const scrollContainerRect = scrollEl.getBoundingClientRect();
+            const position = {
+              top: rect.top - scrollContainerRect.top + scrollEl.scrollTop,
+              left: rect.left - scrollContainerRect.left + scrollEl.scrollLeft,
+              width: rect.width,
+            };
+            uiStore.addNotification({ ...notification, position });
+          } else {
+            uiStore.addNotification(notification);
+          }
+        } else {
+          uiStore.addNotification(notification);
+        }
+        uiStore.clearPendingNotification();
+      });
+    }
+  },
+  { deep: true }
+);
+
 watch(
   scrollComponentRef,
   (newRef) => {
@@ -343,7 +399,6 @@ watch(
       if (osInstance) {
         const viewport = osInstance.elements().viewport;
         setScrollContainer(viewport);
-        logNotification("JobSelectorArea", "Scroll container SET via provide/inject.", viewport);
       }
     }
   },
@@ -352,7 +407,6 @@ watch(
 
 onUnmounted(() => {
   setScrollContainer(null);
-  logNotification("JobSelectorArea", "Component unmounted. Cleared shared scroll container.");
 });
 
 const setJobButtonRef = (jobId: number | "new-job", el: Element | ComponentPublicInstance | null) => {
@@ -382,9 +436,7 @@ watch(
     if (newJobs.length > oldJobs.length) {
       nextTick(() => {
         const scrollInstance = scrollComponentRef.value?.osInstance();
-        // --- FIX: Cast to our local type to safely call the .scroll() method ---
         if (scrollInstance) {
-          logInteraction("JobSelectorArea", "New job added, scrolling to the end.");
           (scrollInstance as ScrollableOverlayScrollbars).scroll({ x: "max" }, 300);
         }
       });
@@ -411,10 +463,8 @@ watch(
 watch(draggedJobId, (currentValue, oldValue) => {
   if (currentValue !== null && oldValue === null) {
     document.body.classList.add("is-job-reordering");
-    logDragDropEvent("JobSelectorArea", `Body class 'is-job-reordering' added. draggedJobId: ${currentValue}`);
   } else if (currentValue === null && oldValue !== null) {
     document.body.classList.remove("is-job-reordering");
-    logDragDropEvent("JobSelectorArea", `Body class 'is-job-reordering' removed. draggedJobId: ${currentValue}`);
   }
 });
 
@@ -423,32 +473,20 @@ watch(
   (isExternalDragActive) => {
     if (isExternalDragActive) {
       document.body.classList.add("is-external-drag-over");
-      logDragDropEvent("JobSelectorArea", `Body class 'is-external-drag-over' added.`);
     } else {
       document.body.classList.remove("is-external-drag-over");
-      logDragDropEvent("JobSelectorArea", `Body class 'is-external-drag-over' removed.`);
     }
   }
 );
 
 const selectJob = (jobId: number): void => {
-  if (draggedJobId.value !== null) {
-    logInteraction("JobSelectorArea", `Select job aborted: Dragging job ID ${draggedJobId.value}.`);
-    return;
-  }
-  if (dragDropStore.isInternalDragActive) {
-    logInteraction("JobSelectorArea", `Select job aborted: Internal file drag active.`);
-    return;
-  }
-
+  if (draggedJobId.value !== null || dragDropStore.isInternalDragActive) return;
   jobsStore.selectJob(jobId);
-  logInteraction("JobSelectorArea", `Job ${jobId} selected.`);
 };
 
 const addJob = (): void => {
   const newJobId = jobsStore.addJob();
   jobsStore.selectJob(newJobId);
-  logInteraction("JobSelectorArea", `New job (ID: ${newJobId}) added and selected.`);
 };
 
 const removeJob = (jobId: number): void => {
@@ -462,15 +500,9 @@ const removeJob = (jobId: number): void => {
     ],
     footerJustifyContent: "center",
   };
-
-  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { description: modalOptions.description }, (action) => {
+  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, {}, (action) => {
     if (action === "proceed") {
-      const currentSelectedJobId = jobsStore.selectedJobId;
-      jobsStore.removeJobs([jobId], currentSelectedJobId);
-      nextTick();
-      logInteraction("JobSelectorArea", `Job ${jobId} removal confirmed.`);
-    } else {
-      logInteraction("JobSelectorArea", `Job ${jobId} removal cancelled.`);
+      jobsStore.removeJobs([jobId], jobsStore.selectedJobId);
     }
   });
 };
@@ -486,31 +518,22 @@ const confirmRemoveAllJobs = (): void => {
     ],
     footerJustifyContent: "center",
   };
-
-  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { description: modalOptions.description }, (action) => {
+  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, {}, (action) => {
     if (action === "proceed") {
       jobsStore.removeAllJobs();
-      nextTick();
-      logInteraction("JobSelectorArea", `All jobs removal confirmed.`);
-    } else {
-      logInteraction("JobSelectorArea", `All jobs removal cancelled.`);
     }
   });
 };
 
 const onDragStart = (event: DragEvent, jobId: number): void => {
   if (dragDropStore.isInternalDragActive) {
-    logDragDropEvent("JobSelectorArea", `Job drag start prevented: Internal file drag active.`);
     event.preventDefault();
     return;
   }
-  logDragDropEvent("JobSelectorArea", `Job drag start for job ID: ${jobId}`);
-
   if (event.dataTransfer) {
     event.dataTransfer.setData("text/plain", String(jobId));
     event.dataTransfer.effectAllowed = "move";
   }
-
   draggedJobId.value = jobId;
 };
 
@@ -525,22 +548,12 @@ const handleDragOver = (event: DragEvent): void => {
     }
     return;
   }
-
   const target = (event.target as HTMLElement).closest(".job-selector");
-
   if (target instanceof HTMLElement && target.dataset.jobId) {
     const targetId = Number(target.dataset.jobId);
-    if (targetId !== draggedJobId.value) {
-      if (dragOverJobId.value !== targetId) {
-        dragOverJobId.value = targetId;
-        logDragDropEvent("JobSelectorArea", `Job drag over target: ${targetId}`);
-      }
-    }
+    if (targetId !== draggedJobId.value) dragOverJobId.value = targetId;
   } else {
-    if (dragOverJobId.value !== null) {
-      logDragDropEvent("JobSelectorArea", `Job drag left all job targets.`);
-      dragOverJobId.value = null;
-    }
+    dragOverJobId.value = null;
   }
 };
 
@@ -554,26 +567,20 @@ const handleDragLeave = (event: DragEvent): void => {
 
 const onDrop = (targetJobId: number | null): void => {
   if (dragDropStore.isInternalDragActive) {
-    logDragDropEvent("JobSelectorArea", "File drag drop occurred outside specific tab. Ending drag.");
     dragDropStore.endInternalDrag();
     hoveredJobId.value = null;
     return;
   }
-
   const fromIndex = jobsStore.jobs.findIndex((j) => j.id === draggedJobId.value);
   const toIndex = targetJobId === null ? jobsStore.jobs.length - 1 : jobsStore.jobs.findIndex((j) => j.id === targetJobId);
-
   if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
     jobsStore.moveJob(fromIndex, toIndex);
-    logInteraction("JobSelectorArea", `Job ${draggedJobId.value} moved from index ${fromIndex} to ${toIndex}.`);
   }
-
   draggedJobId.value = null;
   dragOverJobId.value = null;
 };
 
 const onDragEnd = (): void => {
-  logDragDropEvent("JobSelectorArea", `Job drag end.`);
   draggedJobId.value = null;
   dragOverJobId.value = null;
   if (dragDropStore.isInternalDragActive) {
@@ -585,16 +592,9 @@ const handleJobTabDragOver = (event: DragEvent, targetIdentifier: number | "new-
   if (dragDropStore.isInternalDragActive) {
     event.preventDefault();
     if (event.dataTransfer) {
-      if (targetIdentifier === dragDropStore.internalDragSourceJobId) {
-        event.dataTransfer.dropEffect = "none";
-      } else {
-        event.dataTransfer.dropEffect = "copy";
-      }
+      event.dataTransfer.dropEffect = targetIdentifier === dragDropStore.internalDragSourceJobId ? "none" : "copy";
     }
     if (hoveredJobId.value !== targetIdentifier) {
-      logDropZoneEvent("JobSelectorArea", `dragover: target changed from ${hoveredJobId.value} to ${targetIdentifier}`, {
-        eventTarget: event.target,
-      });
       hoveredJobId.value = targetIdentifier;
       dragHoverTargetJobId.value = targetIdentifier;
     }
@@ -605,11 +605,7 @@ const handleJobTabDragLeave = (event: DragEvent) => {
   if (dragDropStore.isInternalDragActive) {
     const currentTarget = event.currentTarget as HTMLElement;
     const relatedTarget = event.relatedTarget as HTMLElement | null;
-
     if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
-      logDropZoneEvent("JobSelectorArea", `dragleave: Left job tab: ${hoveredJobId.value}. Related target:`, {
-        relatedTarget: relatedTarget,
-      });
       hoveredJobId.value = null;
       dragHoverTargetJobId.value = null;
     }
@@ -617,161 +613,181 @@ const handleJobTabDragLeave = (event: DragEvent) => {
 };
 
 const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job") => {
-  logTrace("JobSelectorArea", `handleJobTabDrop: Drop detected on target: ${targetIdentifier}`);
   event.preventDefault();
   event.stopPropagation();
-
   if (targetIdentifier === dragDropStore.internalDragSourceJobId) {
-    logDragDropEvent("JobSelectorArea", `File drop prevented on source tab: ${targetIdentifier}.`);
     dragDropStore.endInternalDrag();
     return;
   }
-
-  logDragDropEvent("JobSelectorArea", `File drop detected on tab: ${targetIdentifier}.`);
-
   pendingDropFilePaths.value = [...dragDropStore.internalDraggedFiles];
   pendingDropSourceJobId.value = dragDropStore.internalDragSourceJobId;
-
   hoveredJobId.value = null;
-
   nextTick(() => {
     const dropdown = dragActionDropdownRefs.value.get(targetIdentifier);
     if (dropdown) {
       dropdown.openDropdown({ x: event.clientX, y: event.clientY });
-      logInteraction(
-        "JobSelectorArea",
-        `Opened dropdown on drop for target: ${targetIdentifier} at coords (${event.clientX}, ${event.clientY}).`
-      );
     } else {
-      logInteraction("JobSelectorArea", `Dropdown ref not found for target ${targetIdentifier} after drop.`);
       dragDropStore.endInternalDrag();
     }
   });
 };
 
 const handleDragAction = (operation: "move" | "copy", targetIdentifier: number | "new-job") => {
-  logTrace("JobSelectorArea", `handleDragAction: User chose '${operation}' for target: ${targetIdentifier}`);
   const droppedFilePaths = pendingDropFilePaths.value;
   const sourceJobId = pendingDropSourceJobId.value;
-  const itemCount = droppedFilePaths.length;
 
-  logInteraction(
-    "JobSelectorArea",
-    `handleDragAction called: Operation=${operation}, Target=${targetIdentifier}, Files=${itemCount}, SourceJob=${sourceJobId}`
-  );
-
-  if (!sourceJobId || itemCount === 0) {
-    logInteraction("JobSelectorArea", "Drag action: Missing drag data in local state. Aborting.");
+  if (!sourceJobId || droppedFilePaths.length === 0) {
     dragDropStore.endInternalDrag();
     return;
   }
 
   const sourceJob = jobsStore.jobs.find((j) => j.id === sourceJobId);
   if (!sourceJob) {
-    logInteraction("JobSelectorArea", `Drag action: Source job ${sourceJobId} not found. Aborting.`);
     dragDropStore.endInternalDrag();
     return;
   }
 
-  const filesToConfirm: FileItem[] = sourceJob.files.filter((f) => droppedFilePaths.includes(f.path));
-  const fileNames: string[] = filesToConfirm.map((f) => f.name);
-
   const onModalClose = (confirmed: boolean) => {
     if (confirmed) {
-      logTrace("JobSelectorArea", `Modal confirmed for '${operation}' action.`);
-      let finalTargetId: number;
-      if (targetIdentifier === "new-job") {
-        const newJobId = jobsStore.addJob();
-        finalTargetId = newJobId;
-        if (operation === "move") {
-          jobsStore.moveFilesBetweenJobs(sourceJobId, newJobId, droppedFilePaths);
-        } else {
-          jobsStore.copyFilesToJob(sourceJobId, newJobId, droppedFilePaths);
-        }
-        jobsStore.selectJob(newJobId);
+      let numericTargetId: number;
+      const isNewJob = targetIdentifier === "new-job";
+      if (isNewJob) {
+        numericTargetId = jobsStore.addJob();
       } else {
-        const targetJobId = targetIdentifier as number;
-        finalTargetId = targetJobId;
-        if (sourceJobId !== targetJobId) {
+        numericTargetId = targetIdentifier;
+      }
+
+      const targetJob = jobsStore.jobs.find((j) => j.id === numericTargetId);
+      if (!targetJob) {
+        dragDropStore.endInternalDrag();
+        return;
+      }
+
+      const targetFilePaths = new Set(targetJob.files.map((f) => f.path));
+      const newFilePaths = droppedFilePaths.filter((path) => !targetFilePaths.has(path));
+      const skippedFilePaths = droppedFilePaths.filter((path) => targetFilePaths.has(path));
+      const opPastTense = operation === "move" ? "moved" : "copied";
+
+      const messages: NotificationMessage[] = [];
+      let glowType: NotificationType = "info";
+      let operationFailed = false;
+      let operationSucceeded = false;
+
+      if (newFilePaths.length > 0) {
+        try {
           if (operation === "move") {
-            jobsStore.moveFilesBetweenJobs(sourceJobId, targetJobId, droppedFilePaths);
+            jobsStore.moveFilesBetweenJobs(sourceJobId, numericTargetId, newFilePaths);
           } else {
-            jobsStore.copyFilesToJob(sourceJobId, targetJobId, droppedFilePaths);
+            jobsStore.copyFilesToJob(sourceJobId, numericTargetId, newFilePaths);
           }
-        }
-      }
-
-      if (operation === "move" && clipboardStore.isCut && clipboardStore.sourceJobId === sourceJobId) {
-        clipboardStore.clear();
-      }
-
-      nextTick(() => {
-        const logData: Record<string, unknown> = {};
-        logTrace("JobSelectorArea", `nextTick: Preparing to add notification for target ${finalTargetId}`);
-        const targetButtonRef = jobButtonRefs.value.get(finalTargetId);
-
-        const buttonEl = targetButtonRef?.buttonRef;
-        const visualStyleEl = buttonEl?.querySelector(".visual-style");
-        const rect = visualStyleEl?.getBoundingClientRect();
-
-        logData.buttonRef = buttonEl;
-        logData.visualStyleEl = visualStyleEl;
-        logData.rect = rect ? JSON.parse(JSON.stringify(rect)) : null;
-
-        if (rect) {
-          const opPastTense = operation === "move" ? "moved" : "copied";
-          logNotification("JobSelectorArea", `Adding notification for target ${finalTargetId}`, logData);
-          uiStore.addNotification({
-            message: `${itemCount} item${itemCount > 1 ? "s" : ""} successfully ${opPastTense}.`,
+          operationSucceeded = true;
+          messages.push({
+            text: `${newFilePaths.length} item${newFilePaths.length > 1 ? "s" : ""} successfully ${opPastTense}.`,
             type: "success",
-            targetId: finalTargetId,
-            position: { top: rect.top, left: rect.left, width: rect.width },
+            details: { sourceJobId, destinationJobId: numericTargetId, filePaths: newFilePaths },
           });
-        } else {
-          logNotification("JobSelectorArea", `Could not find rect for target ${finalTargetId} to create notification.`, logData);
+          if (operation === "move" && clipboardStore.isCut && clipboardStore.sourceJobId === sourceJobId) {
+            clipboardStore.clear();
+          }
+        } catch (e) {
+          operationFailed = true;
+          console.error(`Failed to ${operation} files:`, e);
+          messages.push({
+            text: `Failed to ${operation} ${newFilePaths.length} items.`,
+            type: "error",
+            details: {
+              sourceJobId,
+              destinationJobId: numericTargetId,
+              filePaths: newFilePaths,
+              reasons: Object.fromEntries(newFilePaths.map((path) => [path, "Operation failed. See console."])),
+            },
+          });
         }
-      });
-    }
+      }
 
-    logInteraction("JobSelectorArea", `File drag: ${operation} ${confirmed ? "confirmed" : "cancelled"}.`);
+      if (skippedFilePaths.length > 0) {
+        messages.push({
+          text: `${skippedFilePaths.length} item${skippedFilePaths.length > 1 ? "s" : ""} were skipped.`,
+          type: "warning",
+          details: {
+            sourceJobId,
+            destinationJobId: numericTargetId,
+            filePaths: skippedFilePaths,
+            reasons: Object.fromEntries(skippedFilePaths.map((path) => [path, "Already exists in destination"])),
+          },
+        });
+      }
+
+      if (operationFailed) {
+        glowType = "error";
+      } else if (operationSucceeded) {
+        glowType = skippedFilePaths.length > 0 ? "warning" : "success";
+      } else if (skippedFilePaths.length > 0) {
+        glowType = "warning";
+      }
+
+      if (messages.length > 0) {
+        const title = `${operation.charAt(0).toUpperCase() + operation.slice(1)} Complete`;
+        uiStore.triggerJobNotification({
+          title,
+          messages,
+          glowType,
+          targetId: numericTargetId,
+          duration: 8000,
+        });
+      }
+
+      if (operationSucceeded || (targetIdentifier !== "new-job" && skippedFilePaths.length > 0)) {
+        jobsStore.selectJob(numericTargetId);
+      }
+    }
     dragDropStore.endInternalDrag();
     pendingDropFilePaths.value = [];
     pendingDropSourceJobId.value = null;
   };
 
   const isMoveToSameJob = operation === "move" && targetIdentifier !== "new-job" && sourceJobId === targetIdentifier;
-
   if (isMoveToSameJob) {
-    logInteraction("JobSelectorArea", "File drag: Move to same job. No action needed.");
     dragDropStore.endInternalDrag();
     return;
   }
 
-  const title = operation === "move" ? "Confirm Move Items" : "Confirm Copy Items";
-  const targetName = targetIdentifier === "new-job" ? "a new job" : `Job ${targetIdentifier}`;
-  const description = `Are you sure you want to ${operation} ${fileNames.length} item(s) to <strong>${targetName}</strong>?`;
+  const targetJob = jobsStore.jobs.find((j) => j.id === targetIdentifier);
+  const itemsToProcess = [];
+  const itemsToSkip = [];
 
+  if (targetJob) {
+    const targetFilePaths = new Set(targetJob.files.map((f) => f.path));
+    for (const path of droppedFilePaths) {
+      if (targetFilePaths.has(path)) {
+        itemsToSkip.push(path);
+      } else {
+        itemsToProcess.push(path);
+      }
+    }
+  } else {
+    itemsToProcess.push(...droppedFilePaths);
+  }
+
+  if (itemsToProcess.length === 0 && itemsToSkip.length > 0) {
+    onModalClose(true); // Treat as confirmed, but only skipped items will be processed
+    return;
+  }
+
+  const opString = operation.charAt(0).toUpperCase() + operation.slice(1);
+  const targetName = targetIdentifier === "new-job" ? "a new job" : `Job ${targetIdentifier}`;
   const modalOptions: ModalOptions = {
     icon: operation === "move" ? "mdi:arrow-right" : "mdi:content-copy",
-    title,
-    description: [description],
+    title: `Confirm ${opString} Items`,
+    description: [`Are you sure you want to ${operation} the following item(s) to <strong>${targetName}</strong>?`],
     buttons: [
-      {
-        action: "proceed",
-        text: operation === "move" ? "Move Items" : "Copy Items",
-        theme: operation === "move" ? "warning" : "primary",
-        styleClass: "bordered-btn",
-      },
-      { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
+      { action: "proceed", text: `${opString} Items`, theme: "primary" },
+      { action: "cancel", text: "Cancel" },
     ],
     footerJustifyContent: "center",
   };
-
-  modalsStore.openModal(
-    "ResetConfirmationModalContent",
-    modalOptions,
-    { description: modalOptions.description, fileList: fileNames },
-    (action: string) => onModalClose(action === "proceed")
+  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { itemsToProcess, itemsToSkip }, (action) =>
+    onModalClose(action === "proceed")
   );
 };
 
@@ -779,8 +795,86 @@ const reorderJob = (index: number, direction: "left" | "right"): void => {
   const fromIndex = index;
   const toIndex = direction === "left" ? index - 1 : index + 1;
   jobsStore.moveJob(fromIndex, toIndex);
-  logInteraction("JobSelectorArea", `Job reordered: From index ${fromIndex} to ${toIndex}.`);
 };
 </script>
 
-<style scoped src="./job-selector-area-comp/job-selector-area.scoped.css"></style>
+<style scoped>
+@import "./job-selector-area-comp/job-selector-area.scoped.css";
+
+.job-selector .visual-style,
+.add-job-btn .visual-style {
+  transition: box-shadow 0.3s ease-in-out, outline-color 0.3s ease-in-out;
+}
+
+@keyframes success-glow {
+  from {
+    outline-color: hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.4);
+    box-shadow: 0 0 5px hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.5),
+      0 0 10px hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.4);
+  }
+  to {
+    outline-color: hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.8);
+    box-shadow: 0 0 10px hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.9),
+      0 0 20px hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.8);
+  }
+}
+
+@keyframes warning-glow {
+  from {
+    outline-color: hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.4);
+    box-shadow: 0 0 5px hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.5),
+      0 0 10px hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.4);
+  }
+  to {
+    outline-color: hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.8);
+    box-shadow: 0 0 10px hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.9),
+      0 0 20px hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.8);
+  }
+}
+
+@keyframes error-glow {
+  from {
+    outline-color: hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.4);
+    box-shadow: 0 0 5px hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.5),
+      0 0 10px hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.4);
+  }
+  to {
+    outline-color: hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.8);
+    box-shadow: 0 0 10px hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.9),
+      0 0 20px hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.8);
+  }
+}
+
+@keyframes info-glow {
+  from {
+    outline-color: hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.4);
+    box-shadow: 0 0 5px hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.5),
+      0 0 10px hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.4);
+  }
+  to {
+    outline-color: hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.8);
+    box-shadow: 0 0 10px hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.9),
+      0 0 20px hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.8);
+  }
+}
+
+::v-deep(.job-selector.has-notification-success .visual-style),
+::v-deep(.add-job-btn.has-notification-success .visual-style) {
+  animation: success-glow 1.2s ease-in-out infinite alternate;
+}
+
+::v-deep(.job-selector.has-notification-warning .visual-style),
+::v-deep(.add-job-btn.has-notification-warning .visual-style) {
+  animation: warning-glow 1.2s ease-in-out infinite alternate;
+}
+
+::v-deep(.job-selector.has-notification-error .visual-style),
+::v-deep(.add-job-btn.has-notification-error .visual-style) {
+  animation: error-glow 1.2s ease-in-out infinite alternate;
+}
+
+::v-deep(.job-selector.has-notification-info .visual-style),
+::v-deep(.add-job-btn.has-notification-info .visual-style) {
+  animation: info-glow 1.2s ease-in-out infinite alternate;
+}
+</style>

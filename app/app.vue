@@ -47,6 +47,17 @@
         >
           About
         </CustomButton>
+        <hr />
+        <CustomButton
+          button-style-class="trans-btn btn-lite"
+          data-name="context-menu-cancel"
+          first-icon-name="mdi:cancel"
+          :first-icon-size="20"
+          shortcut-text="Esc"
+          @click="close()"
+        >
+          Cancel
+        </CustomButton>
       </template>
     </DropdownMenu>
   </div>

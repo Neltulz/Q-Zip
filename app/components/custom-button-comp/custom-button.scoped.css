@@ -61,7 +61,8 @@
   }
 
   > .button-content,
-  > .icon-placeholder {
+  > .icon-placeholder,
+  > .shortcut-text { /* Include new shortcut-text */
     z-index: 1; /* Ensure content is above visual-style */
   }
 }
@@ -99,6 +100,7 @@
   ) {
   grid-template-columns: auto; /* Default for single item */
 }
+/* Adjusted grid-template-columns to account for shortcut-text */
 .custom-button:is(
     [data-justify="start"],
     [data-justify="center"],
@@ -110,7 +112,13 @@
     [data-justify="center"],
     [data-justify="end"],
     [data-justify="auto"]:not(:has(> .icon-placeholder))
-  ):has(> .button-content:not(:empty) + .last-icon) {
+  ):has(> .button-content:not(:empty) + .last-icon),
+.custom-button:is(
+    [data-justify="start"],
+    [data-justify="center"],
+    [data-justify="end"],
+    [data-justify="auto"]:not(:has(> .icon-placeholder))
+  ):has(> .button-content:not(:empty) + .shortcut-text) { /* New: content + shortcut */
   grid-template-columns: auto auto;
 }
 .custom-button:is(
@@ -118,27 +126,58 @@
     [data-justify="center"],
     [data-justify="end"],
     [data-justify="auto"]:not(:has(> .icon-placeholder))
-  ):has(> .icon-placeholder + .button-content:not(:empty) + .icon-placeholder) {
+  ):has(> .icon-placeholder + .button-content:not(:empty) + .icon-placeholder),
+.custom-button:is(
+    [data-justify="start"],
+    [data-justify="center"],
+    [data-justify="end"],
+    [data-justify="auto"]:not(:has(> .icon-placeholder))
+  ):has(> .icon-placeholder + .button-content:not(:empty) + .shortcut-text + .icon-placeholder), /* New: all four parts */
+.custom-button:is(
+    [data-justify="start"],
+    [data-justify="center"],
+    [data-justify="end"],
+    [data-justify="auto"]:not(:has(> .icon-placeholder))
+  ):has(> .button-content:not(:empty) + .shortcut-text + .icon-placeholder) { /* New: content + shortcut + last icon */
   grid-template-columns: auto auto auto;
 }
 
+
 /* Stretchy modes for `justify="stretch"` or `justify="auto"` when icons are present. */
 /* FIX: Use direct child selector `>` in all `:has()` checks to ensure only direct children of the grid are considered. */
-.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .button-content:not(:empty)):not(:has(> .first-icon)):not(:has(> .last-icon)) {
+.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .button-content:not(:empty)):not(:has(> .first-icon)):not(:has(> .last-icon)):not(:has(> .shortcut-text)) {
   /* Content only */
   grid-template-columns: 1fr;
 }
-.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .first-icon):has(> .button-content:not(:empty)):not(:has(> .last-icon)) {
+.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .first-icon):has(> .button-content:not(:empty)):not(:has(> .last-icon)):not(:has(> .shortcut-text)) {
   /* First icon + content */
   grid-template-columns: auto 1fr;
 }
-.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):not(:has(> .first-icon)):has(> .button-content:not(:empty)):has(> .last-icon) {
+.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):not(:has(> .first-icon)):has(> .button-content:not(:empty)):has(> .last-icon):not(:has(> .shortcut-text)) {
   /* Content + last icon */
   grid-template-columns: 1fr auto;
 }
-.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .first-icon):has(> .button-content:not(:empty)):has(> .last-icon) {
+.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .first-icon):has(> .button-content:not(:empty)):has(> .last-icon):not(:has(> .shortcut-text)) {
   /* All three parts: first icon, content, and last icon */
   grid-template-columns: auto 1fr auto;
+}
+
+/* New grid definitions for shortcut text */
+.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .button-content:not(:empty)):has(> .shortcut-text):not(:has(> .first-icon)):not(:has(> .last-icon)) {
+  /* Content + shortcut */
+  grid-template-columns: 1fr auto;
+}
+.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .first-icon):has(> .button-content:not(:empty)):has(> .shortcut-text):not(:has(> .last-icon)) {
+  /* First icon + content + shortcut */
+  grid-template-columns: auto 1fr auto;
+}
+.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):not(:has(> .first-icon)):has(> .button-content:not(:empty)):has(> .shortcut-text):has(> .last-icon) {
+  /* Content + shortcut + last icon */
+  grid-template-columns: 1fr auto auto;
+}
+.custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .first-icon):has(> .button-content:not(:empty)):has(> .shortcut-text):has(> .last-icon) {
+  /* All four parts: first icon, content, shortcut, last icon */
+  grid-template-columns: auto 1fr auto auto;
 }
 
 
@@ -155,6 +194,16 @@
 /* FIX: Use direct child selector `>` to prevent matching nested icons. */
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)) .button-content {
   justify-content: start;
+}
+
+/* New: Styles for shortcut text */
+.shortcut-text {
+  color: var(--txt-clr); /* Softer color */
+  font-size: 0.9em; /* Larger font size */
+  font-family: monospace; /* Monospaced font for key names */
+  opacity: 0.7; /* Slightly faded */
+  white-space: nowrap;
+  margin-inline-start: auto; /* Push to the right */
 }
 
 /* --- THEME SELECTORS --- */

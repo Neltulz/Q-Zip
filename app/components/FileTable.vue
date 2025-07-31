@@ -87,6 +87,7 @@
               data-name="cancel-move-to-btn"
               first-icon-name="mdi:cancel"
               :first-icon-size="20"
+              shortcut-text="Esc"
               @click="close()"
             >
               Cancel
@@ -144,6 +145,7 @@
               data-name="cancel-copy-to-btn"
               first-icon-name="mdi:cancel"
               :first-icon-size="20"
+              shortcut-text="Esc"
               @click="close()"
             >
               Cancel
@@ -230,6 +232,7 @@
                       :data-name="`remove-file-${index}-btn`"
                       first-icon-name="mdi:trash-can-outline"
                       :first-icon-size="20"
+                      shortcut-text="Del"
                       @click="
                         () => {
                           removeFile(file.path);
@@ -337,9 +340,61 @@
                     <hr />
                     <CustomButton
                       button-style-class="trans-btn btn-lite"
+                      :data-name="`cut-file-${index}-btn`"
+                      first-icon-name="mdi:content-cut"
+                      :first-icon-size="20"
+                      shortcut-text="Ctrl+X"
+                      @click="
+                        () => {
+                          clipboardStore.cut([file], jobId);
+                          closeMain();
+                        }
+                      "
+                    >
+                      Cut
+                    </CustomButton>
+                    <CustomButton
+                      button-style-class="trans-btn btn-lite"
+                      :data-name="`copy-file-${index}-btn`"
+                      first-icon-name="mdi:content-copy"
+                      :first-icon-size="20"
+                      shortcut-text="Ctrl+C"
+                      @click="
+                        () => {
+                          clipboardStore.copy([file], jobId);
+                          closeMain();
+                        }
+                      "
+                    >
+                      Copy
+                    </CustomButton>
+                    <CustomButton
+                      button-style-class="trans-btn btn-lite"
+                      :data-name="`paste-file-${index}-btn`"
+                      first-icon-name="mdi:content-paste"
+                      :first-icon-size="20"
+                      shortcut-text="Ctrl+V"
+                      :disabled="!clipboardStore.hasClipboardItems()"
+                      @click="
+                        () => {
+                          if (clipboardStore.isCut) {
+                            moveFile(jobId, file.path); // Placeholder for move on paste
+                          } else {
+                            copyFile(jobId, file.path); // Placeholder for copy on paste
+                          }
+                          closeMain();
+                        }
+                      "
+                    >
+                      Paste
+                    </CustomButton>
+                    <hr />
+                    <CustomButton
+                      button-style-class="trans-btn btn-lite"
                       :data-name="`cancel-file-action-${index}-btn`"
                       first-icon-name="mdi:cancel"
                       :first-icon-size="20"
+                      shortcut-text="Esc"
                       @click="closeMain()"
                     >
                       Cancel
@@ -368,6 +423,7 @@
 import { ref, computed, watch, onBeforeUpdate, type ComponentPublicInstance } from "vue";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
+import { useClipboardStore } from "@/stores/clipboardStore";
 import type { FileItem } from "@/types/types";
 import DropdownMenu from "./DropdownMenu.vue";
 import { logDragDropEvent } from "@/utils/loggers";
@@ -391,6 +447,7 @@ const emit = defineEmits(["selection-changed", "remove-files", "move-files", "mo
 
 const jobsStore = useJobsStore();
 const dragDropStore = useDragDropStore();
+const clipboardStore = useClipboardStore();
 const jobs = computed(() => jobsStore.jobs);
 
 const selectedFiles = ref<string[]>([]);

@@ -12,25 +12,42 @@ export interface NotificationPosition {
   width: number;
 }
 
+export interface NotificationMessageDetails {
+  sourceJobId: number | null;
+  destinationJobId: number;
+  filePaths: string[];
+  // Add a reasons map to explain why an item was skipped or errored.
+  reasons?: Record<string, string>; // e.g., { "C:\\path\\to\\file.txt": "Already exists in destination" }
+}
+
+export interface NotificationMessage {
+  text: string;
+  type: NotificationType;
+  details?: NotificationMessageDetails;
+}
+
 export interface Notification {
   id: number;
-  message: string;
-  type: NotificationType;
+  title: string;
+  messages: NotificationMessage[];
+  glowType: NotificationType;
   targetId: number | "new-job";
   duration: number;
   position?: NotificationPosition;
   timeoutId: number | null;
 }
 
+// Type for the pending notification payload
+type PendingNotificationPayload = Omit<Notification, "id" | "timeoutId" | "position" | "duration"> & { duration?: number };
+
 export const useUiStore = defineStore(
   "ui",
   () => {
-    // State
     const jobSelectorOrientation: Ref<JobSelectorOrientation> = ref("horizontal");
     const jobsSectionWidth: Ref<PanelWidth> = ref("3fr");
     const compressSectionWidth: Ref<PanelWidth> = ref("2fr");
     const notifications: Ref<Notification[]> = ref([]);
-    // --- FIX: REMOVED scrollContainer and setScrollContainer ---
+    const pendingNotification = ref<PendingNotificationPayload | null>(null);
 
     function toggleJobSelectorOrientation(): void {
       jobSelectorOrientation.value = jobSelectorOrientation.value === "horizontal" ? "vertical" : "horizontal";
@@ -43,7 +60,7 @@ export const useUiStore = defineStore(
 
     function addNotification(notification: Omit<Notification, "id" | "timeoutId" | "duration"> & { duration?: number }): void {
       const id = Date.now() + Math.random();
-      const duration = notification.duration ?? 4000;
+      const duration = notification.duration ?? 5000;
 
       const newNotification: Notification = {
         id,
@@ -87,6 +104,14 @@ export const useUiStore = defineStore(
       }
     }
 
+    function triggerJobNotification(notification: PendingNotificationPayload) {
+      pendingNotification.value = notification;
+    }
+
+    function clearPendingNotification() {
+      pendingNotification.value = null;
+    }
+
     function resetUi(): void {
       jobSelectorOrientation.value = "horizontal";
       jobsSectionWidth.value = "3fr";
@@ -99,12 +124,15 @@ export const useUiStore = defineStore(
       jobsSectionWidth,
       compressSectionWidth,
       notifications,
+      pendingNotification,
       toggleJobSelectorOrientation,
       setPanelWidths,
       addNotification,
       removeNotification,
       pauseNotificationTimeout,
       resumeNotificationTimeout,
+      triggerJobNotification,
+      clearPendingNotification,
       resetUi,
     };
   },

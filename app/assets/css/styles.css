@@ -145,6 +145,19 @@ body {
     var(--success-alph)
   );
 
+  /* --- FIX START --- */
+  --warning-lum: 50%;
+  --warning-hue: 45;
+  --warning-sat: 100%;
+  --warning-alph: 1;
+  --warning-clr: hsla(
+    var(--warning-hue),
+    var(--warning-sat),
+    var(--warning-lum),
+    var(--warning-alph)
+  );
+  /* --- FIX END --- */
+
   --danger-lum: 55%;
   --danger-hue: 0;
   --danger-sat: 65%;

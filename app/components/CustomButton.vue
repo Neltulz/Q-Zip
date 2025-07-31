@@ -6,6 +6,8 @@
   A reusable button component with optional icons, customizable via props.
   The anchor-name prop has been removed as it is no longer needed for the
   notification system.
+  This component now supports displaying a keyboard shortcut text to the
+  right of the main button content and to the left of the last icon.
 -->
 <!-- #endregion -->
 
@@ -28,6 +30,10 @@
     </div>
     <div class="button-content">
       <slot />
+    </div>
+    <!-- New slot for keyboard shortcut text -->
+    <div v-if="props.shortcutText" class="shortcut-text">
+      {{ props.shortcutText }}
     </div>
     <div v-if="props.lastIconName" class="icon-placeholder last-icon" :style="lastIconPlaceholderStyle">
       <Icon :name="props.lastIconName" :size="String(props.lastIconSize ?? 20)" />
@@ -54,6 +60,7 @@ const props = withDefaults(
     justify?: "auto" | "start" | "center" | "end" | "stretch";
     lastIconName?: string;
     lastIconSize?: string | number;
+    shortcutText?: string; // New prop for keyboard shortcut text
   }>(),
   {
     btnTheme: "default",
@@ -63,6 +70,7 @@ const props = withDefaults(
     justify: "auto",
     lastIconName: "",
     lastIconSize: undefined,
+    shortcutText: "", // Default to empty string
   }
 );
 
