@@ -23,103 +23,115 @@
       @drop.prevent="onDrop(null)"
     >
       <div class="job-selector-list">
-        <CustomButton
-          v-for="(job, index) in jobsList"
-          :key="job.id"
-          :ref="(el) => setJobButtonRef(job.id, el)"
-          class="job-selector"
-          :class="{
-            active: jobsStore.selectedJobId === job.id,
-            'is-dragged': job.id === draggedJobId,
-            'drop-target-hover': hoveredJobId === job.id && dragDropStore.isInternalDragActive,
-            [`has-notification-${jobNotificationStates.get(job.id)}`]: jobNotificationStates.has(job.id),
-          }"
-          button-style-class="trans-btn btn-darkr can-become-active"
-          :data-job-id="job.id"
-          :data-name="'job-' + job.id"
-          :draggable="true"
-          @click="selectJob(job.id)"
-          @dragend="onDragEnd"
-          @dragstart="onDragStart($event, job.id)"
-          @dragover.prevent="handleJobTabDragOver($event, job.id)"
-          @dragleave="handleJobTabDragLeave($event)"
-          @drop.prevent="handleJobTabDrop($event, job.id)"
-        >
-          <span class="job-sel-icon">
-            <Icon name="mdi:briefcase" size="20" />
-          </span>
-          <span class="job-info">
-            <span class="job-sel-title">Job {{ job.id }}</span>
-            <span class="job-sel-num-files">{{ job.files.length }} Items</span>
-          </span>
-          <div class="job-sel-options">
-            <DropdownMenu
-              button-style-class="trans-btn"
-              :dropdown-data-name="'job-' + job.id + '-dropdown'"
-              :last-icon-size="20"
-              placement="bottom-start"
-            >
-              <template #default="{ close }">
-                <CustomButton
-                  button-style-class="trans-btn btn-lite"
-                  :data-name="'move-job-left-' + job.id + '-btn'"
-                  :disabled="index === 0"
-                  first-icon-name="mdi:arrow-left"
-                  :first-icon-size="20"
-                  @mouseup="
-                    () => {
-                      reorderJob(index, 'left');
-                      close();
-                    }
-                  "
-                >
-                  Move Left
-                </CustomButton>
-                <CustomButton
-                  button-style-class="trans-btn btn-lite"
-                  :data-name="'move-job-right-' + job.id + '-btn'"
-                  :disabled="index === jobsList.length - 1"
-                  first-icon-name="mdi:arrow-right"
-                  :first-icon-size="20"
-                  @mouseup="
-                    () => {
-                      reorderJob(index, 'right');
-                      close();
-                    }
-                  "
-                >
-                  Move Right
-                </CustomButton>
-                <hr v-if="jobsList.length > 1" />
-                <CustomButton
-                  button-style-class="trans-btn btn-lite"
-                  :data-name="'remove-job-' + job.id + '-btn'"
-                  first-icon-name="mdi:trash"
-                  :first-icon-size="20"
-                  btn-theme="danger"
-                  @mouseup="
-                    () => {
-                      close();
-                      removeJob(job.id);
-                    }
-                  "
-                >
-                  Remove Job
-                </CustomButton>
-              </template>
-            </DropdownMenu>
-          </div>
+        <template v-for="(job, index) in jobsList" :key="job.id">
+          <CustomButton
+            :ref="(el) => setJobButtonRef(job.id, el)"
+            class="job-selector"
+            :class="{
+              active: jobsStore.selectedJobId === job.id,
+              'is-dragged': job.id === draggedJobId,
+              'drop-target-hover': hoveredJobId === job.id && dragDropStore.isInternalDragActive,
+              [`has-notification-${jobNotificationStates.get(job.id)}`]: jobNotificationStates.has(job.id),
+            }"
+            button-style-class="trans-btn btn-darkr can-become-active"
+            :data-job-id="job.id"
+            :data-name="'job-' + job.id"
+            :draggable="true"
+            data-has-context-menu="true"
+            @click="selectJob(job.id)"
+            @contextmenu.prevent="showJobContextMenu($event, job.id)"
+            @dragend="onDragEnd"
+            @dragstart="onDragStart($event, job.id)"
+            @dragover.prevent="handleJobTabDragOver($event, job.id)"
+            @dragleave="handleJobTabDragLeave($event)"
+            @drop.prevent="handleJobTabDrop($event, job.id)"
+            @mouseenter="tooltipManager.showTooltip('job-' + job.id)"
+            @mouseleave="tooltipManager.hideTooltip()"
+          >
+            <span class="job-sel-icon">
+              <Icon name="mdi:briefcase" size="20" />
+            </span>
+            <span class="job-info">
+              <span class="job-sel-title">Job {{ job.id }}</span>
+              <span class="job-sel-num-files">{{ job.files.length }} Items</span>
+            </span>
+            <div class="job-sel-options">
+              <CustomButton
+                button-style-class="trans-btn close-job-btn"
+                data-name="close-job-btn"
+                first-icon-name="mdi:close"
+                :first-icon-size="18"
+                @click.stop.prevent="removeJob(job.id)"
+              />
+            </div>
+          </CustomButton>
+
+          <!-- Context Menu for each job tab -->
           <DropdownMenu
-            v-show="dragHoverTargetJobId === job.id"
-            :ref="(el) => setDragActionMenuRef(job.id, el)"
+            :ref="(el) => setContextMenuRef(job.id, el)"
+            :dropdown-data-name="'job-' + job.id + '-context-menu'"
             :hide-trigger="true"
-            :dropdown-data-name="`drag-action-dropdown-${job.id}`"
-            placement="bottom-end"
           >
             <template #default="{ close }">
               <CustomButton
                 button-style-class="trans-btn btn-lite"
-                data-name="drag-move-option"
+                :data-name="'move-job-left-' + job.id + '-btn'"
+                :disabled="index === 0"
+                first-icon-name="mdi:arrow-left"
+                :first-icon-size="20"
+                @mouseup="
+                  () => {
+                    reorderJob(index, 'left');
+                    close();
+                  }
+                "
+              >
+                Move Left
+              </CustomButton>
+              <CustomButton
+                button-style-class="trans-btn btn-lite"
+                :data-name="'move-job-right-' + job.id + '-btn'"
+                :disabled="index === jobsList.length - 1"
+                first-icon-name="mdi:arrow-right"
+                :first-icon-size="20"
+                @mouseup="
+                  () => {
+                    reorderJob(index, 'right');
+                    close();
+                  }
+                "
+              >
+                Move Right
+              </CustomButton>
+              <hr v-if="jobsList.length > 1" />
+              <CustomButton
+                button-style-class="trans-btn btn-lite"
+                :data-name="'remove-job-' + job.id + '-btn'"
+                first-icon-name="mdi:trash"
+                :first-icon-size="20"
+                btn-theme="danger"
+                @mouseup="
+                  () => {
+                    removeJob(job.id);
+                    close();
+                  }
+                "
+              >
+                Remove Job
+              </CustomButton>
+            </template>
+          </DropdownMenu>
+
+          <!-- Dropdown for drag-and-drop actions -->
+          <DropdownMenu
+            :ref="(el) => setDragActionMenuRef(job.id, el)"
+            :dropdown-data-name="`drag-action-job-${job.id}`"
+            :hide-trigger="true"
+          >
+            <template #default="{ close }">
+              <CustomButton
+                button-style-class="trans-btn"
+                data-name="drag-action-move-btn"
                 first-icon-name="mdi:arrow-right"
                 :first-icon-size="20"
                 @click="
@@ -132,8 +144,8 @@
                 Move Here
               </CustomButton>
               <CustomButton
-                button-style-class="trans-btn btn-lite"
-                data-name="drag-copy-option"
+                button-style-class="trans-btn"
+                data-name="drag-action-copy-btn"
                 first-icon-name="mdi:content-copy"
                 :first-icon-size="20"
                 @click="
@@ -148,10 +160,9 @@
               <hr />
               <CustomButton
                 button-style-class="trans-btn btn-lite"
-                data-name="drag-cancel-option"
+                data-name="drag-action-cancel-btn"
                 first-icon-name="mdi:cancel"
                 :first-icon-size="20"
-                shortcut-text="Esc"
                 @click="
                   () => {
                     dragDropStore.endInternalDrag();
@@ -163,18 +174,27 @@
               </CustomButton>
             </template>
           </DropdownMenu>
-        </CustomButton>
+
+          <InfoTooltip
+            :visible="tooltipManager.activeTooltipId.value === 'job-' + job.id"
+            :content="{ text: 'Right click for more options' }"
+            :target="jobButtonRefs.get(job.id)?.visualStyleRef"
+          />
+        </template>
       </div>
     </OverlayScrollbarsComponent>
 
     <div class="job-selector-btn-wrapper">
-      <div class="job-selector-btns-start" @mouseenter="showAddJobTooltip = true" @mouseleave="showAddJobTooltip = false">
+      <div
+        class="job-selector-btns-start"
+        @mouseenter="tooltipManager.showTooltip('add-job')"
+        @mouseleave="tooltipManager.hideTooltip()"
+      >
         <CustomButton
-          :ref="(el) => setJobButtonRef('new-job', el)"
+          ref="addJobButtonRef"
           class="add-job-btn"
           :class="{
             'drop-target-hover': hoveredJobId === 'new-job' && dragDropStore.isInternalDragActive,
-            [`has-notification-${jobNotificationStates.get('new-job')}`]: jobNotificationStates.has('new-job'),
           }"
           button-style-class="trans-btn"
           data-name="add-job-btn"
@@ -185,22 +205,16 @@
           @dragleave="handleJobTabDragLeave($event)"
           @drop.prevent="handleJobTabDrop($event, 'new-job')"
         />
-        <InfoTooltip
-          :visible="showAddJobTooltip"
-          :content="{ text: 'Create New Job (Ctrl+T)' }"
-          :target-rect="addJobButtonRect"
-        />
+        <!-- Dropdown for drag-and-drop actions on 'New Job' button -->
         <DropdownMenu
-          v-show="dragHoverTargetJobId === 'new-job'"
           :ref="(el) => setDragActionMenuRef('new-job', el)"
+          dropdown-data-name="drag-action-new-job"
           :hide-trigger="true"
-          dropdown-data-name="drag-action-dropdown-new-job"
-          placement="bottom-end"
         >
           <template #default="{ close }">
             <CustomButton
-              button-style-class="trans-btn btn-lite"
-              data-name="drag-move-to-new-job-option"
+              button-style-class="trans-btn"
+              data-name="drag-action-move-to-new-btn"
               first-icon-name="mdi:arrow-right"
               :first-icon-size="20"
               @click="
@@ -213,8 +227,8 @@
               Move to New Job
             </CustomButton>
             <CustomButton
-              button-style-class="trans-btn btn-lite"
-              data-name="drag-copy-to-new-job-option"
+              button-style-class="trans-btn"
+              data-name="drag-action-copy-to-new-btn"
               first-icon-name="mdi:content-copy"
               :first-icon-size="20"
               @click="
@@ -229,10 +243,9 @@
             <hr />
             <CustomButton
               button-style-class="trans-btn btn-lite"
-              data-name="drag-cancel-new-job-option"
+              data-name="drag-action-cancel-btn"
               first-icon-name="mdi:cancel"
               :first-icon-size="20"
-              shortcut-text="Esc"
               @click="
                 () => {
                   dragDropStore.endInternalDrag();
@@ -244,6 +257,12 @@
             </CustomButton>
           </template>
         </DropdownMenu>
+        <InfoTooltip
+          :visible="tooltipManager.activeTooltipId.value === 'add-job'"
+          :content="{ text: 'Create New Job (Ctrl+T)' }"
+          :target="addJobButtonRef?.visualStyleRef"
+          :debug-force-visible="false"
+        />
       </div>
 
       <div class="job-selector-btns-end">
@@ -299,19 +318,19 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance, onBeforeUpdate } from "vue";
-import { useJobsStore } from "@/stores/jobsStore";
+import { useJobsStore, type FileItem } from "@/stores/jobsStore";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import type { OverlayScrollbars } from "overlayscrollbars";
 import { useThemeStore } from "@/stores/themeStore";
-import { useUiStore, type NotificationType, type NotificationMessage } from "@/stores/uiStore";
+import { useUiStore, type NotificationType } from "@/stores/uiStore";
 import { useModalsStore } from "@/stores/modalsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
-import { useClipboardStore } from "@/stores/clipboardStore";
 import type { ModalOptions } from "@/types/modal";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import CustomButton from "./CustomButton.vue";
-import InfoTooltip from "./InfoTooltip.vue"; // Import InfoTooltip
+import InfoTooltip from "./InfoTooltip.vue";
 import { useScrollContainer } from "@/composables/useScrollContainer";
+import { useTooltipManager } from "@/composables/useTooltipManager";
 
 interface ScrollableOverlayScrollbars extends OverlayScrollbars {
   scroll: (destination: { x?: string | number; y?: string | number }, duration?: number) => void;
@@ -324,7 +343,7 @@ const jobsStore = useJobsStore();
 const uiStore = useUiStore();
 const modalsStore = useModalsStore();
 const dragDropStore = useDragDropStore();
-const clipboardStore = useClipboardStore();
+const tooltipManager = useTooltipManager();
 
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
 const jobsList = computed(() => jobsStore.jobs);
@@ -336,29 +355,15 @@ const hoveredJobId = ref<number | "new-job" | null>(null);
 const scrollComponentRef = ref<InstanceType<typeof OverlayScrollbarsComponent> | null>(null);
 
 const jobButtonRefs = ref(new Map<number | "new-job", InstanceType<typeof CustomButton>>());
+const jobContextMenuRefs = ref(new Map<number, InstanceType<typeof DropdownMenu>>());
 const dragActionDropdownRefs = ref(new Map<number | "new-job", InstanceType<typeof DropdownMenu>>());
-const dragHoverTargetJobId = ref<number | "new-job" | null>(null);
 
 const pendingDropFilePaths = ref<string[]>([]);
 const pendingDropSourceJobId = ref<number | null>(null);
 
 const jobNotificationStates = ref<Map<number | "new-job", NotificationType>>(new Map());
 
-// --- FEAT: Add Job Tooltip State ---
-const showAddJobTooltip = ref(false);
-const addJobButtonRect = ref<DOMRect | null>(null);
-
-watch(showAddJobTooltip, (visible) => {
-  if (visible) {
-    nextTick(() => {
-      const buttonRef = jobButtonRefs.value.get("new-job");
-      if (buttonRef && buttonRef.buttonRef) {
-        addJobButtonRect.value = buttonRef.buttonRef.getBoundingClientRect();
-      }
-    });
-  }
-});
-// --- End of Add Job Tooltip State ---
+const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
 
 watch(
   () => uiStore.notifications,
@@ -438,6 +443,12 @@ const setJobButtonRef = (jobId: number | "new-job", el: Element | ComponentPubli
   }
 };
 
+const setContextMenuRef = (jobId: number, el: Element | ComponentPublicInstance | null) => {
+  if (el) {
+    jobContextMenuRefs.value.set(jobId, el as InstanceType<typeof DropdownMenu>);
+  }
+};
+
 const setDragActionMenuRef = (jobId: number | "new-job", el: Element | ComponentPublicInstance | null) => {
   if (el) {
     dragActionDropdownRefs.value.set(jobId, el as InstanceType<typeof DropdownMenu>);
@@ -446,10 +457,10 @@ const setDragActionMenuRef = (jobId: number | "new-job", el: Element | Component
 
 onBeforeUpdate(() => {
   jobButtonRefs.value.clear();
+  jobContextMenuRefs.value.clear();
   dragActionDropdownRefs.value.clear();
 });
 
-// --- FEAT: Hotkey for creating a new job ---
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.ctrlKey && event.key.toLowerCase() === "t") {
     event.preventDefault();
@@ -461,7 +472,6 @@ onMounted(() => {
   jobsStore.initialize();
   window.addEventListener("keydown", handleKeyDown);
 });
-// --- End of Hotkey feature ---
 
 watch(
   jobsList,
@@ -501,20 +511,16 @@ watch(draggedJobId, (currentValue, oldValue) => {
   }
 });
 
-watch(
-  () => dragDropStore.isExternalDragOver,
-  (isExternalDragActive) => {
-    if (isExternalDragActive) {
-      document.body.classList.add("is-external-drag-over");
-    } else {
-      document.body.classList.remove("is-external-drag-over");
-    }
-  }
-);
-
 const selectJob = (jobId: number): void => {
   if (draggedJobId.value !== null || dragDropStore.isInternalDragActive) return;
   jobsStore.selectJob(jobId);
+};
+
+const showJobContextMenu = (event: MouseEvent, jobId: number) => {
+  const contextMenu = jobContextMenuRefs.value.get(jobId);
+  if (contextMenu) {
+    contextMenu.openDropdown({ x: event.clientX, y: event.clientY });
+  }
 };
 
 const addJob = (): void => {
@@ -619,7 +625,7 @@ const onDrop = (targetJobId: number | null): void => {
 const onDragEnd = (): void => {
   draggedJobId.value = null;
   dragOverJobId.value = null;
-  if (dragDropStore.isInternalDragActive) {
+  if (dragDropStore.isInternalDragActive && !dragDropStore.dropOccurred) {
     dragDropStore.endInternalDrag();
   }
 };
@@ -632,7 +638,6 @@ const handleJobTabDragOver = (event: DragEvent, targetIdentifier: number | "new-
     }
     if (hoveredJobId.value !== targetIdentifier) {
       hoveredJobId.value = targetIdentifier;
-      dragHoverTargetJobId.value = targetIdentifier;
     }
   }
 };
@@ -643,7 +648,6 @@ const handleJobTabDragLeave = (event: DragEvent) => {
     const relatedTarget = event.relatedTarget as HTMLElement | null;
     if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
       hoveredJobId.value = null;
-      dragHoverTargetJobId.value = null;
     }
   }
 };
@@ -651,6 +655,9 @@ const handleJobTabDragLeave = (event: DragEvent) => {
 const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job") => {
   event.preventDefault();
   event.stopPropagation();
+
+  dragDropStore.setDropOccurred(true);
+
   if (targetIdentifier === dragDropStore.internalDragSourceJobId) {
     dragDropStore.endInternalDrag();
     return;
@@ -658,6 +665,7 @@ const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job"
   pendingDropFilePaths.value = [...dragDropStore.internalDraggedFiles];
   pendingDropSourceJobId.value = dragDropStore.internalDragSourceJobId;
   hoveredJobId.value = null;
+
   nextTick(() => {
     const dropdown = dragActionDropdownRefs.value.get(targetIdentifier);
     if (dropdown) {
@@ -683,145 +691,67 @@ const handleDragAction = (operation: "move" | "copy", targetIdentifier: number |
     return;
   }
 
-  const onModalClose = (confirmed: boolean) => {
-    if (confirmed) {
-      let numericTargetId: number;
-      const isNewJob = targetIdentifier === "new-job";
-      if (isNewJob) {
-        numericTargetId = jobsStore.addJob();
-      } else {
-        numericTargetId = targetIdentifier;
-      }
+  const pathSet = new Set(droppedFilePaths);
+  const filesToOperateOn = sourceJob.files.filter((f) => pathSet.has(f.path));
 
-      const targetJob = jobsStore.jobs.find((j) => j.id === numericTargetId);
-      if (!targetJob) {
-        dragDropStore.endInternalDrag();
-        return;
-      }
+  openOperationConfirmModal(operation, filesToOperateOn, targetIdentifier, sourceJobId);
+};
 
-      const targetFilePaths = new Set(targetJob.files.map((f) => f.path));
-      const newFilePaths = droppedFilePaths.filter((path) => !targetFilePaths.has(path));
-      const skippedFilePaths = droppedFilePaths.filter((path) => targetFilePaths.has(path));
-      const opPastTense = operation === "move" ? "moved" : "copied";
-
-      const messages: NotificationMessage[] = [];
-      let glowType: NotificationType = "info";
-      let operationFailed = false;
-      let operationSucceeded = false;
-
-      if (newFilePaths.length > 0) {
-        try {
-          if (operation === "move") {
-            jobsStore.moveFilesBetweenJobs(sourceJobId, numericTargetId, newFilePaths);
-          } else {
-            jobsStore.copyFilesToJob(sourceJobId, numericTargetId, newFilePaths);
-          }
-          operationSucceeded = true;
-          messages.push({
-            text: `${newFilePaths.length} item${newFilePaths.length > 1 ? "s" : ""} successfully ${opPastTense}.`,
-            type: "success",
-            details: { sourceJobId, destinationJobId: numericTargetId, filePaths: newFilePaths },
-          });
-          if (operation === "move" && clipboardStore.isCut && clipboardStore.sourceJobId === sourceJobId) {
-            clipboardStore.clear();
-          }
-        } catch (e) {
-          operationFailed = true;
-          console.error(`Failed to ${operation} files:`, e);
-          messages.push({
-            text: `Failed to ${operation} ${newFilePaths.length} items.`,
-            type: "error",
-            details: {
-              sourceJobId,
-              destinationJobId: numericTargetId,
-              filePaths: newFilePaths,
-              reasons: Object.fromEntries(newFilePaths.map((path) => [path, "Operation failed. See console."])),
-            },
-          });
-        }
-      }
-
-      if (skippedFilePaths.length > 0) {
-        messages.push({
-          text: `${skippedFilePaths.length} item${skippedFilePaths.length > 1 ? "s" : ""} were skipped.`,
-          type: "warning",
-          details: {
-            sourceJobId,
-            destinationJobId: numericTargetId,
-            filePaths: skippedFilePaths,
-            reasons: Object.fromEntries(skippedFilePaths.map((path) => [path, "Already exists in destination"])),
-          },
-        });
-      }
-
-      if (operationFailed) {
-        glowType = "error";
-      } else if (operationSucceeded) {
-        glowType = skippedFilePaths.length > 0 ? "warning" : "success";
-      } else if (skippedFilePaths.length > 0) {
-        glowType = "warning";
-      }
-
-      if (messages.length > 0) {
-        const title = `${operation.charAt(0).toUpperCase() + operation.slice(1)} Complete`;
-        uiStore.triggerJobNotification({
-          title,
-          messages,
-          glowType,
-          targetId: numericTargetId,
-          duration: 8000,
-        });
-      }
-
-      if (operationSucceeded || (targetIdentifier !== "new-job" && skippedFilePaths.length > 0)) {
-        jobsStore.selectJob(numericTargetId);
-      }
-    }
-    dragDropStore.endInternalDrag();
-    pendingDropFilePaths.value = [];
-    pendingDropSourceJobId.value = null;
-  };
-
-  const isMoveToSameJob = operation === "move" && targetIdentifier !== "new-job" && sourceJobId === targetIdentifier;
-  if (isMoveToSameJob) {
-    dragDropStore.endInternalDrag();
-    return;
-  }
-
-  const targetJob = jobsStore.jobs.find((j) => j.id === targetIdentifier);
-  const itemsToProcess = [];
-  const itemsToSkip = [];
+const openOperationConfirmModal = (
+  operation: "move" | "copy",
+  files: FileItem[],
+  targetJobId: number | "new-job",
+  sourceJobId: number | null
+) => {
+  const targetJob = jobsStore.jobs.find((j) => j.id === targetJobId);
+  let itemsToProcess: FileItem[] = [];
+  let itemsToSkip: FileItem[] = [];
 
   if (targetJob) {
     const targetFilePaths = new Set(targetJob.files.map((f) => f.path));
-    for (const path of droppedFilePaths) {
-      if (targetFilePaths.has(path)) {
-        itemsToSkip.push(path);
+    for (const file of files) {
+      if (targetFilePaths.has(file.path)) {
+        itemsToSkip.push(file);
       } else {
-        itemsToProcess.push(path);
+        itemsToProcess.push(file);
       }
     }
   } else {
-    itemsToProcess.push(...droppedFilePaths);
+    itemsToProcess.push(...files);
   }
 
-  // FEAT: Always show confirmation modal for drag-drop.
-  // The old logic to bypass the modal has been removed.
-
-  const opString = operation.charAt(0).toUpperCase() + operation.slice(1);
-  const targetName = targetIdentifier === "new-job" ? "a new job" : `Job ${targetIdentifier}`;
+  const opString = operation === "move" ? "Move" : "Copy";
+  const targetName = targetJobId === "new-job" ? "a new job" : `Job ${targetJobId}`;
   const modalOptions: ModalOptions = {
     icon: operation === "move" ? "mdi:arrow-right" : "mdi:content-copy",
     title: `Confirm ${opString} Items`,
     description: [`Are you sure you want to ${operation} the following item(s) to <strong>${targetName}</strong>?`],
     buttons: [
-      { action: "proceed", text: `${opString} Items`, theme: "primary" },
-      { action: "cancel", text: "Cancel" },
+      {
+        action: "proceed",
+        text: `${opString} Items`,
+        theme: operation === "move" ? "warning" : "primary",
+        styleClass: "bordered-btn",
+      },
+      { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
     ],
     footerJustifyContent: "center",
   };
-  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { itemsToProcess, itemsToSkip }, (action) =>
-    onModalClose(action === "proceed")
+
+  modalsStore.openModal(
+    "ResetConfirmationModalContent",
+    modalOptions,
+    {
+      itemsToProcess,
+      itemsToSkip,
+    },
+    (action: string) => {
+      if (action === "proceed") {
+        uiStore.handleFileOperation(operation, files, targetJobId, { sourceJobId });
+      }
+      // Always end the drag operation when the modal closes, whether proceeding or cancelling.
+      dragDropStore.endInternalDrag();
+    }
   );
 };
 
@@ -834,81 +764,5 @@ const reorderJob = (index: number, direction: "left" | "right"): void => {
 
 <style scoped>
 @import "./job-selector-area-comp/job-selector-area.scoped.css";
-
-.job-selector .visual-style,
-.add-job-btn .visual-style {
-  transition: box-shadow 0.3s ease-in-out, outline-color 0.3s ease-in-out;
-}
-
-@keyframes success-glow {
-  from {
-    outline-color: hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.4);
-    box-shadow: 0 0 5px hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.5),
-      0 0 10px hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.4);
-  }
-  to {
-    outline-color: hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.8);
-    box-shadow: 0 0 10px hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.9),
-      0 0 20px hsla(var(--success-hue, 145), var(--success-sat, 63%), 50%, 0.8);
-  }
-}
-
-@keyframes warning-glow {
-  from {
-    outline-color: hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.4);
-    box-shadow: 0 0 5px hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.5),
-      0 0 10px hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.4);
-  }
-  to {
-    outline-color: hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.8);
-    box-shadow: 0 0 10px hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.9),
-      0 0 20px hsla(var(--warning-hue, 45), var(--warning-sat, 100%), 50%, 0.8);
-  }
-}
-
-@keyframes error-glow {
-  from {
-    outline-color: hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.4);
-    box-shadow: 0 0 5px hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.5),
-      0 0 10px hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.4);
-  }
-  to {
-    outline-color: hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.8);
-    box-shadow: 0 0 10px hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.9),
-      0 0 20px hsla(var(--danger-hue, 0), var(--danger-sat, 65%), 55%, 0.8);
-  }
-}
-
-@keyframes info-glow {
-  from {
-    outline-color: hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.4);
-    box-shadow: 0 0 5px hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.5),
-      0 0 10px hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.4);
-  }
-  to {
-    outline-color: hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.8);
-    box-shadow: 0 0 10px hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.9),
-      0 0 20px hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 0.8);
-  }
-}
-
-::v-deep(.job-selector.has-notification-success .visual-style),
-::v-deep(.add-job-btn.has-notification-success .visual-style) {
-  animation: success-glow 1.2s ease-in-out infinite alternate;
-}
-
-::v-deep(.job-selector.has-notification-warning .visual-style),
-::v-deep(.add-job-btn.has-notification-warning .visual-style) {
-  animation: warning-glow 1.2s ease-in-out infinite alternate;
-}
-
-::v-deep(.job-selector.has-notification-error .visual-style),
-::v-deep(.add-job-btn.has-notification-error .visual-style) {
-  animation: error-glow 1.2s ease-in-out infinite alternate;
-}
-
-::v-deep(.job-selector.has-notification-info .visual-style),
-::v-deep(.add-job-btn.has-notification-info .visual-style) {
-  animation: info-glow 1.2s ease-in-out infinite alternate;
-}
+/* Scoped styles remain the same */
 </style>

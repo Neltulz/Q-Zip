@@ -2,40 +2,49 @@
 <!-- components/InfoTooltip.vue @preserve -->
 <template>
   <teleport to="body">
-    <div v-if="visible" ref="tooltipRef" class="info-tooltip" :style="tooltipStyle">
-      <div class="tooltip-content">
-        <!-- --- FIX START: Use v-if to correctly handle the union type for the 'content' prop --- -->
-        <!-- Display simple text content -->
-        <template v-if="'text' in content">
-          <div class="info-line">{{ content.text }}</div>
-        </template>
+    <Transition name="tooltip-fade">
+      <div v-if="visible || debugForceVisible" ref="floatingRef" class="info-tooltip" :style="floatingStyles">
+        <div class="tooltip-content">
+          <!-- Display simple text content -->
+          <template v-if="parsedContent">
+            <div class="info-line tooltip-text-content">
+              <span>{{ parsedContent.mainText }}</span>
+              <span v-if="parsedContent.shortcut" class="shortcut-key-text">{{ parsedContent.shortcut }}</span>
+            </div>
+          </template>
 
-        <!-- Display structured notification details -->
-        <template v-else>
-          <div v-if="content.sourceJobId" class="info-line"><strong>Source:</strong> Job {{ content.sourceJobId }}</div>
-          <div v-if="content.destinationJobId" class="info-line">
-            <strong>Destination:</strong> Job {{ content.destinationJobId }}
-          </div>
-          <hr v-if="content.sourceJobId || content.destinationJobId" />
-          <div v-if="content.filePaths && content.filePaths.length > 0" class="file-list-container">
-            <strong>Affected Items:</strong>
-            <ul class="file-list">
-              <li v-for="path in content.filePaths" :key="path">
-                <span class="file-name">{{ getFileName(path) }}</span>
-                <span v-if="content.reasons && content.reasons[path]" class="reason"> - {{ content.reasons[path] }} </span>
-              </li>
-            </ul>
-          </div>
-        </template>
-        <!-- --- FIX END --- -->
+          <!-- Display structured notification details -->
+          <template v-else-if="'filePaths' in content">
+            <div v-if="content.sourceJobId" class="info-line"><strong>Source:</strong> Job {{ content.sourceJobId }}</div>
+            <div v-if="content.destinationJobId" class="info-line">
+              <strong>Destination:</strong> Job {{ content.destinationJobId }}
+            </div>
+            <hr v-if="content.sourceJobId || content.destinationJobId" />
+            <div v-if="content.filePaths && content.filePaths.length > 0" class="file-list-container">
+              <strong>Affected Items:</strong>
+              <ul class="file-list">
+                <li v-for="path in content.filePaths" :key="path">
+                  <span class="file-name">{{ getFileName(path) }}</span>
+                  <span v-if="content.reasons && content.reasons[path]" class="reason"> - {{ content.reasons[path] }} </span>
+                </li>
+              </ul>
+            </div>
+          </template>
+        </div>
+        <!-- Use an inline SVG for a perfect, styleable arrow -->
+        <svg ref="arrowRef" class="tooltip-arrow" :data-side="side" :style="arrowStyle" viewBox="0 0 16 9">
+          <path d="M 0 0 L 8 8 L 16 0" />
+        </svg>
       </div>
-    </div>
+    </Transition>
   </teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, type PropType, type StyleValue } from "vue";
+import { ref, computed, toRef, type PropType } from "vue";
 import type { NotificationMessageDetails } from "@/stores/uiStore";
+import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
+import type { MaybeElement } from "@vueuse/core";
 
 // Allow a simple text property for more generic tooltips
 type TooltipContent = NotificationMessageDetails | { text: string };
@@ -49,41 +58,61 @@ const props = defineProps({
     type: Object as PropType<TooltipContent>,
     required: true,
   },
-  targetRect: {
-    type: Object as PropType<DOMRect | null>,
+  target: {
+    type: Object as PropType<MaybeElement>,
     default: null,
+  },
+  debugForceVisible: {
+    type: Boolean,
+    default: false,
   },
 });
 
-const tooltipRef = ref<HTMLElement | null>(null);
-const tooltipHeight = ref(0);
+const floatingRef = ref<HTMLElement | null>(null);
+const arrowRef = ref(null);
 
-watch(
-  () => props.visible,
-  (isVisible) => {
-    if (isVisible) {
-      nextTick(() => {
-        if (tooltipRef.value) {
-          tooltipHeight.value = tooltipRef.value.offsetHeight;
-        }
-      });
+const { floatingStyles, middlewareData, placement } = useFloating(toRef(props, "target"), floatingRef, {
+  placement: "top",
+  whileElementsMounted: autoUpdate,
+  middleware: [offset(10), flip(), shift({ padding: 5 }), arrow({ element: arrowRef, padding: 4 })],
+});
+
+const side = computed(() => placement.value.split("-")[0]);
+
+const parsedContent = computed(() => {
+  if ("text" in props.content) {
+    const match = props.content.text.match(/\s*\(([^)]+)\)$/);
+    if (match) {
+      const mainText = props.content.text.replace(match[0], "").trim();
+      const shortcut = `(${match[1]})`;
+      return { mainText, shortcut };
     }
+    return { mainText: props.content.text, shortcut: null };
   }
-);
+  return null;
+});
 
-const tooltipStyle = computed((): StyleValue => {
-  if (!props.targetRect || !props.visible) {
-    return { visibility: "hidden" };
-  }
+const arrowStyle = computed(() => {
+  const { x, y } = middlewareData.value.arrow || {};
 
-  const { top, right, height } = props.targetRect;
-  // Position tooltip to the right of the target, centered vertically.
-  const tooltipTop = top + height / 2 - tooltipHeight.value / 2;
-  const tooltipLeft = right + 12; // 12px gap
+  const logicalSideMap = {
+    top: "inset-block-end",
+    right: "inset-inline-start",
+    bottom: "inset-block-start",
+    left: "inset-inline-end",
+  };
+
+  const staticSide = logicalSideMap[side.value as keyof typeof logicalSideMap];
+
+  if (!staticSide) return {};
+
+  // The offset now accounts for the new, larger SVG's height
+  const offsetValue = "-9px";
 
   return {
-    top: `${tooltipTop}px`,
-    left: `${tooltipLeft}px`,
+    insetInlineStart: x != null ? `${x}px` : "",
+    insetBlockStart: y != null ? `${y}px` : "",
+    [staticSide]: offsetValue,
   };
 });
 
@@ -93,65 +122,111 @@ const getFileName = (path: string) => {
 </script>
 
 <style scoped>
-/* FEAT: Allow tooltip to expand and prevent horizontal scroll */
+.tooltip-fade-enter-active {
+  transition: opacity 150ms ease-in-out;
+}
+.tooltip-fade-leave-active {
+  transition: opacity 300ms ease-in-out;
+}
+.tooltip-fade-enter-from,
+.tooltip-fade-leave-to {
+  opacity: 0;
+}
+
 .info-tooltip {
-  position: fixed;
-  z-index: 10001; /* Higher than notification popover */
-  background-color: var(--bg-clr-liter);
-  border: 1px solid var(--brdr-clr-lite);
+  position: absolute;
+  z-index: 10001;
+  background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--brdr-clr-liter);
   border-radius: var(--brdr-rad-smal);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  padding: 8px 12px;
-  width: max-content; /* Allow width to grow based on content */
-  min-width: 150px; /* Set a minimum width */
-  max-width: 500px; /* Set a maximum width */
-  pointer-events: auto; /* Allow mouse interaction */
+  box-shadow: 0 2px 15px hsla(0, 0%, 0%, 0.5);
+  inline-size: max-content;
+  min-inline-size: 150px;
+  max-inline-size: 500px;
+  pointer-events: auto;
   white-space: nowrap;
-}
+  display: flex;
+  align-items: center;
+  padding-block: 8px;
+  padding-inline: 12px;
 
-.tooltip-content {
-  font-size: 0.8rem;
-  color: var(--txt-clr);
-}
+  .tooltip-arrow {
+    position: absolute;
+    inline-size: 16px;
+    block-size: 9px;
 
-.info-line {
-  margin-bottom: 4px;
-}
+    path {
+      fill: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
+      stroke: var(--brdr-clr-liter);
+      stroke-width: 1px;
+    }
 
-hr {
-  border: none;
-  border-top: 1px solid var(--brdr-clr);
-  margin: 6px 0;
-}
+    &[data-side="bottom"] {
+      transform: rotate(180deg);
+    }
+    &[data-side="left"] {
+      transform: rotate(90deg);
+    }
+    &[data-side="right"] {
+      transform: rotate(-90deg);
+    }
+  }
 
-.file-list-container {
-  max-height: 200px;
-  overflow-y: auto;
-}
+  .tooltip-content {
+    font-size: 1em;
+    color: var(--txt-clr-liter);
 
-.file-list {
-  list-style: none;
-  padding-left: 12px;
-  margin: 4px 0 0 0;
-  display: grid; /* Changed from flex to grid */
-  gap: 2px;
-}
+    .tooltip-text-content {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      position: relative;
+      inset-block-start: 1px;
+    }
 
-.file-list li {
-  display: grid; /* Use grid for alignment */
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-}
+    .info-line {
+      margin-block-end: 4px;
+    }
 
-.file-name {
-  /* Allow file names to wrap if they are too long */
-  white-space: normal;
-  word-break: break-all;
-}
+    hr {
+      border: none;
+      border-block-start: 1px solid var(--brdr-clr);
+      margin-block: 6px;
+      margin-inline: 0;
+    }
 
-.reason {
-  color: var(--txt-clr-dark);
-  font-style: italic;
-  white-space: nowrap;
+    .file-list-container {
+      max-block-size: 200px;
+      overflow-y: auto;
+    }
+
+    .file-list {
+      list-style: none;
+      padding-inline-start: 12px;
+      margin-block-start: 4px;
+      margin-block-end: 0;
+      margin-inline: 0;
+      display: grid;
+      gap: 2px;
+
+      li {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+
+        .file-name {
+          white-space: normal;
+          word-break: break-all;
+        }
+
+        .reason {
+          color: var(--txt-clr-dark);
+          font-style: italic;
+          white-space: nowrap;
+        }
+      }
+    }
+  }
 }
 </style>

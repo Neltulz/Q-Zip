@@ -267,6 +267,7 @@ body {
   background-color: var(--bg-clr);
   color: var(--txt-clr);
   font-family:
+    "Inter",
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
@@ -308,6 +309,12 @@ a {
 
 .selectable {
   user-select: text;
+}
+
+/* New reusable class for shortcut text */
+.shortcut-key-text {
+  color: var(--blu-lite);
+  font-weight: 500;
 }
 
 :disabled {

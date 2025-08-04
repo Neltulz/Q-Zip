@@ -4,10 +4,8 @@
 <!--
   Description:
   A reusable button component with optional icons, customizable via props.
-  The anchor-name prop has been removed as it is no longer needed for the
-  notification system.
-  This component now supports displaying a keyboard shortcut text to the
-  right of the main button content and to the left of the last icon.
+  Now exposes a ref to its internal `.visual-style` div for precise
+  positioning of other elements like tooltips.
 -->
 <!-- #endregion -->
 
@@ -24,7 +22,7 @@
     data-component-name="CustomButton"
     @contextmenu.prevent
   >
-    <div class="visual-style" />
+    <div ref="visualStyleRef" class="visual-style" />
     <div v-if="props.firstIconName" class="icon-placeholder first-icon" :style="firstIconPlaceholderStyle">
       <Icon :name="props.firstIconName" :size="String(props.firstIconSize ?? 20)" />
     </div>
@@ -49,6 +47,7 @@ import { DEBUG, debugConfig } from "@/utils/debugConfig";
 
 const attrs = useAttrs();
 const buttonRef = ref<HTMLElement | null>(null);
+const visualStyleRef = ref<HTMLElement | null>(null); // Ref for the visual style div
 
 const props = withDefaults(
   defineProps<{
@@ -60,7 +59,7 @@ const props = withDefaults(
     justify?: "auto" | "start" | "center" | "end" | "stretch";
     lastIconName?: string;
     lastIconSize?: string | number;
-    shortcutText?: string; // New prop for keyboard shortcut text
+    shortcutText?: string;
   }>(),
   {
     btnTheme: "default",
@@ -70,7 +69,7 @@ const props = withDefaults(
     justify: "auto",
     lastIconName: "",
     lastIconSize: undefined,
-    shortcutText: "", // Default to empty string
+    shortcutText: "",
   }
 );
 
@@ -112,6 +111,7 @@ const otherAttrs = computed(() => {
 
 defineExpose({
   buttonRef,
+  visualStyleRef, // Expose the new ref
 });
 
 onMounted((): void => {

@@ -1,7 +1,7 @@
-<!-- components/DropZone.vue @preserve -->
+<!-- components/AddFilesAndFolders.vue @preserve (formerly DropZone.vue) -->
 <template>
-  <div class="drop-zone-wrapper" :data-job-id="jobId" data-component-name="DropZone">
-    <div class="drop-zone">
+  <div class="add-files-wrapper" :data-job-id="jobId" data-component-name="AddFilesAndFolders">
+    <div class="add-files-content">
       <div class="prompt-message">Add Files/Folders</div>
       <DropdownMenu
         first-icon-name="mdi:add"
@@ -71,29 +71,27 @@ const handleAddFolder = async (close: () => void): Promise<void> => {
 </script>
 
 <style scoped>
-.drop-zone-wrapper {
-  /* This element is the container for the container query. */
+.add-files-wrapper {
   container-type: size;
-  container-name: dropzone-wrapper;
-
-  /* This ensures the wrapper fills its grid cell and centers its content. */
+  container-name: addfiles-wrapper;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 100%;
+  height: auto;
   min-height: 40px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
 
-.drop-zone {
-  /* This is the element that gets styled based on the wrapper's size. */
+.add-files-content {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1rem;
   padding-block: 1rem;
-
-  /* Default to a vertical layout (text above button). */
   flex-direction: column;
 }
 
@@ -103,12 +101,8 @@ const handleAddFolder = async (close: () => void): Promise<void> => {
   text-align: center;
 }
 
-/* When the WRAPPER's height is less than 90px, switch the INNER element
-  to a horizontal layout. This happens when the file table grows,
-  leaving less space for the dropzone.
-*/
-@container dropzone-wrapper (height < 90px) {
-  .drop-zone {
+@container addfiles-wrapper (height < 90px) {
+  .add-files-content {
     flex-direction: row;
   }
 }

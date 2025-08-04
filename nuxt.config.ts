@@ -44,6 +44,11 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@pinia/nuxt',
   ],
+  fonts: {
+    families: [
+      { name: 'Inter', provider: 'google' },
+    ]
+  },
   plugins: [
     '~/plugins/pinia-persistence.ts',
     '~/plugins/registerResets.client',

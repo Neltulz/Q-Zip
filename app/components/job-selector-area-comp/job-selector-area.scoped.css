@@ -98,20 +98,17 @@
 .job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector:not(.active) > .visual-style),
 .job-selector-area.internal-drag-active :deep(.add-job-btn .visual-style) {
   opacity: 1 !important;
-  outline-color: hsla(0, 0%, 70%, 0.7);
+  outline: 2px dashed hsla(0, 0%, 70%, 0.7);
   box-shadow: none;
   transition: all 0.2s ease-in-out;
 }
 
-/* --- FIX START --- */
 .job-selector-area.internal-drag-active
   :deep(.job-selector-list button.job-selector.drop-target-hover:not(.active) > .visual-style),
 .job-selector-area.internal-drag-active :deep(.add-job-btn.drop-target-hover .visual-style) {
-  /* "Goldilocks" value: less bright but still highly visible. */
   outline-color: hsla(204, 80%, 60%, 0.85);
-  box-shadow: 0 0 12px 3px hsla(204, 80%, 60%, 0.4);
+  outline-style: dashed;
 }
-/* --- FIX END --- */
 
 .job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector.active.drop-target-hover > .visual-style) {
   opacity: 1 !important;
