@@ -1,5 +1,3 @@
-// stores/jobsStore.ts @preserve
-
 /** @preserve
  * This store manages jobs and global compression settings for the
  * application. It handles job creation, file management within jobs,
@@ -11,6 +9,7 @@ import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";
 import { getFileDetails } from "@/utils/fileUtils";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
+import { logStoreAction } from "@/utils/loggers";
 
 // Type definitions are now exported to be available across the application.
 export interface FileItem {
@@ -99,9 +98,17 @@ export const useJobsStore = defineStore(
     // Actions
     function initialize(): void {
       if (jobs.value.length === 0) {
-        addJob();
+        const newJobId = addJob();
+        selectJob(newJobId);
         if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Initialized with first job`);
+          console.log(`Initialized with first job and selected it.`);
+        }
+      } else if (!selectedJobId.value || !jobs.value.some(j => j.id === selectedJobId.value)) {
+        if (jobs.value[0]) {
+          selectJob(jobs.value[0].id);
+        }
+         if (DEBUG && debugConfig.logStoreActions) {
+          console.log(`Selected job was invalid. Defaulting to first job.`);
         }
       }
     }
@@ -121,22 +128,37 @@ export const useJobsStore = defineStore(
 
     async function addFilesToJob(jobId: number, paths: string[]): Promise<number> {
       const job = jobs.value.find((j) => j.id === jobId);
-      if (job) {
-        let addedCount = 0;
-        for (const path of paths) {
-          const fileDetails = await getFileDetails(path);
-          if (fileDetails && !job.files.some((file) => file.path === fileDetails.path)) {
-            job.files.push(fileDetails);
-            addedCount++;
-          }
-        }
-        
-        if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Added ${addedCount} of ${paths.length} attempted files to job ${jobId}`);
-        }
-        return addedCount;
+      if (!job) return 0;
+
+      const startTime = performance.now();
+      logStoreAction("jobsStore", `Starting to process ${paths.length} files for job ${jobId}...`);
+
+      const existingFilePaths = new Set(job.files.map((file) => file.path));
+      const newPaths = paths.filter(path => !existingFilePaths.has(path));
+
+      if (newPaths.length === 0) {
+        logStoreAction("jobsStore", "No new files to add, all paths already exist in the job.");
+        return 0;
       }
-      return 0;
+
+      const fileDetailPromises = newPaths.map(path => getFileDetails(path));
+      const fileDetailsResults = await Promise.all(fileDetailPromises);
+
+      const validFilesToAdd = fileDetailsResults.filter((details): details is FileItem => details !== null);
+
+      if (validFilesToAdd.length > 0) {
+        job.files.push(...validFilesToAdd);
+      }
+
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+
+      logStoreAction("jobsStore", `Added ${validFilesToAdd.length} new files to job ${jobId}.`);
+      if (DEBUG) {
+        console.log(`[jobsStore] File processing for ${paths.length} paths took ${duration.toFixed(2)} ms.`);
+      }
+
+      return validFilesToAdd.length;
     }
 
     function addClipboardFilesToJob(jobId: number, files: FileItem[]): void {
@@ -225,7 +247,8 @@ export const useJobsStore = defineStore(
     function removeFilesFromJob(jobId: number, paths: string[]): void {
       const job = jobs.value.find((j) => j.id === jobId);
       if (job) {
-        job.files = job.files.filter((file) => !paths.includes(file.path));
+        const pathsToRemove = new Set(paths);
+        job.files = job.files.filter((file) => !pathsToRemove.has(file.path));
         if (DEBUG && debugConfig.logStoreActions) {
           console.log(`Removed ${paths.length} files from job ${jobId}`);
         }

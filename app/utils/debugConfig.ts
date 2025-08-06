@@ -21,7 +21,7 @@ export const DEBUG: boolean = true;
 // Individual flags for controlling specific types of logs.
 export const debugConfig = {
   // Logs messages when Vue components are mounted.
-  logComponentMounts: false,
+  logComponentMounts: true, // <-- This is now enabled
 
   // Logs when template refs (like buttonRef) are updated.
   logRefUpdates: false,
@@ -55,4 +55,13 @@ export const debugConfig = {
 
   // Logs events related to the notification system.
   logNotifications: true,
+
+  // Logs events related to loading animations.
+  logLoadingEvents: true,
+
+  // Logs events related to the Vue rendering lifecycle.
+  logRenderingEvents: true,
+
+  // Logs events related to UI interactivity and responsiveness.
+  logUIInteractivity: true,
 };

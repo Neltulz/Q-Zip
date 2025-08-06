@@ -26,16 +26,18 @@
     </DropdownMenu>
 
     <transition name="job-fade">
-      <!-- UPDATED: Added jobRef -->
       <div v-if="activeJob" :key="activeJob.id" ref="jobRef" class="job">
         <div class="job-header">
           <h2>Job {{ activeJob.id }}</h2>
         </div>
-        <!-- REMOVED: The selection box is no longer rendered here -->
         <div ref="jobContentRef" class="job-content" @contextmenu.prevent.stop="showJobContextMenu">
+          <LoadingAnim :visible="showLoading" @cancel="cancelOperation" @animation-finished="onAnimationFinished">
+            {{ loadingMessage }}
+          </LoadingAnim>
           <FileTable
             ref="fileTableRef"
             :files="activeJob.files"
+            :is-loading="false"
             :is-dragging="false"
             :job-id="activeJob.id"
             :cut-files="clipboardStore.cutFilePaths"
@@ -56,16 +58,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, nextTick } from "vue";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useModalsStore } from "@/stores/modalsStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
 import { useUiStore } from "@/stores/uiStore";
 import type { ModalOptions } from "@/types/modal";
 import FileTable from "@/components/FileTable.vue";
-import AddFilesAndFolders from "@/components/AddFilesAndFolders.vue";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import type { FileItem } from "@/types/types";
+import LoadingAnim from "@/components/LoadingAnim.vue";
+import { logLoading, logRendering, logUI } from "@/utils/loggers";
 
 type FileOperationPayload = {
   targetJobId: number;
@@ -76,6 +79,8 @@ type ContextMenuFileOperationPayload = {
   targetJobId: number;
   rightClickedPath: string;
 };
+
+type LoadingState = "idle" | "adding" | "removing" | "transferring";
 
 const jobsStore = useJobsStore();
 const modalsStore = useModalsStore();
@@ -88,17 +93,106 @@ const jobContentRef = ref<HTMLElement | null>(null);
 const jobRef = ref<HTMLElement | null>(null);
 const jobContextMenuRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
 const selectedFilePaths = ref<string[]>([]);
+const operationTimer = ref<NodeJS.Timeout | null>(null);
+const loadingState = ref<LoadingState>("idle");
+const showLoading = ref(false);
+let operationCancelled = false;
+
+const loadingMessage = computed(() => {
+  switch (loadingState.value) {
+    case "adding":
+      return "Adding files, please wait...";
+    case "removing":
+      return "Removing Files, please wait...";
+    case "transferring":
+      return "Transferring files...";
+    default:
+      return "";
+  }
+});
 
 const activeJob = computed(() => {
   return jobsStore.jobs.find((job: Job) => job.id === jobsStore.selectedJobId);
 });
 
-// REMOVED: marqueeBoxStyle is no longer needed in this component
-// const marqueeBoxStyle = computed(() => ({
-//   transform: `translate(${uiStore.marqueeBox.x}px, ${uiStore.marqueeBox.y}px)`,
-//   width: `${uiStore.marqueeBox.width}px`,
-//   height: `${uiStore.marqueeBox.height}px`,
-// }));
+const cancelOperation = () => {
+  logLoading("JobArea", "Cancel button clicked. Clearing operation timer.");
+  operationCancelled = true;
+  if (operationTimer.value) {
+    clearTimeout(operationTimer.value);
+    operationTimer.value = null;
+  }
+  showLoading.value = false;
+};
+
+const onAnimationFinished = () => {
+  logLoading("JobArea", "Animation finished event received.");
+  if (!showLoading.value) {
+    loadingState.value = "idle";
+  }
+};
+
+const handleOperation = async (
+  state: LoadingState,
+  items: any[],
+  action: () => Promise<any> | void,
+  operationType?: "copy" | "move"
+) => {
+  operationCancelled = false;
+  loadingState.value = state;
+
+  let loadingTimer: NodeJS.Timeout | null = null;
+
+  const operationPromise = new Promise<void>(async (resolve) => {
+    if (operationType === "copy") {
+      logLoading("JobArea", "Applying 5-second debug delay for copy operation.");
+      await new Promise((res) => setTimeout(res, 5000));
+    }
+
+    if (!operationCancelled) {
+      await action();
+    }
+    resolve();
+  });
+
+  let shouldShowLoading = false;
+
+  if (items.length >= 100) {
+    shouldShowLoading = true;
+  } else {
+    const timeoutPromise = new Promise((resolve) => {
+      loadingTimer = setTimeout(() => resolve("timeout"), 2000);
+    });
+    const result = await Promise.race([operationPromise, timeoutPromise]);
+    if (result === "timeout") {
+      shouldShowLoading = true;
+    }
+  }
+
+  if (shouldShowLoading && !operationCancelled) {
+    showLoading.value = true;
+  }
+
+  await operationPromise;
+
+  if (loadingTimer) {
+    clearTimeout(loadingTimer);
+  }
+
+  if (operationCancelled) {
+    logLoading("JobArea", "Operation was cancelled. Bypassing final state change.");
+    return;
+  }
+
+  logRendering("JobArea", "Operation complete. UI update is about to begin.");
+  showLoading.value = false;
+
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      logUI("JobArea", "UI should now be interactive after DOM patch and repaint.");
+    });
+  });
+};
 
 const showJobContextMenu = (event: MouseEvent) => {
   if ((event.target as Element).closest('.file-row[data-has-context-menu="true"]')) {
@@ -200,8 +294,10 @@ const confirmRemoveFiles = (paths: string | string[]) => {
   };
   modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { fileList }, (action: string) => {
     if (action === "proceed" && activeJob.value) {
-      jobsStore.removeFilesFromJob(activeJob.value.id, pathsToRemove);
-      fileTableRef.value?.deselectAll();
+      handleOperation("removing", pathsToRemove, () => {
+        jobsStore.removeFilesFromJob(activeJob.value!.id, pathsToRemove);
+        fileTableRef.value?.deselectAll();
+      });
     }
   });
 };
@@ -256,7 +352,14 @@ const openOperationConfirmModal = (
     },
     (action: string) => {
       if (action === "proceed") {
-        uiStore.handleFileOperation(operation, files, targetJobId, { sourceJobId });
+        handleOperation(
+          "transferring",
+          files,
+          () => {
+            uiStore.handleFileOperation(operation, files, targetJobId, { sourceJobId });
+          },
+          operation
+        );
       }
     }
   );
@@ -288,15 +391,20 @@ const confirmCopyToNewJob = (paths: string | string[]): void => {
   openOperationConfirmModal("copy", fileItems, "new-job", activeJob.value?.id ?? null);
 };
 
-const addItemsToJob = (paths: string[]): void => {
+const addItemsToJob = async (paths: string[]): Promise<void> => {
   if (activeJob.value) {
-    jobsStore.addFilesToJob(activeJob.value.id, paths);
+    handleOperation("adding", paths, () => jobsStore.addFilesToJob(activeJob.value!.id, paths));
   }
 };
 </script>
 
 <style scoped>
-/* REMOVED: Styles for the selection box are no longer needed here */
+.job-content {
+  position: relative; /* Needed for the loading overlay */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
 </style>
 
 <style scoped src="./job-area-comp/job-area.scoped.css"></style>
