@@ -1,5 +1,50 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- components/FileTable.vue @preserve -->
+
+<!--
+  RECOMMENDATIONS FOR IMPROVEMENT:
+  
+  1. COMPONENT DECOMPOSITION
+     - Break into smaller, focused components:
+       * FileTableHeader.vue (sorting, column resizing)
+       * FileTableRow.vue (individual row rendering)
+       * FileTableToolbar.vue (add/remove/move/copy actions)
+       * FileTableContextMenu.vue (right-click menu)
+     - Current component is 1145 lines and handles too many responsibilities
+  
+  2. PERFORMANCE OPTIMIZATIONS
+     - Add memoization for expensive computations (sortedFiles, columnStyles)
+     - Use useMemo or similar for sorting operations
+     - Optimize large template with many conditional renders
+     - Consider lazy loading for context menus
+  
+  3. ERROR HANDLING
+     - Add comprehensive error handling for file operations
+     - Implement loading states for individual operations
+     - Add error boundaries for component failures
+     - Handle edge cases (empty states, network failures)
+  
+  4. TESTING
+     - Implement comprehensive unit tests for complex interactions
+     - Test virtual scrolling with large datasets
+     - Test drag & drop functionality
+     - Test keyboard navigation and accessibility
+     - Add integration tests for file operations
+  
+  5. DOCUMENTATION
+     - Add JSDoc comments for complex functions
+     - Document component props and events
+     - Add usage examples and best practices
+     - Document performance considerations
+  
+  6. ACCESSIBILITY
+     - Add more ARIA labels and descriptions
+     - Improve keyboard navigation (Tab, Arrow keys)
+     - Add screen reader announcements for state changes
+     - Ensure proper focus management
+     - Add high contrast mode support
+-->
+
 <template>
   <div
     ref="fileTableCompRef"

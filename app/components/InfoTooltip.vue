@@ -1,5 +1,40 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- components/InfoTooltip.vue @preserve -->
+
+<!--
+  InfoTooltip.vue
+
+  What it is:
+  - A floating tooltip component that teleports to <body> and positions itself
+    relative to a target element using @floating-ui/vue.
+
+  What it does:
+  - Shows either simple text (with optional shortcut parsing like "Copy (Ctrl+C)")
+    or a structured notification payload (e.g., source/destination jobs and a
+    scrollable list of affected file paths with reasons).
+  - Automatically flips/offsets/shifts to stay in view and renders a styled arrow
+    pointing at the target element.
+  - Uses a lightweight fade transition and high-contrast, blurred backdrop styling.
+
+  Key features:
+  - Teleport to body for layering reliability
+  - Smart positioning (offset, flip, shift, arrow)
+  - Simple text mode with shortcut extraction
+  - Rich details mode for notification/message details
+
+  Props:
+  - visible: boolean — Controls visibility
+  - content: TooltipContent (NotificationMessageDetails | { text: string }) — What to display
+  - target: MaybeElement — The reference element for positioning
+  - debugForceVisible: boolean — Forces visibility for debugging
+
+  Example usage:
+  <InfoTooltip
+    :visible="isTooltipVisible"
+    :content="{ text: 'Copy (Ctrl+C)' }"
+    :target="buttonRef"
+  />
+-->
 <template>
   <teleport to="body">
     <Transition name="tooltip-fade">
