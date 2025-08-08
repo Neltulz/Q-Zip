@@ -616,14 +616,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUpdate, reactive, onUnmounted, onMounted, onUpdated } from "vue";
+import { ref, computed, watch, onBeforeUpdate, reactive, onUnmounted, onMounted, onUpdated, nextTick } from "vue";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
 import { useUiStore } from "@/stores/uiStore";
 import type { FileItem } from "@/types/types";
 import DropdownMenu from "./DropdownMenu.vue";
-import { logDragDropEvent, logLifecycle, logRendering, logUI } from "@/utils/loggers";
+import { logDragDropEvent, logLifecycle, logRendering, logUI, logMarqueeSelection } from "@/utils/loggers";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -828,6 +828,19 @@ const handleScroll = () => {
   scrollTimeout = setTimeout(() => {
     isScrolling.value = false;
   }, 150);
+  
+  // Log virtual scrolling calculations when in development
+  if (isDevelopment.value) {
+    logMarqueeSelection('FileTable', 'Virtual scroll update:', {
+      scrollTop: scrollTop.value,
+      startIndex: startIndex.value,
+      endIndex: endIndex.value,
+      contentOffsetY: contentOffsetY.value,
+      visibleFilesCount: visibleFiles.value.length,
+      totalFiles: sortedFiles.value.length,
+      wrapperHeight: viewportRef.value?.clientHeight || 0
+    });
+  }
 };
 
 const marqueeBoxStyle = computed(() => ({
@@ -836,40 +849,151 @@ const marqueeBoxStyle = computed(() => ({
   height: `${uiStore.marqueeBox.height}px`,
 }));
 
+// Watch for when debug hotzones become visible to log DOM measurements
+watch(() => uiStore.marqueeBox.visible, (newVisible) => {
+  if (newVisible && isDevelopment.value) {
+    // Use nextTick to ensure DOM is updated
+    nextTick(() => {
+      logActualDOMMeasurements();
+    });
+  }
+});
+
+// Function to log actual DOM measurements for debugging
+const logActualDOMMeasurements = () => {
+  if (!isDevelopment.value || !uiStore.marqueeBox.visible) return;
+  
+  // Try to get actual measurements from the DOM
+  const tableRows = document.querySelectorAll('.table-row');
+  const itemNameContents = document.querySelectorAll('.item-name-content');
+  
+  if (tableRows.length > 0 && itemNameContents.length > 0) {
+    const firstRow = tableRows[0] as HTMLElement;
+    const firstItemNameContent = itemNameContents[0] as HTMLElement;
+    
+    if (firstRow && firstItemNameContent) {
+      const rowRect = firstRow.getBoundingClientRect();
+      const contentRect = firstItemNameContent.getBoundingClientRect();
+      const tableComp = fileTableCompRef.value;
+      const tableCompRect = tableComp?.getBoundingClientRect();
+      
+      // Get computed styles
+      const computedStyles = {
+        rowPadding: window.getComputedStyle(firstRow).paddingInline,
+        contentGap: window.getComputedStyle(firstItemNameContent).columnGap,
+        contentPadding: window.getComputedStyle(firstItemNameContent).paddingInline,
+        contentWidth: window.getComputedStyle(firstItemNameContent).width,
+        contentMinWidth: window.getComputedStyle(firstItemNameContent).minInlineSize,
+        contentMaxWidth: window.getComputedStyle(firstItemNameContent).maxInlineSize,
+        itemNameGap: window.getComputedStyle(firstRow.querySelector('.item-name') as HTMLElement)?.gap || 'N/A'
+      };
+      
+      logMarqueeSelection('FileTable', 'Actual DOM measurements:', {
+        tableCompBounds: tableCompRect ? {
+          left: tableCompRect.left,
+          top: tableCompRect.top,
+          width: tableCompRect.width,
+          height: tableCompRect.height
+        } : null,
+        firstRowBounds: {
+          left: rowRect.left,
+          top: rowRect.top,
+          width: rowRect.width,
+          height: rowRect.height
+        },
+        firstItemNameContentBounds: {
+          left: contentRect.left,
+          top: contentRect.top,
+          width: contentRect.width,
+          height: contentRect.height
+        },
+        // Calculate relative positions
+        contentRelativeToRow: {
+          left: contentRect.left - rowRect.left,
+          top: contentRect.top - rowRect.top
+        },
+        contentRelativeToTable: tableCompRect ? {
+          left: contentRect.left - tableCompRect.left,
+          top: contentRect.top - tableCompRect.top
+        } : null,
+        // Computed CSS styles
+        computedStyles
+      });
+    }
+  }
+};
+
 // Debug hotzone style computation
 const getDebugHotzoneStyle = (index: number, file: FileItem) => {
   // Account for header height (34px) and virtual scroll offset
   const rowTop = index * ROW_HEIGHT + 34 + contentOffsetY.value;
   
-  // Calculate the horizontal bounds of the .item-name-content area (same logic as updateSelectionByRect)
-  let itemNameContentLeft = 12; // Account for row padding
+  // Calculate the horizontal bounds of the .item-name-content area
+  // The .item-name-content starts at the beginning of the .item-name cell (after padding)
+  let itemNameContentLeft = 12; // Account for row padding (8px on each side = 16px total, but we need to account for the cell's left padding)
   
   // If checkboxes are shown, start after the checkbox column
   if (props.showCheckboxes) {
     itemNameContentLeft += columnWidths.checkbox;
   }
   
-  // More accurate calculation of the .item-name-content width
+  // The .item-name-content starts at the left edge of the .item-name cell (after padding)
+  // So we need to add the left padding of the .item-name cell
+  itemNameContentLeft += 8; // Left padding of .item-name cell
+  
+  // Calculate the width that fully encompasses the icon and text content
   const iconWidth = 16; // Icon width
-  const textPadding = 8; // Gap between icon and text
+  const textPadding = 8; // Gap between icon and text (column-gap in CSS)
   const rowActionsWidth = 40; // Estimated width of the '...' button
   const gapToRowActions = 8; // Gap between content and actions
   const itemNameGap = 8; // Gap in .item-name flexbox
   
   // Calculate the maximum available space for the content
-  // Account for the gap in .item-name and the row-actions width
   const maxAvailableSpace = columnWidths.name - (rowActionsWidth + gapToRowActions + itemNameGap);
   
   // Calculate the actual content width based on the text length
   // Use a more precise estimate: 7px per character (average character width)
   const estimatedTextWidth = Math.min(file.name.length * 7, maxAvailableSpace - (iconWidth + textPadding));
   
-  // The actual content width is the sum of icon, padding, and text
-  // But it's capped by the available space due to flex-shrink: 1
-  const itemNameContentWidth = Math.min(
+  // The actual content width should be the sum of icon, padding, and text
+  // The hotzone should encompass: icon + gap + text
+  const itemNameContentWidth = Math.max(
     iconWidth + textPadding + Math.max(estimatedTextWidth, 0),
-    maxAvailableSpace
+    iconWidth + textPadding // Minimum width to fully encompass the icon and gap
   );
+  
+  // Log detailed calculations for debugging
+  if (isDevelopment.value) {
+    logMarqueeSelection('FileTable', `Hotzone calculation for row ${index} (${file.name}):`, {
+      rowTop,
+      itemNameContentLeft,
+      itemNameContentWidth,
+      iconWidth,
+      textPadding,
+      rowActionsWidth,
+      gapToRowActions,
+      itemNameGap,
+      maxAvailableSpace,
+      estimatedTextWidth,
+      fileLength: file.name.length,
+      columnWidths: columnWidths.name,
+      showCheckboxes: props.showCheckboxes,
+      checkboxWidth: props.showCheckboxes ? columnWidths.checkbox : 0,
+      contentOffsetY: contentOffsetY.value,
+      ROW_HEIGHT,
+      headerHeight: 34,
+      // Additional debugging info
+      calculatedRowTop: index * ROW_HEIGHT,
+      finalRowTop: rowTop,
+      // CSS values that might affect positioning
+      itemNameGapCSS: '8px', // From CSS: gap: 8px in .item-name
+      columnGapCSS: '8px', // From CSS: column-gap: 8px in .item-name-content
+      paddingInlineCSS: '8px', // From CSS: padding-inline: 8px in .table-row > div
+      // Virtual scroll info
+      virtualScrollOffset: contentOffsetY.value,
+      isVirtualScrolling: contentOffsetY.value > 0
+    });
+  }
   
   return {
     position: 'absolute' as const,
@@ -933,6 +1057,30 @@ const handleMarqueeMouseMove = (event: MouseEvent) => {
   const width = Math.abs(mouseX_content - marqueeAnchorX.value);
   const height = Math.abs(mouseY_content - marqueeAnchorY.value);
 
+  // Log marquee box calculations when in development
+  if (isDevelopment.value && width > 0 && height > 0) {
+    logMarqueeSelection('FileTable', 'Marquee box calculation:', {
+      mouseX_content,
+      mouseY_content,
+      marqueeAnchorX: marqueeAnchorX.value,
+      marqueeAnchorY: marqueeAnchorY.value,
+      scrollWrapperBounds: {
+        left: scrollWrapperBounds.left,
+        top: scrollWrapperBounds.top,
+        width: scrollWrapperBounds.width,
+        height: scrollWrapperBounds.height
+      },
+      scrollTop: scrollWrapper.scrollTop,
+      calculatedMarqueeBox: {
+        x,
+        y,
+        width,
+        height
+      },
+      headerHeightOffset: 34
+    });
+  }
+
   uiStore.marqueeBox.visible = true;
   uiStore.marqueeBox.x = x;
   uiStore.marqueeBox.y = y;
@@ -960,6 +1108,20 @@ const updateSelectionByRect = (isAdditive: boolean) => {
 
   const pathsToSelect: string[] = [];
 
+  // Log marquee bounds for debugging
+  if (isDevelopment.value && uiStore.marqueeBox.width > 0) {
+    logMarqueeSelection('FileTable', 'Marquee bounds:', {
+      marqueeTop,
+      marqueeBottom,
+      marqueeLeft,
+      marqueeRight,
+      marqueeWidth: uiStore.marqueeBox.width,
+      marqueeHeight: uiStore.marqueeBox.height,
+      startIndexInView,
+      endIndexInView
+    });
+  }
+
   // Check each row in the marquee range
   for (let i = startIndexInView; i < endIndexInView; i++) {
     if (i >= 0 && i < sortedFiles.value.length) {
@@ -972,40 +1134,47 @@ const updateSelectionByRect = (isAdditive: boolean) => {
       // Check if the marquee intersects with this row vertically
       if (marqueeBottom > rowTop && marqueeTop < rowBottom) {
         // Calculate the horizontal bounds of the .item-name-content area
-        let itemNameContentLeft = 12; // Account for row padding
+        let itemNameContentLeft = 12; // Account for row padding (8px on each side = 16px total, but we need to account for the cell's left padding)
         
         // If checkboxes are shown, start after the checkbox column
         if (props.showCheckboxes) {
           itemNameContentLeft += columnWidths.checkbox;
         }
         
-        // More accurate calculation of the .item-name-content width
+        // The .item-name-content starts at the left edge of the .item-name cell (after padding)
+        // So we need to add the left padding of the .item-name cell
+        itemNameContentLeft += 8; // Left padding of .item-name cell
+        
+        // Calculate the width that fully encompasses the icon and text content
         const iconWidth = 16; // Icon width
-        const textPadding = 8; // Gap between icon and text
+        const textPadding = 8; // Gap between icon and text (column-gap in CSS)
         const rowActionsWidth = 40; // Estimated width of the '...' button
         const gapToRowActions = 8; // Gap between content and actions
         const itemNameGap = 8; // Gap in .item-name flexbox
         
         // Calculate the maximum available space for the content
-        // Account for the gap in .item-name and the row-actions width
         const maxAvailableSpace = columnWidths.name - (rowActionsWidth + gapToRowActions + itemNameGap);
         
         // Calculate the actual content width based on the text length
         // Use a more precise estimate: 7px per character (average character width)
         const estimatedTextWidth = Math.min(file.name.length * 7, maxAvailableSpace - (iconWidth + textPadding));
         
-        // The actual content width is the sum of icon, padding, and text
-        // But it's capped by the available space due to flex-shrink: 1
-        const itemNameContentWidth = Math.min(
+        // The actual content width should be the sum of icon, padding, and text
+        // The hotzone should encompass: icon + gap + text
+        const itemNameContentWidth = Math.max(
           iconWidth + textPadding + Math.max(estimatedTextWidth, 0),
-          maxAvailableSpace
+          iconWidth + textPadding // Minimum width to fully encompass the icon and gap
         );
         
         const itemNameContentRight = itemNameContentLeft + itemNameContentWidth;
 
         // Debug: Log the calculations when dragging (only in development)
         if (isDevelopment.value && uiStore.marqueeBox.width > 0) {
-          console.log(`Row ${i} (${file.name}):`, {
+          logMarqueeSelection('FileTable', `Row ${i} (${file.name}) intersection check:`, {
+            rowTop,
+            rowBottom,
+            marqueeTop,
+            marqueeBottom,
             marqueeLeft,
             marqueeRight,
             itemNameContentLeft,
@@ -1013,7 +1182,17 @@ const updateSelectionByRect = (isAdditive: boolean) => {
             itemNameContentWidth,
             maxAvailableSpace,
             estimatedTextWidth,
-            intersects: marqueeRight > itemNameContentLeft - 2 && marqueeLeft < itemNameContentRight + 2
+            iconWidth,
+            textPadding,
+            rowActionsWidth,
+            gapToRowActions,
+            itemNameGap,
+            fileLength: file.name.length,
+            columnWidths: columnWidths.name,
+            showCheckboxes: props.showCheckboxes,
+            checkboxWidth: props.showCheckboxes ? columnWidths.checkbox : 0,
+            intersects: marqueeRight > itemNameContentLeft - 2 && marqueeLeft < itemNameContentRight + 2,
+            tolerance: 2
           });
         }
 
@@ -1024,6 +1203,14 @@ const updateSelectionByRect = (isAdditive: boolean) => {
         }
       }
     }
+  }
+
+  if (isDevelopment.value && uiStore.marqueeBox.width > 0) {
+    logMarqueeSelection('FileTable', `Selection result:`, {
+      pathsToSelect,
+      isAdditive,
+      currentSelectionCount: selectedFiles.value.length
+    });
   }
 
   if (isAdditive) {

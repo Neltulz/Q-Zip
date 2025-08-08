@@ -227,3 +227,15 @@ export const logUI = (callerName: string, message: string, data?: unknown): void
     }
   }
 };
+
+// --- Logger for Marquee Selection Events ---
+const marqueeStyle: string = `${baseStyle} background-color: #9c27b0;`; // Purple
+export const logMarqueeSelection = (callerName: string, message: string, data?: unknown): void => {
+  if (DEBUG && debugConfig.logUIInteractivity) {
+    if (data) {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, marqueeStyle, data);
+    } else {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, marqueeStyle);
+    }
+  }
+};
