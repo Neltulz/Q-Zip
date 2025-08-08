@@ -101,13 +101,17 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  placement: {
+    type: String as PropType<"top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end">,
+    default: "top",
+  },
 });
 
 const floatingRef = ref<HTMLElement | null>(null);
 const arrowRef = ref(null);
 
 const { floatingStyles, middlewareData, placement } = useFloating(toRef(props, "target"), floatingRef, {
-  placement: "top",
+  placement: toRef(props, "placement"),
   whileElementsMounted: autoUpdate,
   middleware: [offset(10), flip(), shift({ padding: 5 }), arrow({ element: arrowRef, padding: 4 })],
 });

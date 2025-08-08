@@ -8,6 +8,7 @@ import { defineNuxtConfig } from 'nuxt/config'
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-28',
   devtools: { enabled: true },
+  telemetry: false,
   ssr: false,
   srcDir: 'app/', // Keep this line as it correctly points to your source directory
   devServer: {

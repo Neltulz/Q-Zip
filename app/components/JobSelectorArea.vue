@@ -179,6 +179,7 @@
             :visible="tooltipManager.activeTooltipId.value === 'job-' + job.id"
             :content="{ text: 'Right click for more options' }"
             :target="jobButtonRefs.get(job.id)?.visualStyleRef"
+            placement="bottom"
           />
         </template>
       </div>
@@ -261,6 +262,7 @@
           :visible="tooltipManager.activeTooltipId.value === 'add-job'"
           :content="{ text: 'Create New Job (Ctrl+T)' }"
           :target="addJobButtonRef?.visualStyleRef"
+          placement="bottom"
           :debug-force-visible="false"
         />
       </div>
@@ -318,11 +320,12 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance, onBeforeUpdate } from "vue";
-import { useJobsStore, type FileItem } from "@/stores/jobsStore";
+import { useJobsStore } from "@/stores/jobsStore";
+import type { FileItem } from "@/types/types";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import type { OverlayScrollbars } from "overlayscrollbars";
 import { useThemeStore } from "@/stores/themeStore";
-import { useUiStore, type NotificationType } from "@/stores/uiStore";
+import { useUiStore, type NotificationType, type Notification } from "@/stores/uiStore";
 import { useModalsStore } from "@/stores/modalsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
 import type { ModalOptions } from "@/types/modal";
@@ -367,10 +370,10 @@ const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
 
 watch(
   () => uiStore.notifications,
-  (notifications, oldNotifications) => {
-    const newNotifications = notifications.filter((n) => !oldNotifications.some((on) => on.id === n.id));
+  (notifications: Notification[], oldNotifications: Notification[]) => {
+    const newNotifications = notifications.filter((n: Notification) => !oldNotifications.some((on: Notification) => on.id === n.id));
 
-    newNotifications.forEach((notification) => {
+    newNotifications.forEach((notification: Notification) => {
       if (notification.targetId) {
         jobNotificationStates.value.set(notification.targetId, notification.glowType);
         setTimeout(() => {
@@ -384,7 +387,7 @@ watch(
 
 watch(
   () => uiStore.pendingNotification,
-  (notification) => {
+  (notification: any) => {
     if (notification) {
       const { targetId } = notification;
       nextTick(() => {
@@ -420,7 +423,7 @@ watch(
 
 watch(
   scrollComponentRef,
-  (newRef) => {
+  (newRef: any) => {
     if (newRef) {
       const osInstance = newRef.osInstance();
       if (osInstance) {

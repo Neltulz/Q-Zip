@@ -144,10 +144,11 @@ const handleOperation = async (
   let loadingTimer: NodeJS.Timeout | null = null;
 
   const operationPromise = new Promise<void>(async (resolve) => {
-    if (operationType === "copy") {
-      logLoading("JobArea", "Applying 5-second debug delay for copy operation.");
-      await new Promise((res) => setTimeout(res, 5000));
-    }
+    // Temporarily disabled debug delay
+    // if (operationType === "copy") {
+    //   logLoading("JobArea", "Applying 5-second debug delay for copy operation.");
+    //   await new Promise((res) => setTimeout(res, 5000));
+    // }
 
     if (!operationCancelled) {
       await action();
