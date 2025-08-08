@@ -56,6 +56,7 @@ export const useUiStore = defineStore(
     const jobsSectionWidth: Ref<PanelWidth> = ref("3fr");
     const compressSectionWidth: Ref<PanelWidth> = ref("2fr");
     const notifications: Ref<Notification[]> = ref([]);
+    const notificationQueue: Ref<Notification[]> = ref([]);
     const pendingNotification = ref<PendingNotificationPayload | null>(null);
 
     // NEW: Central state for the marquee selection box
@@ -197,11 +198,16 @@ export const useUiStore = defineStore(
         timeoutId: null,
       };
 
-      newNotification.timeoutId = window.setTimeout(() => {
-        removeNotification(id);
-      }, duration);
-
-      notifications.value.push(newNotification);
+      // If no notifications are currently displayed, show this one immediately
+      if (notifications.value.length === 0) {
+        newNotification.timeoutId = window.setTimeout(() => {
+          removeNotification(id);
+        }, duration);
+        notifications.value.push(newNotification);
+      } else {
+        // Otherwise, add to queue
+        notificationQueue.value.push(newNotification);
+      }
     }
 
     function removeNotification(id: number): void {
@@ -212,6 +218,9 @@ export const useUiStore = defineStore(
           clearTimeout(notification.timeoutId);
         }
         notifications.value.splice(index, 1);
+        
+        // After removing a notification, show the next one from the queue
+        showNextNotification();
       }
     }
 
@@ -240,11 +249,22 @@ export const useUiStore = defineStore(
       pendingNotification.value = null;
     }
 
+    function showNextNotification(): void {
+      if (notificationQueue.value.length > 0 && notifications.value.length === 0) {
+        const nextNotification = notificationQueue.value.shift()!;
+        nextNotification.timeoutId = window.setTimeout(() => {
+          removeNotification(nextNotification.id);
+        }, nextNotification.duration);
+        notifications.value.push(nextNotification);
+      }
+    }
+
     function resetUi(): void {
       jobSelectorOrientation.value = "horizontal";
       jobsSectionWidth.value = "3fr";
       compressSectionWidth.value = "2fr";
       notifications.value = [];
+      notificationQueue.value = [];
       // Reset marquee box on UI reset
       Object.assign(marqueeBox, { visible: false, x: 0, y: 0, width: 0, height: 0 });
     }
@@ -254,6 +274,7 @@ export const useUiStore = defineStore(
       jobsSectionWidth,
       compressSectionWidth,
       notifications,
+      notificationQueue,
       pendingNotification,
       marqueeBox, // Expose the new state
       toggleJobSelectorOrientation,
@@ -264,6 +285,7 @@ export const useUiStore = defineStore(
       resumeNotificationTimeout,
       triggerJobNotification,
       clearPendingNotification,
+      showNextNotification,
       resetUi,
       handleFileOperation,
     };
