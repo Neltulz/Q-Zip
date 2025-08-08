@@ -36,6 +36,7 @@ export interface Notification {
   duration: number;
   position?: NotificationPosition;
   timeoutId: number | null;
+  isRemoving?: boolean;
 }
 
 type PendingNotificationPayload = Omit<Notification, "id" | "timeoutId" | "position" | "duration"> & { duration?: number };
@@ -196,14 +197,18 @@ export const useUiStore = defineStore(
         duration,
         ...notification,
         timeoutId: null,
+        isRemoving: false,
       };
 
       // If no notifications are currently displayed, show this one immediately
       if (notifications.value.length === 0) {
-        newNotification.timeoutId = window.setTimeout(() => {
-          removeNotification(id);
-        }, duration);
-        notifications.value.push(newNotification);
+        // Add a small delay for the initial notification to ensure smooth fade-in
+        setTimeout(() => {
+          newNotification.timeoutId = window.setTimeout(() => {
+            removeNotification(id);
+          }, duration);
+          notifications.value.push(newNotification);
+        }, 100); // Small delay for smooth initial fade-in
       } else {
         // Otherwise, add to queue
         notificationQueue.value.push(newNotification);
@@ -214,13 +219,25 @@ export const useUiStore = defineStore(
       const index = notifications.value.findIndex((n) => n.id === id);
       if (index > -1) {
         const notification = notifications.value[index];
-        if (notification && notification.timeoutId) {
+        if (!notification) return;
+        
+        if (notification.timeoutId) {
           clearTimeout(notification.timeoutId);
         }
-        notifications.value.splice(index, 1);
         
-        // After removing a notification, show the next one from the queue
-        showNextNotification();
+        // Mark the notification as removing to trigger fade-out
+        notification.isRemoving = true;
+        
+        // Wait for the fade-out transition to complete before actually removing
+        setTimeout(() => {
+          const currentIndex = notifications.value.findIndex((n) => n.id === id);
+          if (currentIndex > -1) {
+            notifications.value.splice(currentIndex, 1);
+          }
+          
+          // After removing a notification, show the next one from the queue
+          showNextNotification();
+        }, 600); // Wait for the fade-out transition to complete (0.6s)
       }
     }
 
@@ -251,11 +268,15 @@ export const useUiStore = defineStore(
 
     function showNextNotification(): void {
       if (notificationQueue.value.length > 0 && notifications.value.length === 0) {
-        const nextNotification = notificationQueue.value.shift()!;
-        nextNotification.timeoutId = window.setTimeout(() => {
-          removeNotification(nextNotification.id);
-        }, nextNotification.duration);
-        notifications.value.push(nextNotification);
+        // Add a small delay before showing the next notification to ensure smooth transition
+        setTimeout(() => {
+          const nextNotification = notificationQueue.value.shift()!;
+          nextNotification.isRemoving = false;
+          nextNotification.timeoutId = window.setTimeout(() => {
+            removeNotification(nextNotification.id);
+          }, nextNotification.duration);
+          notifications.value.push(nextNotification);
+        }, 200); // Small delay for smooth transition
       }
     }
 

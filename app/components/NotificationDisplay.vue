@@ -4,7 +4,7 @@
   <div
     ref="popoverRef"
     class="popover"
-    :class="[{ 'is-visible': isVisible, 'is-clipped': isClipped }]"
+    :class="[{ 'is-visible': isVisible && !notification.isRemoving, 'is-clipped': isClipped }]"
     :style="popoverPositionStyle"
     data-component-name="NotificationDisplay"
     @mouseenter="pauseTimeout"
@@ -336,7 +336,7 @@ watch(scrollContainer, (newContainer, oldContainer) => {
   opacity: 0;
   transform-origin: bottom center;
   transform: scale(0.95);
-  transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+  transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
   pointer-events: none;
   box-sizing: border-box;
 }
@@ -361,7 +361,7 @@ watch(scrollContainer, (newContainer, oldContainer) => {
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
   border-top: 6px solid var(--bg-clr-liter);
-  transition: transform 0.15s ease-in-out;
+  transition: transform 0.6s ease-in-out;
 }
 
 .popover h1 {

@@ -10,7 +10,7 @@
 -->
 <template>
   <teleport to="body">
-    <div data-component-name="NotificationContainer">
+    <div data-component-name="NotificationContainer" :class="{ 'has-notifications': hasAnyNotifications }">
       <TransitionGroup name="notification-list-fade" tag="div" class="notification-list">
         <NotificationDisplay v-for="notification in uiStore.notifications" :key="notification.id" :notification="notification" />
       </TransitionGroup>
@@ -27,10 +27,16 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useUiStore } from "@/stores/uiStore";
 import NotificationDisplay from "./NotificationDisplay.vue";
 
 const uiStore = useUiStore();
+
+// Computed property to check if there are any notifications or queued notifications
+const hasAnyNotifications = computed(() => {
+  return uiStore.notifications.length > 0 || uiStore.notificationQueue.length > 0;
+});
 </script>
 
 <style scoped>
@@ -44,6 +50,16 @@ const uiStore = useUiStore();
   z-index: 9999;
 }
 
+/* Ensure the container stays visible during transitions */
+[data-component-name="NotificationContainer"] {
+  transition: opacity 0.8s ease;
+}
+
+[data-component-name="NotificationContainer"]:not(.has-notifications) {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /*
   Since the popovers handle their own appear/disappear transitions,
   this transition is for the list itself when items are added/removed
@@ -51,7 +67,7 @@ const uiStore = useUiStore();
 */
 .notification-list-fade-enter-active,
 .notification-list-fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.8s ease;
 }
 
 .notification-list-fade-enter-from,
