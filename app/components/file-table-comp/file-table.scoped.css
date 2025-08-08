@@ -132,6 +132,11 @@
   inline-size: var(--col-width-name);
   min-inline-size: 150px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+  overflow: hidden;
 }
 
 .item-size {
@@ -201,16 +206,27 @@
 }
 
 .item-name-content {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   column-gap: 8px;
   cursor: default;
-  max-inline-size: 100%;
+  flex-shrink: 1;
   overflow: hidden;
+  white-space: nowrap;
+  min-inline-size: 0;
+  max-inline-size: 100%;
 
   & > .iconify {
     flex-shrink: 0;
     min-inline-size: 1em;
+  }
+  
+  & > .cell-text {
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-inline-size: 0;
   }
 }
 
@@ -219,7 +235,7 @@
   justify-content: flex-end;
   opacity: 0;
   transition: opacity 150ms ease-in-out;
-  margin-inline-start: auto;
+  flex-shrink: 0;
 }
 
 /* Virtual Scrolling Styles */
@@ -269,6 +285,22 @@
   background-color: hsla(204, 100%, 50%, 0.2);
   pointer-events: none;
   z-index: 100;
+}
+
+/* Debug hotzones for development */
+.debug-hotzones {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 98;
+}
+
+.debug-hotzone {
+  position: absolute;
+  background-color: rgba(255, 0, 0, 0.2);
+  border: 1px solid rgba(255, 0, 0, 0.5);
+  pointer-events: none;
+  z-index: 99;
 }
 
 .file-table-visual-select {

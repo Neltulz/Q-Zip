@@ -305,6 +305,16 @@
         </div>
 
         <div v-if="uiStore.marqueeBox.visible" class="selection-box" :style="marqueeBoxStyle" />
+        
+        <!-- Debug hotzones for .item-name-content areas when dragging -->
+        <div v-if="uiStore.marqueeBox.visible && isDevelopment" class="debug-hotzones">
+          <div
+            v-for="(file, index) in visibleFiles"
+            :key="`debug-${file.path}`"
+            class="debug-hotzone"
+            :style="getDebugHotzoneStyle(index, file)"
+          ></div>
+        </div>
 
         <!-- Spacer for Virtual Scroll -->
         <div class="virtual-scroll-spacer" :style="{ height: `${totalHeight}px` }">
@@ -826,6 +836,59 @@ const marqueeBoxStyle = computed(() => ({
   height: `${uiStore.marqueeBox.height}px`,
 }));
 
+// Debug hotzone style computation
+const getDebugHotzoneStyle = (index: number, file: FileItem) => {
+  // Account for header height (34px) and virtual scroll offset
+  const rowTop = index * ROW_HEIGHT + 34 + contentOffsetY.value;
+  
+  // Calculate the horizontal bounds of the .item-name-content area (same logic as updateSelectionByRect)
+  let itemNameContentLeft = 12; // Account for row padding
+  
+  // If checkboxes are shown, start after the checkbox column
+  if (props.showCheckboxes) {
+    itemNameContentLeft += columnWidths.checkbox;
+  }
+  
+  // More accurate calculation of the .item-name-content width
+  const iconWidth = 16; // Icon width
+  const textPadding = 8; // Gap between icon and text
+  const rowActionsWidth = 40; // Estimated width of the '...' button
+  const gapToRowActions = 8; // Gap between content and actions
+  const itemNameGap = 8; // Gap in .item-name flexbox
+  
+  // Calculate the maximum available space for the content
+  // Account for the gap in .item-name and the row-actions width
+  const maxAvailableSpace = columnWidths.name - (rowActionsWidth + gapToRowActions + itemNameGap);
+  
+  // Calculate the actual content width based on the text length
+  // Use a more precise estimate: 7px per character (average character width)
+  const estimatedTextWidth = Math.min(file.name.length * 7, maxAvailableSpace - (iconWidth + textPadding));
+  
+  // The actual content width is the sum of icon, padding, and text
+  // But it's capped by the available space due to flex-shrink: 1
+  const itemNameContentWidth = Math.min(
+    iconWidth + textPadding + Math.max(estimatedTextWidth, 0),
+    maxAvailableSpace
+  );
+  
+  return {
+    position: 'absolute' as const,
+    top: `${rowTop}px`,
+    left: `${itemNameContentLeft}px`,
+    width: `${itemNameContentWidth}px`,
+    height: `${ROW_HEIGHT}px`,
+    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+    border: '1px solid rgba(255, 0, 0, 0.5)',
+    pointerEvents: 'none' as const,
+    zIndex: 99,
+  };
+};
+
+// Check if we're in development mode
+const isDevelopment = computed(() => {
+  return typeof window !== 'undefined' && window.location.hostname === 'localhost';
+});
+
 const isMarqueeActive = ref(false);
 const marqueeAnchorX = ref(0);
 const marqueeAnchorY = ref(0);
@@ -889,11 +952,79 @@ const handleMarqueeMouseUp = () => {
 const updateSelectionByRect = (isAdditive: boolean) => {
   const marqueeTop = uiStore.marqueeBox.y;
   const marqueeBottom = marqueeTop + uiStore.marqueeBox.height;
+  const marqueeLeft = uiStore.marqueeBox.x;
+  const marqueeRight = marqueeLeft + uiStore.marqueeBox.width;
 
   const startIndexInView = Math.floor(marqueeTop / ROW_HEIGHT);
   const endIndexInView = Math.ceil(marqueeBottom / ROW_HEIGHT);
 
-  const pathsToSelect = sortedFiles.value.slice(startIndexInView, endIndexInView).map((f) => f.path);
+  const pathsToSelect: string[] = [];
+
+  // Check each row in the marquee range
+  for (let i = startIndexInView; i < endIndexInView; i++) {
+    if (i >= 0 && i < sortedFiles.value.length) {
+      const file = sortedFiles.value[i];
+      if (!file) continue;
+      
+      const rowTop = i * ROW_HEIGHT;
+      const rowBottom = rowTop + ROW_HEIGHT;
+
+      // Check if the marquee intersects with this row vertically
+      if (marqueeBottom > rowTop && marqueeTop < rowBottom) {
+        // Calculate the horizontal bounds of the .item-name-content area
+        let itemNameContentLeft = 12; // Account for row padding
+        
+        // If checkboxes are shown, start after the checkbox column
+        if (props.showCheckboxes) {
+          itemNameContentLeft += columnWidths.checkbox;
+        }
+        
+        // More accurate calculation of the .item-name-content width
+        const iconWidth = 16; // Icon width
+        const textPadding = 8; // Gap between icon and text
+        const rowActionsWidth = 40; // Estimated width of the '...' button
+        const gapToRowActions = 8; // Gap between content and actions
+        const itemNameGap = 8; // Gap in .item-name flexbox
+        
+        // Calculate the maximum available space for the content
+        // Account for the gap in .item-name and the row-actions width
+        const maxAvailableSpace = columnWidths.name - (rowActionsWidth + gapToRowActions + itemNameGap);
+        
+        // Calculate the actual content width based on the text length
+        // Use a more precise estimate: 7px per character (average character width)
+        const estimatedTextWidth = Math.min(file.name.length * 7, maxAvailableSpace - (iconWidth + textPadding));
+        
+        // The actual content width is the sum of icon, padding, and text
+        // But it's capped by the available space due to flex-shrink: 1
+        const itemNameContentWidth = Math.min(
+          iconWidth + textPadding + Math.max(estimatedTextWidth, 0),
+          maxAvailableSpace
+        );
+        
+        const itemNameContentRight = itemNameContentLeft + itemNameContentWidth;
+
+        // Debug: Log the calculations when dragging (only in development)
+        if (isDevelopment.value && uiStore.marqueeBox.width > 0) {
+          console.log(`Row ${i} (${file.name}):`, {
+            marqueeLeft,
+            marqueeRight,
+            itemNameContentLeft,
+            itemNameContentRight,
+            itemNameContentWidth,
+            maxAvailableSpace,
+            estimatedTextWidth,
+            intersects: marqueeRight > itemNameContentLeft - 2 && marqueeLeft < itemNameContentRight + 2
+          });
+        }
+
+        // Only select the row if the marquee intersects with the .item-name-content area
+        // Add some tolerance for better user experience
+        if (marqueeRight > itemNameContentLeft - 2 && marqueeLeft < itemNameContentRight + 2) {
+          pathsToSelect.push(file.path);
+        }
+      }
+    }
+  }
 
   if (isAdditive) {
     const selectionSet = new Set([...selectedFiles.value, ...pathsToSelect]);
