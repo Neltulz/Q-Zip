@@ -59,6 +59,8 @@
     data-component-name="FileTable"
     @click="handleRootClick"
   >
+    <!-- Full-screen transparent blocker to prevent interaction with outside UI while marquee drag is active -->
+    <div v-if="isMarqueeActive" class="marquee-blocker" aria-hidden="true"></div>
     <div class="file-table-visual-select" />
     <LoadingAnim :visible="props.isLoading" @cancel="$emit('cancel-load')"> Adding files, please wait... </LoadingAnim>
     <ToolBar v-if="props.showToolbar" class="file-table-toolbar">
@@ -1471,7 +1473,7 @@ watch(columnStyles, (newStyle) => {
 
 // --- LIFECYCLE HOOKS ---
 onMounted(() => {
-  logLifecycle("FileTable", "Component has been mounted.");
+  // NOOP: already handled above
 });
 
 onBeforeUpdate(() => {
@@ -1491,6 +1493,46 @@ watch(scrollComponentRef, (newRef) => {
     if (osInstance) {
       viewportRef.value = osInstance.elements().viewport;
     }
+  }
+});
+
+// --- Global marquee blocker (app-level overlay) ---
+let globalMarqueeBlocker: HTMLElement | null = null;
+onMounted(() => {
+  logLifecycle("FileTable", "Component has been mounted.");
+
+  // create a global blocker appended to body so it captures pointer events outside this component
+  try {
+    globalMarqueeBlocker = document.createElement("div");
+    globalMarqueeBlocker.className = "marquee-blocker-global";
+    // Inline styles (so they apply even without global CSS)
+    Object.assign(globalMarqueeBlocker.style, {
+      position: "fixed",
+      inset: "0",
+      background: "transparent",
+      zIndex: "2000",
+      pointerEvents: "auto",
+      display: "none",
+    });
+    document.body.appendChild(globalMarqueeBlocker);
+
+    // Watch marquee active state to toggle display
+    watch(
+      () => isMarqueeActive.value,
+      (val) => {
+        if (!globalMarqueeBlocker) return;
+        globalMarqueeBlocker.style.display = val ? "block" : "none";
+      }
+    );
+  } catch (err) {
+    // ignore if DOM unavailable
+  }
+});
+
+onUnmounted(() => {
+  if (globalMarqueeBlocker && globalMarqueeBlocker.parentElement) {
+    globalMarqueeBlocker.parentElement.removeChild(globalMarqueeBlocker);
+    globalMarqueeBlocker = null;
   }
 });
 

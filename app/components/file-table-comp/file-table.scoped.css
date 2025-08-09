@@ -109,6 +109,15 @@
   opacity: 0 !important;
 }
 
+/* Disable interactions with the toolbar and header while marquee drag is active */
+.file-table-comp.is-marquee-dragging .file-table-toolbar {
+  pointer-events: none !important;
+}
+
+.file-table-comp.is-marquee-dragging .table-header {
+  pointer-events: none !important;
+}
+
 /* Common Cell Styles */
 .table-header > div,
 .table-row > div {
@@ -249,6 +258,13 @@
   }
 }
 
+/* Color folder icon yellow for rows that are folders */
+.table-row.is-folder .item-name-content > .iconify {
+  color: var(--warning-clr, #f5c542);
+  /* Ensure SVG inherits currentColor */
+  fill: currentColor;
+}
+
 .row-actions {
   display: flex;
   justify-content: flex-end;
@@ -342,4 +358,18 @@
   transform: scaleY(0.8); /* Shorter triangle */
   line-height: 1; /* Adjust vertical alignment */
   flex-shrink: 0; /* Prevent the indicator from shrinking */
+}
+
+/* Full-screen transparent blocker to prevent interaction with other UI during marquee drag */
+.marquee-blocker {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 140; /* Sit above most UI but below marquee overlays which should have higher z-index if needed */
+  pointer-events: auto; /* capture pointer events */
+}
+
+/* Ensure the file table component is above the blocker so marquee interactions still work */
+.file-table-comp {
+  z-index: 150;
 }
