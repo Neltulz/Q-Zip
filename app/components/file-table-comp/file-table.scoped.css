@@ -129,10 +129,18 @@
 .table-row > div {
   padding-inline: 8px;
   display: flex;
-  align-items: center;
+  align-items: stretch; /* allow cells to stretch so inner content can control its own centering */
   position: relative;
   border-inline-end: 1px solid var(--brdr-clr-dark);
   overflow: hidden; /* Prevent content from spilling. Header is overridden below. */
+}
+
+/* Ensure text within header and cell content stays vertically centered when cells stretch */
+.table-header > div .header-text,
+.table-row > div .cell-text {
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
 /* --- FIX: Override overflow for header cells to make resizers visible --- */

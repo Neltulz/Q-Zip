@@ -31,6 +31,7 @@
               active: jobsStore.selectedJobId === job.id,
               'is-dragged': job.id === draggedJobId,
               'drop-target-hover': hoveredJobId === job.id && dragDropStore.isInternalDragActive,
+              'drag-over': dragOverJobId === job.id,
               [`has-notification-${jobNotificationStates.get(job.id)}`]: jobNotificationStates.has(job.id),
             }"
             button-style-class="trans-btn btn-darkr can-become-active"
@@ -371,7 +372,9 @@ const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
 watch(
   () => uiStore.notifications,
   (notifications: Notification[], oldNotifications: Notification[]) => {
-    const newNotifications = notifications.filter((n: Notification) => !oldNotifications.some((on: Notification) => on.id === n.id));
+    const newNotifications = notifications.filter(
+      (n: Notification) => !oldNotifications.some((on: Notification) => on.id === n.id)
+    );
 
     newNotifications.forEach((notification: Notification) => {
       if (notification.targetId) {

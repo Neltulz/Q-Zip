@@ -1036,7 +1036,10 @@ const isMarqueeActive = ref(false);
 const marqueeAnchorX = ref(0);
 const marqueeAnchorY = ref(0);
 const marqueePreviewSelection = ref<string[]>([]);
+const marqueePreviewAdd = ref<string[]>([]);
+const marqueePreviewRemove = ref<string[]>([]);
 const marqueeIsAdditive = ref(false);
+const marqueeIsInvert = ref(false);
 const skipRootClick = ref(false);
 
 const handleComponentMouseDown = (event: MouseEvent) => {
@@ -1058,16 +1061,23 @@ const handleComponentMouseDown = (event: MouseEvent) => {
   const clickedOnName = !!target.closest(".item-name-content");
   const clickedOnCheckbox = !!target.closest(".item-checkbox");
 
+  const ctrlPressed = event.ctrlKey || event.metaKey;
+  const shiftPressed = event.shiftKey;
+
   // If the mousedown is on the background (not on a name or checkbox), clear selection to start fresh
+  // unless the user is holding Ctrl (additive) or Ctrl+Shift (invert)
   if (!clickedOnName && !clickedOnCheckbox) {
-    if (selectedFiles.value.length > 0) {
-      selectedFiles.value = [];
+    if (!ctrlPressed) {
+      if (selectedFiles.value.length > 0) {
+        selectedFiles.value = [];
+      }
     }
   }
 
   event.preventDefault();
   isMarqueeActive.value = true;
-  marqueeIsAdditive.value = event.ctrlKey || event.metaKey;
+  marqueeIsAdditive.value = ctrlPressed;
+  marqueeIsInvert.value = ctrlPressed && shiftPressed;
 
   const scrollWrapper = viewportRef.value;
   if (!scrollWrapper) return;
@@ -1115,7 +1125,16 @@ const handleMarqueeMouseMove = (event: MouseEvent) => {
       uiStore.marqueeBox.height = height;
 
       // Compute preview selection but do not commit until mouseup
-      marqueePreviewSelection.value = computeSelectionByRect(marqueeIsAdditive.value);
+      const paths = computeSelectionByRect(marqueeIsAdditive.value);
+      marqueePreviewSelection.value = paths;
+      // prepare add/remove sets for invert mode
+      if (marqueeIsInvert.value) {
+        marqueePreviewAdd.value = paths.filter((p) => !selectedFiles.value.includes(p));
+        marqueePreviewRemove.value = paths.filter((p) => selectedFiles.value.includes(p));
+      } else {
+        marqueePreviewAdd.value = paths;
+        marqueePreviewRemove.value = [];
+      }
     });
   };
 
@@ -1129,7 +1148,15 @@ const handleMarqueeMouseUp = () => {
   isMarqueeActive.value = false;
   // Commit the previewed selection on mouse up
   if (marqueePreviewSelection.value.length > 0) {
-    if (marqueeIsAdditive.value) {
+    if (marqueeIsInvert.value) {
+      // Toggle selection for previewed rows
+      const currentSet = new Set(selectedFiles.value);
+      for (const p of marqueePreviewSelection.value) {
+        if (currentSet.has(p)) currentSet.delete(p);
+        else currentSet.add(p);
+      }
+      selectedFiles.value = Array.from(currentSet);
+    } else if (marqueeIsAdditive.value) {
       const selectionSet = new Set([...selectedFiles.value, ...marqueePreviewSelection.value]);
       selectedFiles.value = Array.from(selectionSet);
     } else {

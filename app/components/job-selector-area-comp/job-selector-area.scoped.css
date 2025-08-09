@@ -130,6 +130,18 @@
   z-index: 1;
 }
 
+/* bright insertion line between job tabs during reorder drag */
+.job-selector-list > :deep(button.job-selector.drag-over) > .visual-style::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 8px;
+  inset-block-end: 8px;
+  inline-size: 4px;
+  inset-inline-start: -2px;
+  background: white;
+  z-index: 3;
+}
+
 .job-selector-list > :deep(button.job-selector > .visual-style),
 .job-selector-list > :deep(button.job-selector:before) {
   --visual-style-inset: 8px;
