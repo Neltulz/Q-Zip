@@ -1047,6 +1047,11 @@ const handleComponentMouseDown = (event: MouseEvent) => {
 
   if (!props.marqueeSelectionEnabled || event.button !== 0) return;
 
+  // If the mousedown is on an item name/content or checkbox, let the native drag/interaction proceed
+  if (target.closest(".item-name-content") || target.closest(".item-checkbox")) {
+    return;
+  }
+
   const isInteractiveElement = target.closest("button, a, input, select, textarea, .table-header, .resizer");
   if (isInteractiveElement) return;
   // Determine whether this mousedown started on a file's name/checkbox or on the blank background
