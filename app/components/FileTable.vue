@@ -1078,6 +1078,9 @@ const handleComponentMouseDown = (event: MouseEvent) => {
 
   window.addEventListener("mousemove", handleMarqueeMouseMove);
   window.addEventListener("mouseup", handleMarqueeMouseUp);
+  // Also listen for pointer events to be robust on quick releases / touch
+  window.addEventListener("pointerup", handleMarqueeMouseUp);
+  window.addEventListener("pointercancel", handleMarqueeMouseUp);
 };
 
 const handleMarqueeMouseMove = (event: MouseEvent) => {
@@ -1092,7 +1095,10 @@ const handleMarqueeMouseMove = (event: MouseEvent) => {
     if (scheduled) return;
     scheduled = true;
     window.requestAnimationFrame(() => {
+      // clear scheduled first to allow future scheduling
       scheduled = false;
+      // if marquee got cancelled before rAF fired, skip updating
+      if (!isMarqueeActive.value) return;
       const scrollWrapperBounds = scrollWrapper.getBoundingClientRect();
       const mouseX_content = event.clientX - scrollWrapperBounds.left;
       const mouseY_content = event.clientY - scrollWrapperBounds.top + scrollWrapper.scrollTop - 34; // Offset by header height
@@ -1134,6 +1140,8 @@ const handleMarqueeMouseUp = () => {
   uiStore.marqueeBox.visible = false;
   window.removeEventListener("mousemove", handleMarqueeMouseMove);
   window.removeEventListener("mouseup", handleMarqueeMouseUp);
+  window.removeEventListener("pointerup", handleMarqueeMouseUp);
+  window.removeEventListener("pointercancel", handleMarqueeMouseUp);
 };
 
 // Compute selection paths for current marquee rect without committing (used for preview)
