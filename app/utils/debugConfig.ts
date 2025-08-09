@@ -15,53 +15,66 @@
  */
 // @preserve
 
-// Master switch to enable or disable all debugging logs.
-export const DEBUG: boolean = true;
+// Master switch to enable or disable all debugging logs. Use `setAllLoggingEnabled` to toggle at runtime.
+export let DEBUG: boolean = false; // default OFF for performance; change via API below
 
 // Individual flags for controlling specific types of logs.
-export const debugConfig = {
+export const debugConfig: Record<string, boolean> = {
   // Logs messages when Vue components are mounted.
-  logComponentMounts: true, // <-- This is now enabled
+  logComponentMounts: false,
 
   // Logs when template refs (like buttonRef) are updated.
   logRefUpdates: false,
 
   // Logs user interaction events like clicks and input changes.
-  logClicksAndInputs: true,
+  logClicksAndInputs: false,
 
   // Logs actions and state changes within Pinia stores.
-  logStoreActions: true,
+  logStoreActions: false,
 
   // Logs events specific to the DropdownMenu component.
-  logDropdownEvents: true,
+  logDropdownEvents: false,
 
   // For general UI interactions like scrolling or accordion transitions.
-  logUIEvents: true,
+  logUIEvents: false,
 
   // For handling Tauri's drag-and-drop events.
-  logDragAndDrop: true,
+  logDragAndDrop: false,
 
   // For events from composables that manage state (e.g., dropdownManager).
-  logComposableManagerEvents: true,
+  logComposableManagerEvents: false,
 
   // For developer warnings about missing props or potential issues.
-  logMissingPropWarnings: true,
+  logMissingPropWarnings: false,
 
   // For logging file selection changes in the JobArea.
-  logFileSelection: true,
+  logFileSelection: false,
 
   // Logs when a drag-and-drop operation is canceled by a failsafe.
-  logDragDropFailsafe: true,
+  logDragDropFailsafe: false,
 
   // Logs events related to the notification system.
-  logNotifications: true,
+  logNotifications: false,
 
   // Logs events related to loading animations.
-  logLoadingEvents: true,
+  logLoadingEvents: false,
 
   // Logs events related to the Vue rendering lifecycle.
-  logRenderingEvents: true,
+  logRenderingEvents: false,
 
   // Logs events related to UI interactivity and responsiveness.
-  logUIInteractivity: true,
+  logUIInteractivity: false,
 };
+
+// Helper to toggle all logging flags at runtime. This updates the master DEBUG
+// flag and flips every individual debugConfig flag to the provided value.
+export const setAllLoggingEnabled = (enabled: boolean) => {
+  DEBUG = enabled;
+  Object.keys(debugConfig).forEach((k) => {
+    // @ts-ignore - dynamic assignment to flags
+    debugConfig[k] = enabled;
+  });
+};
+
+// Convenience: disable all logging immediately on import (default behavior)
+setAllLoggingEnabled(false);

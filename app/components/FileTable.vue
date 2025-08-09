@@ -305,9 +305,16 @@
             <span v-if="sortKey === 'parentPath'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
             <div class="resizer" @mousedown.stop="startResize($event, 'parentPath')"></div>
           </div>
+          <!-- Spacer column to ensure there is buffer space at the right edge for resizers/scrollbar -->
+          <div class="item-spacer" aria-hidden="true">
+            <div class="spacer-header">
+              <span class="header-text">&nbsp;</span>
+            </div>
+          </div>
         </div>
 
-        <div v-if="uiStore.marqueeBox.visible" class="selection-box" :style="marqueeBoxStyle" />
+        <!-- Local selection box: updated directly via DOM to avoid reactive writes every frame -->
+        <div ref="localSelectionBox" class="selection-box" style="display: none" />
 
         <!-- debug hotzones removed -->
 
@@ -602,6 +609,10 @@
                 <div class="item-parent-path">
                   <span class="cell-text">{{ file.parentPath }}</span>
                 </div>
+                <!-- Right-side spacer to keep space for scrollbars / resizers -->
+                <div class="item-spacer" aria-hidden="true">
+                  <div class="spacer-cell">&nbsp;</div>
+                </div>
               </div>
             </template>
           </div>
@@ -696,23 +707,23 @@ const formatBytes = (bytes: number): string => {
   return mb.toFixed(2);
 };
 
-const formatModifiedDate = (timestamp: number): string => {
-  return new Intl.DateTimeFormat(undefined, {
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-  }).format(new Date(timestamp));
-};
+// Memoized formatters to avoid constructing on every render
+const MODIFIED_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+});
 
-const formatCreationDate = (timestamp: number): string => {
-  return new Intl.DateTimeFormat(undefined, {
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  }).format(new Date(timestamp));
-};
+const CREATION_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+});
+
+const formatModifiedDate = (timestamp: number): string => MODIFIED_DATE_FORMATTER.format(new Date(timestamp));
+const formatCreationDate = (timestamp: number): string => CREATION_DATE_FORMATTER.format(new Date(timestamp));
 
 const sortKey = ref<keyof FileItem>("name");
 const sortDirection = ref<"asc" | "desc">("asc");
@@ -1035,12 +1046,51 @@ const isDevelopment = computed(() => {
 const isMarqueeActive = ref(false);
 const marqueeAnchorX = ref(0);
 const marqueeAnchorY = ref(0);
-const marqueePreviewSelection = ref<string[]>([]);
+// Preview selection kept local during drag to avoid reactive churn
+const marqueePreviewSelection = ref<string[]>([]); // retained for compatibility (committed on mouseup)
 const marqueePreviewAdd = ref<string[]>([]);
 const marqueePreviewRemove = ref<string[]>([]);
 const marqueeIsAdditive = ref(false);
 const marqueeIsInvert = ref(false);
+// Local DOM refs/state used to avoid per-frame reactive writes
+const localSelectionBox = ref<HTMLElement | null>(null);
+const localMarqueeRect = reactive({ x: 0, y: 0, width: 0, height: 0 });
+const localPreviewSet = new Set<string>();
 const skipRootClick = ref(false);
+// Drag threshold (px) to distinguish click vs marquee drag
+const DRAG_THRESHOLD = 6;
+const isPossibleMarquee = ref(false);
+// Single-sample calibration for .item-name-content horizontal bounds (relative to scroll wrapper)
+const nameContentCalibration = reactive({ left: null as number | null, right: null as number | null });
+// Measured header height (fallback 34)
+const headerHeight = ref(34);
+
+const calibrateHeaderHeight = (scrollWrapper: HTMLElement | null) => {
+  try {
+    const tableHeader = fileTableCompRef.value?.querySelector(".table-header") as HTMLElement | null;
+    if (tableHeader) headerHeight.value = tableHeader.getBoundingClientRect().height || 34;
+  } catch (err) {
+    headerHeight.value = 34;
+  }
+};
+
+const calibrateNameContent = (scrollWrapper: HTMLElement) => {
+  try {
+    const scrollBounds = scrollWrapper.getBoundingClientRect();
+    const node = document.querySelector(".virtual-scroll-content .item-name-content") as HTMLElement | null;
+    if (node) {
+      const rect = node.getBoundingClientRect();
+      const scrollLeft = scrollWrapper ? scrollWrapper.scrollLeft : 0;
+      // store calibration in content-coordinate space (include horizontal scroll)
+      nameContentCalibration.left = rect.left - scrollBounds.left + scrollLeft;
+      nameContentCalibration.right = nameContentCalibration.left + rect.width;
+    }
+  } catch (err) {
+    // ignore calibration errors and fall back to estimate
+    nameContentCalibration.left = null;
+    nameContentCalibration.right = null;
+  }
+};
 
 const handleComponentMouseDown = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
@@ -1075,7 +1125,9 @@ const handleComponentMouseDown = (event: MouseEvent) => {
   }
 
   event.preventDefault();
-  isMarqueeActive.value = true;
+  // mark a possible marquee; activate only after movement exceeds threshold
+  isPossibleMarquee.value = true;
+  isMarqueeActive.value = false;
   marqueeIsAdditive.value = ctrlPressed;
   marqueeIsInvert.value = ctrlPressed && shiftPressed;
 
@@ -1083,62 +1135,210 @@ const handleComponentMouseDown = (event: MouseEvent) => {
   if (!scrollWrapper) return;
 
   const scrollWrapperBounds = scrollWrapper.getBoundingClientRect();
-  marqueeAnchorX.value = event.clientX - scrollWrapperBounds.left;
-  marqueeAnchorY.value = event.clientY - scrollWrapperBounds.top + scrollWrapper.scrollTop - 34; // Offset by header height
+  // compute anchor in content-space and clamp to content bounds
+  const computedAnchorX = event.clientX - scrollWrapperBounds.left + scrollWrapper.scrollLeft;
+  const maxContentX = Math.max(0, scrollWrapper.scrollWidth - 1);
+  marqueeAnchorX.value = Math.min(maxContentX, Math.max(0, computedAnchorX));
+  const computedAnchorY = event.clientY - scrollWrapperBounds.top + scrollWrapper.scrollTop - headerHeight.value;
+  const maxContentY = Math.max(0, scrollWrapper.scrollHeight - headerHeight.value - 1);
+  marqueeAnchorY.value = Math.min(maxContentY, Math.max(0, computedAnchorY)); // Offset by header height
 
   window.addEventListener("mousemove", handleMarqueeMouseMove);
   window.addEventListener("mouseup", handleMarqueeMouseUp);
   // Also listen for pointer events to be robust on quick releases / touch
   window.addEventListener("pointerup", handleMarqueeMouseUp);
   window.addEventListener("pointercancel", handleMarqueeMouseUp);
+  // do NOT start auto-scroll until marquee is actually activated (threshold passed)
 };
 
 const handleMarqueeMouseMove = (event: MouseEvent) => {
-  if (!isMarqueeActive.value) return;
-
   const scrollWrapper = viewportRef.value;
   if (!scrollWrapper) return;
 
-  // Throttle updates using requestAnimationFrame to reduce DOM thrash
+  // save last client coordinates so auto-scroll can reuse when needed
+  lastMouseClientX = event.clientX;
+  lastMouseClientY = event.clientY;
+
+  const scrollWrapperBounds = scrollWrapper.getBoundingClientRect();
+  const mouseX_content = event.clientX - scrollWrapperBounds.left + scrollWrapper.scrollLeft;
+  const mouseY_content = event.clientY - scrollWrapperBounds.top + scrollWrapper.scrollTop - headerHeight.value; // Offset by header height
+
+  // If marquee hasn't been activated yet, check threshold
+  if (!isMarqueeActive.value && isPossibleMarquee.value) {
+    const dx = mouseX_content - marqueeAnchorX.value;
+    const dy = mouseY_content - marqueeAnchorY.value;
+    const distSq = dx * dx + dy * dy;
+    if (distSq < DRAG_THRESHOLD * DRAG_THRESHOLD) {
+      // not past threshold yet
+      return;
+    }
+    // activate marquee
+    isMarqueeActive.value = true;
+    isPossibleMarquee.value = false;
+    // show selection box starting at anchor with zero size to avoid flash at 0,0
+    if (localSelectionBox.value) {
+      localSelectionBox.value.style.display = "block";
+      localSelectionBox.value.style.transform = `translate(${marqueeAnchorX.value}px, ${marqueeAnchorY.value}px)`;
+      localSelectionBox.value.style.width = `0px`;
+      localSelectionBox.value.style.height = `0px`;
+    }
+    // start auto-scroll now that marquee is active
+    // try to disable overscroll/rubber-band on the scroll wrapper while marquee is active
+    try {
+      scrollWrapper.style.setProperty("overscroll-behavior", "contain");
+    } catch (e) {
+      // ignore
+    }
+    startAutoScroll(scrollWrapper);
+    // Attempt single-sample calibration for .item-name-content to get exact horizontal bounds
+    calibrateNameContent(scrollWrapper);
+  }
+
+  if (!isMarqueeActive.value) return;
+
+  // Throttle updates using requestAnimationFrame to reduce DOM thrash.
   let scheduled = false as boolean;
   const schedule = () => {
     if (scheduled) return;
     scheduled = true;
     window.requestAnimationFrame(() => {
-      // clear scheduled first to allow future scheduling
       scheduled = false;
-      // if marquee got cancelled before rAF fired, skip updating
       if (!isMarqueeActive.value) return;
-      const scrollWrapperBounds = scrollWrapper.getBoundingClientRect();
-      const mouseX_content = event.clientX - scrollWrapperBounds.left;
-      const mouseY_content = event.clientY - scrollWrapperBounds.top + scrollWrapper.scrollTop - 34; // Offset by header height
+      const bounds = scrollWrapper.getBoundingClientRect();
+      let mx = event.clientX - bounds.left + scrollWrapper.scrollLeft;
+      let my = event.clientY - bounds.top + scrollWrapper.scrollTop - headerHeight.value;
+      // Clamp horizontal and vertical positions to content bounds to avoid marquee growing past content end
+      const maxContentY = Math.max(0, (scrollWrapper.scrollHeight || totalHeight.value) - headerHeight.value - 1);
+      const maxContentX = Math.max(0, (scrollWrapper.scrollWidth || bounds.width) - 1);
+      mx = Math.min(maxContentX, Math.max(0, mx));
+      my = Math.min(maxContentY, Math.max(0, my));
 
-      const x = Math.min(marqueeAnchorX.value, mouseX_content);
-      const y = Math.min(marqueeAnchorY.value, mouseY_content);
-      const width = Math.abs(mouseX_content - marqueeAnchorX.value);
-      const height = Math.abs(mouseY_content - marqueeAnchorY.value);
+      const x = Math.min(marqueeAnchorX.value, mx);
+      const y = Math.min(marqueeAnchorY.value, my);
+      const width = Math.abs(mx - marqueeAnchorX.value);
+      const height = Math.abs(my - marqueeAnchorY.value);
 
-      uiStore.marqueeBox.visible = true;
-      uiStore.marqueeBox.x = x;
-      uiStore.marqueeBox.y = y;
-      uiStore.marqueeBox.width = width;
-      uiStore.marqueeBox.height = height;
+      // Update local rect and the DOM element directly (avoid reactive writes)
+      localMarqueeRect.x = x;
+      localMarqueeRect.y = y;
+      localMarqueeRect.width = width;
+      localMarqueeRect.height = height;
 
-      // Compute preview selection but do not commit until mouseup
-      const paths = computeSelectionByRect(marqueeIsAdditive.value);
-      marqueePreviewSelection.value = paths;
-      // prepare add/remove sets for invert mode
-      if (marqueeIsInvert.value) {
-        marqueePreviewAdd.value = paths.filter((p) => !selectedFiles.value.includes(p));
-        marqueePreviewRemove.value = paths.filter((p) => selectedFiles.value.includes(p));
-      } else {
-        marqueePreviewAdd.value = paths;
-        marqueePreviewRemove.value = [];
+      if (localSelectionBox.value) {
+        localSelectionBox.value.style.transform = `translate(${x}px, ${y}px)`;
+        localSelectionBox.value.style.width = `${width}px`;
+        localSelectionBox.value.style.height = `${height}px`;
       }
+
+      // Compute preview selection using math-based selection (no per-row getBoundingClientRect)
+      const paths = computeSelectionByRectLocal(marqueeIsAdditive.value, x, y, width, height);
+
+      // Toggle preview classes on visible rows directly to avoid reactive churn
+      updatePreviewDOM(paths);
     });
   };
 
   schedule();
+};
+
+// --- Auto-scroll while dragging near edges ---
+let autoScrollRaf: number | null = null;
+let lastMouseClientX = 0;
+let lastMouseClientY = 0;
+const AUTO_SCROLL_THRESHOLD = 60; // px from edge to start scrolling
+const AUTO_SCROLL_MAX_SPEED = 24; // px per frame approx
+// Horizontal buffer to keep last-column resizer reachable (pixels)
+const HORIZONTAL_RIGHT_BUFFER = 48;
+
+const startAutoScroll = (scrollWrapper: HTMLElement) => {
+  if (autoScrollRaf) return;
+
+  const tick = () => {
+    if (!isMarqueeActive.value) {
+      stopAutoScroll();
+      return;
+    }
+
+    const bounds = scrollWrapper.getBoundingClientRect();
+    // compute mouse position relative to viewport
+    const y = lastMouseClientY - bounds.top;
+    const xPos = lastMouseClientX - bounds.left;
+    let speedY = 0;
+    let speedX = 0;
+
+    if (y < AUTO_SCROLL_THRESHOLD) {
+      const pct = (AUTO_SCROLL_THRESHOLD - y) / AUTO_SCROLL_THRESHOLD;
+      speedY = -Math.min(AUTO_SCROLL_MAX_SPEED, Math.max(2, AUTO_SCROLL_MAX_SPEED * pct));
+    } else if (y > bounds.height - AUTO_SCROLL_THRESHOLD) {
+      const pct = (y - (bounds.height - AUTO_SCROLL_THRESHOLD)) / AUTO_SCROLL_THRESHOLD;
+      speedY = Math.min(AUTO_SCROLL_MAX_SPEED, Math.max(2, AUTO_SCROLL_MAX_SPEED * pct));
+    }
+
+    if (xPos < AUTO_SCROLL_THRESHOLD) {
+      const pct = (AUTO_SCROLL_THRESHOLD - xPos) / AUTO_SCROLL_THRESHOLD;
+      speedX = -Math.min(AUTO_SCROLL_MAX_SPEED, Math.max(2, AUTO_SCROLL_MAX_SPEED * pct));
+    } else if (xPos > bounds.width - AUTO_SCROLL_THRESHOLD) {
+      const pct = (xPos - (bounds.width - AUTO_SCROLL_THRESHOLD)) / AUTO_SCROLL_THRESHOLD;
+      speedX = Math.min(AUTO_SCROLL_MAX_SPEED, Math.max(2, AUTO_SCROLL_MAX_SPEED * pct));
+    }
+
+    if (speedY !== 0 || speedX !== 0) {
+      // Clamp vertical scrollTop
+      const maxScrollTop = Math.max(0, scrollWrapper.scrollHeight - bounds.height);
+      const desiredTop = scrollWrapper.scrollTop + speedY;
+      const newTop = Math.max(0, Math.min(maxScrollTop, desiredTop));
+      if (newTop !== scrollWrapper.scrollTop) scrollWrapper.scrollTop = newTop;
+
+      // Clamp horizontal scrollLeft
+      // reduce max scroll left by a small buffer so the last column resizer remains reachable
+      const maxScrollLeft = Math.max(0, scrollWrapper.scrollWidth - bounds.width - HORIZONTAL_RIGHT_BUFFER);
+      const desiredLeft = scrollWrapper.scrollLeft + speedX;
+      const newLeft = Math.max(0, Math.min(maxScrollLeft, desiredLeft));
+      if (newLeft !== scrollWrapper.scrollLeft) scrollWrapper.scrollLeft = newLeft;
+
+      // update marquee using synthetic mouse position (use last client coords)
+      const mouseX_content = lastMouseClientX - bounds.left + scrollWrapper.scrollLeft;
+      let mouseY_content = lastMouseClientY - bounds.top + scrollWrapper.scrollTop - headerHeight.value;
+      // Clamp synthetic mouse X/Y to content bounds to avoid overscroll
+      const maxY = Math.max(0, (scrollWrapper.scrollHeight || totalHeight.value) - headerHeight.value - 1);
+      // Consider a right-side buffer so the marquee doesn't extend beyond and interfere with the resizer
+      const maxX = Math.max(0, (scrollWrapper.scrollWidth || bounds.width) - HORIZONTAL_RIGHT_BUFFER - 1);
+      const clampedMouseX = Math.min(maxX, Math.max(0, mouseX_content));
+      mouseY_content = Math.min(maxY, Math.max(0, mouseY_content));
+
+      const x = Math.min(marqueeAnchorX.value, clampedMouseX);
+      const yPos = Math.min(marqueeAnchorY.value, mouseY_content);
+      const width = Math.abs(mouseX_content - marqueeAnchorX.value);
+      const height = Math.abs(mouseY_content - marqueeAnchorY.value);
+
+      // Update local rect + DOM
+      localMarqueeRect.x = x;
+      localMarqueeRect.y = yPos;
+      localMarqueeRect.width = width;
+      localMarqueeRect.height = height;
+      if (localSelectionBox.value) {
+        localSelectionBox.value.style.display = "block";
+        localSelectionBox.value.style.transform = `translate(${x}px, ${yPos}px)`;
+        localSelectionBox.value.style.width = `${width}px`;
+        localSelectionBox.value.style.height = `${height}px`;
+      }
+
+      // recompute preview selection via math
+      const paths = computeSelectionByRectLocal(marqueeIsAdditive.value, x, yPos, width, height);
+      updatePreviewDOM(paths);
+    }
+
+    autoScrollRaf = window.requestAnimationFrame(tick);
+  };
+
+  autoScrollRaf = window.requestAnimationFrame(tick);
+};
+
+const stopAutoScroll = () => {
+  if (autoScrollRaf) {
+    window.cancelAnimationFrame(autoScrollRaf);
+    autoScrollRaf = null;
+  }
 };
 
 const handleMarqueeMouseUp = () => {
@@ -1146,37 +1346,48 @@ const handleMarqueeMouseUp = () => {
   skipRootClick.value = true;
   setTimeout(() => (skipRootClick.value = false), 100);
   isMarqueeActive.value = false;
-  // Commit the previewed selection on mouse up
-  if (marqueePreviewSelection.value.length > 0) {
+  // Commit the previewed selection on mouse up using the local rect
+  const finalPaths = computeSelectionByRectLocal(
+    marqueeIsAdditive.value,
+    localMarqueeRect.x,
+    localMarqueeRect.y,
+    localMarqueeRect.width,
+    localMarqueeRect.height
+  );
+  if (finalPaths.length > 0) {
     if (marqueeIsInvert.value) {
-      // Toggle selection for previewed rows
       const currentSet = new Set(selectedFiles.value);
-      for (const p of marqueePreviewSelection.value) {
+      for (const p of finalPaths) {
         if (currentSet.has(p)) currentSet.delete(p);
         else currentSet.add(p);
       }
       selectedFiles.value = Array.from(currentSet);
     } else if (marqueeIsAdditive.value) {
-      const selectionSet = new Set([...selectedFiles.value, ...marqueePreviewSelection.value]);
+      const selectionSet = new Set([...selectedFiles.value, ...finalPaths]);
       selectedFiles.value = Array.from(selectionSet);
     } else {
-      selectedFiles.value = marqueePreviewSelection.value;
+      selectedFiles.value = finalPaths;
     }
   }
+  // clear preview DOM classes and local state
+  clearPreviewDOM();
   marqueePreviewSelection.value = [];
   uiStore.marqueeBox.visible = false;
   window.removeEventListener("mousemove", handleMarqueeMouseMove);
   window.removeEventListener("mouseup", handleMarqueeMouseUp);
   window.removeEventListener("pointerup", handleMarqueeMouseUp);
   window.removeEventListener("pointercancel", handleMarqueeMouseUp);
+  // stop auto-scroll when marquee ends
+  stopAutoScroll();
 };
 
 // Compute selection paths for current marquee rect without committing (used for preview)
 const computeSelectionByRect = (isAdditive: boolean): string[] => {
-  const marqueeTop = uiStore.marqueeBox.y;
-  const marqueeBottom = marqueeTop + uiStore.marqueeBox.height;
-  const marqueeLeft = uiStore.marqueeBox.x;
-  const marqueeRight = marqueeLeft + uiStore.marqueeBox.width;
+  // Backwards-compatible: if a local marquee rect is active, prefer that (avoids layout reads)
+  const marqueeTop = isMarqueeActive.value ? localMarqueeRect.y : uiStore.marqueeBox.y;
+  const marqueeBottom = marqueeTop + (isMarqueeActive.value ? localMarqueeRect.height : uiStore.marqueeBox.height);
+  const marqueeLeft = isMarqueeActive.value ? localMarqueeRect.x : uiStore.marqueeBox.x;
+  const marqueeRight = marqueeLeft + (isMarqueeActive.value ? localMarqueeRect.width : uiStore.marqueeBox.width);
 
   const startIndexInView = Math.max(0, Math.floor(marqueeTop / ROW_HEIGHT));
   const endIndexInView = Math.min(sortedFiles.value.length, Math.ceil(marqueeBottom / ROW_HEIGHT));
@@ -1222,6 +1433,108 @@ const computeSelectionByRect = (isAdditive: boolean): string[] => {
   }
 
   return pathsToSelect;
+};
+
+// Math-based selection computation that avoids DOM reads. Use columnWidths and ROW_HEIGHT to test ranges.
+const computeSelectionByRectLocal = (
+  isAdditive: boolean,
+  rectX: number,
+  rectY: number,
+  rectW: number,
+  rectH: number
+): string[] => {
+  const marqueeTop = rectY;
+  const marqueeBottom = rectY + rectH;
+  const marqueeLeft = rectX;
+  const marqueeRight = rectX + rectW;
+
+  const startIndexInView = Math.max(0, Math.floor(marqueeTop / ROW_HEIGHT));
+  const endIndexInView = Math.min(sortedFiles.value.length, Math.ceil(marqueeBottom / ROW_HEIGHT));
+
+  const pathsToSelect: string[] = [];
+
+  // Horizontal bounds estimation for .item-name content
+  let leftPadding = 8 + (props.showCheckboxes ? columnWidths.checkbox : 0);
+  let rightEdge = leftPadding + (columnWidths.name - 16);
+  // apply a right-side buffer so marquee and interactions don't overlap scrollbar/resizer
+  rightEdge = Math.max(leftPadding, rightEdge - HORIZONTAL_RIGHT_BUFFER);
+  // If we calibrated actual .item-name-content bounds, use those
+  if (nameContentCalibration.left !== null && nameContentCalibration.right !== null) {
+    leftPadding = nameContentCalibration.left;
+    rightEdge = nameContentCalibration.right;
+  }
+
+  // Try to read actual .item-name-content rects for visible rows (cheap because it's limited to visible rows)
+  try {
+    const scrollWrapper = viewportRef.value;
+    const scrollBounds = scrollWrapper ? scrollWrapper.getBoundingClientRect() : null;
+    const rowNodes = document.querySelectorAll(".virtual-scroll-content .table-row");
+
+    for (let i = startIndexInView; i < endIndexInView; i++) {
+      const file = sortedFiles.value[i];
+      if (!file) continue;
+
+      const rowTop = i * ROW_HEIGHT;
+      const rowBottom = rowTop + ROW_HEIGHT;
+      if (!(marqueeBottom > rowTop && marqueeTop < rowBottom)) continue;
+
+      const node = rowNodes[i - startIndex.value] as HTMLElement | undefined;
+      if (node && scrollBounds) {
+        const contentNode = node.querySelector(".item-name-content") as HTMLElement | null;
+        if (contentNode) {
+          const rect = contentNode.getBoundingClientRect();
+          const scrollLeft = scrollWrapper ? scrollWrapper.scrollLeft : 0;
+          const itemLeft = rect.left - scrollBounds.left + scrollLeft;
+          const itemRight = itemLeft + rect.width;
+          if (marqueeRight > itemLeft - 2 && marqueeLeft < itemRight + 2) {
+            pathsToSelect.push(file.path);
+          }
+          continue;
+        }
+      }
+
+      // Fallback to estimation if DOM node unavailable
+      if (marqueeRight > leftPadding - 2 && marqueeLeft < rightEdge + 2) {
+        pathsToSelect.push(file.path);
+      }
+    }
+  } catch (err) {
+    // If any DOM read fails, fallback to estimate for all rows
+    for (let i = startIndexInView; i < endIndexInView; i++) {
+      const file = sortedFiles.value[i];
+      if (!file) continue;
+      const rowTop = i * ROW_HEIGHT;
+      const rowBottom = rowTop + ROW_HEIGHT;
+      if (!(marqueeBottom > rowTop && marqueeTop < rowBottom)) continue;
+      if (marqueeRight > leftPadding - 2 && marqueeLeft < rightEdge + 2) {
+        pathsToSelect.push(file.path);
+      }
+    }
+  }
+
+  return pathsToSelect;
+};
+
+// Update visible rows' preview classes based on the provided paths array
+const updatePreviewDOM = (paths: string[]) => {
+  const newSet = new Set(paths);
+  // Query only visible rows
+  const rowNodes = document.querySelectorAll(".virtual-scroll-content .table-row");
+  rowNodes.forEach((node) => {
+    const path = node.getAttribute("data-path") || "";
+    const shouldHave = newSet.has(path);
+    const has = node.classList.contains("preview-selected");
+    if (shouldHave && !has) node.classList.add("preview-selected");
+    else if (!shouldHave && has) node.classList.remove("preview-selected");
+  });
+};
+
+const clearPreviewDOM = () => {
+  const rowNodes = document.querySelectorAll(".virtual-scroll-content .table-row.preview-selected");
+  rowNodes.forEach((n) => n.classList.remove("preview-selected"));
+  if (localSelectionBox.value) {
+    localSelectionBox.value.style.display = "none";
+  }
 };
 
 const columnWidths = reactive({
@@ -1531,13 +1844,33 @@ watch(scrollComponentRef, (newRef) => {
   if (newRef) {
     const osInstance = newRef.osInstance();
     if (osInstance) {
-      viewportRef.value = osInstance.elements().viewport;
+      const viewportEl = osInstance.elements().viewport;
+      const contentEl = osInstance.elements().content;
+      viewportRef.value = viewportEl;
+      try {
+        // Disable momentum/elastic scrolling for this overlayscrollbars instance
+        // -webkit-overflow-scrolling: auto disables iOS momentum
+        // overscroll-behavior: contain prevents rubber-banding
+        // scrollBehavior: auto avoids smooth scrolling side-effects
+        if (viewportEl) {
+          viewportEl.style.setProperty("-webkit-overflow-scrolling", "auto");
+          viewportEl.style.setProperty("overscroll-behavior", "contain");
+          viewportEl.style.setProperty("scroll-behavior", "auto");
+        }
+        if (contentEl) {
+          contentEl.style.setProperty("-webkit-overflow-scrolling", "auto");
+        }
+      } catch (err) {
+        // ignore
+      }
     }
   }
 });
 
 // --- Global marquee blocker (app-level overlay) ---
 let globalMarqueeBlocker: HTMLElement | null = null;
+// Reference to the global click handler so it can be removed on unmount
+let globalClickHandler: ((e: MouseEvent) => void) | null = null;
 onMounted(() => {
   logLifecycle("FileTable", "Component has been mounted.");
 
@@ -1567,12 +1900,38 @@ onMounted(() => {
   } catch (err) {
     // ignore if DOM unavailable
   }
+  // install a global click handler to deselect when clicking empty space inside .job-content
+  // store handler reference so it can be removed on unmount
+  globalClickHandler = (event: MouseEvent) => {
+    if (skipRootClick.value) {
+      // ignore spurious click generated by mouseup after marquee
+      skipRootClick.value = false;
+      return;
+    }
+    if (isMarqueeActive.value) return; // ignore while dragging
+    const target = event.target as HTMLElement;
+    // If click is within a job-content but not on interactive name/checkbox/header/resizer, deselect
+    if (target.closest(".job-content")) {
+      const clickedOnName = !!target.closest(".item-name-content");
+      const clickedOnCheckbox = !!target.closest(".item-checkbox");
+      const isInteractive = !!target.closest(".row-actions") || !!target.closest(".table-header") || !!target.closest(".resizer");
+      if (!clickedOnName && !clickedOnCheckbox && !isInteractive) {
+        deselectAll();
+      }
+    }
+  };
+
+  window.addEventListener("click", globalClickHandler);
 });
 
 onUnmounted(() => {
   if (globalMarqueeBlocker && globalMarqueeBlocker.parentElement) {
     globalMarqueeBlocker.parentElement.removeChild(globalMarqueeBlocker);
     globalMarqueeBlocker = null;
+  }
+  if (globalClickHandler) {
+    window.removeEventListener("click", globalClickHandler);
+    globalClickHandler = null;
   }
 });
 
