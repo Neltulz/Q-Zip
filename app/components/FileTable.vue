@@ -53,10 +53,11 @@
       'is-dragging': isDragging || dragDropStore.isInternalDragActive,
       'is-active': isActive,
       'is-scrolling': isScrolling,
+      'is-marquee-dragging': isMarqueeActive,
     }"
     :style="columnStyles"
     data-component-name="FileTable"
-    @click="isActive = true"
+    @click="handleRootClick"
   >
     <div class="file-table-visual-select" />
     <LoadingAnim :visible="props.isLoading" @cancel="$emit('cancel-load')"> Adding files, please wait... </LoadingAnim>
@@ -306,15 +307,7 @@
 
         <div v-if="uiStore.marqueeBox.visible" class="selection-box" :style="marqueeBoxStyle" />
 
-        <!-- Debug hotzones for .item-name-content areas when dragging -->
-        <div v-if="uiStore.marqueeBox.visible && isDevelopment" class="debug-hotzones">
-          <div
-            v-for="(file, index) in visibleFiles"
-            :key="`debug-${file.path}`"
-            class="debug-hotzone"
-            :style="getDebugHotzoneStyle(index, file)"
-          ></div>
-        </div>
+        <!-- debug hotzones removed -->
 
         <!-- Spacer for Virtual Scroll -->
         <div class="virtual-scroll-spacer" :style="{ height: `${totalHeight}px` }">
@@ -325,6 +318,7 @@
                 class="table-row"
                 :class="{
                   selected: selectedFiles.includes(file.path),
+                  'preview-selected': isMarqueeActive && marqueePreviewSelection.includes(file.path),
                   'is-cut': cutFiles.includes(file.path) && jobId === cutSourceJobId,
                   'is-folder': file.type === 'Folder',
                 }"
@@ -1039,6 +1033,9 @@ const isDevelopment = computed(() => {
 const isMarqueeActive = ref(false);
 const marqueeAnchorX = ref(0);
 const marqueeAnchorY = ref(0);
+const marqueePreviewSelection = ref<string[]>([]);
+const marqueeIsAdditive = ref(false);
+const skipRootClick = ref(false);
 
 const handleComponentMouseDown = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
@@ -1050,9 +1047,20 @@ const handleComponentMouseDown = (event: MouseEvent) => {
 
   const isInteractiveElement = target.closest("button, a, input, select, textarea, .table-header, .resizer");
   if (isInteractiveElement) return;
+  // Determine whether this mousedown started on a file's name/checkbox or on the blank background
+  const clickedOnName = !!target.closest(".item-name-content");
+  const clickedOnCheckbox = !!target.closest(".item-checkbox");
+
+  // If the mousedown is on the background (not on a name or checkbox), clear selection to start fresh
+  if (!clickedOnName && !clickedOnCheckbox) {
+    if (selectedFiles.value.length > 0) {
+      selectedFiles.value = [];
+    }
+  }
 
   event.preventDefault();
   isMarqueeActive.value = true;
+  marqueeIsAdditive.value = event.ctrlKey || event.metaKey;
 
   const scrollWrapper = viewportRef.value;
   if (!scrollWrapper) return;
@@ -1071,189 +1079,107 @@ const handleMarqueeMouseMove = (event: MouseEvent) => {
   const scrollWrapper = viewportRef.value;
   if (!scrollWrapper) return;
 
-  const scrollWrapperBounds = scrollWrapper.getBoundingClientRect();
-  const mouseX_content = event.clientX - scrollWrapperBounds.left;
-  const mouseY_content = event.clientY - scrollWrapperBounds.top + scrollWrapper.scrollTop - 34; // Offset by header height
+  // Throttle updates using requestAnimationFrame to reduce DOM thrash
+  let scheduled = false as boolean;
+  const schedule = () => {
+    if (scheduled) return;
+    scheduled = true;
+    window.requestAnimationFrame(() => {
+      scheduled = false;
+      const scrollWrapperBounds = scrollWrapper.getBoundingClientRect();
+      const mouseX_content = event.clientX - scrollWrapperBounds.left;
+      const mouseY_content = event.clientY - scrollWrapperBounds.top + scrollWrapper.scrollTop - 34; // Offset by header height
 
-  const x = Math.min(marqueeAnchorX.value, mouseX_content);
-  const y = Math.min(marqueeAnchorY.value, mouseY_content);
-  const width = Math.abs(mouseX_content - marqueeAnchorX.value);
-  const height = Math.abs(mouseY_content - marqueeAnchorY.value);
+      const x = Math.min(marqueeAnchorX.value, mouseX_content);
+      const y = Math.min(marqueeAnchorY.value, mouseY_content);
+      const width = Math.abs(mouseX_content - marqueeAnchorX.value);
+      const height = Math.abs(mouseY_content - marqueeAnchorY.value);
 
-  // Log marquee box calculations when in development
-  if (isDevelopment.value && width > 0 && height > 0) {
-    logMarqueeSelection("FileTable", "Marquee box calculation:", {
-      mouseX_content,
-      mouseY_content,
-      marqueeAnchorX: marqueeAnchorX.value,
-      marqueeAnchorY: marqueeAnchorY.value,
-      scrollWrapperBounds: {
-        left: scrollWrapperBounds.left,
-        top: scrollWrapperBounds.top,
-        width: scrollWrapperBounds.width,
-        height: scrollWrapperBounds.height,
-      },
-      scrollTop: scrollWrapper.scrollTop,
-      calculatedMarqueeBox: {
-        x,
-        y,
-        width,
-        height,
-      },
-      headerHeightOffset: 34,
+      uiStore.marqueeBox.visible = true;
+      uiStore.marqueeBox.x = x;
+      uiStore.marqueeBox.y = y;
+      uiStore.marqueeBox.width = width;
+      uiStore.marqueeBox.height = height;
+
+      // Compute preview selection but do not commit until mouseup
+      marqueePreviewSelection.value = computeSelectionByRect(marqueeIsAdditive.value);
     });
-  }
+  };
 
-  uiStore.marqueeBox.visible = true;
-  uiStore.marqueeBox.x = x;
-  uiStore.marqueeBox.y = y;
-  uiStore.marqueeBox.width = width;
-  uiStore.marqueeBox.height = height;
-
-  updateSelectionByRect(event.ctrlKey || event.metaKey);
+  schedule();
 };
 
 const handleMarqueeMouseUp = () => {
+  // Suppress the next root click that may be generated by the mouseup after dragging
+  skipRootClick.value = true;
+  setTimeout(() => (skipRootClick.value = false), 100);
   isMarqueeActive.value = false;
+  // Commit the previewed selection on mouse up
+  if (marqueePreviewSelection.value.length > 0) {
+    if (marqueeIsAdditive.value) {
+      const selectionSet = new Set([...selectedFiles.value, ...marqueePreviewSelection.value]);
+      selectedFiles.value = Array.from(selectionSet);
+    } else {
+      selectedFiles.value = marqueePreviewSelection.value;
+    }
+  }
+  marqueePreviewSelection.value = [];
   uiStore.marqueeBox.visible = false;
   window.removeEventListener("mousemove", handleMarqueeMouseMove);
   window.removeEventListener("mouseup", handleMarqueeMouseUp);
 };
 
-const updateSelectionByRect = (isAdditive: boolean) => {
+// Compute selection paths for current marquee rect without committing (used for preview)
+const computeSelectionByRect = (isAdditive: boolean): string[] => {
   const marqueeTop = uiStore.marqueeBox.y;
   const marqueeBottom = marqueeTop + uiStore.marqueeBox.height;
   const marqueeLeft = uiStore.marqueeBox.x;
   const marqueeRight = marqueeLeft + uiStore.marqueeBox.width;
 
-  const startIndexInView = Math.floor(marqueeTop / ROW_HEIGHT);
-  const endIndexInView = Math.ceil(marqueeBottom / ROW_HEIGHT);
+  const startIndexInView = Math.max(0, Math.floor(marqueeTop / ROW_HEIGHT));
+  const endIndexInView = Math.min(sortedFiles.value.length, Math.ceil(marqueeBottom / ROW_HEIGHT));
 
   const pathsToSelect: string[] = [];
 
-  // Log marquee bounds for debugging
-  if (isDevelopment.value && uiStore.marqueeBox.width > 0) {
-    logMarqueeSelection("FileTable", "Marquee bounds:", {
-      marqueeTop,
-      marqueeBottom,
-      marqueeLeft,
-      marqueeRight,
-      marqueeWidth: uiStore.marqueeBox.width,
-      marqueeHeight: uiStore.marqueeBox.height,
-      startIndexInView,
-      endIndexInView,
-    });
-  }
-
-  // Check each row in the marquee range
   for (let i = startIndexInView; i < endIndexInView; i++) {
-    if (i >= 0 && i < sortedFiles.value.length) {
-      const file = sortedFiles.value[i];
-      if (!file) continue;
+    const file = sortedFiles.value[i];
+    if (!file) continue;
 
-      const rowTop = i * ROW_HEIGHT;
-      const rowBottom = rowTop + ROW_HEIGHT;
+    const rowTop = i * ROW_HEIGHT;
+    const rowBottom = rowTop + ROW_HEIGHT;
 
-      // Check if the marquee intersects with this row vertically
-      if (marqueeBottom > rowTop && marqueeTop < rowBottom) {
-        // Calculate the horizontal bounds of the .item-name-content area
-        let itemNameContentLeft = 8; // Left padding of .item-name cell
+    if (!(marqueeBottom > rowTop && marqueeTop < rowBottom)) continue;
 
-        // If checkboxes are shown, add the full width of the checkbox column
-        if (props.showCheckboxes) {
-          itemNameContentLeft += columnWidths.checkbox;
-        }
+    // Compute horizontal bounds; try DOM first
+    let itemNameContentLeftFinal = 8;
+    if (props.showCheckboxes) itemNameContentLeftFinal += columnWidths.checkbox;
+    let itemNameContentRight = itemNameContentLeftFinal + (columnWidths.name - 16);
 
-        // Calculate the width that fully encompasses the icon and text content
-        const iconWidth = 16; // Icon width
-        const textPadding = 8; // Gap between icon and text (column-gap in CSS)
-        const rowActionsWidth = 40; // Estimated width of the '...' button
-        const itemNameGap = 8; // Gap in .item-name flexbox
-
-        // Account for padding of .item-name cell (8px left + 8px right)
-        let maxAvailableSpace = columnWidths.name - 16;
-
-        // If row actions are shown, account for their width and the gap in .item-name flexbox
-        if (props.showRowActions) {
-          maxAvailableSpace -= itemNameGap + rowActionsWidth;
-        }
-
-        // Try to use actual DOM measurements for precise selection calculation
-        let itemNameContentLeftFinal = itemNameContentLeft;
-        let itemNameContentRight = itemNameContentLeft + Math.max(iconWidth + textPadding, 0);
-        try {
-          const scrollWrapper = viewportRef.value;
-          if (scrollWrapper) {
-            const scrollBounds = scrollWrapper.getBoundingClientRect();
-            const rowNodes = document.querySelectorAll(".virtual-scroll-content .table-row");
-            const rowNode = rowNodes[i - startIndex.value] as HTMLElement | undefined;
-            if (rowNode) {
-              const contentNode = rowNode.querySelector(".item-name-content") as HTMLElement | null;
-              if (contentNode) {
-                const rect = contentNode.getBoundingClientRect();
-                itemNameContentLeftFinal = rect.left - scrollBounds.left;
-                itemNameContentRight = itemNameContentLeftFinal + rect.width;
-              }
-            }
+    try {
+      const scrollWrapper = viewportRef.value;
+      if (scrollWrapper) {
+        const scrollBounds = scrollWrapper.getBoundingClientRect();
+        const rowNodes = document.querySelectorAll(".virtual-scroll-content .table-row");
+        const rowNode = rowNodes[i - startIndex.value] as HTMLElement | undefined;
+        if (rowNode) {
+          const contentNode = rowNode.querySelector(".item-name-content") as HTMLElement | null;
+          if (contentNode) {
+            const rect = contentNode.getBoundingClientRect();
+            itemNameContentLeftFinal = rect.left - scrollBounds.left;
+            itemNameContentRight = itemNameContentLeftFinal + rect.width;
           }
-        } catch (err) {
-          // ignore and fall back to estimates
-          const estimatedTextWidth = Math.min(file.name.length * 7, maxAvailableSpace - (iconWidth + textPadding));
-          const itemNameContentWidth = Math.max(
-            iconWidth + textPadding + Math.max(estimatedTextWidth, 0),
-            iconWidth + textPadding
-          );
-          itemNameContentRight = itemNameContentLeft + itemNameContentWidth;
-        }
-
-        // Debug: Log the calculations when dragging (only in development)
-        if (isDevelopment.value && uiStore.marqueeBox.width > 0) {
-          logMarqueeSelection("FileTable", `Row ${i} (${file.name}) intersection check:`, {
-            rowTop,
-            rowBottom,
-            marqueeTop,
-            marqueeBottom,
-            marqueeLeft,
-            marqueeRight,
-            itemNameContentLeft: itemNameContentLeftFinal,
-            itemNameContentRight,
-            maxAvailableSpace,
-            iconWidth,
-            textPadding,
-            rowActionsWidth,
-            itemNameGap,
-            fileLength: file.name.length,
-            columnWidths: columnWidths.name,
-            showCheckboxes: props.showCheckboxes,
-            checkboxWidth: props.showCheckboxes ? columnWidths.checkbox : 0,
-            intersects: marqueeRight > itemNameContentLeftFinal - 2 && marqueeLeft < itemNameContentRight + 2,
-            tolerance: 2,
-          });
-        }
-
-        // Only select the row if the marquee intersects with the .item-name-content area
-        // Add some tolerance for better user experience
-        if (marqueeRight > itemNameContentLeftFinal - 2 && marqueeLeft < itemNameContentRight + 2) {
-          pathsToSelect.push(file.path);
         }
       }
+    } catch (err) {
+      // fall back to estimate
+    }
+
+    if (marqueeRight > itemNameContentLeftFinal - 2 && marqueeLeft < itemNameContentRight + 2) {
+      pathsToSelect.push(file.path);
     }
   }
 
-  if (isDevelopment.value && uiStore.marqueeBox.width > 0) {
-    logMarqueeSelection("FileTable", `Selection result:`, {
-      pathsToSelect,
-      isAdditive,
-      currentSelectionCount: selectedFiles.value.length,
-    });
-  }
-
-  if (isAdditive) {
-    const selectionSet = new Set([...selectedFiles.value, ...pathsToSelect]);
-    selectedFiles.value = Array.from(selectionSet);
-  } else {
-    selectedFiles.value = pathsToSelect;
-  }
+  return pathsToSelect;
 };
 
 const columnWidths = reactive({
@@ -1340,6 +1266,20 @@ const toggleFileSelection = (path: string) => {
 const clickRowByPath = (event: MouseEvent, path: string) => {
   if (!props.isSelectable) return;
 
+  // Only treat as a row-selection click if the user clicked the name content or checkbox
+  const target = event.target as HTMLElement;
+  const clickedOnName = !!target.closest(".item-name-content");
+  const clickedOnCheckbox = !!target.closest(".item-checkbox");
+
+  if (!clickedOnName && !clickedOnCheckbox) {
+    // Clicked elsewhere in the row: deselect all
+    deselectAll();
+    return;
+  }
+
+  // Prevent the root click handler from also deselecting
+  event.stopPropagation();
+
   const clickedIndex = sortedFiles.value.findIndex((f) => f.path === path);
   if (clickedIndex === -1) return;
 
@@ -1363,6 +1303,28 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
     selectedFiles.value = [path];
   }
   lastClickedIndex.value = clickedIndex;
+};
+
+const handleRootClick = (event: MouseEvent) => {
+  isActive.value = true;
+  // If we recently ended a marquee drag, ignore this root click (it comes from the mouseup)
+  if (skipRootClick.value) {
+    skipRootClick.value = false;
+    return;
+  }
+  const target = event.target as HTMLElement;
+  // If click is inside item-name-content or interactive controls, do nothing
+  if (
+    target.closest(".item-name-content") ||
+    target.closest(".item-checkbox") ||
+    target.closest(".row-actions") ||
+    target.closest(".table-header") ||
+    target.closest(".resizer")
+  ) {
+    return;
+  }
+  // Otherwise deselect all
+  deselectAll();
 };
 
 const toggleAll = (): void => {

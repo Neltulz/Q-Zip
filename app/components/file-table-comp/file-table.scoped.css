@@ -90,6 +90,25 @@
   }
 }
 
+/* Preview selection state (visual only during marquee drag) */
+.table-row.preview-selected {
+  background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.25);
+  color: white;
+}
+
+/* While marquee is active, hide and disable row actions to prevent layout thrash and accidental interactions */
+.file-table-comp.is-marquee-dragging .row-actions {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Disable dropdown open button inside row-actions while marquee active (safe-guard) */
+.file-table-comp.is-marquee-dragging .row-actions .trans-btn,
+.file-table-comp.is-marquee-dragging .row-actions .minimal-trans-btn {
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
 /* Common Cell Styles */
 .table-header > div,
 .table-row > div {
@@ -220,7 +239,7 @@
     flex-shrink: 0;
     min-inline-size: 1em;
   }
-  
+
   & > .cell-text {
     flex-shrink: 1;
     overflow: hidden;
