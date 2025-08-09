@@ -161,6 +161,14 @@
   user-select: none;
 }
 
+/* When resizing, make resizer area capture pointer events and suppress header clicks.
+   We still want the header to be clickable outside the resizer; pointer-events: none on
+   the header would block that, so we use a class on body (is-resizing) to control cursor.
+*/
+body.is-resizing .table-header > div {
+  pointer-events: auto;
+}
+
 /* Individual Column Widths using CSS Variables */
 .item-checkbox {
   inline-size: var(--col-width-checkbox);

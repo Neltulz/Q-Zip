@@ -103,7 +103,7 @@
           :disabled="selectedFiles.length === 0"
           first-icon-name="mdi:remove"
           :first-icon-size="20"
-          @click="removeSelectedFiles"
+          @click.stop="removeSelectedFiles"
         >
           Remove Selected
         </CustomButton>
@@ -757,6 +757,8 @@ const sortedFiles = computed(() => {
 });
 
 const handleSort = (key: keyof FileItem) => {
+  // Prevent sorting if we just finished a resize (suppresses the mouseup click that follows)
+  if (suppressHeaderClick.value) return;
   if (sortKey.value === key) {
     sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
   } else {
@@ -1575,9 +1577,12 @@ const tableContentStyle = computed(() => {
 const resizingColumn = ref<keyof typeof columnWidths | null>(null);
 const startX = ref(0);
 const startWidth = ref(0);
+const isResizing = ref(false);
+const suppressHeaderClick = ref(false);
 
 const startResize = (event: MouseEvent, column: keyof typeof columnWidths) => {
   document.body.classList.add("is-resizing");
+  isResizing.value = true;
   resizingColumn.value = column;
   startX.value = event.clientX;
   startWidth.value = columnWidths[column];
@@ -1585,17 +1590,49 @@ const startResize = (event: MouseEvent, column: keyof typeof columnWidths) => {
   window.addEventListener("mouseup", stopResize);
 };
 
+// Use rAF batching to avoid updating reactive state on every mousemove
+let pendingResizeRaf: number | null = null;
+let pendingResizeColumn: keyof typeof columnWidths | null = null;
+let pendingResizeWidth = 0;
+
 const doResize = (event: MouseEvent) => {
-  if (resizingColumn.value) {
-    const delta = event.clientX - startX.value;
-    const newWidth = Math.max(30, startWidth.value + delta);
-    columnWidths[resizingColumn.value] = newWidth;
-  }
+  if (!resizingColumn.value) return;
+  const delta = event.clientX - startX.value;
+  const newWidth = Math.max(30, startWidth.value + delta);
+
+  // store pending values
+  pendingResizeColumn = resizingColumn.value;
+  pendingResizeWidth = newWidth;
+
+  if (pendingResizeRaf !== null) return;
+  pendingResizeRaf = window.requestAnimationFrame(() => {
+    if (pendingResizeColumn) {
+      // commit to reactive state once per frame
+      columnWidths[pendingResizeColumn] = pendingResizeWidth;
+    }
+    pendingResizeRaf = null;
+    pendingResizeColumn = null;
+    pendingResizeWidth = 0;
+  });
 };
 
 const stopResize = () => {
   document.body.classList.remove("is-resizing");
+  // small delay to prevent the click event that follows mouseup from triggering header actions
+  isResizing.value = false;
+  suppressHeaderClick.value = true;
+  setTimeout(() => (suppressHeaderClick.value = false), 150);
   resizingColumn.value = null;
+  // cancel any pending rAF and commit pending width synchronously
+  if (pendingResizeRaf !== null) {
+    window.cancelAnimationFrame(pendingResizeRaf);
+    pendingResizeRaf = null;
+  }
+  if (pendingResizeColumn) {
+    columnWidths[pendingResizeColumn] = pendingResizeWidth;
+    pendingResizeColumn = null;
+    pendingResizeWidth = 0;
+  }
   window.removeEventListener("mousemove", doResize);
   window.removeEventListener("mouseup", stopResize);
 };
@@ -1667,11 +1704,16 @@ const handleRootClick = (event: MouseEvent) => {
     skipRootClick.value = false;
     return;
   }
+  // If we just finished a resize, suppress the immediate click
+  if (suppressHeaderClick.value) {
+    return;
+  }
   const target = event.target as HTMLElement;
   // If click is inside item-name-content or interactive controls, do nothing
   if (
     target.closest(".item-name-content") ||
     target.closest(".item-checkbox") ||
+    target.closest(".file-table-toolbar") ||
     target.closest(".row-actions") ||
     target.closest(".table-header") ||
     target.closest(".resizer")
