@@ -96,6 +96,12 @@
   color: white;
 }
 
+/* Preview selection for folder rows: use a distinct blue tint during marquee preview */
+.table-row.is-folder.preview-selected {
+  background-color: rgba(54, 115, 170, 0.25); /* bluish preview for folders */
+  color: white;
+}
+
 /* While marquee is active, hide and disable row actions to prevent layout thrash and accidental interactions */
 .file-table-comp.is-marquee-dragging .row-actions {
   opacity: 0 !important;
@@ -303,6 +309,11 @@
 }
 .date-bar {
   background-color: var(--warning-clr);
+}
+
+/* Folder rows: use a distinct color for date bars (modified/created) */
+.table-row.is-folder .date-bar {
+  background-color: var(--folder-date-clr, #b355c9); /* magenta/purple fallback */
 }
 
 /* Wrapper span for data bar text is now .cell-text */
