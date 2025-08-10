@@ -14,9 +14,22 @@
   /* CSS Variables for column widths will be injected here by Vue */
   /* Allow per-component zoom via CSS variable --file-table-zoom-local (defaults to 1) */
   --file-table-zoom-local: 1;
-  /* Apply per-component zoom to the component root so overlay elements scale
-     consistently with the content. */
+  /* NOTE: do NOT apply the `zoom` to the component root here. We want the
+     toolbar and other controls to remain unaffected by file-table zoom.
+     The actual `zoom` will be applied to the scroll wrapper below. */
+}
+
+.file-table-comp .table-scroll-wrapper {
+  /* Ensure the scroll wrapper uses the per-component zoom variable set on
+     the component root so Vue can control zoom via inline styles. */
+  --file-table-zoom-local: 1;
   zoom: var(--file-table-zoom-local);
+}
+
+/* Temporary visual debug: make active file table very obvious */
+.file-table-comp.is-active {
+  outline: 3px solid rgba(0, 150, 255, 0.85);
+  box-shadow: 0 0 0 2px rgba(0, 150, 255, 0.15) inset;
 }
 
 .file-table-comp:not(.is-dragging) .table-row:hover .row-actions,

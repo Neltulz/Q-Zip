@@ -75,10 +75,10 @@ onMounted(() => {
   // Keyboard shortcuts for zoom (increment by 0.5 using CSS `--zoom` variable)
   const zoomKeyHandler = (e: KeyboardEvent) => {
     if (!(e.ctrlKey || e.metaKey)) return;
-    // Route keyboard zoom to file-table when the mouse is over job-content
+    // Route keyboard zoom to file-table when the mouse is over the file table
     if (e.key === "+" || e.key === "=") {
       e.preventDefault();
-      if (lastIsInJobContent) {
+      if (lastIsInFileTable) {
         const current = getFileTableZoomFactor();
         setFileTableZoomFactor(current + 0.05);
       } else {
@@ -86,7 +86,7 @@ onMounted(() => {
       }
     } else if (e.key === "-") {
       e.preventDefault();
-      if (lastIsInJobContent) {
+      if (lastIsInFileTable) {
         const current = getFileTableZoomFactor();
         setFileTableZoomFactor(current - 0.05);
       } else {
@@ -94,7 +94,7 @@ onMounted(() => {
       }
     } else if (e.key.toLowerCase() === "0") {
       e.preventDefault();
-      if (lastIsInJobContent) {
+      if (lastIsInFileTable) {
         setFileTableZoomFactor(1);
       } else {
         resetZoom();
@@ -102,16 +102,16 @@ onMounted(() => {
     }
   };
   window.addEventListener("keydown", zoomKeyHandler);
-  // Track whether the mouse cursor is currently over a job-content area so we
+  // Track whether the mouse cursor is currently over the file-table component so we
   // can route zoom commands (keyboard/wheel) to the file table when the cursor
   // is over it.
-  let lastIsInJobContent = false;
+  let lastIsInFileTable = false;
   const mouseMoveTracker = (ev: MouseEvent) => {
     try {
       const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
-      lastIsInJobContent = !!(el && el.closest && el.closest(".job-content"));
+      lastIsInFileTable = !!(el && el.closest && el.closest(".file-table-comp"));
     } catch (e) {
-      lastIsInJobContent = false;
+      lastIsInFileTable = false;
     }
   };
   window.addEventListener("mousemove", mouseMoveTracker, { passive: true });
@@ -141,7 +141,7 @@ onMounted(() => {
     const delta = e.deltaY;
     const increment = delta < 0 ? 1 : -1;
 
-    if (lastIsInJobContent) {
+    if (lastIsInFileTable) {
       const current = getFileTableZoomFactor();
       setFileTableZoomFactor(current + increment * 0.05);
       return;

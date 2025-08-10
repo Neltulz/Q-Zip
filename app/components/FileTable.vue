@@ -1620,6 +1620,7 @@ const fileTableRootStyle = computed(() => ({
 
 // MutationObserver to detect style changes on documentElement
 let fileTableZoomObserver: MutationObserver | null = null;
+let fileTableClassObserver: MutationObserver | null = null;
 onMounted(() => {
   try {
     fileTableZoomObserver = new MutationObserver(() => {
@@ -1634,6 +1635,10 @@ onUnmounted(() => {
   if (fileTableZoomObserver) {
     fileTableZoomObserver.disconnect();
     fileTableZoomObserver = null;
+  }
+  if (fileTableClassObserver) {
+    fileTableClassObserver.disconnect();
+    fileTableClassObserver = null;
   }
 });
 
@@ -1996,6 +2001,37 @@ let globalClickHandler: ((e: MouseEvent) => void) | null = null;
 onMounted(() => {
   logLifecycle("FileTable", "Component has been mounted.");
 
+  // Watch the root element for class changes so we can diagnose 'is-active' toggles
+  try {
+    nextTick(() => {
+      const root = fileTableCompRef.value as HTMLElement | null;
+      if (root) {
+        // Log initial classes
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { logLifecycle } = require("@/utils/loggers");
+          logLifecycle("FileTable", `root initial classes: ${Array.from(root.classList).join(' ')}`);
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.log("FileTable root initial classes:", root.className);
+        }
+
+        fileTableClassObserver = new MutationObserver((muts) => {
+          for (const m of muts) {
+            if (m.type === "attributes" && m.attributeName === "class") {
+              const el = m.target as HTMLElement;
+              // eslint-disable-next-line no-console
+              console.log(`FileTable.classMutation: job=${props.jobId} class="${el.className}"`);
+            }
+          }
+        });
+        fileTableClassObserver.observe(root, { attributes: true, attributeFilter: ["class"] });
+      }
+    });
+  } catch (err) {
+    // ignore
+  }
+
   // create a global blocker appended to body so it captures pointer events outside this component
   try {
     globalMarqueeBlocker = document.createElement("div");
@@ -2063,10 +2099,34 @@ onUnmounted(() => {
   window.removeEventListener("app:clicked-outside-job-content", (() => {}) as EventListener);
 });
 
+// Programmatic setter so parents can toggle active state. Log for debugging.
+const setActive = (val: boolean) => {
+  try {
+    const prev = isActive.value;
+    isActive.value = !!val;
+    // log lifecycle/state change
+    try {
+      // prefer logLifecycle (component state changes)
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { logLifecycle } = require("@/utils/loggers");
+      logLifecycle("FileTable", `setActive called -> ${isActive.value} (was ${prev})`, {
+        jobId: props.jobId,
+      });
+    } catch (e) {
+      // fallback console
+      // eslint-disable-next-line no-console
+      console.log(`FileTable.setActive: job=${props.jobId} -> ${isActive.value} (was ${prev})`);
+    }
+  } catch (err) {
+    // ignore
+  }
+};
+
 defineExpose({
   deselectAll,
   toggleAll,
   selectedFiles,
+  setActive,
 });
 </script>
 

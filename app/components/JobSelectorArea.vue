@@ -520,7 +520,33 @@ watch(draggedJobId, (currentValue, oldValue) => {
 
 const selectJob = (jobId: number): void => {
   if (draggedJobId.value !== null || dragDropStore.isInternalDragActive) return;
+  const oldId = jobsStore.selectedJobId;
+  try {
+    // Dispatch the old and new ids so listeners can deterministically
+    // deactivate the previous job's FileTable before the store updates.
+      // log for debugging
+      try {
+        const { logGlobalEvent } = require("@/utils/loggers");
+        logGlobalEvent("JobSelectorArea", "selectJob dispatching app:selected-job-changed", { oldId, newId: jobId });
+      } catch (e) {
+        // fallback
+        // eslint-disable-next-line no-console
+        console.log("JobSelectorArea.selectJob -> dispatching selected-job-changed", { oldId, newId: jobId });
+      }
+
+      window.dispatchEvent(new CustomEvent("app:selected-job-changed", { detail: { oldId, newId: jobId } }));
+  } catch (e) {
+    // ignore non-browser env
+  }
   jobsStore.selectJob(jobId);
+  // Ensure activation after the new JobArea mounts/updates (workaround for timing races)
+  try {
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("app:ensure-activate-filetable", { detail: jobId }));
+    }, 50);
+  } catch (e) {
+    // ignore
+  }
 };
 
 const showJobContextMenu = (event: MouseEvent, jobId: number) => {

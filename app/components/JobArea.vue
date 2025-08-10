@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, nextTick } from "vue";
+import { computed, onMounted, onUnmounted, ref, nextTick, watch } from "vue";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useModalsStore } from "@/stores/modalsStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
@@ -113,6 +113,94 @@ const loadingMessage = computed(() => {
 
 const activeJob = computed(() => {
   return jobsStore.jobs.find((job: Job) => job.id === jobsStore.selectedJobId);
+});
+
+// When the selected job changes (e.g., user clicks a job tab), ensure the
+// FileTable for the active job is marked as active so it receives keyboard
+// focus and styling (`is-active` class).
+watch(
+  () => jobsStore.selectedJobId,
+  (newId, oldId) => {
+    if (newId !== oldId && newId !== null) {
+      nextTick(() => {
+        fileTableRef.value?.setActive(true);
+      });
+    }
+  }
+);
+
+// If the FileTable component wasn't mounted at the time the selectedJobId
+// watcher ran, activating it would be missed. Watch the fileTableRef and if
+// it becomes available while this JobArea is the active job, mark it active.
+watch(
+  fileTableRef,
+  (newRef) => {
+    if (newRef && activeJob.value && jobsStore.selectedJobId === activeJob.value.id) {
+      // Ensure DOM children mounted
+      nextTick(() => {
+        fileTableRef.value?.setActive(true);
+      });
+    }
+  },
+  { immediate: true }
+);
+
+// Listen for app-level selected-job events so we can deactivate the previous
+// FileTable before the new one becomes active. This complements the watcher
+// above which activates the new table.
+const selectedJobHandler = (ev: Event) => {
+  try {
+    const e = ev as CustomEvent<{ oldId: number | null; newId: number }>;
+    const { oldId, newId } = e.detail;
+    // Log incoming selected-job-changed event
+    try {
+      const { logGlobalEvent } = require("@/utils/loggers");
+      logGlobalEvent("JobArea", `selected-job-changed received`, { oldId, newId, activeJobId: activeJob.value?.id });
+    } catch (e) {
+      // fallback
+      // eslint-disable-next-line no-console
+      console.log("JobArea.selectedJobHandler", { oldId, newId, activeJobId: activeJob.value?.id });
+    }
+
+    // If this component was the previously selected job, deactivate its table
+    if (activeJob.value && oldId !== null && activeJob.value.id === oldId) {
+      // log and deactivate
+      // eslint-disable-next-line no-console
+      console.log(`JobArea: deactivating fileTable for job ${oldId}`);
+      fileTableRef.value?.setActive(false);
+    }
+
+    // If this component is the newly selected job and the table exists, activate it
+    if (activeJob.value && activeJob.value.id === newId && fileTableRef.value) {
+      // eslint-disable-next-line no-console
+      console.log(`JobArea: activating fileTable for job ${newId}`);
+      fileTableRef.value?.setActive(true);
+    }
+  } catch (err) {
+    // ignore
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("app:selected-job-changed", selectedJobHandler as EventListener);
+  window.addEventListener("app:ensure-activate-filetable", (ev: Event) => {
+    try {
+      const e = ev as CustomEvent<number>;
+      const jobId = e.detail;
+      if (activeJob.value && activeJob.value.id === jobId) {
+        // ensure activation once mounted
+        nextTick(() => {
+          fileTableRef.value?.setActive(true);
+        });
+      }
+    } catch (err) {
+      // ignore
+    }
+  });
+});
+
+onUnmounted(() => {
+  window.removeEventListener("app:selected-job-changed", selectedJobHandler as EventListener);
 });
 
 const cancelOperation = () => {
