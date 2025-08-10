@@ -154,6 +154,33 @@ export function useDropdownManager() {
         }
       });
     },
+    // Close all dropdowns that are descendants of the dropdown with the given id.
+    closeDescendantsOf: (parentId: symbol): void => {
+      const parentDropdown = openDropdowns.value.find((d) => d.id === parentId);
+      if (!parentDropdown) return;
+
+      const isDescendant = (candidate: Dropdown): boolean => {
+        let currentButton: HTMLElement | null = candidate.button;
+        while (currentButton) {
+          const parentContent: HTMLElement | null = currentButton.closest<HTMLElement>(".dropdown-content");
+          if (!parentContent) break;
+          const foundParent: Dropdown | undefined = openDropdowns.value.find((d) => d.dropdownContent === parentContent);
+          if (foundParent) {
+            if (foundParent.id === parentDropdown.id) return true;
+            currentButton = foundParent.button;
+          } else {
+            break;
+          }
+        }
+        return false;
+      };
+
+      openDropdowns.value.forEach((dropdown) => {
+        if (dropdown.id !== parentDropdown.id && isDescendant(dropdown)) {
+          dropdown.close();
+        }
+      });
+    },
     // Schedules the closure of any open submenus after a delay.
     scheduleSubmenuClosure: (): void => {
       if (submenuCloseTimer) clearTimeout(submenuCloseTimer);

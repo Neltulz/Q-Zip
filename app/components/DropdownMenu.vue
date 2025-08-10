@@ -161,6 +161,7 @@ const isContentLoaded: Ref<boolean> = ref(false);
 const dropdownContent: Ref<HTMLElement | null> = ref(null);
 const dropdownId: symbol = Symbol("dropdown");
 const openTimeoutId: Ref<number | null> = ref(null);
+const closeTimeoutId: Ref<number | null> = ref(null);
 const dropdownMenuRef = ref<HTMLDivElement | null>(null);
 
 const isOpenedByClick: Ref<boolean> = ref(false);
@@ -316,6 +317,7 @@ const {
   closeUnrelatedDropdowns,
   cancelSubmenuClosure,
   scheduleSubmenuClosure,
+  closeDescendantsOf,
   closeAllDropdowns,
 } = useDropdownManager();
 
@@ -338,6 +340,13 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
   }
 
   isOpenedByClick.value = !isContextMenuCall;
+
+  // If we were in the process of closing, cancel that close so the dropdown
+  // can open immediately and animate in.
+  if (closeTimeoutId.value) {
+    clearTimeout(closeTimeoutId.value);
+    closeTimeoutId.value = null;
+  }
 
   if (debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Opening "${props.dropdownDataName}"`);
   isOpen.value = true;
@@ -409,19 +418,42 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
   });
 };
 
+const CLOSE_ANIMATION_MS = 180; // slightly longer than CSS transition to ensure smooth fade
+
 const closeDropdown = (): void => {
   if (!isOpen.value) return;
   if (debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Closing "${props.dropdownDataName}"`);
 
+  // Cancel any pending open timeouts for submenus
   if (openTimeoutId.value) {
     clearTimeout(openTimeoutId.value);
     openTimeoutId.value = null;
   }
 
-  isOpen.value = false;
+  // Ensure any descendant submenus begin closing immediately so they fade out
+  // when the parent dropdown is closed (covers clicks on parent trigger).
+  try {
+    closeDescendantsOf(dropdownId);
+  } catch (e) {
+    /* ignore */
+  }
+
+  // Start fade-out by removing the content-ready class which transitions opacity -> 0
   isContentLoaded.value = false;
   contextMenuCoords.value = null;
   isOpenedByClick.value = false;
+
+  // If a close is already scheduled, clear it
+  if (closeTimeoutId.value) {
+    clearTimeout(closeTimeoutId.value);
+    closeTimeoutId.value = null;
+  }
+
+  // Delay clearing `isOpen` so CSS opacity transition can run (dropdown remains in DOM)
+  closeTimeoutId.value = window.setTimeout(() => {
+    isOpen.value = false;
+    closeTimeoutId.value = null;
+  }, CLOSE_ANIMATION_MS);
 };
 
 const handleButtonClick = async (event?: MouseEvent): Promise<void> => {
@@ -462,6 +494,12 @@ const handleMouseEnter = (event?: MouseEvent): void => {
   }
 
   if (isOpen.value) {
+    // If the dropdown is already open and this is a parent trigger (not a submenu),
+    // schedule submenus to close after a delay so they fade out naturally when
+    // the user moves the pointer back to the parent trigger.
+    if (!props.isSubmenu) {
+      scheduleSubmenuClosure();
+    }
     return;
   }
 
@@ -520,6 +558,7 @@ watch(isOpen, (newIsOpen: boolean): void => {
 onUnmounted((): void => {
   window.removeEventListener("resize", adjustDropdownPosition);
   if (openTimeoutId.value) clearTimeout(openTimeoutId.value);
+  if (closeTimeoutId.value) clearTimeout(closeTimeoutId.value);
   if (isOpen.value) unregisterDropdown(dropdownId);
 });
 
