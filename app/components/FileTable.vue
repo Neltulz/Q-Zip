@@ -342,7 +342,7 @@
                 :data-path="file.path"
                 data-has-context-menu="true"
                 @click="clickRowByPath($event, file.path)"
-                @contextmenu.prevent="showFileContextMenu(file, $event)"
+                @contextmenu.prevent.stop="showFileContextMenu(file, $event)"
               >
                 <!-- Checkbox Cell -->
                 <div v-if="props.showCheckboxes" class="item-checkbox">
@@ -503,12 +503,7 @@
                           first-icon-name="mdi:content-cut"
                           :first-icon-size="20"
                           shortcut-text="Ctrl+X"
-                          @click="
-                            () => {
-                              clipboardStore.cut([file], jobId);
-                              closeMain();
-                            }
-                          "
+                          @click="() => { performCutFor(file.path); closeMain(); }"
                         >
                           Cut
                         </CustomButton>
@@ -518,12 +513,7 @@
                           first-icon-name="mdi:content-copy"
                           :first-icon-size="20"
                           shortcut-text="Ctrl+C"
-                          @click="
-                            () => {
-                              clipboardStore.copy([file], jobId);
-                              closeMain();
-                            }
-                          "
+                          @click="() => { performCopyFor(file.path); closeMain(); }"
                         >
                           Copy
                         </CustomButton>
@@ -1859,6 +1849,30 @@ const handleAddFile = async (close: () => void): Promise<void> => {
   }
 };
 
+const performCopyFor = (pathOrPaths: string | string[]) => {
+  const paths = Array.isArray(pathOrPaths)
+    ? pathOrPaths
+    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
+    ? selectedFiles.value
+    : [pathOrPaths];
+  const filesToCopy: FileItem[] = paths
+    .map((p) => jobsStore.jobs.find((j) => j.id === props.jobId)?.files.find((f) => f.path === p))
+    .filter(Boolean) as FileItem[];
+  clipboardStore.copy(filesToCopy, props.jobId);
+};
+
+const performCutFor = (pathOrPaths: string | string[]) => {
+  const paths = Array.isArray(pathOrPaths)
+    ? pathOrPaths
+    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
+    ? selectedFiles.value
+    : [pathOrPaths];
+  const filesToCut: FileItem[] = paths
+    .map((p) => jobsStore.jobs.find((j) => j.id === props.jobId)?.files.find((f) => f.path === p))
+    .filter(Boolean) as FileItem[];
+  clipboardStore.cut(filesToCut, props.jobId);
+};
+
 const handleAddFolder = async (close: () => void): Promise<void> => {
   close();
   const selected: string[] | null = await open({
@@ -1895,22 +1909,42 @@ const removeFile = (path: string): void => {
   emit("remove-files", path);
 };
 
-const moveFile = (targetJobId: number, path: string): void => {
-  emit("move-files", { targetJobId, files: [path] });
+const moveFile = (targetJobId: number, pathOrPaths: string | string[]): void => {
+  const paths = Array.isArray(pathOrPaths)
+    ? pathOrPaths
+    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
+    ? selectedFiles.value
+    : [pathOrPaths];
+  emit("move-files", { targetJobId, files: paths });
 };
 
-const moveFileToNewJob = (path: string): void => {
-  // Emit string so parent can use selection if appropriate
-  emit("move-to-new-job", path);
+const moveFileToNewJob = (pathOrPaths: string | string[]): void => {
+  const paths = Array.isArray(pathOrPaths)
+    ? pathOrPaths
+    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
+    ? selectedFiles.value
+    : [pathOrPaths];
+  // Emit array so parent can use selection if appropriate
+  emit("move-to-new-job", paths);
 };
 
-const copyFile = (targetJobId: number, path: string): void => {
-  emit("copy-files", { targetJobId, files: [path] });
+const copyFile = (targetJobId: number, pathOrPaths: string | string[]): void => {
+  const paths = Array.isArray(pathOrPaths)
+    ? pathOrPaths
+    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
+    ? selectedFiles.value
+    : [pathOrPaths];
+  emit("copy-files", { targetJobId, files: paths });
 };
 
-const copyFileToNewJob = (path: string): void => {
-  // Emit string so parent can use selection if appropriate
-  emit("copy-to-new-job", path);
+const copyFileToNewJob = (pathOrPaths: string | string[]): void => {
+  const paths = Array.isArray(pathOrPaths)
+    ? pathOrPaths
+    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
+    ? selectedFiles.value
+    : [pathOrPaths];
+  // Emit array so parent can use selection if appropriate
+  emit("copy-to-new-job", paths);
 };
 
 const setFileMenuRef = (file: FileItem, el: any) => {

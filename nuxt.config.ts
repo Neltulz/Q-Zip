@@ -55,6 +55,7 @@ export default defineNuxtConfig({
     '~/plugins/registerResets.client',
     '~/plugins/themePlugin.ts',
     '~/plugins/bounceDirective.ts',
+    '~/plugins/disableContext.client.ts',
   ],
   sourcemap: {
     server: true,

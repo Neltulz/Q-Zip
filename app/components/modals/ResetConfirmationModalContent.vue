@@ -12,6 +12,7 @@
         <h3>To Be Processed ({{ props.itemsToProcess.length }})</h3>
         <FileTable
           :files="props.itemsToProcess"
+            :is-loading="false"
           :job-id="0"
           :cut-files="[]"
           :cut-source-job-id="null"
@@ -30,6 +31,7 @@
         <h3>To Be Skipped ({{ props.itemsToSkip.length }})</h3>
         <FileTable
           :files="props.itemsToSkip"
+            :is-loading="false"
           :job-id="0"
           :cut-files="[]"
           :cut-source-job-id="null"

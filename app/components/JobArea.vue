@@ -456,26 +456,41 @@ const openOperationConfirmModal = (
 
 const confirmMoveFiles = (payload: FileOperationPayload | ContextMenuFileOperationPayload): void => {
   const { targetJobId } = payload;
-  const pathsToMove = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath);
+  let pathsToMove = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath);
+  // If only one path was passed but the user currently has a multi-selection that includes
+  // that path, prefer the full selection (defensive against races where selection wasn't
+  // propagated in time).
+  if (pathsToMove.length === 1 && selectedFilePaths.value.length > 1 && selectedFilePaths.value.includes(pathsToMove[0])) {
+    pathsToMove = [...selectedFilePaths.value];
+  }
   const fileItems = getFileItemsFromPaths(pathsToMove, activeJob.value?.id ?? null);
   openOperationConfirmModal("move", fileItems, targetJobId, activeJob.value?.id ?? null);
 };
 
 const confirmMoveToNewJob = (paths: string | string[]): void => {
-  const pathsToMove = getPathsForAction(paths);
+  let pathsToMove = getPathsForAction(paths);
+  if (pathsToMove.length === 1 && selectedFilePaths.value.length > 1 && selectedFilePaths.value.includes(pathsToMove[0])) {
+    pathsToMove = [...selectedFilePaths.value];
+  }
   const fileItems = getFileItemsFromPaths(pathsToMove, activeJob.value?.id ?? null);
   openOperationConfirmModal("move", fileItems, "new-job", activeJob.value?.id ?? null);
 };
 
 const confirmCopyFiles = (payload: FileOperationPayload | ContextMenuFileOperationPayload): void => {
   const { targetJobId } = payload;
-  const pathsToCopy = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath);
+  let pathsToCopy = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath);
+  if (pathsToCopy.length === 1 && selectedFilePaths.value.length > 1 && selectedFilePaths.value.includes(pathsToCopy[0])) {
+    pathsToCopy = [...selectedFilePaths.value];
+  }
   const fileItems = getFileItemsFromPaths(pathsToCopy, activeJob.value?.id ?? null);
   openOperationConfirmModal("copy", fileItems, targetJobId, activeJob.value?.id ?? null);
 };
 
 const confirmCopyToNewJob = (paths: string | string[]): void => {
-  const pathsToCopy = getPathsForAction(paths);
+  let pathsToCopy = getPathsForAction(paths);
+  if (pathsToCopy.length === 1 && selectedFilePaths.value.length > 1 && selectedFilePaths.value.includes(pathsToCopy[0])) {
+    pathsToCopy = [...selectedFilePaths.value];
+  }
   const fileItems = getFileItemsFromPaths(pathsToCopy, activeJob.value?.id ?? null);
   openOperationConfirmModal("copy", fileItems, "new-job", activeJob.value?.id ?? null);
 };
