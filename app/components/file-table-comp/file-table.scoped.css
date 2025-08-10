@@ -12,19 +12,47 @@
   position: relative;
   block-size: 100%;
   /* CSS Variables for column widths will be injected here by Vue */
+  /* Allow per-component zoom via CSS variable --file-table-zoom-local (defaults to 1) */
+  --file-table-zoom-local: 1;
+  /* Apply per-component zoom to the component root so overlay elements scale
+     consistently with the content. */
+  zoom: var(--file-table-zoom-local);
+}
 
-  &:not(.is-dragging) .table-row:hover .row-actions,
-  .row-actions:has(.dropdown-menu.active) {
-    opacity: 1;
-  }
+.file-table-comp:not(.is-dragging) .table-row:hover .row-actions,
+.file-table-comp .row-actions:has(.dropdown-menu.active) {
+  opacity: 1;
+}
 
-  &.is-active .file-table-visual-select {
-    opacity: 0.5;
-  }
+.file-table-comp.is-active .file-table-visual-select {
+  opacity: 0.5;
+}
 
-  &.is-scrolling .table-row {
-    pointer-events: none;
-  }
+.file-table-comp.is-scrolling .table-row {
+  pointer-events: none;
+}
+
+/* Loading backdrop that sits behind the FileTable while it's loading */
+.file-table-loading-backdrop {
+  position: absolute;
+  inset: 0; /* fill the component */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5); /* slightly darker than background */
+  border: 1px solid var(--brdr-clr-liter);
+  border-radius: var(--brdr-rad-smal);
+  z-index: 50; /* sit above background but below most overlays */
+  padding: 12px;
+}
+
+.file-table-loading-backdrop .file-table-loading-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
 }
 
 .file-table-toolbar {

@@ -29,6 +29,7 @@
             class="job-selector"
             :class="{
               active: jobsStore.selectedJobId === job.id,
+              'active-line-inline': jobsStore.selectedJobId === job.id,
               'is-dragged': job.id === draggedJobId,
               'drop-target-hover': hoveredJobId === job.id && dragDropStore.isInternalDragActive,
               'drag-over': dragOverJobId === job.id,

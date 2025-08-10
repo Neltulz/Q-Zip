@@ -1,3 +1,5 @@
+<!-- styles for drag region moved to scoped CSS file -->
+
 <!-- components/TitleBar.vue @preserve -->
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!--
@@ -9,8 +11,8 @@
   closes all dropdown menus when a theme is selected or the app is exited.
 -->
 <template>
-  <teleport to="body">
-    <div id="title-bar" data-tauri-decorum-tb data-component-name="TitleBar" @contextmenu.prevent>
+  <teleport to="[data-tauri-decorum-tb]">
+    <div id="title-bar" data-component-name="TitleBar" @contextmenu.prevent>
       <div class="header-content">
         <div class="dropdown-and-app-title-wrapper">
           <DropdownMenu
@@ -207,6 +209,18 @@
             </CustomButton>
           </div>
         </div>
+        <!-- Custom Zoom Indicator Button (hidden by default) -->
+        <div v-if="showZoomIndicator" class="titlebar-zoom-indicator" style="grid-row:1">
+          <CustomButton
+            :data-name="'titlebar-zoom-reset-btn'"
+            btn-theme="default"
+            button-style-class="" 
+            @click="resetGlobalZoom"
+            class="zoom-indicator-btn"
+          >
+            {{ zoomText }}
+          </CustomButton>
+        </div>
       </div>
     </div>
   </teleport>
@@ -376,6 +390,42 @@ const handleExit = (): void => {
   dropdownManager.closeAllDropdowns("Exiting app");
   getCurrentWindow().close();
 };
+
+// Zoom indicator state
+import { ref as vueRef, onMounted as vueOnMounted, onUnmounted as vueOnUnmounted } from "vue";
+import { resetZoom } from "@/composables/useZoom";
+const showZoomIndicator = vueRef(false);
+const zoomText = vueRef("100%");
+
+const updateZoomIndicator = (val: number) => {
+  if (!val || val === 1) {
+    showZoomIndicator.value = false;
+  } else {
+    showZoomIndicator.value = true;
+    zoomText.value = `${Math.round(val * 100)}%`;
+  }
+};
+
+const resetGlobalZoom = () => {
+  resetZoom();
+};
+
+vueOnMounted(() => {
+  window.addEventListener("app:global-zoom-changed", (ev: Event) => {
+    const e = ev as CustomEvent<number>;
+    updateZoomIndicator(e.detail);
+  });
+  // compute position for zoom indicator so it sits left of native window controls
+  // We no longer compute --titlebar-zoom-right; the zoom indicator uses the middle grid column.
+});
+
+vueOnUnmounted(() => {
+  window.removeEventListener("app:global-zoom-changed", (ev: Event) => {
+    const e = ev as CustomEvent<number>;
+    updateZoomIndicator(e.detail);
+  });
+  window.removeEventListener('resize', () => {});
+});
 </script>
 
 <style>
@@ -404,9 +454,33 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
 }
 
 [data-tauri-decorum-tb] {
-  align-items: stretch !important;
+  /* Turn the native toolbar container into a 3-column grid:
+     1fr = main title area, 2nd column = zoom indicator, 3rd column = native window controls */
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-template-columns: 1fr auto auto !important;
+  grid-template-rows: 1fr !important;
+  align-items: center !important;
   height: var(--title-bar-height) !important;
   z-index: 0 !important;
+}
+
+/* Ensure all direct children of the native toolbar sit on the first grid row
+   so they flow horizontally into the columns we defined rather than stacking. */
+[data-tauri-decorum-tb] > * {
+  grid-row: 1 !important;
+}
+
+/* Place the zoom indicator into the middle column if present. */
+[data-tauri-decorum-tb] > .titlebar-zoom-indicator {
+  grid-column: 2;
+  justify-self: end;
+}
+
+/* Ensure our #title-bar (Vue root) occupies the main area */
+#title-bar {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 [data-tauri-decorum-tb] button,
@@ -426,6 +500,7 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
   border-radius: 0;
 }
 
+/* Force native window control buttons into the 3rd grid column */
 [data-tauri-decorum-tb] button.decorum-tb-btn,
 [data-tauri-decorum-tb] .button.decorum-tb-btn {
   align-self: stretch;
@@ -445,6 +520,17 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
   cursor: default;
 }
 
+/* Place native window control buttons relative to the end of the grid using negative indices */
+[data-tauri-decorum-tb] button#decorum-tb-close {
+  grid-column: -1; /* last column */
+}
+[data-tauri-decorum-tb] button#decorum-tb-maximize {
+  grid-column: -2; /* second-to-last */
+}
+[data-tauri-decorum-tb] button#decorum-tb-minimize {
+  grid-column: -3; /* third-to-last */
+}
+
 [data-tauri-decorum-tb] button#decorum-tb-minimize:hover {
   background-color: var(--btn-bg-hvr-clr-lite);
 }
@@ -455,6 +541,16 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
 
 [data-tauri-decorum-tb] button#decorum-tb-close:hover {
   background-color: hsl(0, 80%, 40%);
+}
+
+/* Ensure the drag region element is placed into the first grid cell so it
+   occupies the main title area for dragging (global styles must apply). */
+[data-tauri-decorum-tb] > [data-tauri-drag-region],
+[data-tauri-decorum-tb] [data-tauri-drag-region],
+[data-tauri-drag-region] {
+  grid-column: 1;
+  grid-row: 1;
+  z-index: 1;
 }
 </style>
 

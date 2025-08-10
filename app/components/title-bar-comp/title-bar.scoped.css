@@ -1,19 +1,19 @@
 /* "components/title-bar-comp/title-bar.scoped.css" --for-- "components/TitleBar.vue" */
 
 #title-bar {
-  align-items: center;
+  /* Place the title-bar inside the native decorum toolbar grid. */
   display: flex;
+  align-items: center;
   height: var(--title-bar-height);
-  inset-block-start: 0;
-  inset-inline-start: 0;
-  justify-content: center;
-  overflow: hidden;
   padding-block: 0;
   padding-inline: 3px;
+  justify-content: center;
+  position: relative; /* let the container (decorum) handle fixed positioning */
+  width: 100%;
+  grid-column: 1; /* occupy the main area only */
+  grid-row: 1;
+  z-index: 100;
   pointer-events: none;
-  position: fixed;
-  width: 100vw;
-  z-index: 100000;
 }
 
 #title-bar:deep(.custom-button) {
@@ -59,9 +59,11 @@
 #title-bar > .header-content > .center-nav-btns {
   display: flex;
   grid-column: 1 / span all;
-  grid-row: 1;
+  /* removed grid-row so it no longer participates in the grid flow */
   justify-self: center;
-  position: relative;
+  /* Make the center nav buttons fixed so they remain centered in the viewport */
+  position: fixed;
+  inset-inline: 0; /* logical left/right 0 */
   transition: opacity 500ms ease;
   z-index: 100;
 }
@@ -104,4 +106,31 @@
 #title-bar > .header-content > .center-nav-btns .btn-group .custom-button.active + .divider,
 #title-bar > .header-content > .center-nav-btns .btn-group .divider:has(+ .custom-button.active) {
   opacity: 0;
+}
+
+/* Zoom indicator sits in the middle column of the native toolbar grid.
+   Use logical properties (inset-inline-end) when needed; prefer grid placement. */
+.titlebar-zoom-indicator {
+  grid-column: 2;
+  align-self: center;
+  justify-self: end; /* push to the end (right in LTR) of the column */
+  inset-inline-end: 0; /* logical equivalent of right: 0 */
+  z-index: 100001;
+}
+
+.titlebar-zoom-indicator .zoom-indicator-btn {
+  padding-inline: 8px;
+  padding-block: 6px;
+  font-size: 0.9em;
+  pointer-events: auto; /* ensure the button can be clicked even if parent has pointer-events:none */
+}
+
+/* Ensure the drag region element (sometimes provided directly) is placed into
+   the first grid cell so it occupies the main title area for dragging. */
+[data-tauri-decorum-tb] > [data-tauri-drag-region],
+[data-tauri-decorum-tb] [data-tauri-drag-region],
+[data-tauri-drag-region] {
+  grid-column: 1;
+  grid-row: 1;
+  z-index: 1;
 }

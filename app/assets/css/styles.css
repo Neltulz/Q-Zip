@@ -283,6 +283,19 @@ body {
   overflow: hidden;
 }
 
+/* Apply app zoom via CSS variable set by `useZoom` composable. */
+:root {
+  --base-font-size: 14px;
+  --zoom: 1; /* single canonical zoom variable */
+}
+
+/* Apply font-size scaling when zoom mode is 'font' and apply app-wide zoom using
+   the browser `zoom` property which is layout-friendly in Chromium. */
+html {
+  font-size: var(--base-font-size);
+  zoom: var(--zoom);
+}
+
 article,
 blockquote,
 cite,

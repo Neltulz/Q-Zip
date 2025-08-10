@@ -55,12 +55,25 @@
       'is-scrolling': isScrolling,
       'is-marquee-dragging': isMarqueeActive,
     }"
-    :style="columnStyles"
+    :style="Object.assign({}, columnStyles, fileTableRootStyle)"
     data-component-name="FileTable"
     @click="handleRootClick"
   >
     <!-- Full-screen transparent blocker to prevent interaction with outside UI while marquee drag is active -->
     <div v-if="isMarqueeActive" class="marquee-blocker" aria-hidden="true"></div>
+    <!-- Loading backdrop shown while the file table is loading. It reserves the
+         component's height so surrounding modals/dialogs don't jump when the
+         table finishes loading. -->
+    <div
+      v-if="props.isLoading"
+      class="file-table-loading-backdrop"
+      :style="loadingBackdropStyle"
+      aria-hidden="true"
+    >
+      <div class="file-table-loading-box">
+        <LoadingAnim :visible="true" />
+      </div>
+    </div>
     <div class="file-table-visual-select" />
     <LoadingAnim :visible="props.isLoading" @cancel="$emit('cancel-load')"> Adding files, please wait... </LoadingAnim>
     <ToolBar v-if="props.showToolbar" class="file-table-toolbar">
@@ -1136,8 +1149,20 @@ const handleComponentMouseDown = (event: MouseEvent) => {
   const scrollWrapper = viewportRef.value;
   if (!scrollWrapper) return;
 
-  const scrollWrapperBounds = scrollWrapper.getBoundingClientRect();
   // compute anchor in content-space and clamp to content bounds
+  // If the file table is zoomed using `zoom`, the bounding rects and scroll offsets
+  // already reflect the visual scale in Chromium. We still compute using client
+  // coordinates but transform to content coordinates by accounting for the zoom
+  // factor if necessary.
+  const scrollWrapperBounds = scrollWrapper.getBoundingClientRect();
+  const rootStyles = getComputedStyle(document.documentElement);
+  const ftZoomRaw = rootStyles.getPropertyValue("--file-table-zoom") || rootStyles.getPropertyValue("--file-table-zoom-local");
+  const parsed = Number(ftZoomRaw ? parsedFloatSafe(ftZoomRaw) : NaN);
+  const ftZoom = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+
+  // clientX/left are in viewport pixels; when content is zoomed via CSS `zoom`
+  // the scrollLeft/scrollTop and getBoundingClientRect reflect layout after
+  // zoom. Therefore converting anchor using these values works directly.
   const computedAnchorX = event.clientX - scrollWrapperBounds.left + scrollWrapper.scrollLeft;
   const maxContentX = Math.max(0, scrollWrapper.scrollWidth - 1);
   marqueeAnchorX.value = Math.min(maxContentX, Math.max(0, computedAnchorX));
@@ -1567,6 +1592,53 @@ const columnStyles = computed(() => ({
   "--col-width-parent-path": `${columnWidths.parentPath}px`,
 }));
 
+// Per-component zoom factor for FileTable. Uses CSS var `--file-table-zoom` set by useZoom.
+const fileTableZoom = ref<number>(1.0);
+const applyFileTableZoomFromCSS = () => {
+  try {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue("--file-table-zoom").trim();
+    const parsed = raw ? Number(parsedFloatSafe(raw)) : NaN;
+    fileTableZoom.value = Number.isFinite(parsed) ? parsed : 1.0;
+  } catch (e) {
+    fileTableZoom.value = 1.0;
+  }
+};
+
+// safe parse float helper to avoid stray characters
+const parsedFloatSafe = (s: string) => {
+  const m = s.match(/-?\d+(?:\.\d+)?/);
+  return m ? Number(m[0]) : NaN;
+};
+
+// initialize from CSS var
+applyFileTableZoomFromCSS();
+
+// Watch for changes to the root CSS var and apply to the component root as a style variable
+const fileTableRootStyle = computed(() => ({
+  "--file-table-zoom-local": String(fileTableZoom.value),
+}));
+
+// MutationObserver to detect style changes on documentElement
+let fileTableZoomObserver: MutationObserver | null = null;
+onMounted(() => {
+  try {
+    fileTableZoomObserver = new MutationObserver(() => {
+      applyFileTableZoomFromCSS();
+    });
+    fileTableZoomObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
+  } catch (e) {
+    // ignore
+  }
+});
+onUnmounted(() => {
+  if (fileTableZoomObserver) {
+    fileTableZoomObserver.disconnect();
+    fileTableZoomObserver = null;
+  }
+});
+
+const effectiveZoom = () => (fileTableZoom.value && fileTableZoom.value > 0 ? fileTableZoom.value : 1);
+
 const tableContentStyle = computed(() => {
   const totalWidth = Object.values(columnWidths).reduce((sum, width) => sum + width, 0);
   return {
@@ -1972,6 +2044,11 @@ onMounted(() => {
   };
 
   window.addEventListener("click", globalClickHandler);
+  // Listen for app-level outside clicks to deactivate job-content
+  const outsideHandler = () => {
+    isActive.value = false;
+  };
+  window.addEventListener("app:clicked-outside-job-content", outsideHandler as EventListener);
 });
 
 onUnmounted(() => {
@@ -1983,6 +2060,7 @@ onUnmounted(() => {
     window.removeEventListener("click", globalClickHandler);
     globalClickHandler = null;
   }
+  window.removeEventListener("app:clicked-outside-job-content", (() => {}) as EventListener);
 });
 
 defineExpose({

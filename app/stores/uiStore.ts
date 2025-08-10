@@ -173,9 +173,9 @@ export const useUiStore = defineStore(
         });
       }
 
-      if (operationSucceeded || (targetJobId !== "new-job" && skippedFilePaths.length > 0)) {
-        jobsStore.selectJob(numericTargetId);
-      }
+      // NOTE: Previously we switched the UI to the destination job after a
+      // successful move/copy. Keep the current job selected so the user remains
+      // in context; notifications will inform them of the transfer instead.
     }
 
 
@@ -220,21 +220,21 @@ export const useUiStore = defineStore(
       if (index > -1) {
         const notification = notifications.value[index];
         if (!notification) return;
-        
+
         if (notification.timeoutId) {
           clearTimeout(notification.timeoutId);
         }
-        
+
         // Mark the notification as removing to trigger fade-out
         notification.isRemoving = true;
-        
+
         // Wait for the fade-out transition to complete before actually removing
         setTimeout(() => {
           const currentIndex = notifications.value.findIndex((n) => n.id === id);
           if (currentIndex > -1) {
             notifications.value.splice(currentIndex, 1);
           }
-          
+
           // After removing a notification, show the next one from the queue
           showNextNotification();
         }, 600); // Wait for the fade-out transition to complete (0.6s)

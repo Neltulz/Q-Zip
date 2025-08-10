@@ -156,6 +156,55 @@
   border-color: var(--btn-bg-hvr-clr);
 }
 
+/* Vertical blue line indicator for active job selector buttons */
+.job-selector-list > :deep(button.job-selector.active > .visual-style::before),
+.job-selector-list > :deep(button.job-selector.active-line-inline > .visual-style::before) {
+  content: "";
+  position: absolute;
+  inset-block-start: 8px;
+  inset-block-end: 8px;
+  inline-size: var(--btn-line-thickness, 3px);
+  inset-inline-start: 0;
+  background: var(--blu-lite);
+  border-radius: 1000px;
+  opacity: 1;
+  z-index: 2;
+}
+
+/* Hide the global CustomButton pseudo-element for job-selector active state to avoid
+   accidentally showing the indicator behind nested controls (like the close button). */
+.job-selector-list > :deep(button.job-selector.active > .visual-style::before),
+.job-selector-list > :deep(button.job-selector.active-line-inline > .visual-style::before) {
+  display: none !important;
+}
+
+/* Render a dedicated left-side indicator on the job button itself. This places
+   the bar at the very left edge of the tab and avoids interfering with nested
+   controls inside the button. */
+/* Draw the active indicator aligned to the button's visual-style inset so it
+   matches other active-button indicators. Use direct-child selectors so nested
+   buttons (like the close button) are not targeted. */
+.job-selector-list > :deep(button.job-selector.active > .visual-style::before),
+.job-selector-list > :deep(button.job-selector.active-line-inline > .visual-style::before) {
+  content: "";
+  position: absolute;
+  inset-block-start: 6px;
+  inset-block-end: 6px;
+  /* Align with the visual-style inset so the bar lines up correctly */
+  inset-inline-start: var(--visual-style-inset, 8px);
+  inline-size: var(--btn-line-thickness, 3px);
+  background: var(--blu-lite);
+  border-radius: 1000px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Explicitly hide any visual-style pseudo-elements inside the job options/close button
+   to ensure they don't show the thin line. */
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-options > button.close-job-btn > .visual-style::before) {
+  display: none !important;
+}
+
 .job-selector-list > :deep(button.job-selector:hover > .button-content .job-sel-options .dropdown-menu > button.options-btn),
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu.active > button.options-btn) {
   opacity: 1;

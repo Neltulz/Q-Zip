@@ -27,6 +27,7 @@ import { useDragDropStore } from "@/stores/dragDropStore";
 import { useUiStore } from "@/stores/uiStore";
 import NotificationContainer from "@/components/NotificationContainer.vue";
 import { provideScrollContainer } from "@/composables/useScrollContainer";
+import { zoomIn, zoomOut, resetZoom, setFileTableZoomFactor, getFileTableZoomFactor, getZoomFactor, setZoomFactor } from "@/composables/useZoom";
 import { enableSelectionLock, disableSelectionLock } from "@/composables/useSelectionLock";
 
 provideScrollContainer();
@@ -60,6 +61,106 @@ onMounted(() => {
   uiStore.notifications = [];
   // Disable text selection globally by default (except form controls)
   enableSelectionLock();
+  // Re-apply saved zoom factors on mount so refresh restores previous zooms
+  try {
+    setZoomFactor(getZoomFactor());
+  } catch (e) {
+    // ignore
+  }
+  try {
+    setFileTableZoomFactor(getFileTableZoomFactor());
+  } catch (e) {
+    // ignore
+  }
+  // Keyboard shortcuts for zoom (increment by 0.5 using CSS `--zoom` variable)
+  const zoomKeyHandler = (e: KeyboardEvent) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    // Route keyboard zoom to file-table when the mouse is over job-content
+    if (e.key === "+" || e.key === "=") {
+      e.preventDefault();
+      if (lastIsInJobContent) {
+        const current = getFileTableZoomFactor();
+        setFileTableZoomFactor(current + 0.05);
+      } else {
+        zoomIn();
+      }
+    } else if (e.key === "-") {
+      e.preventDefault();
+      if (lastIsInJobContent) {
+        const current = getFileTableZoomFactor();
+        setFileTableZoomFactor(current - 0.05);
+      } else {
+        zoomOut();
+      }
+    } else if (e.key.toLowerCase() === "0") {
+      e.preventDefault();
+      if (lastIsInJobContent) {
+        setFileTableZoomFactor(1);
+      } else {
+        resetZoom();
+      }
+    }
+  };
+  window.addEventListener("keydown", zoomKeyHandler);
+  // Track whether the mouse cursor is currently over a job-content area so we
+  // can route zoom commands (keyboard/wheel) to the file table when the cursor
+  // is over it.
+  let lastIsInJobContent = false;
+  const mouseMoveTracker = (ev: MouseEvent) => {
+    try {
+      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+      lastIsInJobContent = !!(el && el.closest && el.closest(".job-content"));
+    } catch (e) {
+      lastIsInJobContent = false;
+    }
+  };
+  window.addEventListener("mousemove", mouseMoveTracker, { passive: true });
+
+  // Broadcast a custom event when the user clicks outside any job-content so
+  // components (like FileTable) can become inactive.
+  const outsideClickHandler = (ev: MouseEvent) => {
+    try {
+      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+      const inJob = !!(el && el.closest && el.closest(".job-content"));
+      if (!inJob) {
+        window.dispatchEvent(new CustomEvent("app:clicked-outside-job-content"));
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+  window.addEventListener("click", outsideClickHandler, { passive: true });
+
+  // Ctrl + wheel to zoom (global). We'll route zoom to the file-table when the
+  // mouse cursor is over the job-content area (tracked by mouseMoveTracker).
+  const wheelHandler = (e: WheelEvent) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+
+    // Determine delta: positive deltaY means wheel DOWN (zoom out), negative means UP (zoom in)
+    const delta = e.deltaY;
+    const increment = delta < 0 ? 1 : -1;
+
+    if (lastIsInJobContent) {
+      const current = getFileTableZoomFactor();
+      setFileTableZoomFactor(current + increment * 0.05);
+      return;
+    }
+
+    // otherwise global zoom
+    if (delta < 0) zoomIn();
+    else zoomOut();
+  };
+
+  window.addEventListener("wheel", wheelHandler, { passive: false });
+
+  // Ensure we remove the handlers we registered inside this onMounted when the component unmounts
+  onUnmounted(() => {
+    window.removeEventListener("keydown", zoomKeyHandler);
+    window.removeEventListener("wheel", wheelHandler);
+    window.removeEventListener("mousemove", mouseMoveTracker);
+  });
+
   window.addEventListener("keydown", handleGlobalKeyDown);
 });
 
