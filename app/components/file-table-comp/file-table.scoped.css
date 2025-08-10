@@ -98,7 +98,8 @@
   color: hsl(0, 0%, 75%);
   font-weight: 600;
   block-size: 34px;
-  align-items: stretch;
+  /* Center header content vertically */
+  align-items: center;
   display: flex;
   inline-size: 100%;
   flex-shrink: 0;
@@ -241,7 +242,7 @@ body.is-resizing .table-header > div {
   display: flex;
   align-items: center;
   gap: 8px;
-  justify-content: space-between;
+  justify-content: flex-start; /* keep header text and sort indicator together */
   overflow: hidden;
 }
 
@@ -473,10 +474,14 @@ body.is-resizing .table-header > div {
 }
 
 .sort-indicator {
-  padding-inline-start: 6px; /* Space between text and indicator */
+  margin-left: 6px; /* Space between text and indicator */
+  display: inline-flex;
+  align-items: center;
   font-size: 0.7em; /* Smaller triangle */
   color: var(--txt-clr-litest);
-  transform: scaleY(0.8); /* Shorter triangle */
+  /* Keep inline-flex centering; remove forced translate/scale so it aligns naturally */
+  position: relative;
+  transform: none;
   line-height: 1; /* Adjust vertical alignment */
   flex-shrink: 0; /* Prevent the indicator from shrinking */
 }
