@@ -1819,7 +1819,8 @@ const copyToNewJob = (): void => {
 };
 
 const removeFile = (path: string): void => {
-  emit("remove-files", [path]);
+  // Emit the path as a string so parent can decide whether to act on the full selection
+  emit("remove-files", path);
 };
 
 const moveFile = (targetJobId: number, path: string): void => {
@@ -1827,7 +1828,8 @@ const moveFile = (targetJobId: number, path: string): void => {
 };
 
 const moveFileToNewJob = (path: string): void => {
-  emit("move-to-new-job", [path]);
+  // Emit string so parent can use selection if appropriate
+  emit("move-to-new-job", path);
 };
 
 const copyFile = (targetJobId: number, path: string): void => {
@@ -1835,7 +1837,8 @@ const copyFile = (targetJobId: number, path: string): void => {
 };
 
 const copyFileToNewJob = (path: string): void => {
-  emit("copy-to-new-job", [path]);
+  // Emit string so parent can use selection if appropriate
+  emit("copy-to-new-job", path);
 };
 
 const setFileMenuRef = (file: FileItem, el: any) => {
@@ -1860,6 +1863,11 @@ const showFileContextMenu = (file: FileItem, event: MouseEvent) => {
 // --- LOGGING ---
 watch(visibleFiles, (newVisibleFiles) => {
   logRendering("FileTable", `Virtual scroll update: now showing ${newVisibleFiles.length} files.`);
+});
+
+// Emit selection changes so parent components (e.g., JobArea) stay in sync
+watch(selectedFiles, (newSelection) => {
+  emit("selection-changed", newSelection);
 });
 
 watch(columnStyles, (newStyle) => {

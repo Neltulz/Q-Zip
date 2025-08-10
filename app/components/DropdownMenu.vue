@@ -23,7 +23,7 @@
     :data-dropdown-name="props.dropdownDataName"
   >
     <template v-if="!props.hideTrigger">
-      <CustomButton
+        <CustomButton
         :btn-theme="props.btnTheme"
         :class="{ active: isOpen && isOpenedByClick }"
         :button-style-class="customButtonStyles"
@@ -33,9 +33,9 @@
         :first-icon-size="props.firstIconSize"
         :last-icon-name="props.lastIconName"
         :last-icon-size="props.lastIconSize"
-        @click.stop="handleButtonClick"
-        @mouseenter="handleMouseEnter"
-        @mouseleave="handleMouseLeave"
+        @click.stop="(e: MouseEvent) => handleButtonClick(e)"
+        @mouseenter="(e: MouseEvent) => handleMouseEnter(e)"
+        @mouseleave="(e: MouseEvent) => handleMouseLeave(e)"
       >
         <slot name="button-content" />
       </CustomButton>
@@ -81,7 +81,7 @@
 import { computed, nextTick, onUnmounted, ref, useSlots, watch, type CSSProperties, type PropType, type Ref } from "vue";
 import { useDropdownManager, type Dropdown } from "@/composables/dropdownManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-import { logInteraction, logTrace } from "@/utils/loggers";
+import { logInteraction, logTrace, logWarning } from "@/utils/loggers";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
 
@@ -169,6 +169,7 @@ const actualPlacement: Ref<Placement> = ref(props.placement);
 const dropdownTop: Ref<string> = ref("-9999px");
 const dropdownLeft: Ref<string> = ref("-9999px");
 const contextMenuCoords = ref<{ x: number; y: number } | null>(null);
+const contextMenuAnchorEl = ref<HTMLElement | null>(null);
 
 const dropdownContentStyle = computed(
   (): CSSProperties => ({
@@ -193,9 +194,16 @@ const adjustDropdownPosition = async (): Promise<void> => {
   if (isContextMenu) {
     const { x, y } = contextMenuCoords.value!;
     anchorRect = new DOMRect(x, y, 0, 0);
+  } else if (contextMenuAnchorEl.value) {
+    // If an explicit anchor element was provided (from the click), use it
+    const el = contextMenuAnchorEl.value;
+    anchorRect = el.getBoundingClientRect();
   } else {
-    const buttonEl = document.querySelector(`[data-name='options-btn-for-${props.dropdownDataName}']`);
-    const anchorEl = buttonEl?.querySelector(".visual-style");
+    // Try to find the trigger button inside this component first (safer with arbitrary data-name values)
+    const buttonSelector = `[data-name='options-btn-for-${props.dropdownDataName}']`;
+    const localButtonEl = dropdownMenuRef.value?.querySelector(buttonSelector) as HTMLElement | null;
+    const buttonEl = localButtonEl || (document.querySelector(buttonSelector) as HTMLElement | null);
+    const anchorEl = buttonEl?.querySelector(".visual-style") || buttonEl;
     if (!buttonEl || !anchorEl) return;
     anchorRect = anchorEl.getBoundingClientRect();
   }
@@ -210,7 +218,9 @@ const adjustDropdownPosition = async (): Promise<void> => {
     logTrace("DropdownMenu", `Adjusting position for "${props.dropdownDataName}"`);
   }
 
-  let [primary, secondary] = (isContextMenu ? "bottom-start" : props.placement).split("-") as [string, string];
+  // Default placement: for submenus prefer opening to the right
+  const defaultPlacement = props.isSubmenu && !isContextMenu ? "right-start" : props.placement;
+  let [primary, secondary] = (isContextMenu ? "bottom-start" : defaultPlacement).split("-") as [string, string];
 
   if (primary === "bottom" && anchorRect.bottom + dropdownRect.height + margin > viewHeight) {
     primary = "top";
@@ -309,8 +319,9 @@ const {
   closeAllDropdowns,
 } = useDropdownManager();
 
-const openDropdown = async (coords?: { x: number; y: number }): Promise<void> => {
-  const isContextMenuCall = !!coords;
+const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElement }): Promise<void> => {
+  // Consider this a context menu call only when explicit coords are provided and no anchorEl
+  const isContextMenuCall = !!(opts && (opts.x !== undefined || opts.y !== undefined) && !opts.anchorEl);
 
   if (isOpen.value && !isContextMenuCall) {
     return;
@@ -331,17 +342,49 @@ const openDropdown = async (coords?: { x: number; y: number }): Promise<void> =>
   if (debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Opening "${props.dropdownDataName}"`);
   isOpen.value = true;
   isContentLoaded.value = false;
-  contextMenuCoords.value = coords || null;
+  contextMenuCoords.value = opts && opts.x !== undefined && opts.y !== undefined && !opts.anchorEl ? { x: opts.x!, y: opts.y! } : null;
+  contextMenuAnchorEl.value = opts?.anchorEl ?? null;
 
   await nextTick();
 
-  const buttonEl = props.hideTrigger
-    ? dropdownMenuRef.value
-    : (document.querySelector(`[data-name="options-btn-for-${props.dropdownDataName}"]`) as HTMLElement | null);
+  // Prefer finding trigger inside this component's root; fallback to global search.
+  // Use attribute-value equality checks (avoid CSS selector escaping issues with backslashes)
+  const computedDataName = `options-btn-for-${props.dropdownDataName}`;
+  let localButton: HTMLElement | null = null;
+  if (dropdownMenuRef.value) {
+    const candidates = Array.from(dropdownMenuRef.value.querySelectorAll('[data-name]')) as HTMLElement[];
+    localButton = candidates.find((el) => el.getAttribute('data-name') === computedDataName) || null;
+  }
+
+  let buttonEl: HTMLElement | null = null;
+  if (props.hideTrigger) {
+    buttonEl = dropdownMenuRef.value;
+  } else {
+    if (localButton) buttonEl = localButton;
+    else {
+      const globalCandidates = Array.from(document.querySelectorAll('[data-name]')) as HTMLElement[];
+      buttonEl = globalCandidates.find((el) => el.getAttribute('data-name') === computedDataName) || null;
+    }
+  }
+
+  // Log lookup results for debugging
+  logInteraction("DropdownMenu", `openDropdown lookup for ${props.dropdownDataName}`, {
+    dropdownDataName: props.dropdownDataName,
+    computedDataName,
+    hasLocalButton: !!localButton,
+    foundButton: !!buttonEl,
+  });
 
   if (!buttonEl) {
-    if (debugConfig.logDropdownEvents) console.error(`Could not find button element.`);
-    return;
+    // Log useful diagnostic info: list data-name attributes that may match
+    const allNames = Array.from(document.querySelectorAll('[data-name]'))
+      .map((el) => el.getAttribute('data-name'))
+      .filter(Boolean) as string[];
+    const candidates = allNames.filter((n) => n.includes('file-actions')).slice(0, 50);
+    logWarning("DropdownMenu", `Could not find button element for ${props.dropdownDataName}`, { computedDataName, dropdownMenuRef, candidatesCount: candidates.length });
+    logInteraction("DropdownMenu", `Dropdown candidates for 'file-actions' (first 50):`, { candidates });
+    if (DEBUG && debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Total data-name elements: ${allNames.length}`);
+    // As a last resort: if a click-anchored open was requested, allow fallback to click coords handled below
   }
 
   const dropdown: Dropdown = {
@@ -381,7 +424,7 @@ const closeDropdown = (): void => {
   isOpenedByClick.value = false;
 };
 
-const handleButtonClick = async (_event: MouseEvent): Promise<void> => {
+const handleButtonClick = async (event?: MouseEvent): Promise<void> => {
   if (props.disabled || !hasSlotContent) return;
 
   cancelSubmenuClosure();
@@ -396,17 +439,24 @@ const handleButtonClick = async (_event: MouseEvent): Promise<void> => {
     }
     closeDropdown();
   } else {
-    await openDropdown();
+    // If we have the click event, prefer opening positioned at the click and pass the actual button element as anchor
+    if (event) {
+      const anchorEl = (event.currentTarget as HTMLElement) || undefined;
+      await openDropdown({ x: event.clientX, y: event.clientY, anchorEl });
+    } else {
+      await openDropdown();
+    }
   }
 };
 
-const handleMouseEnter = (): void => {
+const handleMouseEnter = (event?: MouseEvent): void => {
   cancelSubmenuClosure();
 
   if (props.isSubmenu) {
     if (openTimeoutId.value) clearTimeout(openTimeoutId.value);
+    const anchorEl = (event?.currentTarget as HTMLElement) || undefined;
     openTimeoutId.value = window.setTimeout(() => {
-      if (!isOpen.value) openDropdown();
+      if (!isOpen.value) openDropdown({ anchorEl });
     }, 500);
     return;
   }
@@ -433,7 +483,8 @@ const handleMouseEnter = (): void => {
   });
 
   if (openSiblingExists) {
-    openDropdown();
+    const anchorEl = (event?.currentTarget as HTMLElement) || undefined;
+    openDropdown({ anchorEl });
   }
 };
 

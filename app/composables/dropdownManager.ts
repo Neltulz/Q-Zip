@@ -64,10 +64,15 @@ const handleGlobalClickOutside = (event: MouseEvent): void => {
   }
 
   // Check if the click was inside the content of any open dropdown OR on its controlling button.
-  const isClickInsideSomethingManaged: boolean = openDropdowns.value.some(
-    (dropdown) =>
-      (dropdown.dropdownContent && dropdown.dropdownContent.contains(target)) || dropdown.button.contains(target)
-  );
+  const closestDropdownContent = target.closest('.dropdown-content') as HTMLElement | null;
+  const isClickInsideSomethingManaged: boolean = openDropdowns.value.some((dropdown) => {
+    const inContent = !!dropdown.dropdownContent && (dropdown.dropdownContent.contains(target) || dropdown.dropdownContent === closestDropdownContent);
+    const onButton = dropdown.button && dropdown.button.contains(target);
+    if (DEBUG && debugConfig.logDropdownEvents) {
+      logTrace('dropdownManager', `Checking dropdown: ${dropdown.button.getAttribute('data-name') || 'btn'} -> inContent:${inContent} onButton:${onButton}`);
+    }
+    return inContent || onButton;
+  });
 
   // If the click is on a file row, let JobArea handle it.
   const isClickOnFileRow = target.closest(".file-row");

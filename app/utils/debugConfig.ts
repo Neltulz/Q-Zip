@@ -16,7 +16,7 @@
 // @preserve
 
 // Master switch to enable or disable all debugging logs. Use `setAllLoggingEnabled` to toggle at runtime.
-export let DEBUG: boolean = false; // default OFF for performance; change via API below
+export let DEBUG: boolean = true; // enabled for debugging
 
 // Individual flags for controlling specific types of logs.
 export const debugConfig: Record<string, boolean> = {
@@ -33,7 +33,7 @@ export const debugConfig: Record<string, boolean> = {
   logStoreActions: false,
 
   // Logs events specific to the DropdownMenu component.
-  logDropdownEvents: false,
+  logDropdownEvents: true,
 
   // For general UI interactions like scrolling or accordion transitions.
   logUIEvents: false,
@@ -63,7 +63,7 @@ export const debugConfig: Record<string, boolean> = {
   logRenderingEvents: false,
 
   // Logs events related to UI interactivity and responsiveness.
-  logUIInteractivity: false,
+  logUIInteractivity: true,
 };
 
 // Helper to toggle all logging flags at runtime. This updates the master DEBUG
@@ -76,5 +76,5 @@ export const setAllLoggingEnabled = (enabled: boolean) => {
   });
 };
 
-// Convenience: disable all logging immediately on import (default behavior)
-setAllLoggingEnabled(false);
+// Convenience: enable all logging immediately on import for debugging
+setAllLoggingEnabled(true);
