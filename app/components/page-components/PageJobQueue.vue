@@ -22,8 +22,8 @@
     </div>
 
     <BottomButtons div-id="job-queue-bottom-buttons">
-      <CustomButton v-flash-on-click data-name="back-btn" @click="navStore.setActivePage('JobSetup')">Back</CustomButton>
-      <CustomButton v-flash-on-click data-name="begin-btn" @click="navStore.setActivePage('Progress')">
+      <CustomButton data-name="back-btn" @click="navStore.setActivePage('JobSetup')">Back</CustomButton>
+      <CustomButton data-name="begin-btn" @click="navStore.setActivePage('Progress')">
         Begin Creating Archive(s)
       </CustomButton>
     </BottomButtons>

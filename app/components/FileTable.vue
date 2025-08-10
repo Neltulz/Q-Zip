@@ -49,9 +49,9 @@
   <div
     ref="fileTableCompRef"
     class="file-table-comp"
-    :class="{
+  :class="{
       'is-dragging': isDragging || dragDropStore.isInternalDragActive,
-      'is-active': isActive,
+      'is-active': isActive && allowActivation,
       'is-scrolling': isScrolling,
       'is-marquee-dragging': isMarqueeActive,
     }"
@@ -668,6 +668,7 @@ const props = withDefaults(
     isSelectable: true,
     fixedHeaders: true,
     itemDragEnabled: true,
+    activatable: true,
     marqueeSelectionEnabled: true,
   }
 );
@@ -697,6 +698,8 @@ const fileMenuRefs = ref(new Map<string, InstanceType<typeof DropdownMenu>>());
 const selectedFiles = ref<string[]>([]);
 const lastClickedIndex = ref<number | null>(null);
 const isActive = ref<boolean>(false);
+// Respect prop to allow disabling activation in contexts like modals
+const allowActivation = computed(() => (props as any).activatable !== false);
 let updateStartTime = 0;
 const isScrolling = ref(false);
 let scrollTimeout: NodeJS.Timeout | null = null;
@@ -2094,6 +2097,10 @@ onUnmounted(() => {
 // Programmatic setter so parents can toggle active state. Log for debugging.
 const setActive = (val: boolean) => {
   try {
+    if (!allowActivation.value) {
+      // ignore attempts to activate when activatable is false
+      return;
+    }
     const prev = isActive.value;
     isActive.value = !!val;
     // log lifecycle/state change
@@ -2120,6 +2127,22 @@ defineExpose({
   selectedFiles,
   setActive,
 });
+
+// Watch isActive to add/remove the visual class only when activation allowed
+watch(
+  () => isActive.value,
+  (val) => {
+    const root = fileTableCompRef.value;
+    if (!root) return;
+    if (allowActivation.value) {
+      if (val) root.classList.add("is-active");
+      else root.classList.remove("is-active");
+    } else {
+      // ensure class removed if activation disabled
+      root.classList.remove("is-active");
+    }
+  }
+);
 </script>
 
 <style scoped src="./file-table-comp/file-table.scoped.css"></style>

@@ -17,7 +17,6 @@
 
     <BottomButtons div-id="main-bottom-bg">
       <CustomButton
-        v-flash-on-click
         button-style-class=""
         data-name="next-btn"
         first-icon-name="mdi:arrow-right-thick"

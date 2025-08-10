@@ -209,11 +209,7 @@ const selectedText = computed((): string => {
       textarea {
         padding-inline: var(--pad-in);
         padding-block: 0;
-        &:focus,
-        &:focus-visible {
-          outline: 0 !important;
-          box-shadow: none !important;
-        }
+        /* Removed focus-visible/focus rules per user preference */
       }
     }
 

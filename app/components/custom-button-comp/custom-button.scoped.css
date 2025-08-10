@@ -435,6 +435,51 @@
   opacity: 1;
 }
 
+/* CSS-only flash for click/keyboard activation (no JS required) */
+/* Trigger a short pulse when the button is activated via mouse or keyboard. */
+.custom-button:active > .visual-style::after {
+  opacity: 1;
+  animation: flash-pulse 260ms ease-out;
+}
+
+@keyframes flash-pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* Move focus outline onto the visual-style element so it matches the visual inset */
+.custom-button::-moz-focus-inner {
+  border: 0; /* remove Firefox inner focus outline */
+}
+
+/* Explicitly remove any UA/broswer focus visuals on the button itself so we only
+   show the focus ring on the .visual-style element. Use !important to override
+   strong UA rules. */
+/* Removed focus-visible/ focus rules — global focus rings disabled per user preference */
+
+/* Removed visual-style focus ring rules per user preference */
+
+/* For checkbox-like buttons (role="checkbox"), move the focus ring to surround
+   the icon itself instead of the full visual-style area. This prevents a large
+   rectangle around minimal checkbox buttons and keeps the ring tightly
+   aligned with the icon. */
+.custom-button[role="checkbox"] > .button-content {
+  position: relative; /* for pseudo-element positioning */
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Suppress the visual-style ring for checkbox buttons */
+/* Removed checkbox-specific focus ring rules per user preference */
+
 /* Bordered variant */
 .custom-button.bordered-btn > .visual-style {
   border-color: var(--btn-brdr-clr);

@@ -268,15 +268,7 @@
         height: 100%;
         padding-inline: var(--pad-in);
 
-        &:focus {
-          box-shadow: none !important;
-          outline: 0 !important;
-        }
-
-        &:focus-visible {
-          box-shadow: none !important;
-          outline: 0 !important;
-        }
+        /* Removed focus ring styles per user preference */
       }
 
       .native-select {

@@ -20,9 +20,7 @@
     </div>
 
     <BottomButtons div-id="progress-bottom-buttons">
-      <CustomButton v-flash-on-click data-name="back-to-queue-btn" @click="navStore.setActivePage('JobQueue')"
-        >Back to Queue</CustomButton
-      >
+      <CustomButton data-name="back-to-queue-btn" @click="navStore.setActivePage('JobQueue')">Back to Queue</CustomButton>
     </BottomButtons>
   </div>
 </template>

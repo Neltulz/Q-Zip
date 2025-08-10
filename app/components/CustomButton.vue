@@ -13,7 +13,6 @@
 <template>
   <button
     ref="buttonRef"
-    v-flash-on-click
     :class="buttonClasses"
     :data-btn-theme="props.btnTheme"
     :data-justify="props.justify"
