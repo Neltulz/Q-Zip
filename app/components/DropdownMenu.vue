@@ -611,5 +611,48 @@ defineExpose({ openDropdown, closeDropdown });
   opacity: 1;
   pointer-events: all;
 }
+
+/* Ensure CustomButton visual-style has no drop shadow inside dropdowns (teleported content) */
+.dropdown-content .custom-button > .visual-style,
+.dropdown-content .dropdown-menu .custom-button > .visual-style {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Improve contrast for dropdown buttons: muted by default, brighter on hover/active.
+   Avoid overriding the explicit themed button styles (primary/danger/warning/info).
+   Only apply these generic dropdown backgrounds to buttons that are NOT one of those themes. */
+/* Apply translucent dropdown background only to default-themed buttons so
+   themed buttons (primary/danger/warning/info) keep their explicit styles. */
+.dropdown-content .custom-button[data-btn-theme="default"] > .visual-style {
+  /* Brighter translucent backgrounds for dropdown buttons using HSLA vars */
+  background-color: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) + 4%), 0.06);
+  transition: opacity 120ms ease, background-color 120ms ease;
+  opacity: 0.75; /* slightly more visible by default */
+}
+
+/* Hover only applies when NOT active so active overrides hover.
+   Exclude themed buttons so their own hover backgrounds remain intact. */
+.dropdown-content .custom-button:not(.active):not([data-btn-theme="primary"]):not([data-btn-theme="danger"]):not([data-btn-theme="warning"]):not([data-btn-theme="info"]):hover > .visual-style {
+  opacity: 0.95;
+  background-color: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) + 8%), 0.14);
+}
+
+/* Active state must always win and be brightest */
+.dropdown-content .custom-button[data-btn-theme="default"].active > .visual-style {
+  opacity: 1 !important;
+  background-color: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) + 12%), 0.22) !important;
+}
+
+/* Submenu triggers: slightly muted by default but fully bright when active */
+.dropdown-content [data-name$="-submenu"] > .visual-style {
+  opacity: 0.7;
+  background-color: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) + 6%), 0.08);
+}
+.dropdown-content [data-name$="-submenu"].active > .visual-style {
+  opacity: 1 !important;
+  /* slightly toned-down highlight for submenu active state */
+  background-color: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) + 10%), 0.18) !important;
+}
 </style>
 <!-- #endregion -->
