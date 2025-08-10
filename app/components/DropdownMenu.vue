@@ -24,6 +24,7 @@
   >
     <template v-if="!props.hideTrigger">
         <CustomButton
+        ref="triggerButtonRef"
         :btn-theme="props.btnTheme"
         :class="{ active: isOpen && isOpenedByClick }"
         :button-style-class="customButtonStyles"
@@ -159,6 +160,7 @@ const hasSlotContent: boolean = !!slots.default || !!slots["content-top"] || !!s
 const isOpen: Ref<boolean> = ref(false);
 const isContentLoaded: Ref<boolean> = ref(false);
 const dropdownContent: Ref<HTMLElement | null> = ref(null);
+const triggerButtonRef = ref<any | null>(null);
 const dropdownId: symbol = Symbol("dropdown");
 const openTimeoutId: Ref<number | null> = ref(null);
 const closeTimeoutId: Ref<number | null> = ref(null);
@@ -562,7 +564,18 @@ onUnmounted((): void => {
   if (isOpen.value) unregisterDropdown(dropdownId);
 });
 
-defineExpose({ openDropdown, closeDropdown });
+const getTriggerVisualStyle = (): HTMLElement | null => {
+  try {
+    const exposed = triggerButtonRef.value as any;
+    // custom-button exposes `visualStyleRef` (a ref to the element)
+    const vsRef = exposed?.visualStyleRef;
+    return vsRef?.value ?? null;
+  } catch (e) {
+    return null;
+  }
+};
+
+defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle });
 </script>
 <!-- #endregion -->
 
@@ -692,6 +705,16 @@ defineExpose({ openDropdown, closeDropdown });
   opacity: 1 !important;
   /* slightly toned-down highlight for submenu active state */
   background-color: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) + 10%), 0.18) !important;
+}
+
+/* Hide floating InfoTooltip when the options button that would trigger it
+   is active (i.e., its dropdown was opened by click). This uses the
+   relational `:has()` selector to detect an active trigger inside the
+   `.dropdown-menu` root. */
+body:has(.dropdown-menu > .custom-button.active) .info-tooltip {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 150ms ease-in-out;
 }
 </style>
 <!-- #endregion -->

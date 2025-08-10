@@ -271,12 +271,16 @@
 
       <div class="job-selector-btns-end">
         <DropdownMenu
-          aria-label="Remove All Jobs"
+          ref="extraOptionsDropdownRef"
+          aria-label="Job Selector Options"
           button-class="remove-all-jobs-btn"
           button-style-class="trans-btn"
           :dropdown-data-name="'extra-job-selector-options-dropdown'"
           :last-icon-size="24"
           placement="bottom-end"
+          @mouseenter="tooltipManager.showTooltip('job-selector-options')"
+          @mouseleave="tooltipManager.hideTooltip()"
+          @click="tooltipManager.hideTooltip()"
         >
           <template #default="{ close }">
             <CustomButton
@@ -315,6 +319,12 @@
             </CustomButton>
           </template>
         </DropdownMenu>
+        <InfoTooltip
+          :visible="tooltipManager.activeTooltipId.value === 'job-selector-options'"
+          :content="{ text: 'Job Selector Options' }"
+          :target="extraOptionsTarget"
+          placement="bottom"
+        />
       </div>
     </div>
   </nav>
@@ -361,14 +371,21 @@ const scrollComponentRef = ref<InstanceType<typeof OverlayScrollbarsComponent> |
 
 const jobButtonRefs = ref(new Map<number | "new-job", InstanceType<typeof CustomButton>>());
 const jobContextMenuRefs = ref(new Map<number, InstanceType<typeof DropdownMenu>>());
-const dragActionDropdownRefs = ref(new Map<number | "new-job", InstanceType<typeof DropdownMenu>>());
+  const dragActionDropdownRefs = ref(new Map<number | "new-job", InstanceType<typeof DropdownMenu>>());
+  const extraOptionsDropdownRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
 
 const pendingDropFilePaths = ref<string[]>([]);
 const pendingDropSourceJobId = ref<number | null>(null);
 
 const jobNotificationStates = ref<Map<number | "new-job", NotificationType>>(new Map());
 
-const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
+  const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
+  const extraOptionsTarget = computed(() => {
+    const el = extraOptionsDropdownRef.value as any;
+    if (!el) return null;
+    // Try common exposed refs, fall back to querying DOM inside the component
+    return el.buttonRef ?? el.$el?.querySelector?.('.visual-style') ?? null;
+  });
 
 watch(
   () => uiStore.notifications,

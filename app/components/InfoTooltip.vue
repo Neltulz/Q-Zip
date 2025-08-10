@@ -38,7 +38,13 @@
 <template>
   <teleport to="body">
     <Transition name="tooltip-fade">
-      <div v-if="visible || debugForceVisible" ref="floatingRef" class="info-tooltip" :style="floatingStyles">
+      <div
+        v-if="visible || debugForceVisible"
+        ref="floatingRef"
+        class="info-tooltip"
+        :class="{ interactive: interactive }"
+        :style="floatingStyles"
+      >
         <div class="tooltip-content">
           <!-- Display simple text content -->
           <template v-if="parsedContent">
@@ -76,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, toRef, type PropType } from "vue";
+import { ref, computed, toRef, watch, type PropType } from "vue";
 import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
@@ -101,6 +107,19 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // When true the tooltip allows pointer interactions (e.g., clickable links).
+  // Default false so tooltips don't block underlying controls.
+  interactive: {
+    type: Boolean,
+    default: false,
+  },
+  // When false, avoid flipping the tooltip to any `top-*` placement. Useful
+  // for controls pinned to the top edge where we always want the tooltip
+  // to appear below the target.
+  allowFlipToTop: {
+    type: Boolean,
+    default: true,
+  },
   placement: {
     type: String as PropType<"top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end">,
     default: "top",
@@ -110,10 +129,101 @@ const props = defineProps({
 const floatingRef = ref<HTMLElement | null>(null);
 const arrowRef = ref(null);
 
-const { floatingStyles, middlewareData, placement } = useFloating(toRef(props, "target"), floatingRef, {
+// Resolve the provided `target` prop to the "best" DOM element to anchor to.
+// If a CustomButton (or its wrapper) is passed, prefer its internal
+// `.visual-style` element when available so tooltips anchor to the visible surface.
+const resolvedTarget = computed(() => {
+  const raw = (props as any).target;
+  if (!raw) return null;
+
+  // Unwrap refs if necessary
+  const maybe = raw && (raw.value !== undefined ? raw.value : raw);
+
+  // If a component instance exposing `visualStyleRef` was passed, use that
+  if (maybe && typeof maybe === "object") {
+    // Component proxy exposing a ref
+    const vsRef = maybe.visualStyleRef ?? maybe.getTriggerVisualStyle ?? null;
+    if (vsRef) {
+      // vsRef may be a Ref or a direct element-returning function
+      if (typeof vsRef === "function") {
+        try {
+          const el = vsRef();
+          if (el instanceof Element) return el;
+        } catch (e) {
+          /* ignore */
+        }
+      } else if (vsRef.value instanceof Element) {
+        return vsRef.value;
+      }
+    }
+  }
+
+  // If an Element was passed, prefer its `.visual-style` child when present
+  if (maybe instanceof Element) {
+    const inner = (maybe as Element).querySelector?.(".visual-style");
+    if (inner) return inner as Element;
+    return maybe as Element;
+  }
+
+  return null;
+});
+
+// Debug: when visible, optionally log resolved target and rect to help diagnose placement
+watch(
+  () => props.visible,
+  (v) => {
+    if (v) {
+      try {
+        const el = resolvedTarget.value as Element | null;
+        if (el) {
+          // eslint-disable-next-line no-console
+          console.debug("InfoTooltip: resolved target element:", el, el.getBoundingClientRect());
+        } else {
+          // eslint-disable-next-line no-console
+          console.debug("InfoTooltip: no resolved target");
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+);
+
+const { floatingStyles, middlewareData, placement } = useFloating(resolvedTarget, floatingRef, {
   placement: toRef(props, "placement"),
   whileElementsMounted: autoUpdate,
-  middleware: [offset(10), flip(), shift({ padding: 5 }), arrow({ element: arrowRef, padding: 4 })],
+  // Prefer keeping the tooltip below the target even when horizontal space is tight.
+  // Provide an explicit fallback ordering so we try bottom-start / bottom-end first.
+  // If `allowFlipToTop` is false, never include top placements in the fallbacks.
+  middleware: [
+    // Slightly larger vertical offset so the tooltip sits clearly below the target
+    // and is less likely to overlap it when near the window edge.
+    // Slightly smaller offset so tooltip sits closer to the visual surface
+    offset(8),
+    flip({
+      fallbackPlacements: (props.allowFlipToTop
+        ? [
+            "bottom-start",
+            "bottom-end",
+            "right-start",
+            "right-end",
+            "left-start",
+            "left-end",
+            "top-start",
+            "top-end",
+          ]
+        : [
+            "bottom-start",
+            "bottom-end",
+            "right-start",
+            "right-end",
+            "left-start",
+            "left-end",
+          ]),
+    }),
+    shift({ padding: 8 }),
+    arrow({ element: arrowRef, padding: 4 }),
+  ],
 });
 
 const side = computed(() => placement.value.split("-")[0]);
@@ -145,8 +255,22 @@ const arrowStyle = computed(() => {
 
   if (!staticSide) return {};
 
-  // The offset now accounts for the new, larger SVG's height
-  const offsetValue = "-9px";
+  // Measure arrow element height when available so we can offset it precisely
+  // to sit flush with the tooltip body. Fall back to 9px if measurement not ready.
+  const measuredHeight = (() => {
+    try {
+      const el = arrowRef.value as HTMLElement | null;
+      if (el) {
+        const h = el.getBoundingClientRect().height;
+        if (h && !Number.isNaN(h)) return h;
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    return 9;
+  })();
+
+  const offsetValue = `-${Math.round(measuredHeight)}px`;
 
   return {
     insetInlineStart: x != null ? `${x}px` : "",
@@ -172,7 +296,7 @@ const getFileName = (path: string) => {
   opacity: 0;
 }
 
-.info-tooltip {
+  .info-tooltip {
   position: absolute;
   z-index: 10001;
   background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
@@ -183,12 +307,13 @@ const getFileName = (path: string) => {
   inline-size: max-content;
   min-inline-size: 150px;
   max-inline-size: 500px;
-  pointer-events: auto;
+  /* Default: don't capture pointer events so tooltips don't block underlying controls */
+  pointer-events: none;
   white-space: nowrap;
   display: flex;
   align-items: center;
-  padding-block: 8px;
-  padding-inline: 12px;
+  padding-block: 6px;
+  padding-inline: 10px;
 
   .tooltip-arrow {
     position: absolute;
@@ -267,5 +392,10 @@ const getFileName = (path: string) => {
       }
     }
   }
+}
+
+/* When interactive=true, allow pointer events on the tooltip */
+.info-tooltip.interactive {
+  pointer-events: auto;
 }
 </style>

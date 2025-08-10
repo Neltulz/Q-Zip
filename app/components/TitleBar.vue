@@ -17,6 +17,7 @@
         <div class="dropdown-and-app-title-wrapper">
           <DropdownMenu
             id="app-menu"
+            ref="appMenuDropdownRef"
             btn-theme="liter"
             button-style-class="trans-btn"
             data-name="main-menu-dropdown"
@@ -24,6 +25,8 @@
             last-icon-name="mdi:menu"
             :last-icon-size="24"
             placement="bottom-start"
+            @mouseenter="showMainMenuTooltip"
+            @mouseleave="hideMainMenuTooltip"
           >
             <template #default>
               <DropdownMenu
@@ -153,6 +156,12 @@
               </CustomButton>
             </template>
           </DropdownMenu>
+          <InfoTooltip
+            :visible="mainMenuTooltipVisible && !isMainMenuActive"
+            :content="{ text: 'Main Menu' }"
+            :target="mainMenuTooltipTarget"
+            placement="bottom-start"
+          />
           <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.3</span></span>
         </div>
 
@@ -227,13 +236,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useThemeStore, type Theme } from "@/stores/themeStore";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useUserPreferencesStore } from "@/stores/userPreferencesStore";
 import { useDropdownManager } from "@/composables/dropdownManager";
+import InfoTooltip from "@/components/InfoTooltip.vue";
 import { useResetManager } from "@/composables/useResetManager";
 import { useModalsStore } from "@/stores/modalsStore";
 import type { ModalOptions } from "@/types/modal";
@@ -249,6 +259,39 @@ const modalsStore = useModalsStore();
 
 const isWelcomeLayout = computed((): boolean => {
   return layoutStore.currentLayout === "welcome";
+});
+
+// Main Menu tooltip state
+const mainMenuTooltipVisible = ref(false);
+const appMenuDropdownRef = ref<any | null>(null);
+
+const mainMenuTooltipTarget = computed(() => {
+  // Prefer the DropdownMenu component's exposed visual-style getter if available
+  const comp = appMenuDropdownRef.value as any;
+  if (comp && typeof comp.getTriggerVisualStyle === "function") {
+    const el = comp.getTriggerVisualStyle();
+    if (el instanceof Element) return el;
+  }
+
+  const btn = document.querySelector("[data-name='options-btn-for-main-menu-dropdown']") as HTMLElement | null;
+  return (btn?.querySelector(".visual-style") as HTMLElement | null) ?? btn;
+});
+
+const isMainMenuActive = computed(() => {
+  const el = document.getElementById("app-menu");
+  return !!(el && el.classList.contains("active"));
+});
+
+const showMainMenuTooltip = () => {
+  mainMenuTooltipVisible.value = true;
+};
+const hideMainMenuTooltip = () => {
+  mainMenuTooltipVisible.value = false;
+};
+
+// If the menu opens, ensure the tooltip is hidden
+watch(isMainMenuActive, (val) => {
+  if (val) mainMenuTooltipVisible.value = false;
 });
 
 const setTheme = (theme: Theme): void => {
