@@ -532,3 +532,20 @@ fieldset {
     }
   }
 }
+
+/* Utility: global "no selection" mode
+   - Add the `no-select` class to the <body> element (e.g. <body class="no-select">)
+     to disable text selection across the app.
+   - Inputs, textareas, selects and contenteditable elements remain selectable so
+     users can still interact with form controls and editable regions. */
+/* Strong: disable selection for everything inside body.no-select except
+   the explicit interactive elements we want to keep selectable. Using
+   `:not()` exclusions ensures form controls and contenteditable areas
+   remain selectable without needing separate re-enable rules. */
+body.no-select,
+body.no-select *:not(textarea):not(input):not(select):not([contenteditable]) {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}

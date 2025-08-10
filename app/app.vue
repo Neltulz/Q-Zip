@@ -27,6 +27,7 @@ import { useDragDropStore } from "@/stores/dragDropStore";
 import { useUiStore } from "@/stores/uiStore";
 import NotificationContainer from "@/components/NotificationContainer.vue";
 import { provideScrollContainer } from "@/composables/useScrollContainer";
+import { enableSelectionLock, disableSelectionLock } from "@/composables/useSelectionLock";
 
 provideScrollContainer();
 
@@ -57,10 +58,14 @@ onBeforeMount((): void => {
 
 onMounted(() => {
   uiStore.notifications = [];
+  // Disable text selection globally by default (except form controls)
+  enableSelectionLock();
   window.addEventListener("keydown", handleGlobalKeyDown);
 });
 
 onUnmounted(() => {
+  // Clean up selection lock when app unmounts
+  disableSelectionLock();
   window.removeEventListener("keydown", handleGlobalKeyDown);
 });
 </script>
