@@ -165,16 +165,19 @@
           <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.3</span></span>
         </div>
 
-        <div class="center-nav-btns" :class="{ disabled: isWelcomeLayout }">
+          <div class="center-nav-btns" :class="{ disabled: isWelcomeLayout }">
           <CustomButton
             btn-theme="liter"
             button-style-class="trans-btn"
             data-name="nav-to-welcome"
+            ref="navToWelcomeRef"
             first-icon-name="mdi:home"
             :first-icon-size="20"
             title="Return to Welcome Screen"
             :disabled="isWelcomeLayout"
             @click="handleNavToWelcome"
+            @mouseenter="showCenterTooltip('Return to the welcome screen', 'nav-to-welcome')"
+            @mouseleave="hideCenterTooltip"
           />
 
           <div class="btn-group">
@@ -182,11 +185,14 @@
               btn-theme="liter"
               button-style-class="trans-btn can-become-active active-line-block-end"
               data-name="nav-to-job-setup"
+              ref="navToJobSetupRef"
               first-icon-name="mdi:briefcase-outline"
               :first-icon-size="20"
               :class="{ active: navStore.activePage === 'JobSetup' }"
               :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('JobSetup')"
+              @mouseenter="showCenterTooltip('Add or remove jobs for archive creation.', 'nav-to-job-setup')"
+              @mouseleave="hideCenterTooltip"
             >
               Job Setup
             </CustomButton>
@@ -195,11 +201,14 @@
               btn-theme="liter"
               button-style-class="trans-btn can-become-active active-line-block-end"
               data-name="nav-to-job-queue"
+              ref="navToJobQueueRef"
               first-icon-name="mdi:view-list"
               :first-icon-size="20"
               :class="{ active: navStore.activePage === 'JobQueue' }"
               :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('JobQueue')"
+              @mouseenter="showCenterTooltip('View summary of archives queued for creation.', 'nav-to-job-queue')"
+              @mouseleave="hideCenterTooltip"
             >
               Job Queue
             </CustomButton>
@@ -208,16 +217,28 @@
               btn-theme="liter"
               button-style-class="trans-btn can-become-active active-line-block-end"
               data-name="nav-to-progress"
+              ref="navToProgressRef"
               first-icon-name="mdi:progress-clock"
               :first-icon-size="20"
               :class="{ active: navStore.activePage === 'Progress' }"
               :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('Progress')"
+              @mouseenter="showCenterTooltip('View archive creation progress.', 'nav-to-progress')"
+              @mouseleave="hideCenterTooltip"
             >
               Progress
             </CustomButton>
           </div>
         </div>
+
+        <!-- Center nav tooltip (single instance used for all center buttons) -->
+        <InfoTooltip
+          :visible="centerTooltipIsActive || (debugForceJobQueue && centerTooltipText && centerTooltipText.toLowerCase().includes('job queue'))"
+          :content="{ text: centerTooltipText || (debugForceJobQueue ? 'Job Queue' : '') }"
+          :target="debugForceCenterTarget || centerTooltipTarget"
+          placement="bottom"
+          :debugForceVisible="debugForceJobQueue"
+        />
         <!-- Custom Zoom Indicator Button (hidden by default) -->
         <div v-if="showZoomIndicator" class="titlebar-zoom-indicator" style="grid-row:1">
           <CustomButton
@@ -264,6 +285,180 @@ const isWelcomeLayout = computed((): boolean => {
 // Main Menu tooltip state
 const mainMenuTooltipVisible = ref(false);
 const appMenuDropdownRef = ref<any | null>(null);
+
+// Center navigation tooltip state
+const centerTooltipVisible = ref(false);
+const centerTooltipText = ref("");
+const navToWelcomeRef = ref<any | null>(null);
+const navToJobSetupRef = ref<any | null>(null);
+const navToJobQueueRef = ref<any | null>(null);
+const navToProgressRef = ref<any | null>(null);
+
+const centerTooltipTarget = computed(() => {
+  // Resolve by data-name -> prefer exposed visual style
+  const nameToRef: Record<string, any> = {
+    'nav-to-welcome': navToWelcomeRef.value,
+    'nav-to-job-setup': navToJobSetupRef.value,
+    'nav-to-job-queue': navToJobQueueRef.value,
+    'nav-to-progress': navToProgressRef.value,
+  };
+  // If a ref is available and exposes visual style, use it
+  const findEl = (r: any) => {
+    try {
+      if (!r) return null;
+      if (typeof r.getTriggerVisualStyle === 'function') return r.getTriggerVisualStyle();
+      if (r.visualStyleRef && r.visualStyleRef.value) return r.visualStyleRef.value;
+      // fallback DOM lookup
+      const el = (r as Element)?.querySelector?.('.visual-style') ?? null;
+      return el;
+    } catch (e) {
+      return null;
+    }
+  };
+  // Determine which nav is active via tooltip text mapping
+  const names = ['nav-to-welcome', 'nav-to-job-setup', 'nav-to-job-queue', 'nav-to-progress'];
+  for (const n of names) {
+    if (centerTooltipText.value && centerTooltipText.value.toLowerCase().includes(n.split('-').slice(2).join(' '))) {
+      const el = findEl(nameToRef[n]);
+      if (el) return el;
+    }
+  }
+  // Fallback: try to find by data-name attribute
+  const el = document.querySelector(`[data-name='${centerTooltipNameCandidate.value}']`);
+  return (el?.querySelector('.visual-style') as HTMLElement) ?? el;
+});
+
+// Helper reactive to store the last hovered center button's data-name
+const centerTooltipNameCandidate = ref('');
+
+// Use the shared tooltip manager (same used by JobSelectorArea) so center
+// nav button tooltips get the same delayed show/hide behavior and don't
+// unmount/remount when switching between adjacent buttons.
+import { useTooltipManager } from '@/composables/useTooltipManager';
+const tooltipManager = useTooltipManager();
+
+// Compute whether the center tooltip should be visible based on the shared
+// tooltip manager's active id or the debug force flag. We keep `centerTooltipVisible`
+// for backward-compat but the InfoTooltip uses this computed value so that the
+// shared manager controls visibility.
+const centerTooltipIsActive = computed(() => {
+  const activeId = tooltipManager.activeTooltipId.value;
+  // Require the manager to indicate a tooltip is visible so opacity transitions
+  // on the InfoTooltip component match the intended fade behaviour when moving
+  // between adjacent center nav buttons.
+  if (tooltipManager.isAnyTooltipVisible && !tooltipManager.isAnyTooltipVisible.value) return false;
+  if (activeId && centerTooltipNameCandidate.value) {
+    return activeId === centerTooltipNameCandidate.value;
+  }
+  // when forcing Job Queue for debug, allow the tooltip to be visible
+  if (debugForceJobQueue && centerTooltipText.value && centerTooltipText.value.toLowerCase().includes('job queue')) return true;
+  return false;
+});
+
+const showCenterTooltip = (text: string, dataName: string) => {
+  // suppress native title immediately to avoid OS/browser tooltip
+  try {
+    const el = document.querySelector(`[data-name='${dataName}']`) as HTMLElement | null;
+    if (el && el.hasAttribute('title')) {
+      (el as any).__originalTitle = el.getAttribute('title');
+      el.removeAttribute('title');
+    }
+  } catch (e) {
+    /* ignore */
+  }
+
+  centerTooltipText.value = text;
+  centerTooltipNameCandidate.value = dataName;
+  tooltipManager.showTooltip(dataName);
+};
+
+const hideCenterTooltip = () => {
+  // restore original title if we removed it earlier (but don't immediately hide UI)
+  try {
+    const dataName = centerTooltipNameCandidate.value;
+    if (dataName) {
+      const el = document.querySelector(`[data-name='${dataName}']`) as HTMLElement | null;
+      if (el && (el as any).__originalTitle !== undefined) {
+        const orig = (el as any).__originalTitle;
+        if (orig === null || orig === undefined) el.removeAttribute('title');
+        else el.setAttribute('title', orig);
+        delete (el as any).__originalTitle;
+      }
+    }
+  } catch (e) {
+    /* ignore */
+  }
+
+  tooltipManager.hideTooltip();
+};
+
+// Debug: force the Job Queue center tooltip to be visible and anchored to the
+// Job Queue button even when not hovered. This is for temporary debugging only.
+import { ref as vueRef2, computed as vueComputed2 } from 'vue';
+// Debug flag for forcing the Job Queue tooltip. Leave `false` in normal use.
+const debugForceJobQueue = vueRef2(false);
+const resolveVisualElement = (r: any) => {
+  try {
+    if (!r) return null;
+    if (typeof r.getTriggerVisualStyle === 'function') return r.getTriggerVisualStyle();
+    if (r.visualStyleRef && r.visualStyleRef.value) return r.visualStyleRef.value;
+    const el = (r as Element)?.querySelector?.('.visual-style') ?? null;
+    return el;
+  } catch (e) {
+    return null;
+  }
+};
+
+import { onMounted, watch as vueWatch } from 'vue';
+
+// When forcing the Job Queue tooltip, we may need to wait for the rendered
+// DOM element to exist. Use a small retry mechanism and store the found
+// element here so InfoTooltip always receives a concrete Element reference.
+const debugForcedElement = vueRef2<HTMLElement | null>(null);
+
+const attemptResolveJobQueueElement = (maxTries = 30, delayMs = 50) => {
+  let tries = 0;
+  const tryFind = () => {
+    // Try the component ref first
+    const compResolved = resolveVisualElement(navToJobQueueRef.value) ?? (navToJobQueueRef.value as any)?.visualStyleRef?.value ?? (navToJobQueueRef.value as any)?.buttonRef?.value;
+    if (compResolved instanceof Element) {
+      debugForcedElement.value = compResolved as HTMLElement;
+      return;
+    }
+
+    // DOM fallback by data-name
+    try {
+      const btn = document.querySelector("[data-name='nav-to-job-queue']") as HTMLElement | null;
+      if (btn) {
+        const inner = btn.querySelector('.visual-style') as HTMLElement | null;
+        debugForcedElement.value = inner ?? btn;
+        return;
+      }
+    } catch (e) {
+      /* ignore */
+    }
+
+    tries += 1;
+    if (tries < maxTries) {
+      setTimeout(tryFind, delayMs);
+    }
+  };
+  tryFind();
+};
+
+onMounted(() => {
+  if (debugForceJobQueue.value) attemptResolveJobQueueElement();
+});
+
+vueWatch(debugForceJobQueue, (val) => {
+  if (val) attemptResolveJobQueueElement();
+  else debugForcedElement.value = null;
+});
+
+const debugForceCenterTarget = vueComputed2(() => {
+  if (!debugForceJobQueue.value) return null;
+  return debugForcedElement.value ?? resolveVisualElement(navToJobQueueRef.value) ?? navToJobQueueRef.value;
+});
 
 const mainMenuTooltipTarget = computed(() => {
   // Prefer the DropdownMenu component's exposed visual-style getter if available

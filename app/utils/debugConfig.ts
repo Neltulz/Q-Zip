@@ -16,7 +16,9 @@
 // @preserve
 
 // Master switch to enable or disable all debugging logs. Use `setAllLoggingEnabled` to toggle at runtime.
-export let DEBUG: boolean = true; // enabled for debugging
+// Master switch to enable or disable all debugging logs. Default OFF for
+// production-like runs; enable explicitly during development or testing.
+export let DEBUG: boolean = false;
 
 // Individual flags for controlling specific types of logs.
 export const debugConfig: Record<string, boolean> = {
@@ -76,5 +78,28 @@ export const setAllLoggingEnabled = (enabled: boolean) => {
   });
 };
 
-// Convenience: enable all logging immediately on import for debugging
-setAllLoggingEnabled(true);
+// NOTE: Do NOT enable logging automatically on import. Call `setAllLoggingEnabled(true)`
+// from a dev-only entrypoint when you need verbose logs.
+
+// Convenience helper available in DevTools to toggle all logging at runtime.
+// Usage: `window.__QZIP_DEBUG(true)` enables all logs; pass `false` to disable.
+try {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).__QZIP_DEBUG = (on: boolean) => setAllLoggingEnabled(!!on);
+  // Enable verbose logging automatically only in development builds
+  try {
+    const isDev = (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.DEV) ||
+      (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development');
+    if (isDev) {
+      try {
+        (window as any).__QZIP_DEBUG(true);
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  } catch (e) {
+    /* ignore */
+  }
+} catch (e) {
+  // ignore if window not available (e.g., SSR)
+}

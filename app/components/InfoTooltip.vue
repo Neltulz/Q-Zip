@@ -37,12 +37,10 @@
 -->
 <template>
   <teleport to="body">
-    <Transition name="tooltip-fade">
       <div
-        v-if="visible || debugForceVisible"
         ref="floatingRef"
         class="info-tooltip"
-        :class="{ interactive: interactive }"
+        :class="{ interactive: interactive, 'simple-tooltip': !!parsedContent, 'is-visible': visible || debugForceVisible }"
         :style="floatingStyles"
       >
         <div class="tooltip-content">
@@ -77,7 +75,6 @@
           <path d="M 0 0 L 8 8 L 16 0" />
         </svg>
       </div>
-    </Transition>
   </teleport>
 </template>
 
@@ -285,11 +282,24 @@ const getFileName = (path: string) => {
 </script>
 
 <style scoped>
-.tooltip-fade-enter-active {
-  transition: opacity 150ms ease-in-out;
+/* Use opacity transitions on the persistent element. We rely on the
+   `.is-visible` class to toggle opacity so the element stays mounted while
+   moving between adjacent targets, preventing unmount/mount flicker. */
+.info-tooltip {
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: 240ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
-.tooltip-fade-leave-active {
-  transition: opacity 300ms ease-in-out;
+.info-tooltip.is-visible {
+  opacity: 1;
+  /* When becoming visible, use the enter timing */
+  transition-duration: 240ms;
+}
+.info-tooltip:not(.is-visible) {
+  /* When hiding, ensure a slower fade-out */
+  transition-duration: 420ms;
+  transition-timing-function: cubic-bezier(0.33, 0, 0.1, 1);
 }
 .tooltip-fade-enter-from,
 .tooltip-fade-leave-to {
@@ -344,10 +354,17 @@ const getFileName = (path: string) => {
     .tooltip-text-content {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 0.5em;
       position: relative;
       inset-block-start: 1px;
+      width: 100%;
+      text-align: center;
     }
+
+    /* Only center the simple text tooltip mode; keep other structured content left-aligned.
+       Use a non-nested selector below to target when the root tooltip also has the
+       `simple-tooltip` class (the previous nested selector was not matching). */
 
     .info-line {
       margin-block-end: 4px;
@@ -397,5 +414,14 @@ const getFileName = (path: string) => {
 /* When interactive=true, allow pointer events on the tooltip */
 .info-tooltip.interactive {
   pointer-events: auto;
+}
+
+/* For simple-text tooltips, center the tooltip body itself so the arrow
+   and content remain visually centered. Applying justify-content to the
+   root `.info-tooltip` element is more reliable than targeting an inner
+   child when positioning is handled by Floating UI. */
+.info-tooltip.simple-tooltip {
+  justify-content: center;
+  text-align: center; /* also ensure text within is centered */
 }
 </style>
