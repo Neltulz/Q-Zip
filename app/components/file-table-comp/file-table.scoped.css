@@ -174,6 +174,8 @@
   position: relative;
   border-inline-end: 1px solid var(--brdr-clr-dark);
   overflow: hidden; /* Prevent content from spilling. Header is overridden below. */
+  /* Allow flex items to shrink below their content so text-overflow works */
+  min-inline-size: 0;
 }
 
 /* Ensure text within header and cell content stays vertically centered when cells stretch */
@@ -192,6 +194,19 @@
 /* --- NEW: Universal Text Truncation --- */
 .header-text,
 .cell-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ensure cell text elements are block-level and can shrink inside flex cells */
+.table-row > div .cell-text,
+.table-header > div .header-text {
+  display: flex;
+  align-items: center; /* vertically center text */
+  height: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -280,9 +295,17 @@ body.is-resizing .table-header > div {
   min-inline-size: 150px;
 }
 
-/* Add a right buffer on the last column so the scrollbar doesn't cover the resizer */
-.item-parent-path {
-  padding-inline-end: 48px; /* keeps 48px of space at the end of the last column */
+/* Invisible interactive buffer at the end of the table content to keep
+   the last resizer reachable without visible empty space. This element
+   will overlay the right edge and not affect layout. */
+.table-content-wrapper::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-block-end: 0;
+  inset-inline-end: 0;
+  inline-size: 48px; /* matches resizer buffer */
+  pointer-events: none; /* allow pointer to reach resizer, not block content */
 }
 
 .resizer {

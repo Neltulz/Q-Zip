@@ -318,12 +318,7 @@
             <span v-if="sortKey === 'parentPath'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
             <div class="resizer" @mousedown.stop="startResize($event, 'parentPath')"></div>
           </div>
-          <!-- Spacer column to ensure there is buffer space at the right edge for resizers/scrollbar -->
-          <div class="item-spacer" aria-hidden="true">
-            <div class="spacer-header">
-              <span class="header-text">&nbsp;</span>
-            </div>
-          </div>
+          <!-- spacer column removed: we no longer render an empty right-hand buffer column -->
         </div>
 
         <!-- Local selection box: updated directly via DOM to avoid reactive writes every frame -->
@@ -622,10 +617,7 @@
                 <div class="item-parent-path">
                   <span class="cell-text">{{ file.parentPath }}</span>
                 </div>
-                <!-- Right-side spacer to keep space for scrollbars / resizers -->
-                <div class="item-spacer" aria-hidden="true">
-                  <div class="spacer-cell">&nbsp;</div>
-                </div>
+                <!-- right-side spacer removed -->
               </div>
             </template>
           </div>
