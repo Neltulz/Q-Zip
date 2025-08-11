@@ -30,25 +30,20 @@
             :class="{
               active: jobsStore.selectedJobId === job.id,
               'active-line-inline': jobsStore.selectedJobId === job.id,
-              'is-dragged': job.id === draggedJobId,
               'drop-target-hover': hoveredJobId === job.id && dragDropStore.isInternalDragActive,
-              'drag-over': dragOverJobId === job.id,
               [`has-notification-${jobNotificationStates.get(job.id)}`]: jobNotificationStates.has(job.id),
             }"
             button-style-class="trans-btn btn-darkr can-become-active"
             :data-job-id="job.id"
             :data-name="'job-' + job.id"
-            :draggable="true"
             data-has-context-menu="true"
             @click="selectJob(job.id)"
             @contextmenu.prevent="showJobContextMenu($event, job.id)"
-            @dragend="onDragEnd"
-            @dragstart="onDragStart($event, job.id)"
-            @dragover.prevent="handleJobTabDragOver($event, job.id)"
-            @dragleave="handleJobTabDragLeave($event)"
+            @dragover.prevent="handleDragOver"
+            @dragleave="handleDragLeave"
             @drop.prevent="handleJobTabDrop($event, job.id)"
-            @mouseenter="tooltipManager.showTooltip('job-' + job.id)"
-            @mouseleave="tooltipManager.hideTooltip()"
+            @mouseenter="handleJobMouseEnter(job.id)"
+            @mouseleave="handleJobMouseLeave()"
           >
             <span class="job-sel-icon">
               <Icon name="mdi:briefcase" size="20" />
@@ -190,8 +185,8 @@
     <div class="job-selector-btn-wrapper">
       <div
         class="job-selector-btns-start"
-        @mouseenter="tooltipManager.showTooltip('add-job')"
-        @mouseleave="tooltipManager.hideTooltip()"
+        @mouseenter="handleAddJobMouseEnter()"
+        @mouseleave="handleAddJobMouseLeave()"
       >
         <CustomButton
           ref="addJobButtonRef"
@@ -278,8 +273,8 @@
           :dropdown-data-name="'extra-job-selector-options-dropdown'"
           :last-icon-size="24"
           placement="bottom-end"
-          @mouseenter="tooltipManager.showTooltip('job-selector-options')"
-          @mouseleave="tooltipManager.hideTooltip()"
+          @mouseenter="handleExtraOptionsMouseEnter()"
+          @mouseleave="handleExtraOptionsMouseLeave()"
           @click="tooltipManager.hideTooltip()"
         >
           <template #default="{ close }">
@@ -363,29 +358,27 @@ const tooltipManager = useTooltipManager();
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
 const jobsList = computed(() => jobsStore.jobs);
 
-const draggedJobId = ref<number | null>(null);
-const dragOverJobId = ref<number | null>(null);
 const hoveredJobId = ref<number | "new-job" | null>(null);
 
 const scrollComponentRef = ref<InstanceType<typeof OverlayScrollbarsComponent> | null>(null);
 
 const jobButtonRefs = ref(new Map<number | "new-job", InstanceType<typeof CustomButton>>());
 const jobContextMenuRefs = ref(new Map<number, InstanceType<typeof DropdownMenu>>());
-  const dragActionDropdownRefs = ref(new Map<number | "new-job", InstanceType<typeof DropdownMenu>>());
-  const extraOptionsDropdownRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
+const dragActionDropdownRefs = ref(new Map<number | "new-job", InstanceType<typeof DropdownMenu>>());
+const extraOptionsDropdownRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
 
 const pendingDropFilePaths = ref<string[]>([]);
 const pendingDropSourceJobId = ref<number | null>(null);
 
 const jobNotificationStates = ref<Map<number | "new-job", NotificationType>>(new Map());
 
-  const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
-  const extraOptionsTarget = computed(() => {
-    const el = extraOptionsDropdownRef.value as any;
-    if (!el) return null;
-    // Try common exposed refs, fall back to querying DOM inside the component
-    return el.buttonRef ?? el.$el?.querySelector?.('.visual-style') ?? null;
-  });
+const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
+const extraOptionsTarget = computed(() => {
+  const el = extraOptionsDropdownRef.value as any;
+  if (!el) return null;
+  // Try common exposed refs, fall back to querying DOM inside the component
+  return el.buttonRef ?? el.$el?.querySelector?.('.visual-style') ?? null;
+});
 
 watch(
   () => uiStore.notifications,
@@ -527,16 +520,8 @@ watch(
   }
 );
 
-watch(draggedJobId, (currentValue, oldValue) => {
-  if (currentValue !== null && oldValue === null) {
-    document.body.classList.add("is-job-reordering");
-  } else if (currentValue === null && oldValue !== null) {
-    document.body.classList.remove("is-job-reordering");
-  }
-});
-
 const selectJob = (jobId: number): void => {
-  if (draggedJobId.value !== null || dragDropStore.isInternalDragActive) return;
+  if (dragDropStore.isInternalDragActive) return;
   const oldId = jobsStore.selectedJobId;
   try {
     // Dispatch the old and new ids so listeners can deterministically
@@ -619,20 +604,9 @@ const confirmRemoveAllJobs = (): void => {
   });
 };
 
-const onDragStart = (event: DragEvent, jobId: number): void => {
-  if (dragDropStore.isInternalDragActive) {
-    event.preventDefault();
-    return;
-  }
-  if (event.dataTransfer) {
-    event.dataTransfer.setData("text/plain", String(jobId));
-    event.dataTransfer.effectAllowed = "move";
-  }
-  draggedJobId.value = jobId;
-};
-
 const handleDragOver = (event: DragEvent): void => {
   if (dragDropStore.isInternalDragActive) {
+    // File operation from FileTable
     const target = (event.target as HTMLElement).closest(".job-selector, .add-job-btn");
     if (target instanceof HTMLElement) {
       const targetIdentifier = target.dataset.jobId ? Number(target.dataset.jobId) : "new-job";
@@ -640,45 +614,19 @@ const handleDragOver = (event: DragEvent): void => {
     } else {
       handleJobTabDragLeave(event);
     }
-    return;
-  }
-  const target = (event.target as HTMLElement).closest(".job-selector");
-  if (target instanceof HTMLElement && target.dataset.jobId) {
-    const targetId = Number(target.dataset.jobId);
-    if (targetId !== draggedJobId.value) dragOverJobId.value = targetId;
-  } else {
-    dragOverJobId.value = null;
   }
 };
 
 const handleDragLeave = (event: DragEvent): void => {
   if (dragDropStore.isInternalDragActive) {
     handleJobTabDragLeave(event);
-    return;
   }
-  dragOverJobId.value = null;
 };
 
 const onDrop = (targetJobId: number | null): void => {
   if (dragDropStore.isInternalDragActive) {
     dragDropStore.endInternalDrag();
     hoveredJobId.value = null;
-    return;
-  }
-  const fromIndex = jobsStore.jobs.findIndex((j) => j.id === draggedJobId.value);
-  const toIndex = targetJobId === null ? jobsStore.jobs.length - 1 : jobsStore.jobs.findIndex((j) => j.id === targetJobId);
-  if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
-    jobsStore.moveJob(fromIndex, toIndex);
-  }
-  draggedJobId.value = null;
-  dragOverJobId.value = null;
-};
-
-const onDragEnd = (): void => {
-  draggedJobId.value = null;
-  dragOverJobId.value = null;
-  if (dragDropStore.isInternalDragActive && !dragDropStore.dropOccurred) {
-    dragDropStore.endInternalDrag();
   }
 };
 
@@ -708,6 +656,7 @@ const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job"
   event.preventDefault();
   event.stopPropagation();
 
+  // This is a file operation from FileTable
   dragDropStore.setDropOccurred(true);
 
   if (targetIdentifier === dragDropStore.internalDragSourceJobId) {
@@ -813,6 +762,30 @@ const openOperationConfirmModal = (
       // Drag operation was already ended in handleDragAction, so no need to call it again
     }
   );
+};
+
+const handleJobMouseEnter = (jobId: number): void => {
+  tooltipManager.showTooltip('job-' + jobId);
+};
+
+const handleJobMouseLeave = (): void => {
+  tooltipManager.hideTooltip();
+};
+
+const handleAddJobMouseEnter = (): void => {
+  tooltipManager.showTooltip('add-job');
+};
+
+const handleAddJobMouseLeave = (): void => {
+  tooltipManager.hideTooltip();
+};
+
+const handleExtraOptionsMouseEnter = (): void => {
+  tooltipManager.showTooltip('job-selector-options');
+};
+
+const handleExtraOptionsMouseLeave = (): void => {
+  tooltipManager.hideTooltip();
 };
 
 const reorderJob = (index: number, direction: "left" | "right"): void => {

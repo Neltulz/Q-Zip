@@ -95,6 +95,7 @@
 }
 
 /* --- Drag & Drop Hover Styles --- */
+/* Only show file operation hover styles when internal drag is active (file operations) */
 .job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector:not(.active) > .visual-style),
 .job-selector-area.internal-drag-active :deep(.add-job-btn .visual-style) {
   opacity: 1 !important;
@@ -116,30 +117,124 @@
   box-shadow: none;
 }
 
+/* Job tab reordering styles - only show when NOT in internal drag mode */
+.job-selector-area:not(.internal-drag-active) :deep(.job-selector-list button.job-selector.is-dragged) {
+  opacity: 0.4;
+}
+
 .job-selector-list > :deep(button.job-selector.drop-target-hover *) {
   pointer-events: none;
 }
 
 .job-selector-list > :deep(button.job-selector.drag-over::after) {
   background-color: hsla(var(--accent-hsl), 0.75);
-  block-size: 100%;
+  block-size: calc(100% - 32px);
   content: "";
-  inset-inline-start: -2px;
-  inline-size: 4px;
+  inset-inline-start: 1px;
+  inline-size: 2px;
   position: absolute;
   z-index: 1;
 }
 
-/* bright insertion line between job tabs during reorder drag */
-.job-selector-list > :deep(button.job-selector.drag-over) > .visual-style::after {
+/* Job selector hotzones for drag and drop */
+.job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector) {
+  position: relative;
+}
+
+/* Hotzone overlays - only visible during drag operations */
+.job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::before,
+.job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::after {
   content: "";
   position: absolute;
-  inset-block-start: 8px;
-  inset-block-end: 8px;
-  inline-size: 4px;
-  inset-inline-start: -2px;
-  background: white;
-  z-index: 3;
+  inset-block-start: 0;
+  inset-block-end: 0;
+  inline-size: 50%;
+  background: transparent;
+  z-index: 10;
+  pointer-events: none;
+  transition: background-color 0.2s ease-in-out;
+  opacity: 0;
+}
+
+/* Left hotzone - only visible when dragging */
+.job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::before {
+  inset-inline-start: 0;
+  background: rgba(255, 0, 0, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Right hotzone - only visible when dragging */
+.job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::after {
+  inset-inline-start: 50%;
+  background: rgba(0, 255, 0, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Show hotzones when dragging */
+body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::before,
+body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::after {
+  opacity: 1;
+}
+
+/* White lines BETWEEN job selectors during drag */
+.job-selector-line {
+  inline-size: 2px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 1px;
+  transition: background-color 0.2s ease-in-out;
+  position: absolute;
+  top: 0;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.job-selector-line.hotzone-hover {
+  background: hsla(204, 80%, 60%, 0.9);
+  box-shadow: 0 0 4px hsla(204, 80%, 60%, 0.5);
+}
+
+/* End-of-list hotzone */
+.end-list-hotzone {
+  inline-size: 60px;
+  min-height: 50px;
+  background: rgba(255, 0, 0, 0.1);
+  border-radius: 4px;
+  transition: background-color 0.2s ease-in-out;
+  cursor: pointer;
+  position: absolute;
+  right: -68px;
+  top: 0;
+  z-index: 10;
+}
+
+.end-list-hotzone:hover {
+  background: rgba(255, 0, 0, 0.2);
+}
+
+/* Beginning-of-list hotzone */
+.begin-list-hotzone {
+  inline-size: 60px;
+  min-height: 50px;
+  background: rgba(255, 0, 0, 0.1);
+  border-radius: 4px;
+  transition: background-color 0.2s ease-in-out;
+  cursor: pointer;
+  position: absolute;
+  left: -68px;
+  top: 0;
+  z-index: 10;
+}
+
+.begin-list-hotzone:hover {
+  background: rgba(255, 0, 0, 0.2);
+}
+
+/* Remove the old hotzone-hover class from job selectors since we're using separate line elements */
+.job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector.hotzone-hover::after) {
+  display: none;
 }
 
 .job-selector-list > :deep(button.job-selector > .visual-style),
