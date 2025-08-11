@@ -32,7 +32,7 @@
       <div v-if="showSkipColumn" class="column skip-column">
         <!-- For copy operations: show static text -->
         <h3 v-if="props.operation === 'copy'" class="static-header">
-          Skip existing files ({{ props.itemsToSkip.length }})
+          Skip existing items ({{ props.itemsToSkip.length }})
         </h3>
         
         <!-- For move operations: show dropdown -->
@@ -77,7 +77,7 @@
               </CustomButton>
             </template>
           </DropdownMenu>
-          existing files ({{ props.itemsToSkip.length }})
+          existing items ({{ props.itemsToSkip.length }})
         </h3>
         <FileTable
           :files="props.itemsToSkip"
