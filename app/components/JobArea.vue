@@ -438,15 +438,19 @@ const openOperationConfirmModal = (
     {
       itemsToProcess,
       itemsToSkip,
+      operation,
     },
-    (action: string) => {
+    (action: string, conflictResolution?: 'skip' | 'replace') => {
       if (action === "proceed") {
         handleOperation(
           "transferring",
           files,
-          () => {
-            uiStore.handleFileOperation(operation, files, targetJobId, { sourceJobId });
-          },
+                  () => {
+          uiStore.handleFileOperation(operation, files, targetJobId, { 
+            sourceJobId, 
+            conflictResolution: conflictResolution || (operation === 'move' ? 'replace' : 'skip')
+          });
+        },
           operation
         );
       }

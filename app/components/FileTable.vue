@@ -122,64 +122,6 @@
         </CustomButton>
         <DropdownMenu
           button-style-class="trans-btn"
-          dropdown-data-name="move-to-job-dropdown"
-          :disabled="selectedFiles.length === 0"
-          first-icon-name="mdi:arrow-right"
-          :first-icon-size="20"
-          last-icon-name="mdi:chevron-down"
-          :last-icon-size="20"
-          placement="bottom-start"
-        >
-          <template #button-content> Move to </template>
-          <template #default="{ close }">
-            <CustomButton
-              v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
-              :key="job.id"
-              button-style-class="trans-btn"
-              :data-name="`move-to-job-${job.id}-btn`"
-              first-icon-name="mdi:briefcase"
-              :first-icon-size="20"
-              @click="
-                () => {
-                  moveToJob(job.id);
-                  close();
-                }
-              "
-            >
-              Job {{ job.id }}
-            </CustomButton>
-          </template>
-          <template #content-bottom="{ close }">
-            <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
-            <CustomButton
-              button-style-class="trans-btn"
-              data-name="move-to-new-job-btn"
-              first-icon-name="mdi:plus"
-              :first-icon-size="20"
-              @click="
-                () => {
-                  moveToNewJob();
-                  close();
-                }
-              "
-            >
-              New Job
-            </CustomButton>
-            <hr />
-            <CustomButton
-              button-style-class="trans-btn btn-lite"
-              data-name="cancel-move-to-btn"
-              first-icon-name="mdi:cancel"
-              :first-icon-size="20"
-              shortcut-text="Esc"
-              @click="close()"
-            >
-              Cancel
-            </CustomButton>
-          </template>
-        </DropdownMenu>
-        <DropdownMenu
-          button-style-class="trans-btn"
           dropdown-data-name="copy-to-job-dropdown"
           :disabled="selectedFiles.length === 0"
           first-icon-name="mdi:content-copy"
@@ -227,6 +169,64 @@
             <CustomButton
               button-style-class="trans-btn btn-lite"
               data-name="cancel-copy-to-btn"
+              first-icon-name="mdi:cancel"
+              :first-icon-size="20"
+              shortcut-text="Esc"
+              @click="close()"
+            >
+              Cancel
+            </CustomButton>
+          </template>
+        </DropdownMenu>
+        <DropdownMenu
+          button-style-class="trans-btn"
+          dropdown-data-name="move-to-job-dropdown"
+          :disabled="selectedFiles.length === 0"
+          first-icon-name="mdi:arrow-right"
+          :first-icon-size="20"
+          last-icon-name="mdi:chevron-down"
+          :last-icon-size="20"
+          placement="bottom-start"
+        >
+          <template #button-content> Move to </template>
+          <template #default="{ close }">
+            <CustomButton
+              v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
+              :key="job.id"
+              button-style-class="trans-btn"
+              :data-name="`move-to-job-${job.id}-btn`"
+              first-icon-name="mdi:briefcase"
+              :first-icon-size="20"
+              @click="
+                () => {
+                  moveToJob(job.id);
+                  close();
+                }
+              "
+            >
+              Job {{ job.id }}
+            </CustomButton>
+          </template>
+          <template #content-bottom="{ close }">
+            <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
+            <CustomButton
+              button-style-class="trans-btn"
+              data-name="move-to-new-job-btn"
+              first-icon-name="mdi:plus"
+              :first-icon-size="20"
+              @click="
+                () => {
+                  moveToNewJob();
+                  close();
+                }
+              "
+            >
+              New Job
+            </CustomButton>
+            <hr />
+            <CustomButton
+              button-style-class="trans-btn btn-lite"
+              data-name="cancel-move-to-btn"
               first-icon-name="mdi:cancel"
               :first-icon-size="20"
               shortcut-text="Esc"
@@ -400,55 +400,6 @@
                         <hr />
                         <DropdownMenu
                           :button-style-class="'trans-btn'"
-                          :dropdown-data-name="`move-file-${file.path}-submenu`"
-                          :first-icon-name="'mdi:arrow-right'"
-                          :first-icon-size="20"
-                          :is-submenu="true"
-                          :last-icon-name="'mdi:chevron-right'"
-                          :last-icon-size="20"
-                          placement="right-start"
-                        >
-                          <template #button-content>Move to</template>
-                          <template #default="{ close: closeSub }">
-                            <CustomButton
-                              v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
-                              :key="job.id"
-                              button-style-class="trans-btn"
-                              :data-name="`move-file-${file.path}-to-job-${job.id}-btn`"
-                              first-icon-name="mdi:briefcase"
-                              :first-icon-size="20"
-                              @click="
-                                () => {
-                                  moveFile(job.id, file.path);
-                                  closeSub();
-                                  closeMain();
-                                }
-                              "
-                            >
-                              Job {{ job.id }}
-                            </CustomButton>
-                          </template>
-                          <template #content-bottom="{ close: closeSub }">
-                            <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
-                            <CustomButton
-                              button-style-class="trans-btn"
-                              data-name="move-to-new-job-btn"
-                              first-icon-name="mdi:plus"
-                              :first-icon-size="20"
-                              @click="
-                                () => {
-                                  moveFileToNewJob(file.path);
-                                  closeSub();
-                                  closeMain();
-                                }
-                              "
-                            >
-                              New Job
-                            </CustomButton>
-                          </template>
-                        </DropdownMenu>
-                        <DropdownMenu
-                          :button-style-class="'trans-btn'"
                           :dropdown-data-name="`copy-file-${file.path}-submenu`"
                           :first-icon-name="'mdi:content-copy'"
                           :first-icon-size="20"
@@ -487,6 +438,55 @@
                               @click="
                                 () => {
                                   copyFileToNewJob(file.path);
+                                  closeSub();
+                                  closeMain();
+                                }
+                              "
+                            >
+                              New Job
+                            </CustomButton>
+                          </template>
+                        </DropdownMenu>
+                        <DropdownMenu
+                          :button-style-class="'trans-btn'"
+                          :dropdown-data-name="`move-file-${file.path}-submenu`"
+                          :first-icon-name="'mdi:arrow-right'"
+                          :first-icon-size="20"
+                          :is-submenu="true"
+                          :last-icon-name="'mdi:chevron-right'"
+                          :last-icon-size="20"
+                          placement="right-start"
+                        >
+                          <template #button-content>Move to</template>
+                          <template #default="{ close: closeSub }">
+                            <CustomButton
+                              v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
+                              :key="job.id"
+                              button-style-class="trans-btn"
+                              :data-name="`move-file-${file.path}-to-job-${job.id}-btn`"
+                              first-icon-name="mdi:briefcase"
+                              :first-icon-size="20"
+                              @click="
+                                () => {
+                                  moveFile(job.id, file.path);
+                                  closeSub();
+                                  closeMain();
+                                }
+                              "
+                            >
+                              Job {{ job.id }}
+                            </CustomButton>
+                          </template>
+                          <template #content-bottom="{ close: closeSub }">
+                            <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
+                            <CustomButton
+                              button-style-class="trans-btn"
+                              data-name="move-to-new-job-btn"
+                              first-icon-name="mdi:plus"
+                              :first-icon-size="20"
+                              @click="
+                                () => {
+                                  moveFileToNewJob(file.path);
                                   closeSub();
                                   closeMain();
                                 }

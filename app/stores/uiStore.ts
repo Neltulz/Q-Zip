@@ -74,7 +74,7 @@ export const useUiStore = defineStore(
       operation: "move" | "copy",
       files: FileItem[],
       targetJobId: number | "new-job",
-      options: { sourceJobId?: number | null } = {}
+      options: { sourceJobId?: number | null; conflictResolution?: 'skip' | 'replace' } = {}
     ) {
       const jobsStore = useJobsStore();
       const clipboardStore = useClipboardStore();
@@ -98,8 +98,24 @@ export const useUiStore = defineStore(
 
       const filePaths = files.map(f => f.path);
       const targetFilePaths = new Set(targetJob.files.map((f) => f.path));
-      const newFilePaths = filePaths.filter((path) => !targetFilePaths.has(path));
-      const skippedFilePaths = filePaths.filter((path) => targetFilePaths.has(path));
+      const conflictResolution = options.conflictResolution || (operation === 'move' ? 'replace' : 'skip');
+
+      let newFilePaths: string[];
+      let skippedFilePaths: string[];
+      let replacedFilePaths: string[];
+
+      if (conflictResolution === 'replace') {
+        // For replace, separate new files from existing files that will be replaced
+        newFilePaths = filePaths.filter((path) => !targetFilePaths.has(path));
+        replacedFilePaths = filePaths.filter((path) => targetFilePaths.has(path));
+        skippedFilePaths = [];
+      } else {
+        // For skip, only process new files
+        newFilePaths = filePaths.filter((path) => !targetFilePaths.has(path));
+        skippedFilePaths = filePaths.filter((path) => targetFilePaths.has(path));
+        replacedFilePaths = [];
+      }
+
       const opPastTense = operation === "move" ? "moved" : "copied";
 
       const messages: NotificationMessage[] = [];
@@ -107,6 +123,7 @@ export const useUiStore = defineStore(
       let operationSucceeded = false;
       let operationFailed = false;
 
+      // Handle new files
       if (newFilePaths.length > 0) {
         try {
           if (operation === "move") {
@@ -139,10 +156,43 @@ export const useUiStore = defineStore(
         }
       }
 
+      // Handle replaced files
+      if (replacedFilePaths.length > 0) {
+        try {
+          if (operation === "move") {
+            jobsStore.moveFilesBetweenJobs(sourceJobId, numericTargetId, replacedFilePaths);
+            if (clipboardStore.isCut) {
+              clipboardStore.clear();
+            }
+          } else {
+            jobsStore.copyFilesToJob(sourceJobId, numericTargetId, replacedFilePaths);
+          }
+          operationSucceeded = true;
+          messages.push({
+            text: `${replacedFilePaths.length} item${replacedFilePaths.length > 1 ? "s" : ""} were replaced.`,
+            type: "success",
+            details: { sourceJobId, destinationJobId: numericTargetId, filePaths: replacedFilePaths },
+          });
+        } catch (e) {
+          operationFailed = true;
+          console.error(`Failed to replace files:`, e);
+          messages.push({
+            text: `Failed to replace ${replacedFilePaths.length} items.`,
+            type: "error",
+            details: {
+              sourceJobId,
+              destinationJobId: numericTargetId,
+              filePaths: replacedFilePaths,
+              reasons: Object.fromEntries(replacedFilePaths.map((path) => [path, "Operation failed. See console for details."])),
+            },
+          });
+        }
+      }
+
       if (skippedFilePaths.length > 0) {
         const reasons: Record<string, string> = {};
         skippedFilePaths.forEach((path) => {
-          reasons[path] = "Already exists in destination";
+          reasons[path] = conflictResolution === 'replace' ? "Replaced existing file" : "Already exists in destination";
         });
         messages.push({
           text: `${skippedFilePaths.length} item${skippedFilePaths.length > 1 ? "s" : ""} were skipped.`,

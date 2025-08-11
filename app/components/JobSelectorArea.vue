@@ -133,20 +133,6 @@
             <template #default="{ close }">
               <CustomButton
                 button-style-class="trans-btn"
-                data-name="drag-action-move-btn"
-                first-icon-name="mdi:arrow-right"
-                :first-icon-size="20"
-                @click="
-                  () => {
-                    handleDragAction('move', job.id);
-                    close();
-                  }
-                "
-              >
-                Move Here
-              </CustomButton>
-              <CustomButton
-                button-style-class="trans-btn"
                 data-name="drag-action-copy-btn"
                 first-icon-name="mdi:content-copy"
                 :first-icon-size="20"
@@ -158,6 +144,20 @@
                 "
               >
                 Copy Here
+              </CustomButton>
+              <CustomButton
+                button-style-class="trans-btn"
+                data-name="drag-action-move-btn"
+                first-icon-name="mdi:arrow-right"
+                :first-icon-size="20"
+                @click="
+                  () => {
+                    handleDragAction('move', job.id);
+                    close();
+                  }
+                "
+              >
+                Move Here
               </CustomButton>
               <hr />
               <CustomButton
@@ -217,20 +217,6 @@
           <template #default="{ close }">
             <CustomButton
               button-style-class="trans-btn"
-              data-name="drag-action-move-to-new-btn"
-              first-icon-name="mdi:arrow-right"
-              :first-icon-size="20"
-              @click="
-                () => {
-                  handleDragAction('move', 'new-job');
-                  close();
-                }
-              "
-            >
-              Move to New Job
-            </CustomButton>
-            <CustomButton
-              button-style-class="trans-btn"
               data-name="drag-action-copy-to-new-btn"
               first-icon-name="mdi:content-copy"
               :first-icon-size="20"
@@ -242,6 +228,20 @@
               "
             >
               Copy to New Job
+            </CustomButton>
+            <CustomButton
+              button-style-class="trans-btn"
+              data-name="drag-action-move-to-new-btn"
+              first-icon-name="mdi:arrow-right"
+              :first-icon-size="20"
+              @click="
+                () => {
+                  handleDragAction('move', 'new-job');
+                  close();
+                }
+              "
+            >
+              Move to New Job
             </CustomButton>
             <hr />
             <CustomButton
@@ -794,10 +794,14 @@ const openOperationConfirmModal = (
     {
       itemsToProcess,
       itemsToSkip,
+      operation,
     },
-    (action: string) => {
+    (action: string, conflictResolution?: 'skip' | 'replace') => {
       if (action === "proceed") {
-        uiStore.handleFileOperation(operation, files, targetJobId, { sourceJobId });
+        uiStore.handleFileOperation(operation, files, targetJobId, { 
+          sourceJobId, 
+          conflictResolution: conflictResolution || (operation === 'move' ? 'replace' : 'skip')
+        });
       }
       // Always end the drag operation when the modal closes, whether proceeding or cancelling.
       dragDropStore.endInternalDrag();
