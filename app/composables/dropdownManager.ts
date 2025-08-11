@@ -5,7 +5,7 @@
 // nested dropdowns by closing only unrelated dropdowns when a new one is opened.
 
 import { ref, watch, onBeforeUnmount } from "vue";
-import { logManagerAction, logGlobalEvent } from "@/utils/loggers";
+import { logManagerAction, logGlobalEvent, logWarning } from "@/utils/loggers";
 
 // Define the structure of a dropdown object
 export interface Dropdown {
@@ -124,7 +124,32 @@ const closeAllDropdowns = (reason?: string): void => {
   if (openDropdowns.value.length > 0) {
     const reasonMsg = reason ? `Reason: ${reason}` : "No reason specified.";
     logManagerAction("dropdownManager", `Closing all dropdowns explicitly. ${reasonMsg}`);
+
+    // Check if any of the dropdowns being closed are drag action dropdowns
+    const hasDragActionDropdown = openDropdowns.value.some((dropdown) => {
+      const dropdownName = dropdown.dropdownContent?.getAttribute('data-belongs-to');
+      return dropdownName && (dropdownName.startsWith('drag-action-job-') || dropdownName === 'drag-action-new-job');
+    });
+
     openDropdowns.value.forEach((dropdown) => dropdown.close());
+
+    // If we closed a drag action dropdown, also end the drag operation
+    if (hasDragActionDropdown) {
+      try {
+        // Dynamically import the drag drop store to avoid circular dependencies
+        import("@/stores/dragDropStore").then(({ useDragDropStore }) => {
+          const dragDropStore = useDragDropStore();
+          if (dragDropStore.isInternalDragActive) {
+            logManagerAction("dropdownManager", "Drag action dropdown closed, ending drag operation");
+            dragDropStore.endInternalDrag();
+          }
+        }).catch((e) => {
+          logWarning("dropdownManager", `Error ending drag operation: ${e}`);
+        });
+      } catch (e) {
+        logWarning("dropdownManager", `Error ending drag operation: ${e}`);
+      }
+    }
   }
   // ALWAYS cancel any pending submenu closure timer when closing all dropdowns.
   cancelSubmenuClosure();
