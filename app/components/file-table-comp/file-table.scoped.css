@@ -171,20 +171,25 @@
 .table-row > div {
   padding-inline: 8px;
   display: flex;
-  align-items: stretch; /* allow cells to stretch so inner content can control its own centering */
+  align-items: center; /* Center content vertically */
   position: relative;
   border-inline-end: 1px solid var(--brdr-clr-dark);
   overflow: hidden; /* Prevent content from spilling. Header is overridden below. */
   /* Allow flex items to shrink below their content so text-overflow works */
-  min-inline-size: 0;
+  min-width: 0;
 }
 
-/* Ensure text within header and cell content stays vertically centered when cells stretch */
-.table-header > div .header-text,
-.table-row > div .cell-text {
-  display: flex;
-  align-items: center;
+/* Ensure text within header and cell content stays vertically centered */
+.table-header > div .header-text {
+  display: block;
   height: 100%;
+  line-height: 34px; /* Match header height for vertical centering */
+}
+
+.table-row > div .cell-text {
+  display: block;
+  height: 100%;
+  line-height: 35px; /* Match row height for vertical centering */
 }
 
 /* --- FIX: Override overflow for header cells to make resizers visible --- */
@@ -192,25 +197,37 @@
   overflow: visible;
 }
 
-/* --- NEW: Universal Text Truncation --- */
+/* --- Universal Text Truncation --- */
 .header-text,
 .cell-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: block; /* Ensure block-level for proper text overflow */
+  width: 100%; /* Take full width of container */
 }
 
-/* Ensure cell text elements are block-level and can shrink inside flex cells */
-.table-row > div .cell-text,
-.table-header > div .header-text {
-  display: flex;
-  align-items: center; /* vertically center text */
+/* Ensure cell text elements are properly configured for text overflow */
+.table-row > div .cell-text {
+  display: block; /* Change from flex to block for proper text overflow */
   height: 100%;
-  max-inline-size: 100%;
-  min-inline-size: 0;
+  width: 100%;
+  min-width: 0; /* Allow shrinking below content size */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 35px; /* Match row height for vertical centering */
+}
+
+.table-header > div .header-text {
+  display: block; /* Change from flex to block for proper text overflow */
+  height: 100%;
+  width: 100%;
+  min-width: 0; /* Allow shrinking below content size */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 34px; /* Match header height for vertical centering */
 }
 
 .table-header > div {
@@ -358,20 +375,22 @@ body.is-resizing .table-header > div {
   flex-shrink: 1;
   overflow: hidden;
   white-space: nowrap;
-  min-inline-size: 0;
-  max-inline-size: 100%;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
 
   & > .iconify {
     flex-shrink: 0;
-    min-inline-size: 1em;
+    min-width: 1em;
   }
 
   & > .cell-text {
-    flex-shrink: 1;
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-inline-size: 0;
+    min-width: 0;
+    display: block;
   }
 }
 
