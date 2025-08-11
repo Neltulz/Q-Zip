@@ -78,14 +78,6 @@
     <LoadingAnim :visible="props.isLoading" @cancel="$emit('cancel-load')"> Adding files, please wait... </LoadingAnim>
     <ToolBar v-if="props.showToolbar" class="file-table-toolbar">
       <template #start>
-        <!-- Lazy Loading Progress Indicator -->
-        <div v-if="lazyLoadingProgress.remaining > 0" class="lazy-loading-progress">
-          <LoadingDots :visible="true" />
-          <span class="progress-text">
-            Calculating folder stats... {{ lazyLoadingProgress.completed }}/{{ lazyLoadingProgress.total }}
-          </span>
-        </div>
-        
         <DropdownMenu
           button-style-class="trans-btn"
           dropdown-data-name="add-files-and-folders-dropdown"
@@ -563,23 +555,13 @@
                 <!-- Other Cells -->
                 <div class="item-size">
                   <div
-                    v-if="!file.isLazyLoaded"
                     class="size-bar"
                     :class="file.type === 'Folder' ? 'size-bar-folder' : 'size-bar-file'"
                     :style="{
                       inlineSize: `${(file.size / (file.type === 'Folder' ? maxFolderSizeInJob : maxFileSizeInJob)) * 100}%`,
                     }"
                   ></div>
-                  <span class="cell-text">
-                    <span v-if="file.isLazyLoaded" class="lazy-loading-indicator">
-                      <LoadingDots :visible="true" />
-                      Calculating...
-                    </span>
-                    <span v-else-if="file.lazyLoadError" class="lazy-load-error">
-                      Error: {{ file.lazyLoadError }}
-                    </span>
-                    <span v-else>{{ formatBytes(file.size) }} MB</span>
-                  </span>
+                  <span class="cell-text">{{ formatBytes(file.size) }} MB</span>
                 </div>
                 <div class="item-ext">
                   <span class="cell-text">{{ file.type }}</span>
@@ -611,40 +593,16 @@
                   <span class="cell-text">{{ file.created ? formatCreationDate(file.created) : "---" }}</span>
                 </div>
                 <div class="item-files">
-                  <span v-if="file.type === 'Folder'" class="cell-text">
-                    <span v-if="file.isLazyLoaded" class="lazy-loading-indicator">
-                      <LoadingDots :visible="true" />
-                    </span>
-                    <span v-else-if="file.lazyLoadError">---</span>
-                    <span v-else>{{ file.files ?? "---" }}</span>
-                  </span>
+                  <span v-if="file.type === 'Folder'" class="cell-text">{{ file.files ?? "---" }}</span>
                 </div>
                 <div class="item-folders">
-                  <span v-if="file.type === 'Folder'" class="cell-text">
-                    <span v-if="file.isLazyLoaded" class="lazy-loading-indicator">
-                      <LoadingDots :visible="true" />
-                    </span>
-                    <span v-else-if="file.lazyLoadError">---</span>
-                    <span v-else>{{ file.folders ?? "---" }}</span>
-                  </span>
+                  <span v-if="file.type === 'Folder'" class="cell-text">{{ file.folders ?? "---" }}</span>
                 </div>
                 <div class="item-files-total">
-                  <span v-if="file.type === 'Folder'" class="cell-text">
-                    <span v-if="file.isLazyLoaded" class="lazy-loading-indicator">
-                      <LoadingDots :visible="true" />
-                    </span>
-                    <span v-else-if="file.lazyLoadError">---</span>
-                    <span v-else>{{ file.filesTotal ?? "---" }}</span>
-                  </span>
+                  <span v-if="file.type === 'Folder'" class="cell-text">{{ file.filesTotal ?? "---" }}</span>
                 </div>
                 <div class="item-folders-total">
-                  <span v-if="file.type === 'Folder'" class="cell-text">
-                    <span v-if="file.isLazyLoaded" class="lazy-loading-indicator">
-                      <LoadingDots :visible="true" />
-                    </span>
-                    <span v-else-if="file.lazyLoadError">---</span>
-                    <span v-else>{{ file.foldersTotal ?? "---" }}</span>
-                  </span>
+                  <span v-if="file.type === 'Folder'" class="cell-text">{{ file.foldersTotal ?? "---" }}</span>
                 </div>
                 <div class="item-parent-path">
                   <span class="cell-text">{{ file.parentPath }}</span>
@@ -672,7 +630,6 @@ import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
 import { open } from "@tauri-apps/plugin-dialog";
 import LoadingAnim from "@/components/LoadingAnim.vue";
-import LoadingDots from "@/components/LoadingDots.vue";
 
 // --- VIRTUAL SCROLLING CONSTANTS ---
 const ROW_HEIGHT = 35;
@@ -769,24 +726,6 @@ const formatCreationDate = (timestamp: number): string => CREATION_DATE_FORMATTE
 const sortKey = ref<keyof FileItem>("name");
 const sortDirection = ref<"asc" | "desc">("asc");
 
-// Computed for lazy loading progress
-const lazyLoadingProgress = computed(() => {
-  // Include the store trigger to force re-computation when folders are updated
-  const trigger = jobsStore.lazyLoadingUpdateTrigger;
-  
-  const lazyLoadedFolders = props.files.filter(f => f.type === "Folder" && f.isLazyLoaded);
-  const totalFolders = props.files.filter(f => f.type === "Folder");
-  const completedFolders = totalFolders.length - lazyLoadedFolders.length;
-  
-  return {
-    total: totalFolders.length,
-    completed: completedFolders,
-    remaining: lazyLoadedFolders.length,
-    percentage: totalFolders.length > 0 ? Math.round((completedFolders / totalFolders.length) * 100) : 100,
-    trigger // Include trigger to force reactivity
-  };
-});
-
 const sortedFiles = computed(() => {
   const filesCopy = [...props.files];
   const folders = filesCopy.filter((item) => item.type === "Folder");
@@ -795,22 +734,8 @@ const sortedFiles = computed(() => {
   const sortArray = (arr: FileItem[]) => {
     arr.sort((a, b) => {
       const key = sortKey.value;
-      
-      // Handle lazy loading for folder statistics
-      let aValue = a[key];
-      let bValue = b[key];
-      
-      // For lazy loaded folders, use fallback values for sorting
-      if (a.isLazyLoaded && typeof aValue === "undefined") {
-        aValue = key === "size" ? 0 : (key === "files" || key === "folders" || key === "filesTotal" || key === "foldersTotal" ? 0 : "");
-      }
-      if (b.isLazyLoaded && typeof bValue === "undefined") {
-        bValue = key === "size" ? 0 : (key === "files" || key === "folders" || key === "filesTotal" || key === "foldersTotal" ? 0 : "");
-      }
-      
-      // Fallback to default values if still undefined
-      aValue = aValue ?? (typeof aValue === "number" ? 0 : "");
-      bValue = bValue ?? (typeof bValue === "number" ? 0 : "");
+      const aValue = a[key] ?? (typeof a[key] === "number" ? 0 : "");
+      const bValue = b[key] ?? (typeof b[key] === "number" ? 0 : "");
 
       let comparison = 0;
       if (typeof aValue === "string" && typeof bValue === "string") {
@@ -848,10 +773,7 @@ const maxFileSizeInJob = computed(() => {
 });
 
 const maxFolderSizeInJob = computed(() => {
-  // Only include folders that have been fully loaded (not lazy loaded)
-  const folderSizes = props.files
-    .filter((f) => f.type === "Folder" && !f.isLazyLoaded)
-    .map((f) => f.size);
+  const folderSizes = props.files.filter((f) => f.type === "Folder").map((f) => f.size);
   if (folderSizes.length === 0) return 1;
   return Math.max(...folderSizes);
 });
@@ -861,7 +783,7 @@ const fileTimestamps = computed(() =>
   props.files.filter((f) => f.type !== "Folder").map((f) => ({ modified: f.modified ?? 0, created: f.created ?? 0 }))
 );
 const folderTimestamps = computed(() =>
-  props.files.filter((f) => f.type === "Folder" && !f.isLazyLoaded).map((f) => ({ modified: f.modified ?? 0, created: f.created ?? 0 }))
+  props.files.filter((f) => f.type === "Folder").map((f) => ({ modified: f.modified ?? 0, created: f.created ?? 0 }))
 );
 
 const getMinMax = (timestamps: number[]) => {
@@ -2059,108 +1981,6 @@ watch(selectedFiles, (newSelection) => {
 watch(columnStyles, (newStyle) => {
   logRendering("FileTable", `Column styles updated`, newStyle);
 });
-
-// Log lazy loading progress changes
-watch(lazyLoadingProgress, (progress) => {
-  if (progress.remaining > 0) {
-    logRendering("FileTable", `📊 Lazy loading progress: ${progress.completed}/${progress.total} folders completed (${progress.percentage}%)`);
-  } else if (progress.total > 0) {
-    logRendering("FileTable", `✅ All folder statistics calculated! ${progress.total} folders completed.`);
-  }
-}, { deep: true });
-
-// Watch for lazy loading updates from the store
-watch(() => jobsStore.lazyLoadingUpdateTrigger, () => {
-  // Force a re-computation of lazy loading progress
-  logRendering("FileTable", `🔄 Lazy loading update triggered - recalculating progress`);
-  
-  // Force the component to re-render by triggering a reactive update
-  nextTick(() => {
-    // Force re-computation of computed properties
-    const _ = visibleFiles.value.length;
-    const __ = lazyLoadingProgress.value;
-    logRendering("FileTable", `🔄 Forced re-render after lazy loading update`);
-  });
-}, { flush: 'post' });
-
-// Add a more aggressive watcher for real-time updates during lazy loading
-watch(() => jobsStore.lazyLoadingUpdateTrigger, (newTrigger, oldTrigger) => {
-  if (newTrigger !== oldTrigger) {
-    // Force immediate re-render of visible files
-    nextTick(() => {
-      // Trigger a reactive update by accessing computed properties
-      const _ = visibleFiles.value.length;
-      const __ = lazyLoadingProgress.value;
-      logRendering("FileTable", `🔄 Triggered immediate re-render for lazy loading update (trigger: ${oldTrigger} → ${newTrigger})`);
-    });
-  }
-}, { flush: 'post' });
-
-// Add a watcher for individual file changes with more aggressive detection
-watch(() => props.files, (newFiles, oldFiles) => {
-  if (newFiles !== oldFiles) {
-    const lazyLoadedCount = newFiles.filter(f => f.type === "Folder" && f.isLazyLoaded).length;
-    const oldLazyLoadedCount = oldFiles?.filter(f => f.type === "Folder" && f.isLazyLoaded).length || 0;
-    
-    if (lazyLoadedCount !== oldLazyLoadedCount) {
-      logRendering("FileTable", `📊 Files prop changed - lazy loaded folders: ${oldLazyLoadedCount} → ${lazyLoadedCount}`);
-    }
-    
-    // Check for any files that changed from lazy loaded to loaded
-    const changedFiles = newFiles.filter((file, index) => {
-      const oldFile = oldFiles?.[index];
-      return oldFile && 
-             file.type === "Folder" && 
-             oldFile.isLazyLoaded && 
-             !file.isLazyLoaded;
-    });
-    
-    if (changedFiles.length > 0) {
-      logRendering("FileTable", `🔄 Detected ${changedFiles.length} files that finished lazy loading:`, 
-        changedFiles.map(f => f.name));
-      
-      // Force a re-render
-      nextTick(() => {
-        const _ = visibleFiles.value.length;
-        const __ = lazyLoadingProgress.value;
-        logRendering("FileTable", `🔄 Forced re-render after detecting lazy loading completion`);
-      });
-    }
-    
-    // Always force a re-render when files change to ensure updates are visible
-    nextTick(() => {
-      const _ = visibleFiles.value.length;
-      logRendering("FileTable", `🔄 Forced re-render due to files prop change`);
-    });
-  }
-}, { deep: true, flush: 'post' });
-
-// Add a watcher for the lazyLoadingUpdateTrigger with immediate execution
-watch(() => jobsStore.lazyLoadingUpdateTrigger, () => {
-  // Force a re-computation of lazy loading progress
-  logRendering("FileTable", `🔄 Lazy loading update triggered - recalculating progress`);
-  
-  // Force the component to re-render by triggering a reactive update
-  nextTick(() => {
-    // Force re-computation of computed properties
-    const _ = visibleFiles.value.length;
-    const __ = lazyLoadingProgress.value;
-    logRendering("FileTable", `🔄 Forced re-render after lazy loading update`);
-  });
-}, { flush: 'post', immediate: true });
-
-// Add a watcher for the lazyLoadingProgress computed property to force updates
-watch(() => lazyLoadingProgress.value, (newProgress, oldProgress) => {
-  if (newProgress.remaining !== oldProgress.remaining || newProgress.completed !== oldProgress.completed) {
-    logRendering("FileTable", `📊 Lazy loading progress changed: ${oldProgress.completed}/${oldProgress.total} → ${newProgress.completed}/${newProgress.total}`);
-    
-    // Force a re-render when progress changes
-    nextTick(() => {
-      const _ = visibleFiles.value.length;
-      logRendering("FileTable", `🔄 Forced re-render due to lazy loading progress change`);
-    });
-  }
-}, { deep: true, flush: 'post' });
 
 // --- LIFECYCLE HOOKS ---
 onMounted(() => {

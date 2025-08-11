@@ -28,17 +28,18 @@ export interface NotificationMessage {
 }
 
 export interface Notification {
-  id: string;
+  id: number;
   title: string;
   messages: NotificationMessage[];
-  type: NotificationType;
-  duration?: number;
+  glowType: NotificationType;
+  targetId: number | "new-job";
+  duration: number;
   position?: NotificationPosition;
   timeoutId: number | null;
   isRemoving?: boolean;
 }
 
-type PendingNotificationPayload = Omit<Notification, "id" | "timeoutId" | "duration" | "position"> & { duration?: number };
+type PendingNotificationPayload = Omit<Notification, "id" | "timeoutId" | "position" | "duration"> & { duration?: number };
 
 // NEW: Interface for the marquee box state
 export interface MarqueeBox {
@@ -216,7 +217,8 @@ export const useUiStore = defineStore(
         triggerJobNotification({
           title,
           messages,
-          type: glowType,
+          glowType,
+          targetId: numericTargetId,
           duration: 8000,
         });
       }
@@ -237,89 +239,72 @@ export const useUiStore = defineStore(
     }
 
     function addNotification(notification: Omit<Notification, "id" | "timeoutId" | "duration"> & { duration?: number }): void {
-      const id = `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const id = Date.now() + Math.random();
       const duration = notification.duration ?? 5000;
 
-      console.log(`[uiStore] Adding notification:`, {
-        id,
-        title: notification.title,
-        messages: notification.messages,
-        duration,
-        hasPosition: !!notification.position,
-        position: notification.position
-      });
-
       const newNotification: Notification = {
-        ...notification,
         id,
         duration,
+        ...notification,
         timeoutId: null,
+        isRemoving: false,
       };
 
-      // If there's already a notification for this job, remove it first
-      const existingIndex = notifications.value.findIndex(n => n.id === id);
-      if (existingIndex !== -1) {
-        console.log(`[uiStore] Removing existing notification with same ID:`, id);
-        notifications.value.splice(existingIndex, 1);
+      // If no notifications are currently displayed, show this one immediately
+      if (notifications.value.length === 0) {
+        // Add a small delay for the initial notification to ensure smooth fade-in
+        setTimeout(() => {
+          newNotification.timeoutId = window.setTimeout(() => {
+            removeNotification(id);
+          }, duration);
+          notifications.value.push(newNotification);
+        }, 100); // Small delay for smooth initial fade-in
+      } else {
+        // Otherwise, add to queue
+        notificationQueue.value.push(newNotification);
       }
-
-      notifications.value.push(newNotification);
-      console.log(`[uiStore] Notification added. Total notifications:`, notifications.value.length);
-      console.log(`[uiStore] Current notifications:`, notifications.value.map(n => ({ id: n.id, title: n.title, hasPosition: !!n.position })));
-
-      // Start the timeout for auto-removal
-      const timeoutId = window.setTimeout(() => {
-        console.log(`[uiStore] Auto-removing notification:`, id);
-        removeNotification(id);
-      }, duration);
-
-      newNotification.timeoutId = timeoutId;
     }
 
-    function removeNotification(id: string): void {
-      console.log(`[uiStore] Removing notification:`, id);
-      const index = notifications.value.findIndex((notification) => notification.id === id);
-      if (index !== -1) {
+    function removeNotification(id: number): void {
+      const index = notifications.value.findIndex((n) => n.id === id);
+      if (index > -1) {
         const notification = notifications.value[index];
         if (!notification) return;
 
-        // Clear the timeout if it exists
-        if (notification.timeoutId !== null) {
+        if (notification.timeoutId) {
           clearTimeout(notification.timeoutId);
         }
 
-        // Mark as removing for smooth transition
+        // Mark the notification as removing to trigger fade-out
         notification.isRemoving = true;
-        console.log(`[uiStore] Marked notification as removing:`, id);
 
-        // Remove after transition
+        // Wait for the fade-out transition to complete before actually removing
         setTimeout(() => {
-          const removeIndex = notifications.value.findIndex((n) => n.id === id);
-          if (removeIndex !== -1) {
-            notifications.value.splice(removeIndex, 1);
-            console.log(`[uiStore] Notification removed from array. Total notifications:`, notifications.value.length);
+          const currentIndex = notifications.value.findIndex((n) => n.id === id);
+          if (currentIndex > -1) {
+            notifications.value.splice(currentIndex, 1);
           }
-        }, 300); // Match the CSS transition duration
-      } else {
-        console.log(`[uiStore] Notification not found for removal:`, id);
+
+          // After removing a notification, show the next one from the queue
+          showNextNotification();
+        }, 600); // Wait for the fade-out transition to complete (0.6s)
       }
     }
 
-    function pauseNotificationTimeout(id: string): void {
+    function pauseNotificationTimeout(id: number): void {
       const notification = notifications.value.find((n) => n.id === id);
-      if (notification && notification.timeoutId !== null) {
+      if (notification && notification.timeoutId) {
         clearTimeout(notification.timeoutId);
         notification.timeoutId = null;
       }
     }
 
-    function resumeNotificationTimeout(id: string): void {
+    function resumeNotificationTimeout(id: number): void {
       const notification = notifications.value.find((n) => n.id === id);
       if (notification && notification.timeoutId === null) {
-        const remainingTime = notification.duration || 5000;
         notification.timeoutId = window.setTimeout(() => {
           removeNotification(id);
-        }, remainingTime);
+        }, notification.duration);
       }
     }
 

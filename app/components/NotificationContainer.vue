@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed } from "vue";
 import { useUiStore } from "@/stores/uiStore";
 import NotificationDisplay from "./NotificationDisplay.vue";
 
@@ -44,22 +44,8 @@ const uiStore = useUiStore();
 
 // Computed property to check if there are any notifications or queued notifications
 const hasAnyNotifications = computed(() => {
-  const hasNotifications = uiStore.notifications.length > 0 || uiStore.notificationQueue.length > 0;
-  console.log(`[NotificationContainer] hasAnyNotifications:`, hasNotifications, {
-    notificationsCount: uiStore.notifications.length,
-    queueCount: uiStore.notificationQueue.length
-  });
-  return hasNotifications;
+  return uiStore.notifications.length > 0 || uiStore.notificationQueue.length > 0;
 });
-
-// Watch for changes in notifications
-watch(() => uiStore.notifications, (newNotifications, oldNotifications) => {
-  console.log(`[NotificationContainer] Notifications changed:`, {
-    oldCount: oldNotifications?.length || 0,
-    newCount: newNotifications.length,
-    notifications: newNotifications.map(n => ({ id: n.id, title: n.title }))
-  });
-}, { deep: true });
 </script>
 
 <style scoped>

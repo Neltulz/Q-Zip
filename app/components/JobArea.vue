@@ -29,16 +29,6 @@
       <div v-if="activeJob" :key="activeJob.id" ref="jobRef" class="job">
         <div class="job-header">
           <h2>Job {{ activeJob.id }}</h2>
-          <!-- Test button for notifications -->
-          <CustomButton
-            button-style-class="trans-btn"
-            data-name="test-notification-btn"
-            first-icon-name="mdi:bell"
-            :first-icon-size="16"
-            @click="testNotification"
-          >
-            Test Notification
-          </CustomButton>
         </div>
         <div ref="jobContentRef" class="job-content" @contextmenu.prevent.stop="showJobContextMenu">
           <LoadingAnim :visible="showLoading" @cancel="cancelOperation" @animation-finished="onAnimationFinished">
@@ -207,8 +197,6 @@ onMounted(() => {
       // ignore
     }
   });
-  
-  // Remove test notification code - no longer needed
 });
 
 onUnmounted(() => {
@@ -515,126 +503,7 @@ const confirmCopyToNewJob = (paths: string | string[]): void => {
 
 const addItemsToJob = async (paths: string[]): Promise<void> => {
   if (activeJob.value) {
-    console.log(`[JobArea] Starting to add ${paths.length} items to job ${activeJob.value.id}`);
-    
-    handleOperation("adding", paths, async () => {
-      const result = await jobsStore.addFilesToJobLazy(activeJob.value!.id, paths);
-      
-      console.log(`[JobArea] File addition result:`, result);
-      
-      // Show notification for failed additions
-      if (result.failedPaths.length > 0) {
-        const failedCount = result.failedPaths.length;
-        const successCount = result.addedCount;
-        
-        console.log(`[JobArea] Creating notification for failed additions:`, { failedCount, successCount });
-        
-        // Create notification message
-        const messages = [];
-        
-        if (successCount > 0) {
-          messages.push({
-            type: "success" as const,
-            text: `Successfully added ${successCount} item${successCount === 1 ? '' : 's'}`
-          });
-        }
-        
-        if (failedCount > 0) {
-          messages.push({
-            type: "error" as const,
-            text: `Failed to add ${failedCount} item${failedCount === 1 ? '' : 's'}`,
-            details: {
-              filePaths: result.failedPaths,
-              reasons: result.errors,
-              sourceJobId: activeJob.value!.id,
-              destinationJobId: activeJob.value!.id
-            }
-          });
-        }
-        
-        // Get job element position for notification
-        const jobElement = jobRef.value;
-        const position = jobElement ? jobElement.getBoundingClientRect() : null;
-        
-        console.log(`[JobArea] Job element:`, jobElement);
-        console.log(`[JobArea] Job element position:`, position);
-        
-        if (position) {
-          console.log(`[JobArea] Adding notification with position:`, position);
-          
-          uiStore.addNotification({
-            title: "Add Items Result",
-            messages,
-            position,
-            duration: 8000, // Show for 8 seconds to give time to read
-            type: failedCount > 0 ? "warning" : "success"
-          });
-        } else {
-          console.log(`[JobArea] No job element found, adding notification without position`);
-          
-          uiStore.addNotification({
-            title: "Add Items Result",
-            messages,
-            duration: 8000,
-            type: failedCount > 0 ? "warning" : "success"
-          });
-        }
-      } else {
-        console.log(`[JobArea] All files added successfully, no notification needed`);
-      }
-    });
-  } else {
-    console.log(`[JobArea] No active job found, cannot add items`);
-  }
-};
-
-const testNotification = () => {
-  if (activeJob.value) {
-    console.log(`[JobArea] Testing notification for job ${activeJob.value.id}`);
-    
-    // Get job element position for notification
-    const jobElement = jobRef.value;
-    const position = jobElement ? jobElement.getBoundingClientRect() : null;
-    
-    console.log(`[JobArea] Test - Job element:`, jobElement);
-    console.log(`[JobArea] Test - Job element position:`, position);
-    
-    if (position) {
-      console.log(`[JobArea] Test - Adding notification with position:`, position);
-      
-      uiStore.addNotification({
-        title: "Test Notification",
-        messages: [
-          {
-            type: "info" as const,
-            text: "This is a test notification with job-specific positioning",
-            details: {
-              filePaths: [],
-              reasons: {},
-              sourceJobId: activeJob.value!.id,
-              destinationJobId: activeJob.value!.id
-            }
-          }
-        ],
-        position,
-        duration: 5000,
-        type: "info"
-      });
-    } else {
-      console.log(`[JobArea] Test - No job element found, adding notification without position`);
-      
-      uiStore.addNotification({
-        title: "Test Notification",
-        messages: [
-          {
-            type: "info" as const,
-            text: "This is a test notification without position data"
-          }
-        ],
-        duration: 5000,
-        type: "info"
-      });
-    }
+    handleOperation("adding", paths, () => jobsStore.addFilesToJob(activeJob.value!.id, paths));
   }
 };
 </script>
@@ -645,19 +514,6 @@ const testNotification = () => {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-}
-
-.job-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--brdr-clr-liter);
-}
-
-.job-header h2 {
-  margin: 0;
-  flex-grow: 1;
 }
 </style>
 

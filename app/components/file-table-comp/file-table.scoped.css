@@ -525,37 +525,3 @@ body.is-resizing .table-header > div {
   pointer-events: none !important;
   /* Keep layout stable: don't change size, only hide visually */
 }
-
-/* Lazy loading indicators */
-.lazy-loading-indicator {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-clr-muted);
-  font-style: italic;
-  font-size: 0.85em;
-  min-height: 16px;
-}
-
-.lazy-load-error {
-  color: var(--danger-clr);
-  font-size: 0.85em;
-  font-style: italic;
-}
-
-/* Lazy loading progress indicator in toolbar */
-.lazy-loading-progress {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  background-color: var(--bg-clr-liter);
-  border: 1px solid var(--brdr-clr-lite);
-  border-radius: 4px;
-  font-size: 0.85em;
-  color: var(--text-clr-muted);
-}
-
-.progress-text {
-  font-style: italic;
-}
