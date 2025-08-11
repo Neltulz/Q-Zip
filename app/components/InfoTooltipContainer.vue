@@ -1,11 +1,11 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
-<!-- components/InfoTooltip.vue @preserve -->
+<!-- components/InfoTooltipContainer.vue @preserve -->
 
 <!--
-  InfoTooltip.vue
+  InfoTooltipContainer.vue
 
   What it is:
-  - A floating tooltip component that teleports to <body> and positions itself
+  - A floating tooltip component that teleports to the tooltip container and positions itself
     relative to a target element using @floating-ui/vue.
 
   What it does:
@@ -17,7 +17,7 @@
   - Uses a lightweight fade transition and high-contrast, blurred backdrop styling.
 
   Key features:
-  - Teleport to body for layering reliability
+  - Teleport to tooltip container for better organization
   - Smart positioning (offset, flip, shift, arrow)
   - Simple text mode with shortcut extraction
   - Rich details mode for notification/message details
@@ -30,14 +30,14 @@
   - debugForceVisible: boolean — Forces visibility for debugging
 
   Example usage:
-  <InfoTooltip
+  <InfoTooltipContainer
     :visible="isTooltipVisible"
     :content="{ text: 'Copy (Ctrl+C)' }"
     :target="buttonRef"
   />
 -->
 <template>
-  <teleport to="body">
+  <teleport to="#tooltip-container">
     <Transition
       name="tooltip-fade"
       appear

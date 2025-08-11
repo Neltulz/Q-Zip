@@ -44,17 +44,23 @@
 
     <teleport to="body">
       <template v-if="hasSlotContent">
-        <div
-          v-show="isOpen"
-          ref="dropdownContent"
-          class="dropdown-content"
-          :class="[transitionClass, { 'content-ready': isContentLoaded }]"
-          :style="dropdownContentStyle"
-          :data-belongs-to="props.dropdownDataName"
-          @contextmenu.prevent
-          @mouseenter="handleContentMouseEnter"
-          @mouseleave="handleContentMouseLeave"
+        <Transition
+          name="dropdown-fade"
+          appear
+          @enter="onDropdownEnter"
+          @leave="onDropdownLeave"
         >
+          <div
+            v-if="isOpen"
+            ref="dropdownContent"
+            class="dropdown-content"
+            :class="[transitionClass, { 'content-ready': isContentLoaded }]"
+            :style="dropdownContentStyle"
+            :data-belongs-to="props.dropdownDataName"
+            @contextmenu.prevent
+            @mouseenter="handleContentMouseEnter"
+            @mouseleave="handleContentMouseLeave"
+          >
           <slot name="content-top" :close="closeDropdown" />
           <OverlayScrollbarsComponent
             :options="{
@@ -71,6 +77,7 @@
           </OverlayScrollbarsComponent>
           <slot name="content-bottom" :close="closeDropdown" />
         </div>
+        </Transition>
       </template>
     </teleport>
   </div>
@@ -163,10 +170,26 @@ const dropdownContent: Ref<HTMLElement | null> = ref(null);
 const triggerButtonRef = ref<any | null>(null);
 const dropdownId: symbol = Symbol("dropdown");
 const openTimeoutId: Ref<number | null> = ref(null);
-const closeTimeoutId: Ref<number | null> = ref(null);
 const dropdownMenuRef = ref<HTMLDivElement | null>(null);
 
 const isOpenedByClick: Ref<boolean> = ref(false);
+
+// Transition handlers for smooth enter/leave animations
+const onDropdownEnter = (el: Element) => {
+  // Ensure the element is properly positioned before showing
+  nextTick(() => {
+    if (el instanceof HTMLElement) {
+      el.style.opacity = '1';
+    }
+  });
+};
+
+const onDropdownLeave = (el: Element) => {
+  // Clean up any positioning when leaving
+  if (el instanceof HTMLElement) {
+    el.style.opacity = '0';
+  }
+};
 
 const actualPlacement: Ref<Placement> = ref(props.placement);
 const dropdownTop: Ref<string> = ref("-9999px");
@@ -343,12 +366,8 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
 
   isOpenedByClick.value = !isContextMenuCall;
 
-  // If we were in the process of closing, cancel that close so the dropdown
-  // can open immediately and animate in.
-  if (closeTimeoutId.value) {
-    clearTimeout(closeTimeoutId.value);
-    closeTimeoutId.value = null;
-  }
+  // With Vue transitions, we can immediately open the dropdown
+  // The transition will handle the fade-in animation
 
   if (debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Opening "${props.dropdownDataName}"`);
   isOpen.value = true;
@@ -420,8 +439,6 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
   });
 };
 
-const CLOSE_ANIMATION_MS = 180; // slightly longer than CSS transition to ensure smooth fade
-
 const closeDropdown = (): void => {
   if (!isOpen.value) return;
   if (debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Closing "${props.dropdownDataName}"`);
@@ -445,17 +462,9 @@ const closeDropdown = (): void => {
   contextMenuCoords.value = null;
   isOpenedByClick.value = false;
 
-  // If a close is already scheduled, clear it
-  if (closeTimeoutId.value) {
-    clearTimeout(closeTimeoutId.value);
-    closeTimeoutId.value = null;
-  }
-
-  // Delay clearing `isOpen` so CSS opacity transition can run (dropdown remains in DOM)
-  closeTimeoutId.value = window.setTimeout(() => {
-    isOpen.value = false;
-    closeTimeoutId.value = null;
-  }, CLOSE_ANIMATION_MS);
+  // With Vue transitions, we can immediately set isOpen to false
+  // The transition will handle the fade-out animation
+  isOpen.value = false;
 };
 
 const handleButtonClick = async (event?: MouseEvent): Promise<void> => {
@@ -560,7 +569,6 @@ watch(isOpen, (newIsOpen: boolean): void => {
 onUnmounted((): void => {
   window.removeEventListener("resize", adjustDropdownPosition);
   if (openTimeoutId.value) clearTimeout(openTimeoutId.value);
-  if (closeTimeoutId.value) clearTimeout(closeTimeoutId.value);
   if (isOpen.value) unregisterDropdown(dropdownId);
 });
 
@@ -604,6 +612,18 @@ defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle });
 <!-- #region style -->
 <style>
 /* These styles must be global because the dropdown content is teleported to `body`. */
+
+/* Transition animations for smooth enter/leave */
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition: opacity 180ms ease-in-out;
+}
+
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  opacity: 0;
+}
+
 .dropdown-content {
   --dropdown-pad: 2px;
   --dropdown-border-width: 1px;
@@ -623,10 +643,8 @@ defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle });
   max-height: 90vh;
   min-height: var(--min-tch-tgt);
   min-width: 200px;
-  opacity: 0; /* Initially hidden */
   padding: var(--dropdown-pad);
   pointer-events: none; /* Initially non-interactive */
-  transition: opacity 150ms ease-in-out;
 }
 
 /* --- FIX START --- */

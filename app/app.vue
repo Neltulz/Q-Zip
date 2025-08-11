@@ -5,6 +5,7 @@
     <TitleBar />
     <ModalContainer />
     <NotificationContainer />
+    <TooltipContainer />
     <Transition name="layout-fade" mode="out-in">
       <!--
         Wrap NuxtLayout in a div with a key to ensure a single root element
@@ -26,6 +27,7 @@ import { useJobsStore } from "@/stores/jobsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
 import { useUiStore } from "@/stores/uiStore";
 import NotificationContainer from "@/components/NotificationContainer.vue";
+import TooltipContainer from "@/components/TooltipContainer.vue";
 import { provideScrollContainer } from "@/composables/useScrollContainer";
 import { zoomIn, zoomOut, resetZoom, setFileTableZoomFactor, getFileTableZoomFactor, getZoomFactor, setZoomFactor } from "@/composables/useZoom";
 import { enableSelectionLock, disableSelectionLock } from "@/composables/useSelectionLock";
