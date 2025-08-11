@@ -182,23 +182,27 @@ const resolvedTarget = computed(() => {
 watch(
   () => props.visible,
   (v) => {
-    logUI("InfoTooltip", "Visibility changed", { visible: v, interactive: props.interactive });
+    // Disabled logging for InfoTooltip
+    // logUI("InfoTooltip", "Visibility changed", { visible: v, interactive: props.interactive });
     
     if (v) {
       try {
         const el = resolvedTarget.value as Element | null;
         if (el) {
-          logUI("InfoTooltip", "Resolved target element", { 
-            element: el, 
-            rect: el.getBoundingClientRect(),
-            placement: props.placement,
-            fallbackPlacements: props.fallbackPlacements
-          });
+          // Disabled logging for InfoTooltip
+          // logUI("InfoTooltip", "Resolved target element", { 
+          //   element: el, 
+          //   rect: el.getBoundingClientRect(),
+          //   placement: props.placement,
+          //   fallbackPlacements: props.fallbackPlacements
+          // });
         } else {
-          logUI("InfoTooltip", "No resolved target");
+          // Disabled logging for InfoTooltip
+          // logUI("InfoTooltip", "No resolved target");
         }
       } catch (e) {
-        logUI("InfoTooltip", "Error resolving target", { error: e });
+        // Disabled logging for InfoTooltip
+        // logUI("InfoTooltip", "Error resolving target", { error: e });
       }
     }
   }
@@ -248,7 +252,10 @@ const { floatingStyles, middlewareData, placement } = useFloating(resolvedTarget
 
 const side = computed(() => {
   const currentSide = placement.value.split("-")[0];
-  logRendering("InfoTooltip", "Side computed", { side: currentSide, placement: placement.value });
+  // Disabled logging for InfoTooltip
+  // if (props.visible || props.debugForceVisible) {
+  //   logRendering("InfoTooltip", "Side computed", { side: currentSide, placement: placement.value });
+  // }
   return currentSide;
 });
 
@@ -269,12 +276,15 @@ const arrowStyle = computed(() => {
   const { x, y } = middlewareData.value.arrow || {};
   const currentSide = side.value;
   
-  logRendering("InfoTooltip", "Arrow style computed", { 
-    side: currentSide, 
-    arrowX: x, 
-    arrowY: y,
-    placement: placement.value 
-  });
+  // Disabled logging for InfoTooltip
+  // if (props.visible || props.debugForceVisible) {
+  //   logRendering("InfoTooltip", "Arrow style computed", { 
+  //     side: currentSide, 
+  //     arrowX: x, 
+  //     arrowY: y,
+  //     placement: placement.value 
+  //   });
+  // }
 
   const logicalSideMap = {
     top: "inset-block-end",
@@ -286,7 +296,10 @@ const arrowStyle = computed(() => {
   const staticSide = logicalSideMap[currentSide as keyof typeof logicalSideMap];
 
   if (!staticSide) {
-    logUI("InfoTooltip", "No static side found", { side: currentSide });
+    // Disabled logging for InfoTooltip
+    // if (props.visible || props.debugForceVisible) {
+    //   logUI("InfoTooltip", "No static side found", { side: currentSide });
+    // }
     return {};
   }
 
@@ -347,14 +360,17 @@ const arrowStyle = computed(() => {
     [staticSide]: offsetValue,
   };
   
-  logRendering("InfoTooltip", "Arrow style result", { 
-    style, 
-    arrowDimensions,
-    originalX: x,
-    originalY: y,
-    adjustedX,
-    adjustedY
-  });
+  // Disabled logging for InfoTooltip
+  // if (props.visible || props.debugForceVisible) {
+  //   logRendering("InfoTooltip", "Arrow style result", { 
+  //     style, 
+  //     arrowDimensions,
+  //     originalX: x,
+  //     originalY: y,
+  //     adjustedX,
+  //     adjustedY
+  //   });
+  // }
   return style;
 });
 

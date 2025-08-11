@@ -746,6 +746,10 @@ const handleDragAction = (operation: "move" | "copy", targetIdentifier: number |
   const pathSet = new Set(droppedFilePaths);
   const filesToOperateOn = sourceJob.files.filter((f) => pathSet.has(f.path));
 
+  // End the drag operation immediately when opening the confirmation modal
+  // This will clear the dashed lines and visual indicators
+  dragDropStore.endInternalDrag();
+
   openOperationConfirmModal(operation, filesToOperateOn, targetIdentifier, sourceJobId);
 };
 
@@ -788,6 +792,7 @@ const openOperationConfirmModal = (
       { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
     ],
     footerJustifyContent: "center",
+    closeOnClickOutside: true,
   };
 
   modalsStore.openModal(
@@ -805,8 +810,7 @@ const openOperationConfirmModal = (
           conflictResolution: conflictResolution || (operation === 'move' ? 'replace' : 'skip')
         });
       }
-      // Always end the drag operation when the modal closes, whether proceeding or cancelling.
-      dragDropStore.endInternalDrag();
+      // Drag operation was already ended in handleDragAction, so no need to call it again
     }
   );
 };

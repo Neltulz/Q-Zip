@@ -4,7 +4,7 @@
 // handling global click events to close dropdowns when clicking outside, and supporting
 // nested dropdowns by closing only unrelated dropdowns when a new one is opened.
 
-import { ref, watch, onBeforeUnmount } from "vue";
+import { ref, watch, onBeforeUnmount, watchEffect } from "vue";
 import { logManagerAction, logGlobalEvent, logWarning } from "@/utils/loggers";
 
 // Define the structure of a dropdown object
@@ -36,8 +36,9 @@ const ensureOverlay = () => {
   // Position under dropdown content (dropdown content uses z-index:100001)
   overlayEl.style.position = "fixed";
   overlayEl.style.inset = "0";
-  // Place overlay above most UI but beneath teleported dropdown content
-  overlayEl.style.zIndex = "100000";
+  // Place overlay above most UI but beneath modals (modal uses z-index:99999)
+  // and beneath teleported dropdown content (dropdown content uses z-index:100001)
+  overlayEl.style.zIndex = "99998";
   // Start hidden (transparent + no pointer events). We'll toggle visibility
   // via opacity so the fade runs consistently for every dropdown instance.
   overlayEl.style.background = "hsla(0, 0%, 0%, 0)";
@@ -60,6 +61,12 @@ const ensureOverlay = () => {
 const showOverlay = () => {
   logManagerAction("dropdownManager", "showOverlay called");
   try {
+    // Don't show overlay if a modal is open
+    if (document.querySelector(".modal-wrapper.modal-open")) {
+      logManagerAction("dropdownManager", "Modal is open, not showing dropdown overlay");
+      return;
+    }
+
     const el = ensureOverlay();
     // Ensure the overlay is present in the DOM once (avoid flicker on append/remove)
     if (!document.body.contains(el)) document.body.appendChild(el);
@@ -167,7 +174,8 @@ const handleGlobalClickOutside = (event: MouseEvent): void => {
   const target = event.target as HTMLElement;
 
   // If the click is inside a modal, don't close the dropdowns.
-  if (target.closest(".modal-dialog")) {
+  // Check both modal-dialog and modal-wrapper to handle backdrop clicks properly
+  if (target.closest(".modal-dialog") || target.closest(".modal-wrapper")) {
     logGlobalEvent("dropdownManager", "Click is inside a modal. No action taken.");
     return;
   }
@@ -227,6 +235,16 @@ const setupGlobalListener = (): void => {
 export function useDropdownManager() {
   // Ensure the global listener is set up
   setupGlobalListener();
+
+  // Watch for modal state changes and hide overlay when modals open
+  watchEffect(() => {
+    const modalOpen = !!document.querySelector(".modal-wrapper.modal-open");
+    if (modalOpen && overlayEl && overlayEl.getAttribute("data-overlay-visible") === "true") {
+      logManagerAction("dropdownManager", "Modal opened, hiding dropdown overlay");
+      hideOverlay();
+    }
+  });
+
   // Watch openDropdowns to show/hide the overlay element when any dropdowns are open
   // Use a debounced watcher to coalesce rapid register/unregister calls (submenus often
   // register/unregister quickly when hovering). This prevents races that left the overlay

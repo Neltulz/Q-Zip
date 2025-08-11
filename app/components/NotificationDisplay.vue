@@ -183,7 +183,8 @@ const handleTooltipMouseLeave = () => {
 // --- End of tooltip hover logic ---
 
 const closeNotification = () => {
-  logNotification("NotificationDisplay", "Closing notification", { id: props.notification.id });
+  // Disabled logging for notifications
+  // logNotification("NotificationDisplay", "Closing notification", { id: props.notification.id });
   uiStore.removeNotification(props.notification.id);
 };
 

@@ -836,18 +836,18 @@ const handleScroll = () => {
     isScrolling.value = false;
   }, 150);
 
-  // Log virtual scrolling calculations when in development
-  if (isDevelopment.value) {
-    logMarqueeSelection("FileTable", "Virtual scroll update:", {
-      scrollTop: scrollTop.value,
-      startIndex: startIndex.value,
-      endIndex: endIndex.value,
-      contentOffsetY: contentOffsetY.value,
-      visibleFilesCount: visibleFiles.value.length,
-      totalFiles: sortedFiles.value.length,
-      wrapperHeight: viewportRef.value?.clientHeight || 0,
-    });
-  }
+  // Disabled logging for FileTable scrolling
+  // if (isDevelopment.value) {
+  //   logMarqueeSelection("FileTable", "Virtual scroll update:", {
+  //     scrollTop: scrollTop.value,
+  //     startIndex: startIndex.value,
+  //     endIndex: endIndex.value,
+  //     contentOffsetY: contentOffsetY.value,
+  //     visibleFilesCount: visibleFiles.value.length,
+  //     totalFiles: sortedFiles.value.length,
+  //     wrapperHeight: viewportRef.value?.clientHeight || 0,
+  //   });
+  // }
 };
 
 const marqueeBoxStyle = computed(() => ({
@@ -871,70 +871,71 @@ watch(
 
 // Function to log actual DOM measurements for debugging
 const logActualDOMMeasurements = () => {
-  if (!isDevelopment.value || !uiStore.marqueeBox.visible) return;
+  // Disabled logging for FileTable DOM measurements
+  // if (!isDevelopment.value || !uiStore.marqueeBox.visible) return;
 
-  // Try to get actual measurements from the DOM
-  const tableRows = document.querySelectorAll(".table-row");
-  const itemNameContents = document.querySelectorAll(".item-name-content");
+  // // Try to get actual measurements from the DOM
+  // const tableRows = document.querySelectorAll(".table-row");
+  // const itemNameContents = document.querySelectorAll(".item-name-content");
 
-  if (tableRows.length > 0 && itemNameContents.length > 0) {
-    const firstRow = tableRows[0] as HTMLElement;
-    const firstItemNameContent = itemNameContents[0] as HTMLElement;
+  // if (tableRows.length > 0 && itemNameContents.length > 0) {
+  //   const firstRow = tableRows[0] as HTMLElement;
+  //   const firstItemNameContent = itemNameContents[0] as HTMLElement;
 
-    if (firstRow && firstItemNameContent) {
-      const rowRect = firstRow.getBoundingClientRect();
-      const contentRect = firstItemNameContent.getBoundingClientRect();
-      const tableComp = fileTableCompRef.value;
-      const tableCompRect = tableComp?.getBoundingClientRect();
+  //   if (firstRow && firstItemNameContent) {
+  //     const rowRect = firstRow.getBoundingClientRect();
+  //     const contentRect = firstItemNameContent.getBoundingClientRect();
+  //     const tableComp = fileTableCompRef.value;
+  //     const tableCompRect = tableComp?.getBoundingClientRect();
 
-      // Get computed styles
-      const computedStyles = {
-        rowPadding: window.getComputedStyle(firstRow).paddingInline,
-        contentGap: window.getComputedStyle(firstItemNameContent).columnGap,
-        contentPadding: window.getComputedStyle(firstItemNameContent).paddingInline,
-        contentWidth: window.getComputedStyle(firstItemNameContent).width,
-        contentMinWidth: window.getComputedStyle(firstItemNameContent).minInlineSize,
-        contentMaxWidth: window.getComputedStyle(firstItemNameContent).maxInlineSize,
-        itemNameGap: window.getComputedStyle(firstRow.querySelector(".item-name") as HTMLElement)?.gap || "N/A",
-      };
+  //     // Get computed styles
+  //     const computedStyles = {
+  //       rowPadding: window.getComputedStyle(firstRow).paddingInline,
+  //       contentGap: window.getComputedStyle(firstItemNameContent).columnGap,
+  //       contentPadding: window.getComputedStyle(firstItemNameContent).paddingInline,
+  //       contentWidth: window.getComputedStyle(firstItemNameContent).width,
+  //       contentMinWidth: window.getComputedStyle(firstItemNameContent).minInlineSize,
+  //       contentMaxWidth: window.getComputedStyle(firstItemNameContent).maxInlineSize,
+  //       itemNameGap: window.getComputedStyle(firstRow.querySelector(".item-name") as HTMLElement)?.gap || "N/A",
+  //     };
 
-      logMarqueeSelection("FileTable", "Actual DOM measurements:", {
-        tableCompBounds: tableCompRect
-          ? {
-              left: tableCompRect.left,
-              top: tableCompRect.top,
-              width: tableCompRect.width,
-              height: tableCompRect.height,
-            }
-          : null,
-        firstRowBounds: {
-          left: rowRect.left,
-          top: rowRect.top,
-          width: rowRect.width,
-          height: rowRect.height,
-        },
-        firstItemNameContentBounds: {
-          left: contentRect.left,
-          top: contentRect.top,
-          width: contentRect.width,
-          height: contentRect.height,
-        },
-        // Calculate relative positions
-        contentRelativeToRow: {
-          left: contentRect.left - rowRect.left,
-          top: contentRect.top - rowRect.top,
-        },
-        contentRelativeToTable: tableCompRect
-          ? {
-              left: contentRect.left - tableCompRect.left,
-              top: contentRect.top - tableCompRect.top,
-            }
-          : null,
-        // Computed CSS styles
-        computedStyles,
-      });
-    }
-  }
+  //     logMarqueeSelection("FileTable", "Actual DOM measurements:", {
+  //       tableCompBounds: tableCompRect
+  //         ? {
+  //             left: tableCompRect.left,
+  //             top: tableCompRect.top,
+  //             width: tableCompRect.width,
+  //             height: tableCompRect.height,
+  //           }
+  //         : null,
+  //       firstRowBounds: {
+  //         left: rowRect.left,
+  //         top: rowRect.top,
+  //         width: rowRect.width,
+  //         height: rowRect.height,
+  //       },
+  //       firstItemNameContentBounds: {
+  //         left: contentRect.left,
+  //         top: contentRect.top,
+  //         width: contentRect.width,
+  //         height: contentRect.height,
+  //       },
+  //       // Calculate relative positions
+  //       contentRelativeToRow: {
+  //         left: contentRect.left - rowRect.left,
+  //         top: contentRect.top - rowRect.top,
+  //       },
+  //       contentRelativeToTable: tableCompRect
+  //         ? {
+  //             left: contentRect.left - tableCompRect.left,
+  //             top: contentRect.top - tableCompRect.top,
+  //           }
+  //         : null,
+  //       // Computed CSS styles
+  //       computedStyles,
+  //     });
+  //   }
+  // }
 };
 
 // Debug hotzone style computation
@@ -998,32 +999,33 @@ const getDebugHotzoneStyle = (index: number, file: FileItem) => {
   const itemNameContentWidth = maxAvailableSpace;
 
   // Log detailed calculations for debugging
-  if (isDevelopment.value) {
-    logMarqueeSelection("FileTable", `Hotzone calculation for row ${index} (${file.name}):`, {
-      rowTop,
-      itemNameContentLeft,
-      itemNameContentWidth,
-      iconWidth,
-      textPadding,
-      rowActionsWidth,
-      itemNameGap,
-      maxAvailableSpace,
-      fileLength: file.name.length,
-      columnWidths: columnWidths.name,
-      showCheckboxes: props.showCheckboxes,
-      checkboxWidth: props.showCheckboxes ? columnWidths.checkbox : 0,
-      contentOffsetY: contentOffsetY.value,
-      ROW_HEIGHT,
-      headerHeight: 34,
-      calculatedRowTop: index * ROW_HEIGHT,
-      finalRowTop: rowTop,
-      itemNameGapCSS: "8px",
-      columnGapCSS: "8px",
-      paddingInlineCSS: "8px",
-      virtualScrollOffset: contentOffsetY.value,
-      isVirtualScrolling: contentOffsetY.value > 0,
-    });
-  }
+  // Disabled logging for FileTable hotzone calculations
+  // if (isDevelopment.value) {
+  //   logMarqueeSelection("FileTable", `Hotzone calculation for row ${index} (${file.name}):`, {
+  //     rowTop,
+  //     itemNameContentLeft,
+  //     itemNameContentWidth,
+  //     iconWidth,
+  //     textPadding,
+  //     rowActionsWidth,
+  //     itemNameGap,
+  //     maxAvailableSpace,
+  //     fileLength: file.name.length,
+  //     columnWidths: columnWidths.name,
+  //     showCheckboxes: props.showCheckboxes,
+  //     checkboxWidth: props.showCheckboxes ? columnWidths.checkbox : 0,
+  //     contentOffsetY: contentOffsetY.value,
+  //     ROW_HEIGHT,
+  //     headerHeight: 34,
+  //     calculatedRowTop: index * ROW_HEIGHT,
+  //     finalRowTop: rowTop,
+  //     itemNameGapCSS: "8px",
+  //     columnGapCSS: "8px",
+  //     paddingInlineCSS: "8px",
+  //     virtualScrollOffset: contentOffsetY.value,
+  //     isVirtualScrolling: contentOffsetY.value > 0,
+  //   });
+  // }
 
   return {
     position: "absolute" as const,
