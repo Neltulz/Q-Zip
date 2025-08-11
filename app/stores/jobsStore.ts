@@ -6,8 +6,8 @@
 // @preserve
 
 import { defineStore } from "pinia";
-import { ref, type Ref } from "vue";
-import { getFileDetails } from "@/utils/fileUtils";
+import { ref, type Ref, nextTick } from "vue";
+import { getFileDetails, getQuickFileDetails, calculateFolderStatistics } from "@/utils/fileUtils";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logStoreAction } from "@/utils/loggers";
 
@@ -18,6 +18,16 @@ export interface FileItem {
   type: string;
   size: number;
   parentPath: string;
+  // Optional fields for timestamps and folder statistics
+  modified?: number; // UNIX timestamp
+  created?: number; // UNIX timestamp
+  files?: number;
+  folders?: number;
+  filesTotal?: number;
+  foldersTotal?: number;
+  // Lazy loading support
+  isLazyLoaded?: boolean; // Indicates if folder stats are still being calculated
+  lazyLoadError?: string; // Error message if lazy loading failed
 }
 
 export interface CompressionSettings {
@@ -94,22 +104,49 @@ export const useJobsStore = defineStore(
       ...defaultGlobalSettings,
     });
     const selectedJobId: Ref<number | null> = ref(null);
+    const lazyLoadingUpdateTrigger: Ref<number> = ref(0);
 
     // Actions
     function initialize(): void {
       if (jobs.value.length === 0) {
-        const newJobId = addJob();
-        selectJob(newJobId);
-        if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Initialized with first job and selected it.`);
+        addJob();
+        selectJob(jobs.value[0]?.id ?? null);
+      }
+      
+      // Restore lazy loading state for folders that need statistics calculated
+      restoreLazyLoadingState();
+    }
+
+    /**
+     * Restores lazy loading state for folders that were persisted but still need
+     * their statistics calculated. This ensures folder information is restored
+     * at program startup.
+     */
+    function restoreLazyLoadingState(): void {
+      let totalFoldersToRestore = 0;
+      
+      for (const job of jobs.value) {
+        const foldersToRestore = job.files.filter(file => 
+          file.type === "Folder" && 
+          (file.isLazyLoaded || (!file.files && !file.folders && !file.filesTotal && !file.foldersTotal))
+        );
+        
+        if (foldersToRestore.length > 0) {
+          totalFoldersToRestore += foldersToRestore.length;
+          
+          // Mark folders as needing lazy loading
+          for (const folder of foldersToRestore) {
+            folder.isLazyLoaded = true;
+            folder.lazyLoadError = undefined;
+          }
+          
+          // Start background calculation for this job's folders
+          calculateFolderStatisticsInBackground(job.id, foldersToRestore);
         }
-      } else if (!selectedJobId.value || !jobs.value.some(j => j.id === selectedJobId.value)) {
-        if (jobs.value[0]) {
-          selectJob(jobs.value[0].id);
-        }
-         if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Selected job was invalid. Defaulting to first job.`);
-        }
+      }
+      
+      if (totalFoldersToRestore > 0) {
+        logStoreAction("jobsStore", `🔄 Restoring lazy loading state for ${totalFoldersToRestore} folders across ${jobs.value.length} jobs`);
       }
     }
 
@@ -159,6 +196,137 @@ export const useJobsStore = defineStore(
       }
 
       return validFilesToAdd.length;
+    }
+
+    /**
+     * Quickly adds files to a job using lazy loading for folder statistics.
+     * This function adds files immediately and calculates folder stats in the background.
+     * @param jobId The ID of the job to add files to.
+     * @param paths Array of file paths to add.
+     * @returns An object containing the number of files successfully added and any errors.
+     */
+    async function addFilesToJobLazy(jobId: number, paths: string[]): Promise<{
+      addedCount: number;
+      failedPaths: string[];
+      errors: Record<string, string>;
+    }> {
+      const job = jobs.value.find((j) => j.id === jobId);
+      if (!job) return { addedCount: 0, failedPaths: paths, errors: {} };
+
+      const startTime = performance.now();
+      logStoreAction("jobsStore", `Starting to process ${paths.length} files for job ${jobId} with lazy loading...`);
+
+      const existingFilePaths = new Set(job.files.map((file) => file.path));
+      const newPaths = paths.filter(path => !existingFilePaths.has(path));
+
+      if (newPaths.length === 0) {
+        logStoreAction("jobsStore", "No new files to add, all paths already exist in the job.");
+        return { addedCount: 0, failedPaths: [], errors: {} };
+      }
+
+      // Use quick file details for immediate addition
+      const fileDetailPromises = newPaths.map(async (path) => {
+        try {
+          return await getQuickFileDetails(path);
+        } catch (error) {
+          return null;
+        }
+      });
+      
+      const fileDetailsResults = await Promise.all(fileDetailPromises);
+
+      const validFilesToAdd = fileDetailsResults.filter((details): details is FileItem => details !== null);
+      const failedPaths: string[] = [];
+      const errors: Record<string, string> = {};
+
+      // Track which paths failed
+      fileDetailsResults.forEach((result, index) => {
+        if (result === null) {
+          const path = newPaths[index];
+          if (path) {
+            failedPaths.push(path);
+            errors[path] = "Failed to read file details";
+          }
+        }
+      });
+
+      if (validFilesToAdd.length > 0) {
+        job.files.push(...validFilesToAdd);
+
+        // Start background calculation for folders that need lazy loading
+        const foldersToCalculate = validFilesToAdd.filter(file => file.isLazyLoaded);
+        if (foldersToCalculate.length > 0) {
+          calculateFolderStatisticsInBackground(jobId, foldersToCalculate);
+        }
+      }
+
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+
+      logStoreAction("jobsStore", `Added ${validFilesToAdd.length} new files to job ${jobId} with lazy loading.`);
+      if (DEBUG) {
+        console.log(`[jobsStore] Quick file processing for ${paths.length} paths took ${duration.toFixed(2)} ms.`);
+      }
+
+      return {
+        addedCount: validFilesToAdd.length,
+        failedPaths,
+        errors
+      };
+    }
+
+    /**
+ * Calculates folder statistics in the background for files marked as lazy loaded.
+ * This function updates the FileItems in place as calculations complete.
+ * @param jobId The ID of the job containing the files.
+ * @param foldersToCalculate Array of FileItems that need folder statistics calculated.
+ */
+    async function calculateFolderStatisticsInBackground(jobId: number, foldersToCalculate: FileItem[]): Promise<void> {
+      logStoreAction("jobsStore", `🚀 Starting background calculation for ${foldersToCalculate.length} folders in job ${jobId}...`);
+
+      const totalFolders = foldersToCalculate.length;
+      let completedFolders = 0;
+      let failedFolders = 0;
+
+      // Process folders individually for real-time updates
+      for (const folder of foldersToCalculate) {
+        try {
+          logStoreAction("jobsStore", `📁 Processing folder: ${folder.name} (${completedFolders + 1}/${totalFolders})`);
+
+          await calculateFolderStatistics(folder);
+          completedFolders++;
+
+          logStoreAction("jobsStore", `✅ Completed folder statistics for: ${folder.name} (${completedFolders}/${totalFolders})`);
+
+          // Force Vue to detect the changes by triggering a reactive update
+          lazyLoadingUpdateTrigger.value++;
+          
+          // Use nextTick to ensure DOM updates
+          await nextTick();
+
+          // Small delay to keep UI responsive and allow updates
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+        } catch (error) {
+          failedFolders++;
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          folder.lazyLoadError = errorMessage;
+          folder.isLazyLoaded = false;
+          
+          console.error(`[jobsStore] ❌ Error calculating statistics for ${folder.path}:`, error);
+          logStoreAction("jobsStore", `❌ Failed to calculate statistics for: ${folder.name} (${failedFolders} failed)`);
+          
+          // Still trigger reactive update even for failed calculations
+          lazyLoadingUpdateTrigger.value++;
+          await nextTick();
+        }
+      }
+
+      logStoreAction("jobsStore", `🎉 Completed background calculation for job ${jobId}. Success: ${completedFolders}, Failed: ${failedFolders}, Total: ${totalFolders}`);
+
+      // Final trigger to ensure UI updates
+      lazyLoadingUpdateTrigger.value++;
+      await nextTick();
     }
 
     function addClipboardFilesToJob(jobId: number, files: FileItem[]): void {
@@ -322,7 +490,11 @@ export const useJobsStore = defineStore(
       for (const path of paths) {
         const newJobId = addJob();
         newJobIds.push(newJobId);
-        await addFilesToJob(newJobId, [path]);
+        const result = await addFilesToJobLazy(newJobId, [path]);
+        // Note: We could add error handling here if needed, but for now just log
+        if (result.failedPaths.length > 0) {
+          console.warn(`Failed to add path ${path} to new job ${newJobId}:`, result.errors[path]);
+        }
       }
       // FIX: Use nullish coalescing operator `??` to ensure type is `number | null`.
       selectJob(newJobIds[0] ?? null);
@@ -335,9 +507,11 @@ export const useJobsStore = defineStore(
       jobs,
       globalSettings,
       selectedJobId,
+      lazyLoadingUpdateTrigger,
       initialize,
       addJob,
       addFilesToJob,
+      addFilesToJobLazy,
       addClipboardFilesToJob,
       removeJobs,
       removeAllJobs,
@@ -351,6 +525,7 @@ export const useJobsStore = defineStore(
       copyFilesToJob,
       moveJob,
       createJobsFromPaths,
+      restoreLazyLoadingState,
     };
   },
   {

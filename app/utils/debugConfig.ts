@@ -56,7 +56,7 @@ export const debugConfig: Record<string, boolean> = {
   logDragDropFailsafe: false,
 
   // Logs events related to the notification system.
-  logNotifications: false,
+  logNotifications: true,
 
   // Logs events related to loading animations.
   logLoadingEvents: false,

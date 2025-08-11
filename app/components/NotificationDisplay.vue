@@ -68,6 +68,13 @@ const props = defineProps({
   },
 });
 
+console.log(`[NotificationDisplay] Mounting with notification:`, {
+  id: props.notification.id,
+  title: props.notification.title,
+  messages: props.notification.messages,
+  type: props.notification.type
+});
+
 const uiStore = useUiStore();
 const { scrollContainer } = useScrollContainer();
 
@@ -202,33 +209,64 @@ const getIconForType = (type: NotificationType): string => {
 };
 
 const popoverMetrics = computed(() => {
-  if (!popoverRef.value || !scrollContainer.value || !props.notification.position) return null;
+  if (!popoverRef.value || !props.notification.position) {
+    console.log(`[NotificationDisplay] No position data for notification:`, props.notification.id);
+    return null;
+  }
   return {
     popoverWidth: popoverRef.value.offsetWidth,
     popoverHeight: popoverRef.value.offsetHeight,
     triggerRect: props.notification.position,
-    containerRect: scrollContainer.value.getBoundingClientRect(),
+    containerRect: { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight },
   };
 });
 
 const popoverPositionStyle = computed((): StyleValue => {
   const metrics = popoverMetrics.value;
-  if (!metrics) return { visibility: "hidden" as const };
-  const { popoverWidth, popoverHeight, triggerRect, containerRect } = metrics;
-  const triggerLeftInsideContainer = triggerRect.left - scrollLeft.value;
-  const triggerTopInsideContainer = triggerRect.top - scrollTop.value;
-  const currentTriggerLeft = containerRect.left + triggerLeftInsideContainer;
-  const currentTriggerTop = containerRect.top + triggerTopInsideContainer;
-  const idealLeft = currentTriggerLeft + triggerRect.width / 2 - popoverWidth / 2;
+  if (!metrics) {
+    // Fallback positioning for notifications without position data
+    console.log(`[NotificationDisplay] Using fallback positioning for notification:`, props.notification.id);
+    return {
+      visibility: "visible" as const,
+      position: "fixed" as const,
+      top: "20px",
+      right: "20px",
+      maxWidth: "400px",
+      zIndex: 10000,
+    };
+  }
+  
+  const { popoverWidth, popoverHeight, triggerRect } = metrics;
+  
+  // Simplified positioning logic - position above the trigger element
+  const idealLeft = triggerRect.left + (triggerRect.width / 2) - (popoverWidth / 2);
   let clampedLeft = idealLeft;
-  if (clampedLeft < containerRect.left) clampedLeft = containerRect.left;
-  if (clampedLeft + popoverWidth > containerRect.right) clampedLeft = containerRect.right - popoverWidth;
-  const finalTop = currentTriggerTop - popoverHeight - 8;
+  
+  // Ensure notification doesn't go off-screen
+  if (clampedLeft < 20) clampedLeft = 20;
+  if (clampedLeft + popoverWidth > window.innerWidth - 20) {
+    clampedLeft = window.innerWidth - popoverWidth - 20;
+  }
+  
+  const finalTop = triggerRect.top - popoverHeight - 8;
+  
+  console.log(`[NotificationDisplay] Positioning notification:`, {
+    id: props.notification.id,
+    triggerRect,
+    popoverWidth,
+    popoverHeight,
+    idealLeft,
+    clampedLeft,
+    finalTop
+  });
+  
   return {
     visibility: "visible" as const,
+    position: "fixed" as const,
     top: `${finalTop}px`,
     left: `${clampedLeft}px`,
-    maxWidth: `${containerRect.width}px`,
+    maxWidth: "400px",
+    zIndex: 10000,
   };
 });
 
@@ -238,46 +276,24 @@ const triangleTransformStyle = computed((): StyleValue => {
   if (!metrics || !style || typeof style !== "object" || !("left" in style) || typeof style.left !== "string") {
     return { left: "50%", transform: "translateX(-50%)" };
   }
+  
   const popoverLeft = parseFloat(style.left);
-  const { popoverWidth, triggerRect, containerRect } = metrics;
-  const triggerVisual = {
-    left: containerRect.left + (triggerRect.left - scrollLeft.value),
-    width: triggerRect.width,
-    borderRadius: 6,
-  };
-  const idealLeft = triggerVisual.left + triggerVisual.width / 2 - popoverWidth / 2;
-  const isClamped = Math.abs(popoverLeft - idealLeft) > 1;
-  let newTriangleLeft;
-  let skewAngle = 0;
+  const { popoverWidth, triggerRect } = metrics;
+  
+  // Simplified triangle positioning - point to the center of the trigger element
+  const triggerCenterX = triggerRect.left + (triggerRect.width / 2);
+  const triangleLeft = triggerCenterX - popoverLeft;
+  
+  // Ensure triangle stays within the popover bounds
   const triangleHalfWidth = 6;
   const popoverBorderRadius = 8;
   const minTriangleClamp = popoverBorderRadius + triangleHalfWidth;
   const maxTriangleClamp = popoverWidth - popoverBorderRadius - triangleHalfWidth;
-  if (!isClamped) {
-    const triggerCenterX = triggerVisual.left + triggerVisual.width / 2;
-    newTriangleLeft = triggerCenterX - popoverLeft;
-  } else {
-    const totalScrollableDistance = triggerVisual.width / 2 + popoverWidth / 2 - 2 * minTriangleClamp;
-    const currentScrollDistance = Math.abs(idealLeft - popoverLeft);
-    const scrollPercent = totalScrollableDistance > 0 ? Math.min(1, currentScrollDistance / totalScrollableDistance) : 0;
-    const maxSkew = 45;
-    skewAngle = scrollPercent * maxSkew;
-    if (popoverLeft > idealLeft) skewAngle = -skewAngle;
-    const startPosOnTrigger = triggerVisual.width / 2;
-    let triangleXOnTrigger;
-    if (popoverLeft > idealLeft) {
-      const endPosOnTrigger = triggerVisual.width - triggerVisual.borderRadius - triangleHalfWidth;
-      triangleXOnTrigger = startPosOnTrigger + (endPosOnTrigger - startPosOnTrigger) * scrollPercent;
-    } else {
-      const endPosOnTrigger = triggerVisual.borderRadius + triangleHalfWidth;
-      triangleXOnTrigger = startPosOnTrigger - (startPosOnTrigger - endPosOnTrigger) * scrollPercent;
-    }
-    newTriangleLeft = triggerVisual.left - popoverLeft + triangleXOnTrigger;
-  }
-  newTriangleLeft = Math.max(minTriangleClamp, Math.min(newTriangleLeft, maxTriangleClamp));
+  const clampedTriangleLeft = Math.max(minTriangleClamp, Math.min(triangleLeft, maxTriangleClamp));
+  
   return {
-    left: `${newTriangleLeft}px`,
-    transform: `translateX(-50%) skewX(${skewAngle}deg)`,
+    left: `${clampedTriangleLeft}px`,
+    transform: "translateX(-50%)",
   };
 });
 
@@ -288,7 +304,6 @@ watch(
       !metrics ||
       typeof metrics !== "object" ||
       !("triggerRect" in metrics) ||
-      !("containerRect" in metrics) ||
       !style ||
       typeof style !== "object" ||
       !("left" in style) ||
@@ -301,16 +316,15 @@ watch(
       isClipped.value = false;
       return;
     }
+    
     const popoverLeft = parseFloat(style.left);
-    const triggerVisual = {
-      left: metrics.containerRect.left + (metrics.triggerRect.left - scrollLeft.value),
-      width: metrics.triggerRect.width,
-      borderRadius: 6,
-    };
-    const triangleAbsoluteX = popoverLeft + parseFloat(triangleStyle.left);
-    const triggerSafeZoneLeft = triggerVisual.left + triggerVisual.borderRadius;
-    const triggerSafeZoneRight = triggerVisual.left + triggerVisual.width - triggerVisual.borderRadius;
-    isClipped.value = triangleAbsoluteX < triggerSafeZoneLeft || triangleAbsoluteX > triggerSafeZoneRight;
+    const triangleLeft = parseFloat(triangleStyle.left);
+    const triangleAbsoluteX = popoverLeft + triangleLeft;
+    const triggerCenterX = metrics.triggerRect.left + (metrics.triggerRect.width / 2);
+    
+    // Check if triangle is pointing to the trigger element
+    const triangleOffset = Math.abs(triangleAbsoluteX - triggerCenterX);
+    isClipped.value = triangleOffset > 20; // Allow some tolerance
   },
   { deep: true, flush: "post" }
 );
@@ -398,12 +412,15 @@ const handlePopoverMouseLeave = () => {
 };
 
 onMounted(() => {
+  console.log(`[NotificationDisplay] Component mounted for notification:`, props.notification.id);
+  
   if (scrollContainer.value) {
     scrollLeft.value = scrollContainer.value.scrollLeft;
     scrollTop.value = scrollContainer.value.scrollTop;
     scrollContainer.value.addEventListener("scroll", handleScroll, { passive: true });
   }
   nextTick(() => {
+    console.log(`[NotificationDisplay] Setting notification visible:`, props.notification.id);
     isVisible.value = true;
     startTimeout();
   });

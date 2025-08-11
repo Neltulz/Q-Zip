@@ -383,53 +383,129 @@ const extraOptionsTarget = computed(() => {
 watch(
   () => uiStore.notifications,
   (notifications: Notification[], oldNotifications: Notification[]) => {
+    // Restore job-specific notification handling
     const newNotifications = notifications.filter(
       (n: Notification) => !oldNotifications.some((on: Notification) => on.id === n.id)
     );
 
-    newNotifications.forEach((notification: Notification) => {
-      if (notification.targetId) {
-        jobNotificationStates.value.set(notification.targetId, notification.glowType);
-        setTimeout(() => {
-          jobNotificationStates.value.delete(notification.targetId);
-        }, notification.duration);
+    // Process new notifications for job-specific positioning
+    for (const notification of newNotifications) {
+      if (notification.position) {
+        // This notification has position data, so it should be positioned relative to a job
+        console.log(`[JobSelectorArea] Processing notification with position:`, notification.id);
+        
+        // Find the job element that this notification should be positioned relative to
+        const jobElement = findJobElementForNotification(notification);
+        if (jobElement) {
+          // Update the notification position to be relative to the job element
+          const jobRect = jobElement.getBoundingClientRect();
+          const updatedPosition = {
+            top: jobRect.top - 10, // Position above the job
+            left: jobRect.left + (jobRect.width / 2) - 200, // Center horizontally with offset
+            width: jobRect.width
+          };
+          
+          // Update the notification position in the store
+          const notificationIndex = uiStore.notifications.findIndex(n => n.id === notification.id);
+          if (notificationIndex !== -1) {
+            uiStore.notifications[notificationIndex].position = updatedPosition;
+            console.log(`[JobSelectorArea] Updated notification position for job:`, updatedPosition);
+          }
+        }
       }
-    });
+    }
+
+    // Update job notification states for highlighting
+    updateJobNotificationStates(notifications);
   },
   { deep: true }
 );
+
+// Helper function to find the job element for a notification
+const findJobElementForNotification = (notification: Notification): HTMLElement | null => {
+  // Check if notification has job-specific details
+  const jobId = getJobIdFromNotification(notification);
+  console.log(`[JobSelectorArea] Finding job element for notification ${notification.id}, jobId:`, jobId);
+  
+  if (jobId !== null) {
+    const jobButton = jobButtonRefs.value.get(jobId);
+    console.log(`[JobSelectorArea] Job button ref for job ${jobId}:`, jobButton);
+    
+    if (jobButton) {
+      const jobElement = getJobButtonElement(jobButton);
+      console.log(`[JobSelectorArea] Job element for job ${jobId}:`, jobElement);
+      return jobElement;
+    }
+  }
+  return null;
+};
+
+// Helper function to extract job ID from notification
+const getJobIdFromNotification = (notification: Notification): number | null => {
+  // Check messages for job-specific details
+  for (const message of notification.messages) {
+    if (message.details) {
+      if (message.details.destinationJobId) {
+        console.log(`[JobSelectorArea] Found destinationJobId in notification:`, message.details.destinationJobId);
+        return message.details.destinationJobId;
+      }
+      if (message.details.sourceJobId) {
+        console.log(`[JobSelectorArea] Found sourceJobId in notification:`, message.details.sourceJobId);
+        return message.details.sourceJobId;
+      }
+    }
+  }
+  console.log(`[JobSelectorArea] No job ID found in notification:`, notification.id);
+  return null;
+};
+
+// Helper function to update job notification states
+const updateJobNotificationStates = (notifications: Notification[]) => {
+  jobNotificationStates.value.clear();
+  
+  for (const notification of notifications) {
+    const jobId = getJobIdFromNotification(notification);
+    if (jobId !== null) {
+      // Determine notification type for highlighting
+      const hasErrors = notification.messages.some(msg => msg.type === 'error');
+      const hasWarnings = notification.messages.some(msg => msg.type === 'warning');
+      const hasSuccess = notification.messages.some(msg => msg.type === 'success');
+      
+      let notificationType: NotificationType = 'info';
+      if (hasErrors) notificationType = 'error';
+      else if (hasWarnings) notificationType = 'warning';
+      else if (hasSuccess) notificationType = 'success';
+      
+      jobNotificationStates.value.set(jobId, notificationType);
+      console.log(`[JobSelectorArea] Set notification state for job ${jobId}:`, notificationType);
+    }
+  }
+};
 
 watch(
   () => uiStore.pendingNotification,
   (notification: any) => {
     if (notification) {
-      const { targetId } = notification;
-      nextTick(() => {
-        const buttonRef = jobButtonRefs.value.get(targetId);
-        const buttonEl = buttonRef?.buttonRef;
-        if (buttonEl) {
-          buttonEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-
-          const visualStyleEl = buttonEl.querySelector(".visual-style");
-          const rect = visualStyleEl?.getBoundingClientRect();
-          const scrollEl = scrollComponentRef.value?.osInstance()?.elements().viewport;
-
-          if (rect && scrollEl) {
-            const scrollContainerRect = scrollEl.getBoundingClientRect();
-            const position = {
-              top: rect.top - scrollContainerRect.top + scrollEl.scrollTop,
-              left: rect.left - scrollContainerRect.left + scrollEl.scrollLeft,
-              width: rect.width,
+      // Add job-specific positioning if possible
+      const jobId = getJobIdFromNotification(notification);
+      if (jobId !== null) {
+        const jobButton = jobButtonRefs.value.get(jobId);
+        if (jobButton) {
+          const jobElement = getJobButtonElement(jobButton);
+          if (jobElement) {
+            const jobRect = jobElement.getBoundingClientRect();
+            notification.position = {
+              top: jobRect.top - 10,
+              left: jobRect.left + (jobRect.width / 2) - 200,
+              width: jobRect.width
             };
-            uiStore.addNotification({ ...notification, position });
-          } else {
-            uiStore.addNotification(notification);
+            console.log(`[JobSelectorArea] Added job-specific position to pending notification:`, notification.position);
           }
-        } else {
-          uiStore.addNotification(notification);
         }
-        uiStore.clearPendingNotification();
-      });
+      }
+      
+      uiStore.addNotification(notification);
+      uiStore.clearPendingNotification();
     }
   },
   { deep: true }

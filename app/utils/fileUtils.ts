@@ -71,6 +71,104 @@ async function getDirectoryContents(path: string): Promise<{
 }
 
 /**
+ * Quick file details function that doesn't calculate folder statistics.
+ * This is used for fast file addition, with folder stats calculated later.
+ * @param path The full path to the file or directory.
+ * @returns A FileItem object with basic details, or null if an error occurs.
+ */
+export async function getQuickFileDetails(path: string): Promise<FileItem | null> {
+  try {
+    const metadata = await stat(path);
+    const name = await basename(path);
+    const parentPath = await dirname(path);
+
+    // Base details common to both files and folders.
+    const baseFileItem = {
+      path,
+      name,
+      parentPath,
+      modified: metadata.mtime?.getTime(),
+      created: metadata.birthtime?.getTime(),
+    };
+
+    if (metadata.isDirectory) {
+      // For directories, return basic info without calculating recursive stats
+      return {
+        ...baseFileItem,
+        type: "Folder",
+        size: 0, // Will be calculated later
+        files: undefined,
+        folders: undefined,
+        filesTotal: undefined,
+        foldersTotal: undefined,
+        isLazyLoaded: true, // Mark as needing lazy loading
+      };
+    } else {
+      // For files, return complete details immediately
+      return {
+        ...baseFileItem,
+        type: path.split(".").pop() || "",
+        size: metadata.size,
+      };
+    }
+  } catch (error) {
+    console.error(`[fileUtils] Error getting quick details for ${path}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Calculates folder statistics for a FileItem that was added with lazy loading.
+ * This function updates the FileItem in place with the calculated statistics.
+ * @param fileItem The FileItem to update with folder statistics.
+ * @returns The updated FileItem with calculated statistics.
+ */
+export async function calculateFolderStatistics(fileItem: FileItem): Promise<FileItem> {
+  if (fileItem.type !== "Folder" || !fileItem.isLazyLoaded) {
+    return fileItem;
+  }
+
+  try {
+    console.log(`[fileUtils] 🔍 Starting calculation for folder: ${fileItem.name}`);
+    const startTime = performance.now();
+
+    const contents = await getDirectoryContents(fileItem.path);
+
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+
+    console.log(`[fileUtils] 📊 Calculated statistics for ${fileItem.name}:`, {
+      files: contents.files,
+      folders: contents.folders,
+      filesTotal: contents.filesTotal,
+      foldersTotal: contents.foldersTotal,
+      size: contents.totalSize,
+      duration: `${duration.toFixed(2)}ms`
+    });
+
+    // Update the file item with calculated statistics
+    // Use reactive assignment to ensure Vue detects the changes
+    fileItem.size = contents.totalSize;
+    fileItem.files = contents.files;
+    fileItem.folders = contents.folders;
+    fileItem.filesTotal = contents.filesTotal;
+    fileItem.foldersTotal = contents.foldersTotal;
+    fileItem.isLazyLoaded = false; // Mark as fully loaded
+    fileItem.lazyLoadError = undefined; // Clear any previous errors
+
+    return fileItem;
+  } catch (error) {
+    console.error(`[fileUtils] ❌ Error calculating folder statistics for ${fileItem.path}:`, error);
+
+    // Mark as failed but keep the item in the list
+    fileItem.isLazyLoaded = false;
+    fileItem.lazyLoadError = error instanceof Error ? error.message : "Unknown error";
+
+    return fileItem;
+  }
+}
+
+/**
  * Retrieves detailed information for a given file or directory path.
  * For directories, it recursively calculates the total size and content count.
  * @param path The full path to the file or directory.

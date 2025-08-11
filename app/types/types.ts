@@ -12,6 +12,9 @@ export interface FileItem {
   folders?: number;
   filesTotal?: number;
   foldersTotal?: number;
+  // Lazy loading support
+  isLazyLoaded?: boolean; // Indicates if folder stats are still being calculated
+  lazyLoadError?: string; // Error message if lazy loading failed
 }
 
 export interface DropZoneExposed {
