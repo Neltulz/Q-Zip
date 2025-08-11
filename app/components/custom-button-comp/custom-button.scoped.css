@@ -437,9 +437,12 @@
 
 /* CSS-only flash for click/keyboard activation (no JS required) */
 /* Trigger a short pulse when the button is activated via mouse or keyboard. */
-.custom-button:active > .visual-style::after {
-  opacity: 1;
-  animation: flash-pulse 260ms ease-out;
+/* Removed :active rule - now using JavaScript-controlled flash */
+
+/* New flash effect controlled by JavaScript */
+.custom-button > .visual-style::after {
+  opacity: var(--flash-active, 0);
+  transition: opacity 100ms ease-out;
 }
 
 @keyframes flash-pulse {

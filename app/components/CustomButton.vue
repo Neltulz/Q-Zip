@@ -17,9 +17,13 @@
     :data-btn-theme="props.btnTheme"
     :data-justify="props.justify"
     :data-name="props.dataName"
+    :style="buttonStyle"
     v-bind="otherAttrs"
     data-component-name="CustomButton"
     @contextmenu.prevent
+    @mousedown="handleMouseDown"
+    @mouseup="handleMouseUp"
+    @mouseleave="handleMouseLeave"
   >
     <div ref="visualStyleRef" class="visual-style" />
     <div v-if="props.firstIconName" class="icon-placeholder first-icon" :style="firstIconPlaceholderStyle">
@@ -47,6 +51,7 @@ import { DEBUG, debugConfig } from "@/utils/debugConfig";
 const attrs = useAttrs();
 const buttonRef = ref<HTMLElement | null>(null);
 const visualStyleRef = ref<HTMLElement | null>(null); // Ref for the visual style div
+const isPressed = ref(false); // Track if button is being pressed
 
 const props = withDefaults(
   defineProps<{
@@ -71,6 +76,24 @@ const props = withDefaults(
     shortcutText: "",
   }
 );
+
+// Mouse event handlers for flash control
+const handleMouseDown = () => {
+  isPressed.value = true;
+};
+
+const handleMouseUp = () => {
+  isPressed.value = false;
+};
+
+const handleMouseLeave = () => {
+  isPressed.value = false;
+};
+
+// Computed style to control flash state
+const buttonStyle = computed(() => ({
+  '--flash-active': isPressed.value ? '1' : '0'
+}));
 
 const firstIconPlaceholderStyle = computed(() => {
   const size = props.firstIconSize ?? 20;
