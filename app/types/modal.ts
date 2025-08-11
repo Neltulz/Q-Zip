@@ -36,6 +36,7 @@ export interface ModalOptions {
   readonly description?: string | readonly string[];
   readonly buttons?: readonly ModalButton[];
   readonly footerJustifyContent?: string;
+  readonly closeOnClickOutside?: boolean;
 }
 
 export interface ActiveModal {

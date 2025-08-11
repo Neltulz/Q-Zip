@@ -42,6 +42,8 @@
         class="info-tooltip"
         :class="{ interactive: interactive, 'simple-tooltip': !!parsedContent, 'is-visible': visible || debugForceVisible }"
         :style="floatingStyles"
+        @mouseenter="(event) => emit('mouseenter', event)"
+        @mouseleave="(event) => emit('mouseleave', event)"
       >
         <div class="tooltip-content">
           <!-- Display simple text content -->
@@ -83,6 +85,7 @@ import { ref, computed, toRef, watch, type PropType } from "vue";
 import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
+import { logUI, logRendering } from "@/utils/loggers";
 
 // Allow a simple text property for more generic tooltips
 type TooltipContent = NotificationMessageDetails | { text: string };
@@ -121,7 +124,17 @@ const props = defineProps({
     type: String as PropType<"top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end">,
     default: "top",
   },
+  fallbackPlacements: {
+    type: Array as PropType<("top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end")[]>,
+    default: () => [],
+  },
 });
+
+// Define emits for mouse events
+const emit = defineEmits<{
+  mouseenter: [event: MouseEvent];
+  mouseleave: [event: MouseEvent];
+}>();
 
 const floatingRef = ref<HTMLElement | null>(null);
 const arrowRef = ref(null);
@@ -169,18 +182,23 @@ const resolvedTarget = computed(() => {
 watch(
   () => props.visible,
   (v) => {
+    logUI("InfoTooltip", "Visibility changed", { visible: v, interactive: props.interactive });
+    
     if (v) {
       try {
         const el = resolvedTarget.value as Element | null;
         if (el) {
-          // eslint-disable-next-line no-console
-          console.debug("InfoTooltip: resolved target element:", el, el.getBoundingClientRect());
+          logUI("InfoTooltip", "Resolved target element", { 
+            element: el, 
+            rect: el.getBoundingClientRect(),
+            placement: props.placement,
+            fallbackPlacements: props.fallbackPlacements
+          });
         } else {
-          // eslint-disable-next-line no-console
-          console.debug("InfoTooltip: no resolved target");
+          logUI("InfoTooltip", "No resolved target");
         }
       } catch (e) {
-        // ignore
+        logUI("InfoTooltip", "Error resolving target", { error: e });
       }
     }
   }
@@ -198,32 +216,41 @@ const { floatingStyles, middlewareData, placement } = useFloating(resolvedTarget
     // Slightly smaller offset so tooltip sits closer to the visual surface
     offset(8),
     flip({
-      fallbackPlacements: (props.allowFlipToTop
-        ? [
-            "bottom-start",
-            "bottom-end",
-            "right-start",
-            "right-end",
-            "left-start",
-            "left-end",
-            "top-start",
-            "top-end",
-          ]
-        : [
-            "bottom-start",
-            "bottom-end",
-            "right-start",
-            "right-end",
-            "left-start",
-            "left-end",
-          ]),
+      fallbackPlacements: props.fallbackPlacements.length > 0 
+        ? props.fallbackPlacements
+        : (props.allowFlipToTop
+          ? [
+              "bottom-start",
+              "bottom-end",
+              "right-start",
+              "right-end",
+              "left-start",
+              "left-end",
+              "top-start",
+              "top-end",
+            ]
+          : [
+              "bottom-start",
+              "bottom-end",
+              "right-start",
+              "right-end",
+              "left-start",
+              "left-end",
+            ]),
     }),
     shift({ padding: 8 }),
-    arrow({ element: arrowRef, padding: 4 }),
+    arrow({ 
+      element: arrowRef, 
+      padding: 8, // Increased padding for better alignment
+    }),
   ],
 });
 
-const side = computed(() => placement.value.split("-")[0]);
+const side = computed(() => {
+  const currentSide = placement.value.split("-")[0];
+  logRendering("InfoTooltip", "Side computed", { side: currentSide, placement: placement.value });
+  return currentSide;
+});
 
 const parsedContent = computed(() => {
   if ("text" in props.content) {
@@ -240,6 +267,14 @@ const parsedContent = computed(() => {
 
 const arrowStyle = computed(() => {
   const { x, y } = middlewareData.value.arrow || {};
+  const currentSide = side.value;
+  
+  logRendering("InfoTooltip", "Arrow style computed", { 
+    side: currentSide, 
+    arrowX: x, 
+    arrowY: y,
+    placement: placement.value 
+  });
 
   const logicalSideMap = {
     top: "inset-block-end",
@@ -248,32 +283,79 @@ const arrowStyle = computed(() => {
     left: "inset-inline-end",
   };
 
-  const staticSide = logicalSideMap[side.value as keyof typeof logicalSideMap];
+  const staticSide = logicalSideMap[currentSide as keyof typeof logicalSideMap];
 
-  if (!staticSide) return {};
+  if (!staticSide) {
+    logUI("InfoTooltip", "No static side found", { side: currentSide });
+    return {};
+  }
 
-  // Measure arrow element height when available so we can offset it precisely
-  // to sit flush with the tooltip body. Fall back to 9px if measurement not ready.
-  const measuredHeight = (() => {
+  // Measure arrow element dimensions when available for precise positioning
+  const arrowDimensions = (() => {
     try {
       const el = arrowRef.value as HTMLElement | null;
       if (el) {
-        const h = el.getBoundingClientRect().height;
-        if (h && !Number.isNaN(h)) return h;
+        const rect = el.getBoundingClientRect();
+        return {
+          width: rect.width || 16,
+          height: rect.height || 9,
+        };
       }
     } catch (e) {
       /* ignore */
     }
-    return 9;
+    return { width: 16, height: 9 };
   })();
 
-  const offsetValue = `-${Math.round(measuredHeight)}px`;
+  // Calculate offset to position arrow flush with tooltip edge
+  const offsetValue = `-${Math.round(arrowDimensions.height)}px`;
 
-  return {
-    insetInlineStart: x != null ? `${x}px` : "",
-    insetBlockStart: y != null ? `${y}px` : "",
+  // Apply additional centering adjustments for better alignment
+  let adjustedX = x;
+  let adjustedY = y;
+
+  // For right-side placement, ensure arrow is vertically centered
+  if (currentSide === 'right' && y !== undefined) {
+    // Center the arrow vertically on the target
+    adjustedY = y;
+  }
+
+  // For bottom placement, ensure arrow is horizontally centered  
+  if (currentSide === 'bottom' && x !== undefined) {
+    // Center the arrow horizontally on the target
+    adjustedX = x;
+  }
+
+  // Account for tooltip border radius and padding in arrow positioning
+  const tooltipBorderRadius = 8; // Should match CSS border-radius
+  const tooltipPadding = 10; // Should match CSS padding-inline
+  
+  // Adjust arrow position to account for border radius
+  if (currentSide === 'right' && adjustedX !== undefined) {
+    // For right placement, ensure arrow doesn't get too close to the edge
+    adjustedX = Math.max(tooltipPadding, adjustedX);
+  }
+  
+  if (currentSide === 'bottom' && adjustedY !== undefined) {
+    // For bottom placement, ensure arrow doesn't get too close to the edge
+    adjustedY = Math.max(tooltipPadding, adjustedY);
+  }
+
+  const style = {
+    insetInlineStart: adjustedX != null ? `${adjustedX}px` : "",
+    insetBlockStart: adjustedY != null ? `${adjustedY}px` : "",
     [staticSide]: offsetValue,
   };
+  
+  logRendering("InfoTooltip", "Arrow style result", { 
+    style, 
+    arrowDimensions,
+    originalX: x,
+    originalY: y,
+    adjustedX,
+    adjustedY
+  });
+  return style;
 });
 
 const getFileName = (path: string) => {
@@ -290,6 +372,8 @@ const getFileName = (path: string) => {
   transition-property: opacity;
   transition-duration: 240ms;
   transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  /* Base state is non-interactive */
+  pointer-events: none;
 }
 .info-tooltip.is-visible {
   opacity: 1;
@@ -329,21 +413,27 @@ const getFileName = (path: string) => {
     position: absolute;
     inline-size: 16px;
     block-size: 9px;
+    /* Ensure arrow is properly centered and positioned */
+    transform-origin: center;
+    /* Prevent any layout shifts */
+    pointer-events: none;
 
     path {
       fill: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
       stroke: var(--brdr-clr-liter);
       stroke-width: 1px;
+      /* Ensure the path is centered within the SVG */
+      vector-effect: non-scaling-stroke;
     }
 
     &[data-side="bottom"] {
       transform: rotate(180deg);
     }
     &[data-side="left"] {
-      transform: rotate(90deg);
+      transform: rotate(-90deg);
     }
     &[data-side="right"] {
-      transform: rotate(-90deg);
+      transform: rotate(90deg);
     }
   }
 
@@ -411,8 +501,8 @@ const getFileName = (path: string) => {
   }
 }
 
-/* When interactive=true, allow pointer events on the tooltip */
-.info-tooltip.interactive {
+/* Only when it's visible AND interactive should it get pointer events */
+.info-tooltip.is-visible.interactive {
   pointer-events: auto;
 }
 

@@ -18,7 +18,7 @@
 // Master switch to enable or disable all debugging logs. Use `setAllLoggingEnabled` to toggle at runtime.
 // Master switch to enable or disable all debugging logs. Default OFF for
 // production-like runs; enable explicitly during development or testing.
-export let DEBUG: boolean = false;
+export let DEBUG: boolean = true;
 
 // Individual flags for controlling specific types of logs.
 export const debugConfig: Record<string, boolean> = {
@@ -56,13 +56,13 @@ export const debugConfig: Record<string, boolean> = {
   logDragDropFailsafe: false,
 
   // Logs events related to the notification system.
-  logNotifications: false,
+  logNotifications: true,
 
   // Logs events related to loading animations.
   logLoadingEvents: false,
 
   // Logs events related to the Vue rendering lifecycle.
-  logRenderingEvents: false,
+  logRenderingEvents: true,
 
   // Logs events related to UI interactivity and responsiveness.
   logUIInteractivity: true,

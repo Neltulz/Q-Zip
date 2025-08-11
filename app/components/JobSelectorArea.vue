@@ -591,8 +591,9 @@ const removeJob = (jobId: number): void => {
       { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
     ],
     footerJustifyContent: "center",
+    closeOnClickOutside: true,
   };
-  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, {}, (action) => {
+  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { showProcessColumn: false }, (action) => {
     if (action === "proceed") {
       jobsStore.removeJobs([jobId], jobsStore.selectedJobId);
     }
@@ -609,8 +610,9 @@ const confirmRemoveAllJobs = (): void => {
       { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
     ],
     footerJustifyContent: "center",
+    closeOnClickOutside: true,
   };
-  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, {}, (action) => {
+  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { showProcessColumn: false }, (action) => {
     if (action === "proceed") {
       jobsStore.removeAllJobs();
     }

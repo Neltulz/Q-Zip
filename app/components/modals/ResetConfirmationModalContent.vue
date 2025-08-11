@@ -8,7 +8,7 @@
     <p v-else-if="props.description" v-html="props.description"></p>
 
     <div v-if="hasFileLists" class="file-table-container">
-      <div class="column process-column">
+      <div v-if="props.showProcessColumn" class="column process-column">
         <h3>To Be Processed ({{ props.itemsToProcess.length }})</h3>
         <FileTable
           v-if="props.itemsToProcess.length > 0"
@@ -124,6 +124,10 @@ const props = defineProps({
     type: String as PropType<'move' | 'copy'>,
     default: 'move',
   },
+  showProcessColumn: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const emit = defineEmits<{
@@ -135,7 +139,10 @@ const conflictResolution = ref<'skip' | 'replace'>(props.operation === 'move' ? 
 
 // Computed properties
 const showSkipColumn = computed(() => (props.itemsToSkip?.length ?? 0) > 0);
-const hasFileLists = computed(() => true); // Always show if we have any data
+const hasFileLists = computed(() => {
+  // Show file lists if we have items to process and showProcessColumn is true, or if we have items to skip
+  return (props.showProcessColumn && (props.itemsToProcess?.length ?? 0) > 0) || (props.itemsToSkip?.length ?? 0) > 0;
+});
 
 const conflictResolutionOption = computed(() => {
   return conflictResolution.value === 'skip' ? 'Skip' : 'Replace';

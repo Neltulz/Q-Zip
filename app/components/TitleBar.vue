@@ -505,6 +505,7 @@ const handleButtonTestClick = (): void => {
       },
     ],
     footerJustifyContent: "center",
+    closeOnClickOutside: true,
   };
   modalsStore.openModal("DebugButtonTestModalContent", modalOptions);
   dropdownManager.closeAllDropdowns("Clicked 'Button Test'");
@@ -565,6 +566,7 @@ const showResetConfirmation = (resetName: string, action: () => void | Promise<v
       },
     ],
     footerJustifyContent: "center",
+    closeOnClickOutside: true,
   };
 
   const props = { description };
@@ -612,6 +614,7 @@ const handleResetAll = (): void => {
       },
     ],
     footerJustifyContent: "center",
+    closeOnClickOutside: true,
   };
 
   const props = { description };

@@ -7,8 +7,8 @@
     :class="[{ 'is-visible': isVisible && !notification.isRemoving, 'is-clipped': isClipped }]"
     :style="popoverPositionStyle"
     data-component-name="NotificationDisplay"
-    @mouseenter="pauseTimeout"
-    @mouseleave="resumeTimeout"
+    @mouseenter="handlePopoverMouseEnter"
+    @mouseleave="handlePopoverMouseLeave"
   >
     <div class="popover__indicator-container">
       <div ref="indicatorRef" class="popover__indicator"></div>
@@ -33,7 +33,7 @@
           class="info-icon"
           size="16"
           @mouseenter="handleIconMouseEnter(msg.details, $event)"
-          @mouseleave="scheduleTooltipHide"
+          @mouseleave="handleIconMouseLeave"
         />
       </div>
     </div>
@@ -41,12 +41,14 @@
     <div class="popover__triangle" :style="triangleTransformStyle"></div>
 
     <InfoTooltip
-      v-if="tooltip.content"
-      :visible="tooltip.visible"
-      :content="tooltip.content"
-      :target-rect="tooltip.targetRect"
-      @mouseenter="cancelTooltipHide"
-      @mouseleave="scheduleTooltipHide"
+      :visible="tooltip.visible && !!tooltip.content"
+      :content="tooltip.content || { text: '' }"
+      :target="tooltip.targetElement"
+      :interactive="true"
+      placement="right"
+      :fallback-placements="['right-start', 'right-end', 'bottom-start', 'bottom-end']"
+      @mouseenter="handleTooltipMouseEnter"
+      @mouseleave="handleTooltipMouseLeave"
     />
   </div>
 </template>
@@ -57,6 +59,7 @@ import { useUiStore, type Notification, type NotificationType, type Notification
 import { useScrollContainer } from "@/composables/useScrollContainer";
 import CustomButton from "./CustomButton.vue";
 import InfoTooltip from "./InfoTooltip.vue";
+import { logUI, logNotification } from "@/utils/loggers";
 
 const props = defineProps({
   notification: {
@@ -77,44 +80,110 @@ const scrollTop = ref(0);
 let isUpdateThrottled = false;
 let remainingScaleX = 1;
 let hideTooltipTimeout: number | null = null;
-// --- FIX START: Removed unused variable ---
-// let isHoveringTooltip = false; // This variable was unused.
-// --- FIX END ---
 
 const tooltip = reactive<{
   visible: boolean;
   content: NotificationMessageDetails | null;
-  targetRect: DOMRect | null;
+  targetElement: HTMLElement | null;
 }>({
   visible: false,
   content: null,
-  targetRect: null,
+  targetElement: null,
 });
+
+// Track hover state for both notification and tooltip
+const isHovering = reactive({
+  notification: false,
+  tooltip: false,
+});
+
+// Computed to check if user is hovering over either element
+const isUserHovering = computed(() => isHovering.notification || isHovering.tooltip);
 
 // --- FEAT: Improved tooltip hover logic ---
 const handleIconMouseEnter = (details: NotificationMessageDetails, event: MouseEvent) => {
-  if (hideTooltipTimeout) clearTimeout(hideTooltipTimeout);
+  logUI("NotificationDisplay", "Icon mouse enter", { details, target: event.target });
+  
+  if (hideTooltipTimeout) {
+    logUI("NotificationDisplay", "Clearing existing hide timeout");
+    clearTimeout(hideTooltipTimeout);
+  }
+  
   pauseTimeout(); // Pause main notification timer
-  tooltip.content = details;
-  tooltip.targetRect = (event.target as HTMLElement).getBoundingClientRect();
+  logUI("NotificationDisplay", "Paused notification timeout");
+
+  // Only update content and target if they've changed to avoid re-renders
+  if (tooltip.content !== details) {
+    logUI("NotificationDisplay", "Updating tooltip content", { oldContent: tooltip.content, newContent: details });
+    tooltip.content = details;
+  }
+  if (tooltip.targetElement !== event.target) {
+    logUI("NotificationDisplay", "Updating tooltip target", { oldTarget: tooltip.targetElement, newTarget: event.target });
+    tooltip.targetElement = event.target as HTMLElement;
+  }
+
   tooltip.visible = true;
+  logUI("NotificationDisplay", "Tooltip made visible", { visible: tooltip.visible, content: tooltip.content });
+};
+
+const handleIconMouseLeave = () => {
+  logUI("NotificationDisplay", "Icon mouse leave - scheduling tooltip hide");
+  // Give user time to move from icon to tooltip
+  scheduleTooltipHide();
 };
 
 const scheduleTooltipHide = () => {
-  if (hideTooltipTimeout) clearTimeout(hideTooltipTimeout);
+  logUI("NotificationDisplay", "Scheduling tooltip hide", { currentTimeout: hideTooltipTimeout });
+  
+  if (hideTooltipTimeout) {
+    logUI("NotificationDisplay", "Clearing existing hide timeout");
+    clearTimeout(hideTooltipTimeout);
+  }
+  
   hideTooltipTimeout = window.setTimeout(() => {
+    logUI("NotificationDisplay", "Hide timeout fired - hiding tooltip");
     tooltip.visible = false;
-    resumeTimeout(); // Resume main notification timer only when tooltip is confirmed to hide
-  }, 200);
+    
+    // Only resume timeout if user is not hovering over either element
+    if (!isUserHovering.value) {
+      logUI("NotificationDisplay", "Tooltip hidden, user not hovering - resuming notification timeout");
+      resumeTimeout();
+    } else {
+      logUI("NotificationDisplay", "Tooltip hidden, but user still hovering over notification - keeping timeout paused");
+    }
+  }, 300); // Increased delay to give more time to move to tooltip
+  
+  logUI("NotificationDisplay", "Hide timeout scheduled", { timeoutId: hideTooltipTimeout });
 };
 
-const cancelTooltipHide = () => {
-  if (hideTooltipTimeout) clearTimeout(hideTooltipTimeout);
-  pauseTimeout(); // Keep main notification paused
+const handleTooltipMouseEnter = () => {
+  logUI("NotificationDisplay", "Tooltip mouse enter - canceling hide timeout");
+  
+  if (hideTooltipTimeout) {
+    logUI("NotificationDisplay", "Clearing hide timeout");
+    clearTimeout(hideTooltipTimeout);
+  }
+  
+  isHovering.tooltip = true;
+  logUI("NotificationDisplay", "User entered tooltip - pausing timeout");
+  pauseTimeout(); // Ensure timeout is paused when entering tooltip
+};
+
+const handleTooltipMouseLeave = () => {
+  logUI("NotificationDisplay", "Tooltip mouse leave - scheduling hide");
+  isHovering.tooltip = false;
+  
+  // Schedule tooltip hide
+  scheduleTooltipHide();
+  
+  // Don't resume timeout here - let the hide timeout handle it
+  // This allows moving from tooltip to notification without resuming
+  logUI("NotificationDisplay", "User left tooltip - keeping timeout paused until hide");
 };
 // --- End of tooltip hover logic ---
 
 const closeNotification = () => {
+  logNotification("NotificationDisplay", "Closing notification", { id: props.notification.id });
   uiStore.removeNotification(props.notification.id);
 };
 
@@ -264,6 +333,7 @@ const startTimeout = () => {
 };
 
 const pauseTimeout = () => {
+  logUI("NotificationDisplay", "Pausing notification timeout");
   if (indicatorRef.value) {
     const computedStyle = window.getComputedStyle(indicatorRef.value);
     const matrix = new DOMMatrix(computedStyle.transform);
@@ -271,10 +341,12 @@ const pauseTimeout = () => {
     indicatorRef.value.style.transform = `scaleX(${remainingScaleX})`;
     indicatorRef.value.style.transition = "none";
     uiStore.pauseNotificationTimeout(props.notification.id);
+    logUI("NotificationDisplay", "Timeout paused", { remainingScaleX });
   }
 };
 
 const resumeTimeout = () => {
+  logUI("NotificationDisplay", "Resuming notification timeout");
   const durationInMs = props.notification.duration ?? 5000;
   if (indicatorRef.value) {
     const fullDuration = durationInMs / 1000;
@@ -282,6 +354,7 @@ const resumeTimeout = () => {
     indicatorRef.value.style.transition = `transform ${remainingDuration}s linear`;
     indicatorRef.value.style.transform = "scaleX(0)";
     uiStore.resumeNotificationTimeout(props.notification.id);
+    logUI("NotificationDisplay", "Timeout resumed", { remainingDuration });
   }
 };
 
@@ -295,6 +368,32 @@ const handleScroll = () => {
     }
     isUpdateThrottled = false;
   });
+};
+
+const handlePopoverMouseEnter = () => {
+  logUI("NotificationDisplay", "Popover mouse enter");
+  isHovering.notification = true;
+  
+  // Always pause timeout when entering notification
+  logUI("NotificationDisplay", "User entered notification - pausing timeout");
+  pauseTimeout();
+};
+
+const handlePopoverMouseLeave = () => {
+  logUI("NotificationDisplay", "Popover mouse leave", { 
+    tooltipVisible: tooltip.visible,
+    isHoveringTooltip: isHovering.tooltip 
+  });
+  
+  isHovering.notification = false;
+  
+  // Only resume timeout if user is not hovering over either element
+  if (!isUserHovering.value) {
+    logUI("NotificationDisplay", "User left both elements - resuming timeout");
+    resumeTimeout();
+  } else {
+    logUI("NotificationDisplay", "User still hovering over tooltip - keeping timeout paused");
+  }
 };
 
 onMounted(() => {
@@ -314,6 +413,13 @@ onUnmounted(() => {
     scrollContainer.value.removeEventListener("scroll", handleScroll);
   }
   if (hideTooltipTimeout) clearTimeout(hideTooltipTimeout);
+  // Clean up tooltip state
+  tooltip.visible = false;
+  tooltip.content = null;
+  tooltip.targetElement = null;
+  // Reset hover state
+  isHovering.notification = false;
+  isHovering.tooltip = false;
 });
 
 watch(scrollContainer, (newContainer, oldContainer) => {

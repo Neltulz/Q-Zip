@@ -380,6 +380,7 @@ const confirmRemoveFiles = (paths: string | string[]) => {
       { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
     ],
     footerJustifyContent: "center",
+    closeOnClickOutside: true,
   };
   modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { fileList }, (action: string) => {
     if (action === "proceed" && activeJob.value) {
@@ -430,6 +431,7 @@ const openOperationConfirmModal = (
       { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
     ],
     footerJustifyContent: "center",
+    closeOnClickOutside: true,
   };
 
   modalsStore.openModal(
