@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-// No props or logic needed - this is just a container
+// No longer need to import useTooltipContainer since we're always rendering
 </script>
 
 <style scoped>

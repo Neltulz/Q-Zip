@@ -8,6 +8,10 @@ This document covers performance optimizations for UI components that were causi
 
 1. **InfoTooltip.vue** - Floating tooltips
 2. **DropdownMenu.vue** - Context menus and dropdowns
+3. **dropdownManager.ts** - Dropdown overlay (conditional DOM mounting)
+4. **FileTable.vue** - Marquee blocker (conditional DOM mounting)
+5. **NotificationContainer.vue** - Notification container (conditional DOM mounting)
+6. **nuxt.config.ts** - Disabled Nuxt UI notification system (removes unwanted DOM elements)
 
 ## Common Problems
 
@@ -291,13 +295,126 @@ The conditional rendering approach is the optimal solution for this use case, pr
 
 ---
 
+# Additional DOM Optimizations
+
+## Problem
+
+After the initial refactoring, we identified three more elements that were always in the DOM:
+
+1. **dropdown-overlay** - Created by dropdownManager.ts, always in DOM but hidden when not needed
+2. **marquee-blocker-global** - Created by FileTable.vue, always in DOM but hidden when not needed  
+3. **NotificationContainer** - Already partially optimized with opacity, but still in DOM
+
+## Solutions
+
+### 1. Dropdown Overlay (dropdownManager.ts)
+
+**Key Changes**:
+- **Conditional DOM Mounting**: Overlay is only added to DOM when dropdowns are open
+- **Automatic Cleanup**: Removed from DOM after fade animation completes
+- **Smooth Transitions**: Maintains fade animations while being added/removed
+
+**Implementation**:
+```typescript
+// Add to DOM only when needed
+if (!document.body.contains(el)) {
+  document.body.appendChild(el);
+}
+
+// Remove from DOM after fade animation completes
+setTimeout(() => {
+  if (overlayEl && overlayEl.parentElement) {
+    overlayEl.parentElement.removeChild(overlayEl);
+    overlayEl = null;
+  }
+}, 180); // Match the CSS transition duration
+```
+
+### 2. Marquee Blocker (FileTable.vue)
+
+**Key Changes**:
+- **Conditional DOM Mounting**: Blocker is only added to DOM when marquee is active
+- **Immediate Cleanup**: Removed from DOM when marquee becomes inactive
+- **No Display Toggle**: Eliminates the need for display:none/block
+
+**Implementation**:
+```typescript
+watch(
+  () => isMarqueeActive.value,
+  (val) => {
+    if (val) {
+      // Add to DOM when marquee becomes active
+      if (!document.body.contains(globalMarqueeBlocker)) {
+        document.body.appendChild(globalMarqueeBlocker);
+      }
+    } else {
+      // Remove from DOM when marquee becomes inactive
+      if (document.body.contains(globalMarqueeBlocker)) {
+        document.body.removeChild(globalMarqueeBlocker);
+      }
+    }
+  }
+);
+```
+
+### 3. Notification Container (NotificationContainer.vue)
+
+**Key Changes**:
+- **Conditional Rendering**: Container is only mounted when there are notifications
+- **Vue Transitions**: Smooth fade in/out when container appears/disappears
+- **Clean DOM**: Complete removal when no notifications are present
+
+**Implementation**:
+```vue
+<Transition name="notification-container-fade" appear>
+  <div v-if="hasAnyNotifications" data-component-name="NotificationContainer">
+    <!-- notification content -->
+  </div>
+</Transition>
+```
+
+### 4. Nuxt UI Notification System (nuxt.config.ts)
+
+**Problem**: Nuxt UI automatically injects a notification container with `role="region"` and `aria-label="Notifications (F8)"` into the DOM, even when not using Nuxt UI notifications.
+
+**Solution**: Disabled Nuxt UI's notification system in the configuration.
+
+**Implementation**:
+```typescript
+ui: {
+  notifications: {
+    // Disable Nuxt UI's notification system since we have our own custom notifications
+    enabled: false,
+  },
+},
+```
+
+## Benefits
+
+- ✅ **Complete DOM Cleanup**: All UI elements are removed when not needed
+- ✅ **Reduced Memory Usage**: No persistent DOM elements for hidden components
+- ✅ **Better Performance**: Fewer elements to track during scrolling/resizing
+- ✅ **Cleaner DevTools**: Easier to inspect and debug when elements are only present when active
+- ✅ **Smooth Animations**: All transitions maintained while improving performance
+
+## Testing
+
+To verify these optimizations work:
+
+1. **Dropdown Overlay**: Open a dropdown and check DOM for overlay, close dropdown and verify it's removed
+2. **Marquee Blocker**: Start marquee selection and check DOM for blocker, end selection and verify it's removed
+3. **Notification Container**: Show a notification and check DOM for container, clear notifications and verify it's removed
+4. **Performance**: Monitor DOM element count during normal usage
+
+---
+
 # Summary
 
 ## Combined Performance Impact
 
 ### Before Refactoring
 ```
-DOM: 100+ invisible UI elements (tooltips + dropdowns)
+DOM: 100+ invisible UI elements (tooltips + dropdowns + overlays + blockers)
 Scrolling: 100+ positioning calculations per scroll event
 Memory: Significant overhead from mounted components
 ```

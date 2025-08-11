@@ -54,7 +54,7 @@ const ensureOverlay = () => {
     logManagerAction("dropdownManager", "Overlay clicked - closing all dropdowns");
     closeAllDropdowns("Overlay clicked");
   });
-  logManagerAction("dropdownManager", "Created dropdown overlay element (persistent)");
+  logManagerAction("dropdownManager", "Created dropdown overlay element (conditional)");
   return overlayEl;
 };
 
@@ -68,8 +68,11 @@ const showOverlay = () => {
     }
 
     const el = ensureOverlay();
-    // Ensure the overlay is present in the DOM once (avoid flicker on append/remove)
-    if (!document.body.contains(el)) document.body.appendChild(el);
+    // Add to DOM only when needed
+    if (!document.body.contains(el)) {
+      document.body.appendChild(el);
+      logManagerAction("dropdownManager", "Overlay added to DOM");
+    }
     // If already visible, noop to avoid noisy duplicate logs/DOM updates
     if (el.getAttribute("data-overlay-visible") === "true") return;
 
@@ -94,13 +97,21 @@ const hideOverlay = () => {
     if (overlayEl.getAttribute("data-overlay-visible") === "false") return;
     logManagerAction("dropdownManager", "hideOverlay called");
 
-    // Fade out and disable pointer capture but keep the element in the DOM
-    // so developers can inspect it and to avoid reflows on repeated opens.
+    // Fade out and disable pointer capture
     overlayEl.style.pointerEvents = "none";
     overlayEl.style.opacity = "0";
     overlayEl.style.background = "hsla(0, 0%, 0%, 0)";
     overlayEl.setAttribute("data-overlay-visible", "false");
     logManagerAction("dropdownManager", "Overlay hidden (visibility toggled off)");
+
+    // Remove from DOM after fade animation completes
+    setTimeout(() => {
+      if (overlayEl && overlayEl.parentElement && overlayEl.getAttribute("data-overlay-visible") === "false") {
+        overlayEl.parentElement.removeChild(overlayEl);
+        overlayEl = null;
+        logManagerAction("dropdownManager", "Overlay removed from DOM");
+      }
+    }, 180); // Match the CSS transition duration
   } catch (e) {
     /* ignore */
   }

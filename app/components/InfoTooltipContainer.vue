@@ -148,10 +148,14 @@ const emit = defineEmits<{
 const floatingRef = ref<HTMLElement | null>(null);
 const arrowRef = ref(null);
 
+
+
 // Computed property to determine if tooltip should be rendered in DOM
 const shouldRender = computed(() => {
   return props.visible || props.debugForceVisible;
 });
+
+
 
 // Resolve the provided `target` prop to the "best" DOM element to anchor to.
 // If a CustomButton (or its wrapper) is passed, prefer its internal
@@ -408,6 +412,8 @@ const arrowStyle = computed(() => {
 const getFileName = (path: string) => {
   return path.split(/[\\/]/).pop() || path;
 };
+
+
 </script>
 
 <style scoped>

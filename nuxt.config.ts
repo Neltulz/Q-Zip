@@ -50,12 +50,20 @@ export default defineNuxtConfig({
       { name: 'Inter', provider: 'google' },
     ]
   },
+  ui: {
+    // Completely disable notifications
+    notifications: false,
+    // Try to disable all global components
+    global: false,
+  },
   plugins: [
     '~/plugins/pinia-persistence.ts',
     '~/plugins/registerResets.client',
     '~/plugins/themePlugin.ts',
     '~/plugins/bounceDirective.ts',
     '~/plugins/disableContext.client.ts',
+    '~/plugins/removeNuxtNotifications.client.ts',
+    '~/plugins/debugNotifications.client.ts',
   ],
   sourcemap: {
     server: true,

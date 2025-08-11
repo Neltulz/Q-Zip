@@ -10,19 +10,28 @@
 -->
 <template>
   <teleport to="body">
-    <div data-component-name="NotificationContainer" :class="{ 'has-notifications': hasAnyNotifications }">
-      <TransitionGroup name="notification-list-fade" tag="div" class="notification-list">
-        <NotificationDisplay v-for="notification in uiStore.notifications" :key="notification.id" :notification="notification" />
-      </TransitionGroup>
-      
-      <!-- Queue indicator -->
-      <div v-if="uiStore.notificationQueue.length > 0" class="notification-queue-indicator">
-        <div class="queue-indicator-content">
-          <Icon name="mdi:clock-outline" size="16" />
-          <span>{{ uiStore.notificationQueue.length }} notification{{ uiStore.notificationQueue.length > 1 ? 's' : '' }} pending</span>
+    <Transition
+      name="notification-container-fade"
+      appear
+    >
+      <div 
+        v-if="hasAnyNotifications"
+        data-component-name="NotificationContainer"
+        class="has-notifications"
+      >
+        <TransitionGroup name="notification-list-fade" tag="div" class="notification-list">
+          <NotificationDisplay v-for="notification in uiStore.notifications" :key="notification.id" :notification="notification" />
+        </TransitionGroup>
+        
+        <!-- Queue indicator -->
+        <div v-if="uiStore.notificationQueue.length > 0" class="notification-queue-indicator">
+          <div class="queue-indicator-content">
+            <Icon name="mdi:clock-outline" size="16" />
+            <span>{{ uiStore.notificationQueue.length }} notification{{ uiStore.notificationQueue.length > 1 ? 's' : '' }} pending</span>
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </teleport>
 </template>
 
@@ -50,14 +59,15 @@ const hasAnyNotifications = computed(() => {
   z-index: 9999;
 }
 
-/* Ensure the container stays visible during transitions */
-[data-component-name="NotificationContainer"] {
-  transition: opacity 0.8s ease;
+/* Container transition animations */
+.notification-container-fade-enter-active,
+.notification-container-fade-leave-active {
+  transition: opacity 0.3s ease;
 }
 
-[data-component-name="NotificationContainer"]:not(.has-notifications) {
+.notification-container-fade-enter-from,
+.notification-container-fade-leave-to {
   opacity: 0;
-  pointer-events: none;
 }
 
 /*

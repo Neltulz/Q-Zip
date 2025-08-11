@@ -2074,16 +2074,25 @@ onMounted(() => {
       background: "transparent",
       zIndex: "2000",
       pointerEvents: "auto",
-      display: "none",
     });
-    document.body.appendChild(globalMarqueeBlocker);
 
-    // Watch marquee active state to toggle display
+    // Watch marquee active state to add/remove from DOM
     watch(
       () => isMarqueeActive.value,
       (val) => {
         if (!globalMarqueeBlocker) return;
-        globalMarqueeBlocker.style.display = val ? "block" : "none";
+        
+        if (val) {
+          // Add to DOM when marquee becomes active
+          if (!document.body.contains(globalMarqueeBlocker)) {
+            document.body.appendChild(globalMarqueeBlocker);
+          }
+        } else {
+          // Remove from DOM when marquee becomes inactive
+          if (document.body.contains(globalMarqueeBlocker)) {
+            document.body.removeChild(globalMarqueeBlocker);
+          }
+        }
       }
     );
   } catch (err) {

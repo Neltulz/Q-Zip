@@ -338,7 +338,7 @@ import { useDragDropStore } from "@/stores/dragDropStore";
 import type { ModalOptions } from "@/types/modal";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import CustomButton from "./CustomButton.vue";
-import InfoTooltip from "./InfoTooltip.vue";
+import InfoTooltip from "./InfoTooltipContainer.vue";
 import { useScrollContainer } from "@/composables/useScrollContainer";
 import { useTooltipManager } from "@/composables/useTooltipManager";
 

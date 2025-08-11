@@ -58,7 +58,7 @@ import { ref, computed, onMounted, onUnmounted, watch, type PropType, nextTick, 
 import { useUiStore, type Notification, type NotificationType, type NotificationMessageDetails } from "@/stores/uiStore";
 import { useScrollContainer } from "@/composables/useScrollContainer";
 import CustomButton from "./CustomButton.vue";
-import InfoTooltip from "./InfoTooltip.vue";
+import InfoTooltip from "./InfoTooltipContainer.vue";
 import { logUI, logNotification } from "@/utils/loggers";
 
 const props = defineProps({

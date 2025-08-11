@@ -264,7 +264,7 @@ import { useNavigationStore } from "@/stores/navigationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useUserPreferencesStore } from "@/stores/userPreferencesStore";
 import { useDropdownManager } from "@/composables/dropdownManager";
-import InfoTooltip from "@/components/InfoTooltip.vue";
+import InfoTooltip from "@/components/InfoTooltipContainer.vue";
 import { useResetManager } from "@/composables/useResetManager";
 import { useModalsStore } from "@/stores/modalsStore";
 import type { ModalOptions } from "@/types/modal";
