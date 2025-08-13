@@ -56,7 +56,8 @@
               <template v-if="descriptionContent.length > 0">
                 <p v-for="(line, index) in descriptionContent" :key="index" v-html="line" />
               </template>
-              <slot name="body-content" />
+              <!-- Provide modal store and ID to child components -->
+              <slot name="body-content" :modalsStore="modalsStore" :modalId="props.modalId" />
               <!-- --- FIX END --- -->
             </OverlayScrollbarsComponent>
           </div>

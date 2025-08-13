@@ -591,8 +591,24 @@ const confirmCopyToNewJob = (paths: string | string[]): void => {
 };
 
 const addItemsToJob = async (paths: string[]): Promise<void> => {
+  logUI("JobArea", `addItemsToJob called with ${paths.length} paths:`, paths);
   if (activeJob.value) {
-    handleOperation("adding", paths, () => jobsStore.addFilesToJob(activeJob.value!.id, paths));
+    const initialFileCount = activeJob.value.files.length;
+    logUI("JobArea", `Initial file count for job ${activeJob.value.id}: ${initialFileCount}`);
+    
+    await handleOperation("adding", paths, async () => {
+      const addedCount = await jobsStore.addFilesToJob(activeJob.value!.id, paths);
+      logUI("JobArea", `addFilesToJob completed, added ${addedCount} files`);
+      return addedCount;
+    });
+    
+    // Check if files were actually added
+    nextTick(() => {
+      const finalFileCount = activeJob.value?.files.length || 0;
+      logUI("JobArea", `Final file count for job ${activeJob.value?.id}: ${finalFileCount} (was ${initialFileCount})`);
+    });
+  } else {
+    logUI("JobArea", "No active job available for adding files");
   }
 };
 </script>

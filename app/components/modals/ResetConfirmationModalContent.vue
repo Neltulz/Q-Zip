@@ -128,6 +128,15 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  // Modal store and ID passed from parent
+  modalsStore: {
+    type: Object,
+    default: null,
+  },
+  modalId: {
+    type: String,
+    default: '',
+  },
 });
 
 const emit = defineEmits<{
@@ -151,12 +160,22 @@ const conflictResolutionOption = computed(() => {
 // Watch for conflict resolution changes and emit to parent
 watch(conflictResolution, (newValue) => {
   emit('conflict-resolution-changed', newValue);
+  
+  // Also set the data in the modal store so it's available to the callback
+  if (props.modalsStore && props.modalId) {
+    props.modalsStore.setModalData(props.modalId, { conflictResolution: newValue });
+  }
 });
 
 // Watch for operation changes to update default conflict resolution
 watch(() => props.operation, (newOperation) => {
   conflictResolution.value = newOperation === 'move' ? 'replace' : 'skip';
 });
+
+// Set initial conflict resolution data
+if (props.modalsStore && props.modalId) {
+  props.modalsStore.setModalData(props.modalId, { conflictResolution: conflictResolution.value });
+}
 </script>
 
 <style scoped>

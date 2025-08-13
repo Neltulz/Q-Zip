@@ -16,8 +16,8 @@
         :modal-id="modal.id"
         :options="modal.options"
       >
-        <template #body-content>
-          <component :is="modalContentComponents[modal.component]" v-bind="modal.props" />
+        <template #body-content="{ modalsStore, modalId }">
+          <component :is="modalContentComponents[modal.component]" v-bind="modal.props" :modalsStore="modalsStore" :modalId="modalId" />
         </template>
       </BaseModal>
     </template>

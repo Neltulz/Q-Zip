@@ -189,10 +189,11 @@ export const useUiStore = defineStore(
         }
       }
 
-      if (skippedFilePaths.length > 0) {
+      // Handle skipped files (only when conflict resolution is 'skip')
+      if (skippedFilePaths.length > 0 && conflictResolution === 'skip') {
         const reasons: Record<string, string> = {};
         skippedFilePaths.forEach((path) => {
-          reasons[path] = conflictResolution === 'replace' ? "Replaced existing file" : "Already exists in destination";
+          reasons[path] = "Already exists in destination";
         });
         messages.push({
           text: `${skippedFilePaths.length} item${skippedFilePaths.length > 1 ? "s" : ""} were skipped.`,

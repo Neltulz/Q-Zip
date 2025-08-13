@@ -107,7 +107,7 @@ export const useJobsStore = defineStore(
         if (jobs.value[0]) {
           selectJob(jobs.value[0].id);
         }
-         if (DEBUG && debugConfig.logStoreActions) {
+        if (DEBUG && debugConfig.logStoreActions) {
           console.log(`Selected job was invalid. Defaulting to first job.`);
         }
       }
@@ -147,13 +147,18 @@ export const useJobsStore = defineStore(
       const validFilesToAdd = fileDetailsResults.filter((details): details is FileItem => details !== null);
 
       if (validFilesToAdd.length > 0) {
+        const beforeCount = job.files.length;
         job.files.push(...validFilesToAdd);
+        const afterCount = job.files.length;
+        logStoreAction("jobsStore", `Added ${validFilesToAdd.length} new files to job ${jobId}. File count: ${beforeCount} -> ${afterCount}`);
+      } else {
+        logStoreAction("jobsStore", `No valid files to add to job ${jobId}.`);
       }
 
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      logStoreAction("jobsStore", `Added ${validFilesToAdd.length} new files to job ${jobId}.`);
+      logStoreAction("jobsStore", `File processing for ${paths.length} paths took ${duration.toFixed(2)} ms.`);
       if (DEBUG) {
         console.log(`[jobsStore] File processing for ${paths.length} paths took ${duration.toFixed(2)} ms.`);
       }

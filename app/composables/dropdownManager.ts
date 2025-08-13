@@ -61,10 +61,22 @@ const ensureOverlay = () => {
 const showOverlay = () => {
   logManagerAction("dropdownManager", "showOverlay called");
   try {
-    // Don't show overlay if a modal is open
-    if (document.querySelector(".modal-wrapper.modal-open")) {
-      logManagerAction("dropdownManager", "Modal is open, not showing dropdown overlay");
-      return;
+    // Don't show overlay if a modal is open, EXCEPT for specific dropdowns that are designed to work within modals
+    const modalOpen = !!document.querySelector(".modal-wrapper.modal-open");
+    if (modalOpen) {
+      // Check if this is a dropdown that should be allowed within modals
+      const isModalCompatibleDropdown = openDropdowns.value.some(dropdown => {
+        const dropdownName = dropdown.dropdownContent?.getAttribute('data-belongs-to');
+        // Allow conflict-resolution-dropdown to work within modals
+        return dropdownName === 'conflict-resolution-dropdown';
+      });
+
+      if (!isModalCompatibleDropdown) {
+        logManagerAction("dropdownManager", "Modal is open, not showing dropdown overlay");
+        return;
+      } else {
+        logManagerAction("dropdownManager", "Modal is open, but allowing modal-compatible dropdown overlay");
+      }
     }
 
     const el = ensureOverlay();
@@ -74,7 +86,10 @@ const showOverlay = () => {
       logManagerAction("dropdownManager", "Overlay added to DOM");
     }
     // If already visible, noop to avoid noisy duplicate logs/DOM updates
-    if (el.getAttribute("data-overlay-visible") === "true") return;
+    if (el.getAttribute("data-overlay-visible") === "true") {
+      logManagerAction("dropdownManager", "Overlay already visible, skipping show");
+      return;
+    }
 
     // Make it visible with a smooth fade and enable pointer capture
     // Use RAF to ensure style changes are applied after insertion.
@@ -86,15 +101,21 @@ const showOverlay = () => {
       logManagerAction("dropdownManager", "Overlay shown (visibility toggled on)");
     });
   } catch (e) {
-    /* ignore */
+    logManagerAction("dropdownManager", `Error in showOverlay: ${e}`);
   }
 };
 
 const hideOverlay = () => {
   // Avoid noisy repeated hide calls by only acting when overlay is visible
   try {
-    if (!overlayEl) return;
-    if (overlayEl.getAttribute("data-overlay-visible") === "false") return;
+    if (!overlayEl) {
+      logManagerAction("dropdownManager", "hideOverlay called but no overlay element exists");
+      return;
+    }
+    if (overlayEl.getAttribute("data-overlay-visible") === "false") {
+      logManagerAction("dropdownManager", "hideOverlay called but overlay is already hidden");
+      return;
+    }
     logManagerAction("dropdownManager", "hideOverlay called");
 
     // Fade out and disable pointer capture
@@ -113,7 +134,7 @@ const hideOverlay = () => {
       }
     }, 180); // Match the CSS transition duration
   } catch (e) {
-    /* ignore */
+    logManagerAction("dropdownManager", `Error in hideOverlay: ${e}`);
   }
 };
 
@@ -264,10 +285,33 @@ export function useDropdownManager() {
         hideOverlay();
       }
 
-      // Also close all dropdowns when a modal opens
+      // Also close all dropdowns when a modal opens, EXCEPT modal-compatible dropdowns
       if (openDropdowns.value.length > 0) {
-        logManagerAction("dropdownManager", "Modal opened, closing all dropdowns");
-        closeAllDropdowns("Modal opened");
+        // Check if there are any modal-compatible dropdowns that should remain open
+        const modalCompatibleDropdowns = openDropdowns.value.filter(dropdown => {
+          const dropdownName = dropdown.dropdownContent?.getAttribute('data-belongs-to');
+          // Allow conflict-resolution-dropdown to remain open within modals
+          return dropdownName === 'conflict-resolution-dropdown';
+        });
+
+        const dropdownsToClose = openDropdowns.value.filter(dropdown => {
+          const dropdownName = dropdown.dropdownContent?.getAttribute('data-belongs-to');
+          // Close all dropdowns except conflict-resolution-dropdown
+          return dropdownName !== 'conflict-resolution-dropdown';
+        });
+
+        if (dropdownsToClose.length > 0) {
+          logManagerAction("dropdownManager", `Modal opened, closing ${dropdownsToClose.length} non-modal-compatible dropdowns`);
+          dropdownsToClose.forEach(dropdown => {
+            const dropdownName = dropdown.dropdownContent?.getAttribute('data-belongs-to') || 'unknown';
+            logManagerAction("dropdownManager", `Closing dropdown: ${dropdownName}`);
+            dropdown.close();
+          });
+        }
+
+        if (modalCompatibleDropdowns.length > 0) {
+          logManagerAction("dropdownManager", `Modal opened, keeping ${modalCompatibleDropdowns.length} modal-compatible dropdowns open`);
+        }
       }
     }
   });
@@ -282,10 +326,16 @@ export function useDropdownManager() {
       if (overlayUpdateTimer != null) clearTimeout(overlayUpdateTimer);
       overlayUpdateTimer = window.setTimeout(() => {
         try {
-          if (openDropdowns.value && openDropdowns.value.length > 0) showOverlay();
-          else hideOverlay();
+          logManagerAction("dropdownManager", `Debounced watcher fired. Open dropdowns: ${openDropdowns.value.length}`);
+          if (openDropdowns.value && openDropdowns.value.length > 0) {
+            logManagerAction("dropdownManager", "Debounced watcher: showing overlay");
+            showOverlay();
+          } else {
+            logManagerAction("dropdownManager", "Debounced watcher: hiding overlay");
+            hideOverlay();
+          }
         } catch (e) {
-          /* ignore */
+          logManagerAction("dropdownManager", `Error in debounced watcher: ${e}`);
         }
         overlayUpdateTimer = null;
       }, 120); // short debounce to smooth submenu transitions
@@ -343,7 +393,18 @@ export function useDropdownManager() {
       openDropdowns.value = openDropdowns.value.filter((d) => d.id !== id);
       if (openDropdowns.value.length < initialLength) {
         logManagerAction("dropdownManager", `Unregistered dropdown. Total open: ${openDropdowns.value.length}`);
-        // Defer overlay visibility updates to the centralized watcher.
+
+        // If this was the last dropdown, immediately hide the overlay
+        // This prevents the backdrop from staying visible when all dropdowns are closed
+        if (openDropdowns.value.length === 0) {
+          logManagerAction("dropdownManager", "Last dropdown unregistered, immediately hiding overlay");
+          try {
+            hideOverlay();
+          } catch (e) {
+            /* ignore */
+          }
+        }
+        // Defer overlay visibility updates to the centralized watcher for other cases.
       }
     },
     // Function to close all dropdowns except the current one and its ancestors

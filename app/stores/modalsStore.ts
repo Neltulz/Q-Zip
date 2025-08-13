@@ -33,6 +33,8 @@ export const useModalsStore = defineStore(
   () => {
     // STATE
     const activeModals: Ref<ActiveModal[]> = ref([]);
+    // Store for modal-specific data that can be passed to callbacks
+    const modalData: Ref<Map<string, any>> = ref(new Map());
 
     // ACTIONS
     /**
@@ -46,7 +48,7 @@ export const useModalsStore = defineStore(
       component: string,
       options: ModalOptions,
       props?: Record<string, unknown>,
-      onClose?: (action: string) => void,
+      onClose?: (action: string, data?: any) => void,
     ): void {
       const id = `modal-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       logStoreAction("modalsStore", `Opening modal: ${component} with ID: ${id}`, { options, props });
@@ -64,6 +66,16 @@ export const useModalsStore = defineStore(
     }
 
     /**
+     * Sets data for a specific modal that will be passed to the callback when the modal closes.
+     * @param modalId - The unique ID of the modal.
+     * @param data - The data to store for this modal.
+     */
+    function setModalData(modalId: string, data: any): void {
+      modalData.value.set(modalId, data);
+      logManagerAction("modalsStore", `Set modal data for ${modalId}:`, data);
+    }
+
+    /**
      * Closes a specific modal by its ID and executes its onClose callback.
      * @param id - The unique ID of the modal to close.
      * @param action - The string indicating how the modal was closed (e.g., 'proceed', 'cancel').
@@ -73,11 +85,16 @@ export const useModalsStore = defineStore(
       logManagerAction("modalsStore", `Modal closing: ID ${id} with action: ${action}`);
 
       const modal = activeModals.value.find((m) => m.id === id);
+      const data = modalData.value.get(id);
+
       if (modal?.onClose) {
         logStoreAction("modalsStore", `Executing onClose callback for modal ID: ${id}`);
         logManagerAction("modalsStore", `Executing onClose callback for modal: ${modal.component} (ID: ${id})`);
-        modal.onClose(action);
+        modal.onClose(action, data);
       }
+
+      // Clean up modal data
+      modalData.value.delete(id);
 
       const index = activeModals.value.findIndex((m) => m.id === id);
       if (index > -1) {
@@ -114,11 +131,13 @@ export const useModalsStore = defineStore(
         }
       }
       activeModals.value = [];
+      modalData.value.clear();
     }
 
     return {
       activeModals: readonly(activeModals),
       openModal,
+      setModalData,
       closeModal,
       closeAllModals,
     };

@@ -771,12 +771,16 @@ const openOperationConfirmModal = (
       itemsToSkip,
       operation,
     },
-    (action: string, conflictResolution?: 'skip' | 'replace') => {
-      logManagerAction("JobSelectorArea", `Modal callback: action=${action}, conflictResolution=${conflictResolution}`);
+    (action: string, data?: any) => {
+      logManagerAction("JobSelectorArea", `Modal callback: action=${action}, data=`, data);
       if (action === "proceed") {
+        // Extract conflict resolution from the data, with fallback based on operation
+        const conflictResolution = data?.conflictResolution || (operation === 'move' ? 'replace' : 'skip');
+        logManagerAction("JobSelectorArea", `Using conflict resolution: ${conflictResolution}`);
+        
         uiStore.handleFileOperation(operation, files, targetJobId, { 
           sourceJobId, 
-          conflictResolution: conflictResolution || (operation === 'move' ? 'replace' : 'skip')
+          conflictResolution
         });
       }
       // Drag operation was already ended in handleDragAction, so no need to call it again

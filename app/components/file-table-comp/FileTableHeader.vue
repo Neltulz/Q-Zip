@@ -77,7 +77,7 @@ const props = defineProps({
   sortDirection: String,
 });
 
-defineEmits(["toggle-all", "sort", "start-resize"]);
+const emit = defineEmits(["toggle-all", "sort", "start-resize"]);
 
 // Resizing logic will be passed in from parent for now
 const startResize = (event: MouseEvent, column: string) => {
@@ -92,7 +92,6 @@ const startResize = (event: MouseEvent, column: string) => {
   // Example: <FileTableHeader @start-resize="..." />
   // and in parent: <FileTableHeader @start-resize="startResize" />
   // For now, just emit
-  // @ts-ignore
   emit("start-resize", event, column);
 };
 </script>
