@@ -6,7 +6,7 @@
 
   1. COMPONENT DECOMPOSITION
      - Break into smaller, focused components:
-       * FileTableHeader.vue (sorting, column resizing)
+       * ✅ FileTableHeader.vue (sorting, column resizing)
        * FileTableRow.vue (individual row rendering)
        * FileTableToolbar.vue (add/remove/move/copy actions)
        * FileTableContextMenu.vue (right-click menu)
@@ -249,72 +249,16 @@
       @mousedown="handleComponentMouseDown"
     >
       <div class="table-content-wrapper" :style="tableContentStyle">
-        <!-- Header is now INSIDE the scroll wrapper to scroll horizontally -->
-        <div class="table-header">
-          <div v-if="props.showCheckboxes" class="item-checkbox">
-            <CustomButton
-              button-style-class="minimal-trans-btn"
-              data-name="select-all-files-checkbox"
-              role="checkbox"
-              :aria-checked="allSelected ? 'true' : 'false'"
-              @click="toggleAll"
-            >
-              <Icon :name="allSelected ? 'mdi:checkbox-marked' : 'mdi:checkbox-blank-outline'" size="16" />
-            </CustomButton>
-            <div class="resizer" @mousedown.stop="startResize($event, 'checkbox')"></div>
-          </div>
-          <div class="item-name" @click="handleSort('name')">
-            <span class="header-text">Name</span>
-            <span v-if="sortKey === 'name'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
-            <div class="resizer" @mousedown.stop="startResize($event, 'name')"></div>
-          </div>
-          <div class="item-size" @click="handleSort('size')">
-            <span class="header-text">Size (MB)</span>
-            <span v-if="sortKey === 'size'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
-            <div class="resizer" @mousedown.stop="startResize($event, 'size')"></div>
-          </div>
-          <div class="item-ext" @click="handleSort('type')">
-            <span class="header-text">Ext</span>
-            <span v-if="sortKey === 'type'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
-            <div class="resizer" @mousedown.stop="startResize($event, 'ext')"></div>
-          </div>
-          <div class="item-modified" @click="handleSort('modified')">
-            <span class="header-text">Modified</span>
-            <span v-if="sortKey === 'modified'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
-            <div class="resizer" @mousedown.stop="startResize($event, 'modified')"></div>
-          </div>
-          <div class="item-created" @click="handleSort('created')">
-            <span class="header-text">Creation Date</span>
-            <span v-if="sortKey === 'created'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
-            <div class="resizer" @mousedown.stop="startResize($event, 'created')"></div>
-          </div>
-          <div class="item-files" @click="handleSort('files')">
-            <span class="header-text">Files</span>
-            <span v-if="sortKey === 'files'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
-            <div class="resizer" @mousedown.stop="startResize($event, 'files')"></div>
-          </div>
-          <div class="item-folders" @click="handleSort('folders')">
-            <span class="header-text">Folders</span>
-            <span v-if="sortKey === 'folders'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
-            <div class="resizer" @mousedown.stop="startResize($event, 'folders')"></div>
-          </div>
-          <div class="item-files-total" @click="handleSort('filesTotal')">
-            <span class="header-text">Files (Total)</span>
-            <span v-if="sortKey === 'filesTotal'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
-            <div class="resizer" @mousedown.stop="startResize($event, 'filesTotal')"></div>
-          </div>
-          <div class="item-folders-total" @click="handleSort('foldersTotal')">
-            <span class="header-text">Folders (Total)</span>
-            <span v-if="sortKey === 'foldersTotal'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
-            <div class="resizer" @mousedown.stop="startResize($event, 'foldersTotal')"></div>
-          </div>
-          <div class="item-parent-path" @click="handleSort('parentPath')">
-            <span class="header-text">Parent Folder Path</span>
-            <span v-if="sortKey === 'parentPath'" class="sort-indicator">{{ sortDirection === "asc" ? "▲" : "▼" }}</span>
-            <div class="resizer" @mousedown.stop="startResize($event, 'parentPath')"></div>
-          </div>
-          <!-- spacer column removed: we no longer render an empty right-hand buffer column -->
-        </div>
+        <!-- Header is now a separate component -->
+        <FileTableHeader
+          :show-checkboxes="props.showCheckboxes"
+          :all-selected="allSelected"
+          :sort-key="sortKey"
+          :sort-direction="sortDirection"
+          @toggle-all="toggleAll"
+          @sort="handleSort"
+          @start-resize="startResize"
+        />
 
         <!-- Local selection box: updated directly via DOM to avoid reactive writes every frame -->
         <div ref="localSelectionBox" class="selection-box" style="display: none" />
@@ -630,6 +574,7 @@ import { useDragDropStore } from "@/stores/dragDropStore";
 import { useUiStore } from "@/stores/uiStore";
 import type { FileItem } from "@/types/types";
 import DropdownMenu from "./DropdownMenu.vue";
+import FileTableHeader from "./file-table-comp/FileTableHeader.vue";
 import { logDragDropEvent, logLifecycle, logRendering, logUI, logMarqueeSelection } from "@/utils/loggers";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
