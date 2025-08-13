@@ -126,116 +126,36 @@
           <!-- Content container for visible rows -->
           <div class="virtual-scroll-content" :style="{ transform: `translateY(${contentOffsetY}px)` }">
             <template v-for="file in visibleFiles" :key="file.path">
-              <div
-                class="table-row"
-                :class="{
-                  selected: selectedFiles.includes(file.path),
-                  'preview-selected': isMarqueeActive && marqueePreviewSelection.includes(file.path),
-                  'is-cut': cutFiles.includes(file.path) && jobId === cutSourceJobId,
-                  'is-folder': file.type === 'Folder',
-                }"
-                :data-path="file.path"
-                data-has-context-menu="true"
-                @click="clickRowByPath($event, file.path)"
-                @contextmenu.prevent.stop="handleContextMenu(file, $event)"
-              >
-                <!-- Checkbox Cell -->
-                <div v-if="props.showCheckboxes" class="item-checkbox">
-                  <CustomButton
-                    button-style-class="minimal-trans-btn"
-                    :data-name="`select-file-${file.path}`"
-                    role="checkbox"
-                    :aria-checked="selectedFiles.includes(file.path) ? 'true' : 'false'"
-                    @click.stop="toggleFileSelection(file.path)"
-                  >
-                    <Icon
-                      :name="selectedFiles.includes(file.path) ? 'mdi:checkbox-marked' : 'mdi:checkbox-blank-outline'"
-                      size="16"
-                    />
-                  </CustomButton>
-                </div>
-                <!-- Name Cell -->
-                <div class="item-name">
-                  <div
-                    class="item-name-content"
-                    :draggable="props.itemDragEnabled"
-                    @dragstart="handleDragStart($event, file.path)"
-                    @dragend="handleDragEnd"
-                  >
-                    <Icon :name="file.type === 'Folder' ? 'mdi:folder' : 'mdi:file-outline'" size="16" />
-                    <span class="cell-text">{{ file.name }}</span>
-                  </div>
-                  <FileTableContextMenu
-                    :file="file"
-                    :job-id="props.jobId"
-                    :show-row-actions="props.showRowActions"
-                    :selected-files="selectedFiles"
-                    :ref="(el) => setFileMenuRef(file, el)"
-                    @remove-files="removeFile"
-                    @move-files="handleContextMenuMoveFiles"
-                    @move-to-new-job="moveFileToNewJob"
-                    @copy-files="handleContextMenuCopyFiles"
-                    @copy-to-new-job="copyFileToNewJob"
-                    @selection-changed="(paths) => selectedFiles = paths"
-                  />
-                </div>
-                <!-- Other Cells -->
-                <div class="item-size">
-                  <div
-                    class="size-bar"
-                    :class="file.type === 'Folder' ? 'size-bar-folder' : 'size-bar-file'"
-                    :style="{
-                      inlineSize: `${(file.size / (file.type === 'Folder' ? maxFolderSizeInJob : maxFileSizeInJob)) * 100}%`,
-                    }"
-                  ></div>
-                  <span class="cell-text">{{ formatBytes(file.size) }} MB</span>
-                </div>
-                <div class="item-ext">
-                  <span class="cell-text">{{ file.type }}</span>
-                </div>
-                <div class="item-modified">
-                  <div
-                    v-if="file.modified"
-                    class="date-bar"
-                    :style="{
-                      inlineSize: `${normalizeTimestamp(
-                        file.modified,
-                        file.type === 'Folder' ? minMaxFolderModified : minMaxFileModified
-                      )}%`,
-                    }"
-                  ></div>
-                  <span class="cell-text">{{ file.modified ? formatModifiedDate(file.modified) : "---" }}</span>
-                </div>
-                <div class="item-created">
-                  <div
-                    v-if="file.created"
-                    class="date-bar"
-                    :style="{
-                      inlineSize: `${normalizeTimestamp(
-                        file.created,
-                        file.type === 'Folder' ? minMaxFolderCreated : minMaxFileCreated
-                      )}%`,
-                    }"
-                  ></div>
-                  <span class="cell-text">{{ file.created ? formatCreationDate(file.created) : "---" }}</span>
-                </div>
-                <div class="item-files">
-                  <span v-if="file.type === 'Folder'" class="cell-text">{{ file.files ?? "---" }}</span>
-                </div>
-                <div class="item-folders">
-                  <span v-if="file.type === 'Folder'" class="cell-text">{{ file.folders ?? "---" }}</span>
-                </div>
-                <div class="item-files-total">
-                  <span v-if="file.type === 'Folder'" class="cell-text">{{ file.filesTotal ?? "---" }}</span>
-                </div>
-                <div class="item-folders-total">
-                  <span v-if="file.type === 'Folder'" class="cell-text">{{ file.foldersTotal ?? "---" }}</span>
-                </div>
-                <div class="item-parent-path">
-                  <span class="cell-text">{{ file.parentPath }}</span>
-                </div>
-                <!-- right-side spacer removed -->
-              </div>
+              <FileTableRow
+                :file="file"
+                :job-id="props.jobId"
+                :selected-files="selectedFiles"
+                :cut-files="cutFiles"
+                :cut-source-job-id="cutSourceJobId"
+                :show-checkboxes="props.showCheckboxes"
+                :show-row-actions="props.showRowActions"
+                :item-drag-enabled="props.itemDragEnabled"
+                :is-marquee-active="isMarqueeActive"
+                :marquee-preview-selection="marqueePreviewSelection"
+                :max-file-size-in-job="maxFileSizeInJob"
+                :max-folder-size-in-job="maxFolderSizeInJob"
+                :min-max-file-modified="minMaxFileModified"
+                :min-max-folder-modified="minMaxFolderModified"
+                :min-max-file-created="minMaxFileCreated"
+                :min-max-folder-created="minMaxFolderCreated"
+                @toggle-file-selection="toggleFileSelection"
+                @click-row="clickRowByPath"
+                @context-menu="handleContextMenu"
+                @drag-start="handleDragStart"
+                @drag-end="handleDragEnd"
+                @remove-file="removeFile"
+                @move-files="handleContextMenuMoveFiles"
+                @move-to-new-job="moveFileToNewJob"
+                @copy-files="handleContextMenuCopyFiles"
+                @copy-to-new-job="copyFileToNewJob"
+                @selection-changed="(paths) => selectedFiles = paths"
+                @set-file-menu-ref="setFileMenuRef"
+              />
             </template>
           </div>
         </div>
@@ -254,6 +174,7 @@ import type { FileItem } from "@/types/types";
 import FileTableHeader from "./file-table-comp/FileTableHeader.vue";
 import FileTableToolbar from "./file-table-comp/FileTableToolbar.vue";
 import FileTableContextMenu from "./file-table-comp/FileTableContextMenu.vue";
+import FileTableRow from "./file-table-comp/FileTableRow.vue";
 import { logDragDropEvent, logLifecycle, logRendering, logUI, logMarqueeSelection } from "@/utils/loggers";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -327,29 +248,7 @@ const scrollTop = ref(0);
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
 const jobs = computed(() => jobsStore.jobs);
 
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return "0.00";
-  const mb = bytes / (1024 * 1024);
-  return mb.toFixed(2);
-};
 
-// Memoized formatters to avoid constructing on every render
-const MODIFIED_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  year: "numeric",
-  month: "numeric",
-  day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
-});
-
-const CREATION_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  year: "numeric",
-  month: "numeric",
-  day: "numeric",
-});
-
-const formatModifiedDate = (timestamp: number): string => MODIFIED_DATE_FORMATTER.format(new Date(timestamp));
-const formatCreationDate = (timestamp: number): string => CREATION_DATE_FORMATTER.format(new Date(timestamp));
 
 const sortKey = ref<keyof FileItem>("name");
 const sortDirection = ref<"asc" | "desc">("asc");
@@ -429,11 +328,7 @@ const minMaxFolderModified = computed(() => getMinMax(folderTimestamps.value.map
 const minMaxFileCreated = computed(() => getMinMax(fileTimestamps.value.map((t) => t.created)));
 const minMaxFolderCreated = computed(() => getMinMax(folderTimestamps.value.map((t) => t.created)));
 
-const normalizeTimestamp = (timestamp: number, range: { min: number; max: number }): number => {
-  if (range.max === range.min) return 50; // If all items have the same date, show a half-bar
-  // Invert the scale: older dates (smaller timestamps) should have a larger bar
-  return 100 - ((timestamp - range.min) / (range.max - range.min)) * 100;
-};
+
 
 const totalHeight = computed(() => sortedFiles.value.length * ROW_HEIGHT);
 
@@ -1573,6 +1468,10 @@ const handleContextMenuCopyFiles = (payload: { targetJobId: number; rightClicked
 const handleContextMenuMoveFiles = (payload: { targetJobId: number; rightClickedPath: string }): void => {
   emit("move-files", payload);
 };
+
+
+
+
 
 const setFileMenuRef = (file: FileItem, el: any) => {
   if (el) {

@@ -100,41 +100,7 @@
   z-index: 10;
 }
 
-.table-row {
-  display: flex;
-  inline-size: 100%;
-  border-block-end: 1px solid var(--brdr-clr-dark);
-  block-size: 35px;
-  box-sizing: border-box;
-  align-items: stretch;
-  scroll-snap-align: start; /* Designate rows as snap points */
 
-  &.is-folder {
-    color: var(--blu-lite);
-  }
-
-  &:not(.is-folder).selected {
-    background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.35);
-    color: white;
-  }
-
-  &.is-folder.selected {
-    background-color: hsla(var(--blu-hue), var(--blu-sat), var(--blu-lite-lum), 0.35);
-    color: white;
-  }
-}
-
-/* Preview selection state (visual only during marquee drag) */
-.table-row.preview-selected {
-  background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.25);
-  color: white;
-}
-
-/* Preview selection for folder rows: use a distinct blue tint during marquee preview */
-.table-row.is-folder.preview-selected {
-  background-color: rgba(54, 115, 170, 0.25); /* bluish preview for folders */
-  color: white;
-}
 
 /* While marquee is active, hide and disable row actions to prevent layout thrash and accidental interactions */
 
@@ -149,8 +115,7 @@
 }
 
 /* Common Cell Styles */
-.table-header > div,
-.table-row > div {
+.table-header > div {
   padding-inline: 8px;
   display: flex;
   align-items: center; /* Center content vertically */
@@ -161,17 +126,11 @@
   min-width: 0;
 }
 
-/* Ensure text within header and cell content stays vertically centered */
+/* Ensure text within header content stays vertically centered */
 .table-header > div .header-text {
   display: block;
   height: 100%;
   line-height: 34px; /* Match header height for vertical centering */
-}
-
-.table-row > div .cell-text {
-  display: block;
-  height: 100%;
-  line-height: 35px; /* Match row height for vertical centering */
 }
 
 /* --- FIX: Override overflow for header cells to make resizers visible --- */
@@ -180,25 +139,12 @@
 }
 
 /* --- Universal Text Truncation --- */
-.header-text,
-.cell-text {
+.header-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block; /* Ensure block-level for proper text overflow */
   width: 100%; /* Take full width of container */
-}
-
-/* Ensure cell text elements are properly configured for text overflow */
-.table-row > div .cell-text {
-  display: block; /* Change from flex to block for proper text overflow */
-  height: 100%;
-  width: 100%;
-  min-width: 0; /* Allow shrinking below content size */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 35px; /* Match row height for vertical centering */
 }
 
 .table-header > div .header-text {
@@ -225,75 +171,7 @@ body.is-resizing .table-header > div {
   pointer-events: auto;
 }
 
-/* Individual Column Widths using CSS Variables */
-.item-checkbox {
-  inline-size: var(--col-width-checkbox);
-  flex-shrink: 0;
-  justify-content: center;
-  padding-inline: 4px;
-  cursor: default; /* Checkbox header is not sortable */
-}
 
-.item-name {
-  inline-size: var(--col-width-name);
-  min-inline-size: 150px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-start; /* keep header text and sort indicator together */
-  overflow: hidden;
-}
-
-.item-size {
-  inline-size: var(--col-width-size);
-  flex-shrink: 0;
-  justify-content: flex-end;
-}
-
-.item-ext {
-  inline-size: var(--col-width-ext);
-  flex-shrink: 0;
-  justify-content: flex-start;
-}
-
-.item-modified,
-.item-created {
-  flex-shrink: 0;
-}
-.item-modified {
-  inline-size: var(--col-width-modified);
-}
-.item-created {
-  inline-size: var(--col-width-created);
-}
-
-.item-files,
-.item-folders,
-.item-files-total,
-.item-folders-total {
-  flex-shrink: 0;
-  justify-content: flex-end;
-}
-
-.item-files {
-  inline-size: var(--col-width-files);
-}
-.item-folders {
-  inline-size: var(--col-width-folders);
-}
-.item-files-total {
-  inline-size: var(--col-width-files-total);
-}
-.item-folders-total {
-  inline-size: var(--col-width-folders-total);
-}
-
-.item-parent-path {
-  inline-size: var(--col-width-parent-path);
-  flex-shrink: 0;
-  min-inline-size: 150px;
-}
 
 /* Invisible interactive buffer at the end of the table content to keep
    the last resizer reachable without visible empty space. This element
@@ -349,39 +227,7 @@ body.is-resizing .table-header > div {
   opacity: 0.28;
 }
 
-.item-name-content {
-  display: flex;
-  align-items: center;
-  column-gap: 8px;
-  cursor: default;
-  flex-shrink: 1;
-  overflow: hidden;
-  white-space: nowrap;
-  min-width: 0;
-  max-width: 100%;
-  width: 100%;
 
-  & > .iconify {
-    flex-shrink: 0;
-    min-width: 1em;
-  }
-
-  & > .cell-text {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
-    display: block;
-  }
-}
-
-/* Color folder icon yellow for rows that are folders */
-.table-row.is-folder .item-name-content > .iconify {
-  color: var(--warning-clr, #f5c542);
-  /* Ensure SVG inherits currentColor */
-  fill: currentColor;
-}
 
 
 
@@ -398,37 +244,7 @@ body.is-resizing .table-header > div {
   inline-size: 100%;
 }
 
-/* Data Bar Styles */
-.size-bar,
-.date-bar {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  block-size: 100%;
-  opacity: 0.15;
-}
-.size-bar-file {
-  background-color: var(--success-clr);
-}
-.size-bar-folder {
-  background-color: var(--blu-lite);
-}
-.date-bar {
-  background-color: var(--warning-clr);
-}
 
-/* Folder rows: use a distinct color for date bars (modified/created) */
-.table-row.is-folder .date-bar {
-  background-color: var(--folder-date-clr, #b355c9); /* magenta/purple fallback */
-}
-
-/* Wrapper span for data bar text is now .cell-text */
-.item-size .cell-text,
-.item-modified .cell-text,
-.item-created .cell-text {
-  position: relative;
-  z-index: 1;
-}
 
 /* Selection Box Styles */
 .selection-box {
