@@ -148,7 +148,8 @@ export const useJobsStore = defineStore(
 
       if (validFilesToAdd.length > 0) {
         const beforeCount = job.files.length;
-        job.files.push(...validFilesToAdd);
+        // Use spread operator to ensure reactivity by creating a new array reference
+        job.files = [...job.files, ...validFilesToAdd];
         const afterCount = job.files.length;
         logStoreAction("jobsStore", `Added ${validFilesToAdd.length} new files to job ${jobId}. File count: ${beforeCount} -> ${afterCount}`);
       } else {
@@ -169,15 +170,15 @@ export const useJobsStore = defineStore(
     function addClipboardFilesToJob(jobId: number, files: FileItem[]): void {
       const job = jobs.value.find((j) => j.id === jobId);
       if (job) {
-        let addedCount = 0;
-        files.forEach((fileToAdd) => {
-          if (!job.files.some((file) => file.path === fileToAdd.path)) {
-            job.files.push(fileToAdd);
-            addedCount++;
+        const existingFilePaths = new Set(job.files.map((file) => file.path));
+        const newFiles = files.filter((fileToAdd) => !existingFilePaths.has(fileToAdd.path));
+
+        if (newFiles.length > 0) {
+          // Use spread operator to ensure reactivity by creating a new array reference
+          job.files = [...job.files, ...newFiles];
+          if (DEBUG && debugConfig.logStoreActions) {
+            console.log(`Added ${newFiles.length} files from clipboard to job ${jobId}`);
           }
-        });
-        if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Added ${addedCount} files from clipboard to job ${jobId}`);
         }
       }
     }
@@ -284,7 +285,10 @@ export const useJobsStore = defineStore(
 
       if (sourceJob && targetJob) {
         const filesToMove = sourceJob.files.filter((f) => filePaths.includes(f.path));
-        targetJob.files.push(...filesToMove.filter((file) => !targetJob.files.some((f) => f.path === file.path)));
+        const newFilesForTarget = filesToMove.filter((file) => !targetJob.files.some((f) => f.path === file.path));
+
+        // Use spread operator to ensure reactivity by creating new array references
+        targetJob.files = [...targetJob.files, ...newFilesForTarget];
         sourceJob.files = sourceJob.files.filter((f) => !filePaths.includes(f.path));
 
         if (DEBUG && debugConfig.logStoreActions) {
@@ -299,7 +303,10 @@ export const useJobsStore = defineStore(
 
       if (sourceJob && targetJob) {
         const filesToCopy = sourceJob.files.filter((f) => filePaths.includes(f.path));
-        targetJob.files.push(...filesToCopy.filter((file) => !targetJob.files.some((f) => f.path === file.path)));
+        const newFilesForTarget = filesToCopy.filter((file) => !targetJob.files.some((f) => f.path === file.path));
+
+        // Use spread operator to ensure reactivity by creating new array references
+        targetJob.files = [...targetJob.files, ...newFilesForTarget];
         if (DEBUG && debugConfig.logStoreActions) {
           console.log(`Copied ${filesToCopy.length} files from job ${sourceJobId} to job ${targetJobId}`);
         }

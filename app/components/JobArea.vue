@@ -112,7 +112,9 @@ const loadingMessage = computed(() => {
 });
 
 const activeJob = computed(() => {
-  return jobsStore.jobs.find((job: Job) => job.id === jobsStore.selectedJobId);
+  const job = jobsStore.jobs.find((job: Job) => job.id === jobsStore.selectedJobId);
+  logRendering("JobArea", `activeJob computed: job ${jobsStore.selectedJobId} has ${job?.files.length || 0} files`);
+  return job;
 });
 
 // When the selected job changes (e.g., user clicks a job tab), ensure the
@@ -127,6 +129,15 @@ watch(
       });
     }
   }
+);
+
+// Watch for changes in the active job's files to ensure FileTable updates
+watch(
+  () => activeJob.value?.files,
+  (newFiles, oldFiles) => {
+    logRendering("JobArea", `Active job files changed: ${oldFiles?.length || 0} -> ${newFiles?.length || 0} files`);
+  },
+  { deep: true }
 );
 
 // If the FileTable component wasn't mounted at the time the selectedJobId

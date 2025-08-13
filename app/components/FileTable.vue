@@ -398,9 +398,11 @@ const minMaxFolderCreated = createMemoizedComputed(() =>
 , [() => folderTimestamps.value]);
 
 // --- MEMOIZED VIRTUAL SCROLLING CALCULATIONS ---
-const totalHeight = createMemoizedComputed(() => 
-  sortedFiles.value.length * ROW_HEIGHT
-, [() => sortedFiles.value.length]);
+const totalHeight = createMemoizedComputed(() => {
+  const height = sortedFiles.value.length * ROW_HEIGHT;
+  logRendering("FileTable", `Total height calculated: ${sortedFiles.value.length} files * ${ROW_HEIGHT}px = ${height}px`);
+  return height;
+}, [() => sortedFiles.value.length]);
 
 const startIndex = createMemoizedComputed(() => {
   return Math.max(0, Math.floor(scrollTop.value / ROW_HEIGHT) - BUFFER_ROWS);
@@ -416,7 +418,9 @@ const contentOffsetY = createMemoizedComputed(() =>
 , [() => startIndex.value]);
 
 const visibleFiles = createMemoizedComputed(() => {
-  return sortedFiles.value.slice(startIndex.value, endIndex.value);
+  const files = sortedFiles.value.slice(startIndex.value, endIndex.value);
+  logRendering("FileTable", `Visible files calculated: ${files.length} files (${startIndex.value} to ${endIndex.value}) out of ${sortedFiles.value.length} total`);
+  return files;
 }, [() => sortedFiles.value, () => startIndex.value, () => endIndex.value]);
 
 // --- RESTORED MISSING FUNCTIONS AND VARIABLES ---
@@ -1414,6 +1418,11 @@ const handleContextMenu = (file: FileItem, event: MouseEvent) => {
 watch(visibleFiles, (newVisibleFiles) => {
   logRendering("FileTable", `Virtual scroll update: now showing ${newVisibleFiles.length} files.`);
 });
+
+// Watch for changes in the files prop to ensure component updates when files are added/removed
+watch(() => props.files, (newFiles, oldFiles) => {
+  logRendering("FileTable", `Files prop changed: ${oldFiles?.length || 0} -> ${newFiles?.length || 0} files`);
+}, { deep: true });
 
 // Emit selection changes so parent components (e.g., JobArea) stay in sync
 watch(selectedFiles, (newSelection) => {
