@@ -162,8 +162,7 @@
                 :first-icon-size="20"
                 @click="
                   () => {
-                    dragDropStore.endInternalDrag();
-                    close();
+                    closeAllDropdowns('Cancel button clicked');
                   }
                 "
               >
@@ -341,6 +340,7 @@ import CustomButton from "./CustomButton.vue";
 import InfoTooltip from "./InfoTooltipContainer.vue";
 import { useScrollContainer } from "@/composables/useScrollContainer";
 import { useTooltipManager } from "@/composables/useTooltipManager";
+import { useDropdownManager } from "@/composables/dropdownManager";
 import { logDragDropEvent, logUI, logManagerAction } from "@/utils/loggers";
 
 interface ScrollableOverlayScrollbars extends OverlayScrollbars {
@@ -355,6 +355,7 @@ const uiStore = useUiStore();
 const modalsStore = useModalsStore();
 const dragDropStore = useDragDropStore();
 const tooltipManager = useTooltipManager();
+const { closeAllDropdowns } = useDropdownManager();
 
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
 const jobsList = computed(() => jobsStore.jobs);

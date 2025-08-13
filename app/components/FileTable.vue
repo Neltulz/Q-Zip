@@ -553,6 +553,7 @@ const handleMarqueeMouseMove = (event: MouseEvent) => {
     }
     isMarqueeActive.value = true;
     isPossibleMarquee.value = false;
+    isActive.value = true;
     if (localSelectionBox.value) {
       localSelectionBox.value.style.display = "block";
       localSelectionBox.value.style.transform = `translate(${marqueeAnchorX.value}px, ${marqueeAnchorY.value}px)`;
@@ -1061,6 +1062,7 @@ const stopResize = () => {
 
 const toggleFileSelection = (path: string) => {
   if (!props.isSelectable) return;
+  isActive.value = true;
   const selectedIndex = selectedFiles.value.indexOf(path);
   if (selectedIndex > -1) {
     selectedFiles.value.splice(selectedIndex, 1);
@@ -1100,7 +1102,8 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
     const end = Math.max(lastClickedIndex.value, clickedIndex);
     const rangePaths = sortedFiles.value.slice(start, end + 1).map((f) => f.path);
 
-    if (isCtrlPressed) {
+    // If file table is active, add the new range to existing selection instead of replacing
+    if (isActive.value && selectedFiles.value.length > 0) {
       const selectionSet = new Set(selectedFiles.value);
       rangePaths.forEach((p) => selectionSet.add(p));
       selectedFiles.value = Array.from(selectionSet);
@@ -1113,6 +1116,7 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
     selectedFiles.value = [path];
   }
   lastClickedIndex.value = clickedIndex;
+  isActive.value = true;
 };
 
 const handleRootClick = (event: MouseEvent) => {
@@ -1180,6 +1184,7 @@ const handleDragStart = (event: DragEvent, path: string) => {
     event.dataTransfer.effectAllowed = "copyMove";
   }
 
+  isActive.value = true;
   dragDropStore.startInternalDrag(pathsToDrag, null, props.jobId);
   logDragDropEvent("FileTable", `Native drag started for ${pathsToDrag.length} files from job ${props.jobId}.`);
 };
@@ -1656,6 +1661,19 @@ watch(
     } else {
       // ensure class removed if activation disabled
       root.classList.remove("is-active");
+    }
+  }
+);
+
+// Watch drag state to reactivate file table when drag operations end
+watch(
+  () => dragDropStore.isInternalDragActive,
+  (isDragActive, wasDragActive) => {
+    // When drag operation ends (was active, now inactive), reactivate the file table
+    if (wasDragActive && !isDragActive && props.jobId === jobsStore.selectedJobId) {
+      nextTick(() => {
+        setActive(true);
+      });
     }
   }
 );
