@@ -10,24 +10,46 @@
        * ✅ FileTableRow.vue (individual row rendering)
        * ✅ FileTableToolbar.vue (add/remove/move/copy actions)
        * ✅ FileTableContextMenu.vue (right-click menu)
-     - Current component is 1145 lines and handles too many responsibilities
 
   2. PERFORMANCE OPTIMIZATIONS
-     - Add memoization for expensive computations (sortedFiles, columnStyles)
-     - Use useMemo or similar for sorting operations
-     - Optimize large template with many conditional renders
-     - Consider lazy loading for context menus
+     - ✅ Add memoization for expensive computations (sortedFiles, columnStyles)
+     - ✅ Use useMemo or similar for sorting operations
+     - ✅ Optimize large template with many conditional renders
+     - ✅ Consider lazy loading for context menus
 
   3. ERROR HANDLING
-     - Add comprehensive error handling for file operations
+     - Add comprehensive error handling for job operations
+       * [Critically Important (5)] Add validation for file paths to ensure they exist and are accessible
+       * [Critically Important (5)] Handle file read permission errors when retrieving metadata
+       * [Very Important (4)] Handle inaccessible or deleted files gracefully
+       * [Very Important (4)] Implement proper cleanup when metadata retrieval fails
+       * [Important (3)] Implement retry mechanisms for transient file system errors
+       * [Important (3)] Implement fallback behavior when file metadata cannot be retrieved
+       * [Somewhat Important (2)] Add specific error handling for different file types (archives, executables, etc.)
      - Implement loading states for individual operations
+       * [Very Important (4)] Show progress indicators for file additions/removals
+       * [Very Important (4)] Display loading states for file metadata retrieval
+       * [Important (3)] Add skeleton loaders for file table rows during operations
+       * [Important (3)] Implement timeout handling for long-running metadata operations
+       * [Somewhat Important (2)] Show cancellation options for user-initiated operations
      - Add error boundaries for component failures
-     - Handle edge cases (empty states, network failures)
+       * [Critically Important (5)] Implement Vue error boundaries to catch component crashes
+       * [Very Important (4)] Add fallback UI for when FileTable component fails to render
+       * [Very Important (4)] Handle unexpected data format errors gracefully
+       * [Important (3)] Implement component recovery mechanisms
+       * [Somewhat Important (2)] Add error reporting/logging for debugging
+     - Handle edge cases (empty states, file system changes)
+       * [Very Important (4)] Implement proper empty state UI with helpful messaging
+       * [Very Important (4)] Handle file system changes during component lifecycle
+       * [Important (3)] Implement proper cleanup when component unmounts during operations
+       * [Important (3)] Add validation for file size limits and system constraints
+       * [Somewhat Important (2)] Handle cases where files are moved/deleted after being added to job
+       * [Low Priority (1)] Add support for detecting file modifications after job creation
 
   4. TESTING
      - Implement comprehensive unit tests for complex interactions
-     - Test virtual scrolling with large datasets
-     - Test drag & drop functionality
+     - ✅ Test virtual scrolling with large datasets (Result: Better, but not perfect)
+     - ✅Test drag & drop functionality
      - Test keyboard navigation and accessibility
      - Add integration tests for file operations
 
@@ -42,7 +64,6 @@
      - Improve keyboard navigation (Tab, Arrow keys)
      - Add screen reader announcements for state changes
      - Ensure proper focus management
-     - Add high contrast mode support
 
   7. UI/UX ENHANCEMENTS
      - Add fancy animations/highlights to job selectors that have notifications above them

@@ -374,6 +374,13 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   min-inline-size: 150px;
 }
 
+/* IMPORTANT: Do NOT add width: 100% or flex: 1 to .item-name-content
+ * This element should only be as wide as its content (icon + text) to ensure
+ * marquee drag selection works correctly. The selection box should only
+ * select items when it visually intersects with the actual icon and text,
+ * not the full width of the container. Adding width: 100% or flex: 1 would
+ * make the element span the full column width, causing incorrect marquee selection.
+ */
 .item-name-content {
   display: flex;
   align-items: center;
@@ -383,8 +390,6 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   overflow: hidden;
   white-space: nowrap;
   min-width: 0;
-  max-width: 100%;
-  width: 100%;
 
   & > .iconify {
     flex-shrink: 0;
