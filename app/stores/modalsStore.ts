@@ -25,7 +25,7 @@
 
 import { defineStore } from "pinia";
 import { ref, readonly, type Ref } from "vue";
-import { logStoreAction } from "@/utils/loggers";
+import { logStoreAction, logManagerAction } from "@/utils/loggers";
 import type { ActiveModal, ModalOptions } from "@/types/modal";
 
 export const useModalsStore = defineStore(
@@ -50,6 +50,8 @@ export const useModalsStore = defineStore(
     ): void {
       const id = `modal-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       logStoreAction("modalsStore", `Opening modal: ${component} with ID: ${id}`, { options, props });
+      logManagerAction("modalsStore", `Modal opening: ${component} (ID: ${id})`);
+
       activeModals.value.push({
         id,
         component,
@@ -57,6 +59,8 @@ export const useModalsStore = defineStore(
         props: props || {},
         onClose,
       });
+
+      logManagerAction("modalsStore", `Modal opened: ${component} (ID: ${id}). Total active modals: ${activeModals.value.length}`);
     }
 
     /**
@@ -66,9 +70,12 @@ export const useModalsStore = defineStore(
      */
     function closeModal(id: string, action: string): void {
       logStoreAction("modalsStore", `Closing modal ID: ${id} with action: ${action}`);
+      logManagerAction("modalsStore", `Modal closing: ID ${id} with action: ${action}`);
+
       const modal = activeModals.value.find((m) => m.id === id);
       if (modal?.onClose) {
         logStoreAction("modalsStore", `Executing onClose callback for modal ID: ${id}`);
+        logManagerAction("modalsStore", `Executing onClose callback for modal: ${modal.component} (ID: ${id})`);
         modal.onClose(action);
       }
 
@@ -76,6 +83,22 @@ export const useModalsStore = defineStore(
       if (index > -1) {
         activeModals.value.splice(index, 1);
         logStoreAction("modalsStore", `Removed modal ID: ${id} from active stack.`);
+        logManagerAction("modalsStore", `Modal closed: ID ${id}. Remaining active modals: ${activeModals.value.length}`);
+
+        // Check for any remaining modal elements in the DOM
+        setTimeout(() => {
+          const remainingModals = document.querySelectorAll('.modal-wrapper');
+          if (remainingModals.length > 0) {
+            logManagerAction("modalsStore", `Warning: Found ${remainingModals.length} modal wrapper(s) still in DOM after closing modal ${id}`);
+            remainingModals.forEach((modal, index) => {
+              const modalId = modal.id;
+              const isVisible = modal.classList.contains('modal-open');
+              logManagerAction("modalsStore", `  Remaining modal ${index}: id=${modalId}, visible=${isVisible}`);
+            });
+          } else {
+            logManagerAction("modalsStore", `All modal wrappers properly removed from DOM after closing modal ${id}`);
+          }
+        }, 100);
       }
     }
 

@@ -341,6 +341,7 @@ import CustomButton from "./CustomButton.vue";
 import InfoTooltip from "./InfoTooltipContainer.vue";
 import { useScrollContainer } from "@/composables/useScrollContainer";
 import { useTooltipManager } from "@/composables/useTooltipManager";
+import { logDragDropEvent, logUI, logManagerAction } from "@/utils/loggers";
 
 interface ScrollableOverlayScrollbars extends OverlayScrollbars {
   scroll: (destination: { x?: string | number; y?: string | number }, duration?: number) => void;
@@ -678,16 +679,20 @@ const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job"
 };
 
 const handleDragAction = (operation: "move" | "copy", targetIdentifier: number | "new-job") => {
+  logManagerAction("JobSelectorArea", `handleDragAction called: operation=${operation}, target=${targetIdentifier}`);
+  
   const droppedFilePaths = pendingDropFilePaths.value;
   const sourceJobId = pendingDropSourceJobId.value;
 
   if (!sourceJobId || droppedFilePaths.length === 0) {
+    logManagerAction("JobSelectorArea", "handleDragAction: Invalid source job or no files, ending drag");
     dragDropStore.endInternalDrag();
     return;
   }
 
   const sourceJob = jobsStore.jobs.find((j) => j.id === sourceJobId);
   if (!sourceJob) {
+    logManagerAction("JobSelectorArea", "handleDragAction: Source job not found, ending drag");
     dragDropStore.endInternalDrag();
     return;
   }
@@ -697,6 +702,7 @@ const handleDragAction = (operation: "move" | "copy", targetIdentifier: number |
 
   // End the drag operation immediately when opening the confirmation modal
   // This will clear the dashed lines and visual indicators
+  logManagerAction("JobSelectorArea", "handleDragAction: Ending drag operation before opening modal");
   dragDropStore.endInternalDrag();
 
   openOperationConfirmModal(operation, filesToOperateOn, targetIdentifier, sourceJobId);
@@ -708,6 +714,16 @@ const openOperationConfirmModal = (
   targetJobId: number | "new-job",
   sourceJobId: number | null
 ) => {
+  logManagerAction("JobSelectorArea", `openOperationConfirmModal called: operation=${operation}, target=${targetJobId}, files=${files.length}`);
+  
+  // Explicitly close any open drag action dropdowns before opening the modal
+  const targetIdentifier = targetJobId;
+  const dropdown = dragActionDropdownRefs.value.get(targetIdentifier);
+  if (dropdown) {
+    logManagerAction("JobSelectorArea", `Explicitly closing drag action dropdown for target: ${targetIdentifier}`);
+    dropdown.closeDropdown();
+  }
+  
   const targetJob = jobsStore.jobs.find((j) => j.id === targetJobId);
   let itemsToProcess: FileItem[] = [];
   let itemsToSkip: FileItem[] = [];
@@ -744,6 +760,7 @@ const openOperationConfirmModal = (
     closeOnClickOutside: true,
   };
 
+  logManagerAction("JobSelectorArea", "openOperationConfirmModal: Opening modal");
   modalsStore.openModal(
     "ResetConfirmationModalContent",
     modalOptions,
@@ -753,6 +770,7 @@ const openOperationConfirmModal = (
       operation,
     },
     (action: string, conflictResolution?: 'skip' | 'replace') => {
+      logManagerAction("JobSelectorArea", `Modal callback: action=${action}, conflictResolution=${conflictResolution}`);
       if (action === "proceed") {
         uiStore.handleFileOperation(operation, files, targetJobId, { 
           sourceJobId, 

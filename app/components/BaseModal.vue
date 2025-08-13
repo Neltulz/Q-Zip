@@ -91,11 +91,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watchEffect } from "vue";
+import { ref, onMounted, computed, watchEffect, watch } from "vue";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
 import { useModalsStore } from "@/stores/modalsStore";
-import { logLifecycle } from "@/utils/loggers";
+import { logLifecycle, logManagerAction } from "@/utils/loggers";
 import type { ModalOptions as OriginalModalOptions } from "@/types/modal";
 import CustomButton from "./CustomButton.vue";
 
@@ -139,40 +139,40 @@ const descriptionContent = computed((): readonly string[] => {
 // Use watchEffect to safely manage the event listener's lifecycle
 watchEffect((onInvalidate) => {
   // Only add the listener if the modal is active and has options
-  if (!props.isActive || !props.options) {
-    return;
-  }
+  if (props.isActive && props.options) {
+    logManagerAction("BaseModal", `Modal ${props.modalId} is now active`);
 
-  // Create a stable copy of the options to satisfy TypeScript's control flow analysis
-  const stableOptions = { ...props.options };
+    // Create a stable copy of the options to satisfy TypeScript's control flow analysis
+    const stableOptions = { ...props.options };
 
-  const handleKeydown = (event: KeyboardEvent) => {
-    if (!props.isActive) return; // Re-check in case modal was closed
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (!props.isActive) return; // Re-check in case modal was closed
 
-    if (event.key === "Escape" && (stableOptions.closeOnEscape ?? true)) {
-      handleClose("cancel");
-    } else if (event.key === "Enter") {
-      const buttons = stableOptions.buttons;
-      if (buttons && buttons.length > 0) {
-        const defaultButton = buttons.find((b) => b.isDefault) || buttons.find((b) => b.action === "proceed");
-        if (defaultButton) {
-          handleClose(defaultButton.action);
-          event.preventDefault();
+      if (event.key === "Escape" && (stableOptions.closeOnEscape ?? true)) {
+        handleClose("cancel");
+      } else if (event.key === "Enter") {
+        const buttons = stableOptions.buttons;
+        if (buttons && buttons.length > 0) {
+          const defaultButton = buttons.find((b) => b.isDefault) || buttons.find((b) => b.action === "proceed");
+          if (defaultButton) {
+            handleClose(defaultButton.action);
+            event.preventDefault();
+          }
         }
       }
-    }
-  };
+    };
 
-  window.addEventListener("keydown", handleKeydown);
+    window.addEventListener("keydown", handleKeydown);
 
-  // The onInvalidate callback automatically cleans up the listener
-  onInvalidate(() => {
-    window.removeEventListener("keydown", handleKeydown);
-  });
+    // The onInvalidate callback automatically cleans up the listener
+    onInvalidate(() => {
+      window.removeEventListener("keydown", handleKeydown);
+    });
+  }
 });
 
 onMounted(() => {
-  logLifecycle("BaseModal", `Mounted with ID: ${props.modalId}`);
+  logLifecycle("BaseModal", `Modal ${props.modalId} mounted`);
   isMounted.value = true;
   isVisible.value = true;
 
@@ -181,12 +181,19 @@ onMounted(() => {
   }, 50);
 });
 
+// Watch for visibility changes
+watchEffect(() => {
+  logManagerAction("BaseModal", `Modal ${props.modalId} visibility changed: isVisible=${isVisible.value}, isMounted=${isMounted.value}, animationState=${animationState.value}`);
+});
+
 const handleClose = (action: string): void => {
   if (animationState.value === "modal-is-leaving") return;
 
+  logManagerAction("BaseModal", `handleClose called for modal ${props.modalId} with action: ${action}`);
   animationState.value = "modal-is-leaving";
 
   setTimeout(() => {
+    logManagerAction("BaseModal", `Setting modal ${props.modalId} to invisible after close delay`);
     isVisible.value = false;
     animationState.value = "";
     modalsStore.closeModal(props.modalId, action);

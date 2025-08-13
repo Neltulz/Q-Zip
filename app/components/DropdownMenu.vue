@@ -89,7 +89,7 @@
 import { computed, nextTick, onUnmounted, ref, useSlots, watch, type CSSProperties, type PropType, type Ref } from "vue";
 import { useDropdownManager, type Dropdown } from "@/composables/dropdownManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-import { logInteraction, logTrace, logWarning } from "@/utils/loggers";
+import { logInteraction, logTrace, logWarning, logManagerAction } from "@/utils/loggers";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
 
@@ -441,6 +441,12 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
 
 const closeDropdown = (): void => {
   if (!isOpen.value) return;
+  
+  const dropdownName = props.dropdownDataName;
+  const isDragActionDropdown = dropdownName.startsWith('drag-action-job-') || dropdownName === 'drag-action-new-job';
+  
+  logManagerAction("DropdownMenu", `closeDropdown called for: ${dropdownName} (isDragAction: ${isDragActionDropdown})`);
+  
   if (debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Closing "${props.dropdownDataName}"`);
 
   // Cancel any pending open timeouts for submenus
@@ -465,6 +471,8 @@ const closeDropdown = (): void => {
   // With Vue transitions, we can immediately set isOpen to false
   // The transition will handle the fade-out animation
   isOpen.value = false;
+  
+  logManagerAction("DropdownMenu", `closeDropdown completed for: ${dropdownName}`);
 };
 
 const handleButtonClick = async (event?: MouseEvent): Promise<void> => {

@@ -43,6 +43,12 @@
      - Add screen reader announcements for state changes
      - Ensure proper focus management
      - Add high contrast mode support
+
+  7. UI/UX ENHANCEMENTS
+     - Add fancy animations/highlights to job selectors that have notifications above them
+     - Consider pulse effects, glow animations, or attention-grabbing visual cues
+     - Implement smooth transitions for notification states
+     - Add visual feedback for drag operations across job boundaries
 -->
 
 <template>

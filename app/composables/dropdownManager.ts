@@ -149,7 +149,15 @@ const closeAllDropdowns = (reason?: string): void => {
       return dropdownName && (dropdownName.startsWith('drag-action-job-') || dropdownName === 'drag-action-new-job');
     });
 
-    openDropdowns.value.forEach((dropdown) => dropdown.close());
+    if (hasDragActionDropdown) {
+      logManagerAction("dropdownManager", "Found drag action dropdown in open dropdowns list");
+    }
+
+    openDropdowns.value.forEach((dropdown) => {
+      const dropdownName = dropdown.dropdownContent?.getAttribute('data-belongs-to') || 'unknown';
+      logManagerAction("dropdownManager", `Closing dropdown: ${dropdownName}`);
+      dropdown.close();
+    });
 
     // If we closed a drag action dropdown, also end the drag operation
     if (hasDragActionDropdown) {
@@ -250,9 +258,17 @@ export function useDropdownManager() {
   // Watch for modal state changes and hide overlay when modals open
   watchEffect(() => {
     const modalOpen = !!document.querySelector(".modal-wrapper.modal-open");
-    if (modalOpen && overlayEl && overlayEl.getAttribute("data-overlay-visible") === "true") {
-      logManagerAction("dropdownManager", "Modal opened, hiding dropdown overlay");
-      hideOverlay();
+    if (modalOpen) {
+      if (overlayEl && overlayEl.getAttribute("data-overlay-visible") === "true") {
+        logManagerAction("dropdownManager", "Modal opened, hiding dropdown overlay");
+        hideOverlay();
+      }
+
+      // Also close all dropdowns when a modal opens
+      if (openDropdowns.value.length > 0) {
+        logManagerAction("dropdownManager", "Modal opened, closing all dropdowns");
+        closeAllDropdowns("Modal opened");
+      }
     }
   });
 
