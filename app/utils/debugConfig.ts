@@ -32,7 +32,7 @@ export const debugConfig: Record<string, boolean> = {
   logClicksAndInputs: false,
 
   // Logs actions and state changes within Pinia stores.
-  logStoreActions: false,
+  logStoreActions: true,
 
   // Logs events specific to the DropdownMenu component.
   logDropdownEvents: true,

@@ -32,10 +32,7 @@
   box-shadow: 0 0 0 2px rgba(0, 150, 255, 0.15) inset;
 }
 
-.file-table-comp:not(.is-dragging) .table-row:hover .row-actions,
-.file-table-comp .row-actions:has(.dropdown-menu.active) {
-  opacity: 1;
-}
+
 
 .file-table-comp.is-active .file-table-visual-select {
   opacity: 0.5;
@@ -140,17 +137,7 @@
 }
 
 /* While marquee is active, hide and disable row actions to prevent layout thrash and accidental interactions */
-.file-table-comp.is-marquee-dragging .row-actions {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
 
-/* Disable dropdown open button inside row-actions while marquee active (safe-guard) */
-.file-table-comp.is-marquee-dragging .row-actions .trans-btn,
-.file-table-comp.is-marquee-dragging .row-actions .minimal-trans-btn {
-  pointer-events: none !important;
-  opacity: 0 !important;
-}
 
 /* Disable interactions with the toolbar and header while marquee drag is active */
 .file-table-comp.is-marquee-dragging .file-table-toolbar {
@@ -396,13 +383,7 @@ body.is-resizing .table-header > div {
   fill: currentColor;
 }
 
-.row-actions {
-  display: flex;
-  justify-content: flex-end;
-  opacity: 0;
-  transition: opacity 150ms ease-in-out;
-  flex-shrink: 0;
-}
+
 
 /* Virtual Scrolling Styles */
 .virtual-scroll-spacer {

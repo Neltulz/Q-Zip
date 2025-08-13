@@ -370,7 +370,7 @@ const getFileNamesFromPaths = (paths: string[], sourceJobId: number | null): str
 
 const confirmRemoveFiles = (paths: string | string[]) => {
   const pathsToRemove: string[] = getPathsForAction(paths);
-  const fileList: string[] = getFileNamesFromPaths(pathsToRemove, activeJob.value?.id ?? null);
+  const itemsToProcess: FileItem[] = getFileItemsFromPaths(pathsToRemove, activeJob.value?.id ?? null);
   const modalOptions: ModalOptions = {
     icon: "mdi:alert-outline",
     title: "Confirm Remove Items",
@@ -382,7 +382,12 @@ const confirmRemoveFiles = (paths: string | string[]) => {
     footerJustifyContent: "center",
     closeOnClickOutside: true,
   };
-  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { fileList }, (action: string) => {
+  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { 
+    itemsToProcess,
+    itemsToSkip: [],
+    showProcessColumn: true,
+    showSkipColumn: false
+  }, (action: string) => {
     if (action === "proceed" && activeJob.value) {
       handleOperation("removing", pathsToRemove, () => {
         jobsStore.removeFilesFromJob(activeJob.value!.id, pathsToRemove);
@@ -398,6 +403,27 @@ const openOperationConfirmModal = (
   targetJobId: number | "new-job",
   sourceJobId: number | null
 ) => {
+  // Add logging to debug the issue
+  try {
+    const { logStoreAction } = require("@/utils/loggers");
+    logStoreAction("JobArea", "openOperationConfirmModal called", { 
+      operation,
+      filesCount: files.length,
+      targetJobId, 
+      targetJobIdType: typeof targetJobId,
+      sourceJobId,
+      sourceJobIdType: typeof sourceJobId
+    });
+  } catch (e) {
+    console.log("JobArea.openOperationConfirmModal", { 
+      operation,
+      filesCount: files.length,
+      targetJobId, 
+      targetJobIdType: typeof targetJobId,
+      sourceJobId 
+    });
+  }
+  
   const targetJob = jobsStore.jobs.find((j) => j.id === targetJobId);
   let itemsToProcess: FileItem[] = [];
   let itemsToSkip: FileItem[] = [];
@@ -417,6 +443,23 @@ const openOperationConfirmModal = (
 
   const opString = operation === "move" ? "Move" : "Copy";
   const targetName = targetJobId === "new-job" ? "a new job" : `Job ${targetJobId}`;
+  
+  // Add logging for the targetName construction
+  try {
+    const { logStoreAction } = require("@/utils/loggers");
+    logStoreAction("JobArea", "targetName constructed", { 
+      targetJobId, 
+      targetJobIdType: typeof targetJobId,
+      targetName,
+      targetNameType: typeof targetName
+    });
+  } catch (e) {
+    console.log("JobArea.targetName", { 
+      targetJobId, 
+      targetJobIdType: typeof targetJobId,
+      targetName 
+    });
+  }
   const modalOptions: ModalOptions = {
     icon: operation === "move" ? "mdi:arrow-right" : "mdi:content-copy",
     title: `Confirm ${opString} Items`,
@@ -462,6 +505,25 @@ const openOperationConfirmModal = (
 
 const confirmMoveFiles = (payload: FileOperationPayload | ContextMenuFileOperationPayload): void => {
   const { targetJobId } = payload;
+  
+  // Add logging to debug the issue
+  try {
+    const { logStoreAction } = require("@/utils/loggers");
+    logStoreAction("JobArea", "confirmMoveFiles received payload", { 
+      payload,
+      targetJobId, 
+      targetJobIdType: typeof targetJobId,
+      hasFiles: "files" in payload,
+      hasRightClickedPath: "rightClickedPath" in payload
+    });
+  } catch (e) {
+    console.log("JobArea.confirmMoveFiles", { 
+      payload,
+      targetJobId, 
+      targetJobIdType: typeof targetJobId 
+    });
+  }
+  
   let pathsToMove = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath);
   // If only one path was passed but the user currently has a multi-selection that includes
   // that path, prefer the full selection (defensive against races where selection wasn't
@@ -484,6 +546,25 @@ const confirmMoveToNewJob = (paths: string | string[]): void => {
 
 const confirmCopyFiles = (payload: FileOperationPayload | ContextMenuFileOperationPayload): void => {
   const { targetJobId } = payload;
+  
+  // Add logging to debug the issue
+  try {
+    const { logStoreAction } = require("@/utils/loggers");
+    logStoreAction("JobArea", "confirmCopyFiles received payload", { 
+      payload,
+      targetJobId, 
+      targetJobIdType: typeof targetJobId,
+      hasFiles: "files" in payload,
+      hasRightClickedPath: "rightClickedPath" in payload
+    });
+  } catch (e) {
+    console.log("JobArea.confirmCopyFiles", { 
+      payload,
+      targetJobId, 
+      targetJobIdType: typeof targetJobId 
+    });
+  }
+  
   let pathsToCopy = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath);
   if (pathsToCopy.length === 1 && selectedFilePaths.value.length > 1 && selectedFilePaths.value.includes(pathsToCopy[0])) {
     pathsToCopy = [...selectedFilePaths.value];

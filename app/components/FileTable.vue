@@ -9,7 +9,7 @@
        * ✅ FileTableHeader.vue (sorting, column resizing)
        * FileTableRow.vue (individual row rendering)
        * ✅ FileTableToolbar.vue (add/remove/move/copy actions)
-       * FileTableContextMenu.vue (right-click menu)
+       * ✅ FileTableContextMenu.vue (right-click menu)
      - Current component is 1145 lines and handles too many responsibilities
 
   2. PERFORMANCE OPTIMIZATIONS
@@ -131,7 +131,7 @@
                 :data-path="file.path"
                 data-has-context-menu="true"
                 @click="clickRowByPath($event, file.path)"
-                @contextmenu.prevent.stop="showFileContextMenu(file, $event)"
+                @contextmenu.prevent.stop="handleContextMenu(file, $event)"
               >
                 <!-- Checkbox Cell -->
                 <div v-if="props.showCheckboxes" class="item-checkbox">
@@ -159,197 +159,19 @@
                     <Icon :name="file.type === 'Folder' ? 'mdi:folder' : 'mdi:file-outline'" size="16" />
                     <span class="cell-text">{{ file.name }}</span>
                   </div>
-                  <div v-if="props.showRowActions" class="row-actions" @click.stop>
-                    <DropdownMenu
-                      :ref="(el) => setFileMenuRef(file, el)"
-                      :button-style-class="'trans-btn'"
-                      :dropdown-data-name="`file-actions-${file.path}`"
-                      :first-icon-name="''"
-                      :last-icon-name="'mdi:dots-horizontal'"
-                      :last-icon-size="20"
-                      placement="bottom-start"
-                    >
-                      <template #default="{ close: closeMain }">
-                        <CustomButton
-                          button-style-class="trans-btn"
-                          data-btn-theme="danger"
-                          :data-name="`remove-file-${file.path}-btn`"
-                          first-icon-name="mdi:trash-can-outline"
-                          :first-icon-size="20"
-                          shortcut-text="Del"
-                          @click="
-                            () => {
-                              removeFile(file.path);
-                              closeMain();
-                            }
-                          "
-                        >
-                          Remove
-                        </CustomButton>
-                        <hr />
-                        <DropdownMenu
-                          :button-style-class="'trans-btn'"
-                          :dropdown-data-name="`copy-file-${file.path}-submenu`"
-                          :first-icon-name="'mdi:content-copy'"
-                          :first-icon-size="20"
-                          :is-submenu="true"
-                          :last-icon-name="'mdi:chevron-right'"
-                          :last-icon-size="20"
-                          placement="right-start"
-                        >
-                          <template #button-content>Copy to</template>
-                          <template #default="{ close: closeSub }">
-                            <CustomButton
-                              v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
-                              :key="job.id"
-                              button-style-class="trans-btn"
-                              :data-name="`copy-file-${file.path}-to-job-${job.id}-btn`"
-                              first-icon-name="mdi:briefcase"
-                              :first-icon-size="20"
-                              @click="
-                                () => {
-                                  copyFile(job.id, file.path);
-                                  closeSub();
-                                  closeMain();
-                                }
-                              "
-                            >
-                              Job {{ job.id }}
-                            </CustomButton>
-                          </template>
-                          <template #content-bottom="{ close: closeSub }">
-                            <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
-                            <CustomButton
-                              button-style-class="trans-btn"
-                              data-name="copy-to-new-job-btn"
-                              first-icon-name="mdi:plus"
-                              :first-icon-size="20"
-                              @click="
-                                () => {
-                                  copyFileToNewJob(file.path);
-                                  closeSub();
-                                  closeMain();
-                                }
-                              "
-                            >
-                              New Job
-                            </CustomButton>
-                          </template>
-                        </DropdownMenu>
-                        <DropdownMenu
-                          :button-style-class="'trans-btn'"
-                          :dropdown-data-name="`move-file-${file.path}-submenu`"
-                          :first-icon-name="'mdi:arrow-right'"
-                          :first-icon-size="20"
-                          :is-submenu="true"
-                          :last-icon-name="'mdi:chevron-right'"
-                          :last-icon-size="20"
-                          placement="right-start"
-                        >
-                          <template #button-content>Move to</template>
-                          <template #default="{ close: closeSub }">
-                            <CustomButton
-                              v-for="job in jobs.filter((j: Job) => j.id !== props.jobId)"
-                              :key="job.id"
-                              button-style-class="trans-btn"
-                              :data-name="`move-file-${file.path}-to-job-${job.id}-btn`"
-                              first-icon-name="mdi:briefcase"
-                              :first-icon-size="20"
-                              @click="
-                                () => {
-                                  moveFile(job.id, file.path);
-                                  closeSub();
-                                  closeMain();
-                                }
-                              "
-                            >
-                              Job {{ job.id }}
-                            </CustomButton>
-                          </template>
-                          <template #content-bottom="{ close: closeSub }">
-                            <hr v-if="jobs.filter((j) => j.id !== props.jobId).length > 0" />
-                            <CustomButton
-                              button-style-class="trans-btn"
-                              data-name="move-to-new-job-btn"
-                              first-icon-name="mdi:plus"
-                              :first-icon-size="20"
-                              @click="
-                                () => {
-                                  moveFileToNewJob(file.path);
-                                  closeSub();
-                                  closeMain();
-                                }
-                              "
-                            >
-                              New Job
-                            </CustomButton>
-                          </template>
-                        </DropdownMenu>
-                        <hr />
-                        <CustomButton
-                          button-style-class="trans-btn btn-lite"
-                          :data-name="`cut-file-${file.path}-btn`"
-                          first-icon-name="mdi:content-cut"
-                          :first-icon-size="20"
-                          shortcut-text="Ctrl+X"
-                          @click="
-                            () => {
-                              performCutFor(file.path);
-                              closeMain();
-                            }
-                          "
-                        >
-                          Cut
-                        </CustomButton>
-                        <CustomButton
-                          button-style-class="trans-btn btn-lite"
-                          :data-name="`copy-file-${file.path}-btn`"
-                          first-icon-name="mdi:content-copy"
-                          :first-icon-size="20"
-                          shortcut-text="Ctrl+C"
-                          @click="
-                            () => {
-                              performCopyFor(file.path);
-                              closeMain();
-                            }
-                          "
-                        >
-                          Copy
-                        </CustomButton>
-                        <CustomButton
-                          button-style-class="trans-btn btn-lite"
-                          :data-name="`paste-file-${file.path}-btn`"
-                          first-icon-name="mdi:content-paste"
-                          :first-icon-size="20"
-                          shortcut-text="Ctrl+V"
-                          :disabled="!clipboardStore.hasClipboardItems()"
-                          @click="
-                            () => {
-                              if (clipboardStore.isCut) {
-                                moveFile(jobId, file.path);
-                              } else {
-                                copyFile(jobId, file.path);
-                              }
-                              closeMain();
-                            }
-                          "
-                        >
-                          Paste
-                        </CustomButton>
-                        <hr />
-                        <CustomButton
-                          button-style-class="trans-btn btn-lite"
-                          :data-name="`cancel-file-action-${file.path}-btn`"
-                          first-icon-name="mdi:cancel"
-                          :first-icon-size="20"
-                          shortcut-text="Esc"
-                          @click="closeMain()"
-                        >
-                          Cancel
-                        </CustomButton>
-                      </template>
-                    </DropdownMenu>
-                  </div>
+                  <FileTableContextMenu
+                    :file="file"
+                    :job-id="props.jobId"
+                    :show-row-actions="props.showRowActions"
+                    :selected-files="selectedFiles"
+                    :ref="(el) => setFileMenuRef(file, el)"
+                    @remove-files="removeFile"
+                    @move-files="handleContextMenuMoveFiles"
+                    @move-to-new-job="moveFileToNewJob"
+                    @copy-files="handleContextMenuCopyFiles"
+                    @copy-to-new-job="copyFileToNewJob"
+                    @selection-changed="(paths) => selectedFiles = paths"
+                  />
                 </div>
                 <!-- Other Cells -->
                 <div class="item-size">
@@ -423,12 +245,11 @@ import { useThemeStore } from "@/stores/themeStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
 import { useUiStore } from "@/stores/uiStore";
 import type { FileItem } from "@/types/types";
-import DropdownMenu from "./DropdownMenu.vue";
 import FileTableHeader from "./file-table-comp/FileTableHeader.vue";
 import FileTableToolbar from "./file-table-comp/FileTableToolbar.vue";
+import FileTableContextMenu from "./file-table-comp/FileTableContextMenu.vue";
 import { logDragDropEvent, logLifecycle, logRendering, logUI, logMarqueeSelection } from "@/utils/loggers";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
-import { useClipboardStore } from "@/stores/clipboardStore";
 import { open } from "@tauri-apps/plugin-dialog";
 import LoadingAnim from "@/components/LoadingAnim.vue";
 
@@ -479,13 +300,13 @@ const emit = defineEmits([
 const themeStore = useThemeStore();
 const jobsStore = useJobsStore();
 const dragDropStore = useDragDropStore();
-const clipboardStore = useClipboardStore();
+
 const uiStore = useUiStore();
 
 const scrollComponentRef = ref<InstanceType<typeof OverlayScrollbarsComponent> | null>(null);
 const viewportRef = ref<HTMLElement | null>(null);
 const fileTableCompRef = ref<HTMLElement | null>(null);
-const fileMenuRefs = ref(new Map<string, InstanceType<typeof DropdownMenu>>());
+const fileMenuRefs = ref(new Map<string, any>());
 const selectedFiles = ref<string[]>([]);
 const lastClickedIndex = ref<number | null>(null);
 const isActive = ref<boolean>(false);
@@ -1638,29 +1459,7 @@ const handleDragEnd = () => {
 
 
 
-const performCopyFor = (pathOrPaths: string | string[]) => {
-  const paths = Array.isArray(pathOrPaths)
-    ? pathOrPaths
-    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
-    ? selectedFiles.value
-    : [pathOrPaths];
-  const filesToCopy: FileItem[] = paths
-    .map((p) => jobsStore.jobs.find((j) => j.id === props.jobId)?.files.find((f) => f.path === p))
-    .filter(Boolean) as FileItem[];
-  clipboardStore.copy(filesToCopy, props.jobId);
-};
 
-const performCutFor = (pathOrPaths: string | string[]) => {
-  const paths = Array.isArray(pathOrPaths)
-    ? pathOrPaths
-    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
-    ? selectedFiles.value
-    : [pathOrPaths];
-  const filesToCut: FileItem[] = paths
-    .map((p) => jobsStore.jobs.find((j) => j.id === props.jobId)?.files.find((f) => f.path === p))
-    .filter(Boolean) as FileItem[];
-  clipboardStore.cut(filesToCut, props.jobId);
-};
 
 
 
@@ -1759,13 +1558,23 @@ const copyFileToNewJob = (pathOrPaths: string | string[]): void => {
   emit("copy-to-new-job", paths);
 };
 
+// Handler for context menu copy events (different format)
+const handleContextMenuCopyFiles = (payload: { targetJobId: number; rightClickedPath: string }): void => {
+  emit("copy-files", payload);
+};
+
+// Handler for context menu move events (different format)
+const handleContextMenuMoveFiles = (payload: { targetJobId: number; rightClickedPath: string }): void => {
+  emit("move-files", payload);
+};
+
 const setFileMenuRef = (file: FileItem, el: any) => {
   if (el) {
     fileMenuRefs.value.set(file.path, el);
   }
 };
 
-const showFileContextMenu = (file: FileItem, event: MouseEvent) => {
+const handleContextMenu = (file: FileItem, event: MouseEvent) => {
   if (!props.isSelectable) return;
   if (!selectedFiles.value.includes(file.path)) {
     selectedFiles.value = [file.path];
@@ -1775,7 +1584,7 @@ const showFileContextMenu = (file: FileItem, event: MouseEvent) => {
     }
   }
   const menuRef = fileMenuRefs.value.get(file.path);
-  menuRef?.openDropdown({ x: event.clientX, y: event.clientY });
+  menuRef?.showFileContextMenu(file, event);
 };
 
 // --- LOGGING ---
