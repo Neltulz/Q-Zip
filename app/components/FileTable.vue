@@ -7,7 +7,7 @@
   1. COMPONENT DECOMPOSITION
      - Break into smaller, focused components:
        * ✅ FileTableHeader.vue (sorting, column resizing)
-       * FileTableRow.vue (individual row rendering)
+       * ✅ FileTableRow.vue (individual row rendering)
        * ✅ FileTableToolbar.vue (add/remove/move/copy actions)
        * ✅ FileTableContextMenu.vue (right-click menu)
      - Current component is 1145 lines and handles too many responsibilities
@@ -81,6 +81,7 @@
       :job-id="props.jobId"
       :selected-files="selectedFiles"
       :show-toolbar="props.showToolbar"
+      :is-filetable-active="isActive"
       @remove-files="removeSelectedFiles"
       @move-files="moveToJob"
       @move-to-new-job="moveToNewJob"
@@ -88,6 +89,7 @@
       @copy-to-new-job="copyToNewJob"
       @add-files="handleAddFile"
       @add-folders="handleAddFolder"
+      @activate-filetable="setActive(true)"
     />
 
     <OverlayScrollbarsComponent

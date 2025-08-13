@@ -1,5 +1,5 @@
 <template>
-  <ToolBar v-if="showToolbar" class="file-table-toolbar">
+  <ToolBar v-if="showToolbar" class="file-table-toolbar" :class="{ 'is-active': isFiletableActive }" @click="handleToolbarClick">
     <template #start>
       <DropdownMenu
         button-style-class="trans-btn"
@@ -175,6 +175,7 @@ const props = defineProps<{
   jobId: number;
   selectedFiles: string[];
   showToolbar?: boolean;
+  isFiletableActive?: boolean;
 }>();
 
 const emit = defineEmits([
@@ -185,6 +186,7 @@ const emit = defineEmits([
   "copy-to-new-job",
   "add-files",
   "add-folders",
+  "activate-filetable",
 ]);
 
 const jobsStore = useJobsStore();
@@ -231,13 +233,38 @@ const copyToJob = (targetJobId: number): void => {
 const copyToNewJob = (): void => {
   emit("copy-to-new-job", props.selectedFiles);
 };
+
+const handleToolbarClick = (event: Event): void => {
+  // Prevent event bubbling to avoid triggering FileTable's deselect logic
+  event.stopPropagation();
+  // Emit event to parent to activate FileTable
+  emit("activate-filetable");
+};
 </script>
 
 <style scoped>
 .file-table-toolbar {
   --bg-clr: transparent;
-  margin-block-end: 4px;
   padding: 0;
   flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+
+/* Toolbar highlighting based on FileTable active state */
+.file-table-toolbar:not(.is-active) {
+  background-color: var(--toolbar-inactive-bg, hsla(0, 0.00%, 50.20%, 0.10));
+}
+
+.file-table-toolbar.is-active {
+  background-color: var(--toolbar-active-bg, hsla(211, 100.00%, 50.00%, 0.10));
+}
+
+/* Dark theme adjustments */
+:global(.dark) .file-table-toolbar:not(.is-active) {
+  background-color: var(--toolbar-inactive-bg-dark, hsla(0, 0.00%, 50.20%, 0.15));
+}
+
+:global(.dark) .file-table-toolbar.is-active {
+  background-color: var(--toolbar-active-bg-dark, hsla(211, 100.00%, 50.00%, 0.15));
 }
 </style>

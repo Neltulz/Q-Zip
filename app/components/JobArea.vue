@@ -394,6 +394,10 @@ const confirmRemoveFiles = (paths: string | string[]) => {
         fileTableRef.value?.deselectAll();
       });
     }
+    // Reactivate FileTable after modal closes
+    nextTick(() => {
+      fileTableRef.value?.setActive(true);
+    });
   });
 };
 
@@ -499,6 +503,10 @@ const openOperationConfirmModal = (
           operation
         );
       }
+      // Reactivate FileTable after modal closes
+      nextTick(() => {
+        fileTableRef.value?.setActive(true);
+      });
     }
   );
 };

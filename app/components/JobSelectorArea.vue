@@ -583,6 +583,7 @@ const removeJob = (jobId: number): void => {
     if (action === "proceed") {
       jobsStore.removeJobs([jobId], jobsStore.selectedJobId);
     }
+    // Note: No FileTable to reactivate in JobSelectorArea
   });
 };
 
@@ -602,6 +603,7 @@ const confirmRemoveAllJobs = (): void => {
     if (action === "proceed") {
       jobsStore.removeAllJobs();
     }
+    // Note: No FileTable to reactivate in JobSelectorArea
   });
 };
 
@@ -778,6 +780,7 @@ const openOperationConfirmModal = (
         });
       }
       // Drag operation was already ended in handleDragAction, so no need to call it again
+      // Note: No FileTable to reactivate in JobSelectorArea
     }
   );
 };
