@@ -49,7 +49,7 @@
   <div
     ref="fileTableCompRef"
     class="file-table-comp"
-  :class="{
+    :class="{
       'is-dragging': isDragging || dragDropStore.isInternalDragActive,
       'is-active': isActive && allowActivation,
       'is-scrolling': isScrolling,
@@ -64,12 +64,7 @@
     <!-- Loading backdrop shown while the file table is loading. It reserves the
          component's height so surrounding modals/dialogs don't jump when the
          table finishes loading. -->
-    <div
-      v-if="props.isLoading"
-      class="file-table-loading-backdrop"
-      :style="loadingBackdropStyle"
-      aria-hidden="true"
-    >
+    <div v-if="props.isLoading" class="file-table-loading-backdrop" :style="loadingBackdropStyle" aria-hidden="true">
       <div class="file-table-loading-box">
         <LoadingAnim :visible="true" />
       </div>
@@ -503,7 +498,12 @@
                           first-icon-name="mdi:content-cut"
                           :first-icon-size="20"
                           shortcut-text="Ctrl+X"
-                          @click="() => { performCutFor(file.path); closeMain(); }"
+                          @click="
+                            () => {
+                              performCutFor(file.path);
+                              closeMain();
+                            }
+                          "
                         >
                           Cut
                         </CustomButton>
@@ -513,7 +513,12 @@
                           first-icon-name="mdi:content-copy"
                           :first-icon-size="20"
                           shortcut-text="Ctrl+C"
-                          @click="() => { performCopyFor(file.path); closeMain(); }"
+                          @click="
+                            () => {
+                              performCopyFor(file.path);
+                              closeMain();
+                            }
+                          "
                         >
                           Copy
                         </CustomButton>
@@ -873,21 +878,17 @@ watch(
 const logActualDOMMeasurements = () => {
   // Disabled logging for FileTable DOM measurements
   // if (!isDevelopment.value || !uiStore.marqueeBox.visible) return;
-
   // // Try to get actual measurements from the DOM
   // const tableRows = document.querySelectorAll(".table-row");
   // const itemNameContents = document.querySelectorAll(".item-name-content");
-
   // if (tableRows.length > 0 && itemNameContents.length > 0) {
   //   const firstRow = tableRows[0] as HTMLElement;
   //   const firstItemNameContent = itemNameContents[0] as HTMLElement;
-
   //   if (firstRow && firstItemNameContent) {
   //     const rowRect = firstRow.getBoundingClientRect();
   //     const contentRect = firstItemNameContent.getBoundingClientRect();
   //     const tableComp = fileTableCompRef.value;
   //     const tableCompRect = tableComp?.getBoundingClientRect();
-
   //     // Get computed styles
   //     const computedStyles = {
   //       rowPadding: window.getComputedStyle(firstRow).paddingInline,
@@ -898,7 +899,6 @@ const logActualDOMMeasurements = () => {
   //       contentMaxWidth: window.getComputedStyle(firstItemNameContent).maxInlineSize,
   //       itemNameGap: window.getComputedStyle(firstRow.querySelector(".item-name") as HTMLElement)?.gap || "N/A",
   //     };
-
   //     logMarqueeSelection("FileTable", "Actual DOM measurements:", {
   //       tableCompBounds: tableCompRect
   //         ? {
@@ -1223,7 +1223,7 @@ const handleMarqueeMouseMove = (event: MouseEvent) => {
       let my = event.clientY - bounds.top + scrollWrapper.scrollTop - headerHeight.value;
       // Clamp horizontal and vertical positions to content bounds to avoid marquee growing past content end
       const maxContentY = Math.max(0, (scrollWrapper.scrollHeight || totalHeight.value) - headerHeight.value - 1);
-      const maxContentX = Math.max(0, (scrollWrapper.scrollWidth || bounds.width) - 1);
+      const maxContentX = Math.max(0, (scrollWrapper.scrollWidth || bounds.width) - HORIZONTAL_RIGHT_BUFFER - 1);
       mx = Math.min(maxContentX, Math.max(0, mx));
       my = Math.min(maxContentY, Math.max(0, my));
 
@@ -2041,7 +2041,7 @@ onMounted(() => {
         try {
           // eslint-disable-next-line @typescript-eslint/no-var-requires
           const { logLifecycle } = require("@/utils/loggers");
-          logLifecycle("FileTable", `root initial classes: ${Array.from(root.classList).join(' ')}`);
+          logLifecycle("FileTable", `root initial classes: ${Array.from(root.classList).join(" ")}`);
         } catch (e) {
           // eslint-disable-next-line no-console
           console.log("FileTable root initial classes:", root.className);
@@ -2081,7 +2081,7 @@ onMounted(() => {
       () => isMarqueeActive.value,
       (val) => {
         if (!globalMarqueeBlocker) return;
-        
+
         if (val) {
           // Add to DOM when marquee becomes active
           if (!document.body.contains(globalMarqueeBlocker)) {
@@ -2188,6 +2188,15 @@ watch(
     }
   }
 );
+
+// Reserve space for the loading backdrop so dialogs/modals don't jump
+// Use the same height as the table would have if loaded
+const loadingBackdropStyle = computed(() => {
+  const minHeight = Math.max(ROW_HEIGHT * (props.files?.length || 1) + 34, 120);
+  return {
+    minHeight: `${minHeight}px`,
+  };
+});
 </script>
 
 <style scoped src="./file-table-comp/file-table.scoped.css"></style>
