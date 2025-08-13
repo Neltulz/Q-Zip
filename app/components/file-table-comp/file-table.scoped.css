@@ -68,12 +68,7 @@
   border-radius: 6px;
 }
 
-.file-table-toolbar {
-  --bg-clr: transparent;
-  margin-block-end: 4px;
-  padding: 0;
-  flex-shrink: 0;
-}
+
 
 .table-scroll-wrapper {
   overflow: auto; /* Enable both vertical and horizontal scrolling */
