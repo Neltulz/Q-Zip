@@ -4,6 +4,26 @@
 
 ## Recent Changes
 
+## [0.1.10] - 2025-08-14T15:00:00Z
+
+### Fixed
+- **Checkbox Mode Auto-Check Bug**: Fixed inconsistent behavior when deselecting files in checkbox mode with "auto check on select" enabled
+  - Fixed bug where previously marquee-selected files would become checked again after deselecting all files
+  - Fixed `deselectAll` function to properly clear checked files when "auto check on select" is enabled
+  - Fixed `toggleAll` function to synchronize selection and checking states when "auto check on select" is enabled
+  - Ensured consistent behavior between selection and checking states in checkbox mode with auto-check enabled
+
+### Technical Details
+- **Selection Logic**: Updated `deselectAll` function to clear checked files when "auto check on select" is enabled
+- **Header Checkbox**: Enhanced `toggleAll` function to update both selection and checking states when auto-check is enabled
+- **State Synchronization**: Ensured selection and checking states remain synchronized when "auto check on select" is enabled
+- **Version Bump**: Incremented patch version from 0.1.9 to 0.1.10 in:
+  - `src-tauri/Cargo.toml`
+  - `app/components/TitleBar.vue`
+  - `src-tauri/tauri.conf.json`
+
+---
+
 ## [0.1.9] - 2025-08-14T14:00:00Z
 
 ### Fixed

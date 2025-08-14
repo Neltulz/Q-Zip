@@ -1313,6 +1313,10 @@ const toggleAll = (): void => {
     if (allSelected.value) {
       const previousCheckedCount = checkedFiles.value.length;
       checkedFiles.value = [];
+      // When auto check on select is enabled, also clear selection
+      if (userPreferencesStore.autoCheckOnSelect) {
+        selectedFiles.value = [];
+      }
       logFocus("FileTable", "Toggle all: Unchecked all files", {
         jobId: props.jobId,
         previousCheckedCount,
@@ -1321,6 +1325,10 @@ const toggleAll = (): void => {
       });
     } else {
       checkedFiles.value = props.files.map((file) => file.path);
+      // When auto check on select is enabled, also select all
+      if (userPreferencesStore.autoCheckOnSelect) {
+        selectedFiles.value = props.files.map((file) => file.path);
+      }
       logFocus("FileTable", "Toggle all: Checked all files", {
         jobId: props.jobId,
         fileCount: props.files.length,
@@ -1357,15 +1365,21 @@ const deselectAll = () => {
   const previousSelectionCount = selectedFiles.value.length;
   const previousCheckedCount = checkedFiles.value.length;
   selectedFiles.value = [];
-  // In checkbox mode, don't clear checked files - only deselect for visual feedback
-  // Checked files should remain checked until explicitly unchecked by the user
-  if (!userPreferencesStore.checkboxMode) {
+  
+  // When auto check on select is enabled, checked files are tied to selection
+  // So when deselecting, we should also clear checked files
+  if (userPreferencesStore.checkboxMode && userPreferencesStore.autoCheckOnSelect) {
+    checkedFiles.value = [];
+  } else if (!userPreferencesStore.checkboxMode) {
+    // In normal mode (not checkbox mode), clear checked files
     checkedFiles.value = [];
   }
+  // In checkbox mode with auto check disabled, preserve checked files
+  
   lastClickedIndex.value = null;
   // Keep focus on the last focused row even when deselecting
   
-  logFocus("FileTable", `Deselect all: Cleared all selections${!userPreferencesStore.checkboxMode ? ' and checkboxes' : ''}`, {
+  logFocus("FileTable", `Deselect all: Cleared all selections${userPreferencesStore.checkboxMode && userPreferencesStore.autoCheckOnSelect ? ' and checkboxes (auto check enabled)' : !userPreferencesStore.checkboxMode ? ' and checkboxes' : ''}`, {
     jobId: props.jobId,
     previousSelectionCount,
     previousCheckedCount,
