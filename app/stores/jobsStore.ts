@@ -11,7 +11,7 @@
 
 import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";
-import { getFileDetails, setCancellationFlag, setProgressCallback as setFileUtilsProgressCallback } from "@/utils/fileUtils";
+import { getFileDetails, setCancellationFlag, setPauseFlag, setProgressCallback as setFileUtilsProgressCallback } from "@/utils/fileUtils";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logStoreAction } from "@/utils/loggers";
 import type { FileItem } from "@/types/types";
@@ -92,12 +92,13 @@ export const useJobsStore = defineStore(
     });
     const selectedJobId: Ref<number | null> = ref(null);
 
-    // Cancellation support
+    // Cancellation and pause support
     let currentOperationCancelled = false;
     let currentOperationJobId: number | null = null;
     let cancelledPaths: string[] = [];
     let cancelStartTime: number | null = null;
     let progressCallback: ((current: number, total: number, message: string) => void) | null = null;
+    let isOperationPaused = false;
 
     // Actions
     function initialize(): void {
@@ -134,8 +135,26 @@ export const useJobsStore = defineStore(
       if (currentOperationJobId !== null) {
         cancelStartTime = performance.now();
         currentOperationCancelled = true;
+        isOperationPaused = false; // Reset pause state when cancelling
         setCancellationFlag(true); // Set the flag in fileUtils
+        setPauseFlag(false); // Reset pause flag in fileUtils
         logStoreAction("jobsStore", `Cancelling current operation for job ${currentOperationJobId} at ${new Date().toISOString()}`);
+      }
+    }
+
+    function pauseCurrentOperation(): void {
+      if (currentOperationJobId !== null) {
+        isOperationPaused = true;
+        setPauseFlag(true); // Set the flag in fileUtils
+        logStoreAction("jobsStore", `Pausing current operation for job ${currentOperationJobId} at ${new Date().toISOString()}`);
+      }
+    }
+
+    function resumeCurrentOperation(): void {
+      if (currentOperationJobId !== null) {
+        isOperationPaused = false;
+        setPauseFlag(false); // Clear the flag in fileUtils
+        logStoreAction("jobsStore", `Resuming current operation for job ${currentOperationJobId} at ${new Date().toISOString()}`);
       }
     }
 
@@ -183,7 +202,7 @@ export const useJobsStore = defineStore(
         const path = newPaths[i];
         if (!path) continue; // Skip undefined paths
 
-        // Check for cancellation more frequently for better responsiveness
+        // Check for cancellation and pause more frequently for better responsiveness
         if (i % 5 === 0 || i === newPaths.length - 1) {
           if (currentOperationCancelled) {
             const cancelTime = performance.now();
@@ -193,7 +212,20 @@ export const useJobsStore = defineStore(
 
             // Add remaining paths to cancelled paths
             cancelledPaths = newPaths.slice(i);
+
+            // Reset operation state when cancelled
+            currentOperationCancelled = false;
+            currentOperationJobId = null;
+            isOperationPaused = false;
+            setCancellationFlag(false);
+            setPauseFlag(false);
+
             return processedPaths.length;
+          }
+
+          // Check for pause and wait if paused
+          while (isOperationPaused && !currentOperationCancelled) {
+            await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before checking again
           }
         }
 
@@ -214,6 +246,14 @@ export const useJobsStore = defineStore(
 
             // Add remaining paths to cancelled paths
             cancelledPaths = newPaths.slice(i);
+
+            // Reset operation state when cancelled
+            currentOperationCancelled = false;
+            currentOperationJobId = null;
+            isOperationPaused = false;
+            setCancellationFlag(false);
+            setPauseFlag(false);
+
             return processedPaths.length;
           }
 
@@ -250,6 +290,13 @@ export const useJobsStore = defineStore(
       const totalTime = endTime - startTime;
       const rate = addedCount / (totalTime / 1000);
       logStoreAction("jobsStore", `Completed processing ${addedCount} items for job ${jobId} in ${totalTime.toFixed(2)}ms (${rate.toFixed(2)} items/sec)`);
+
+      // Reset operation state when completed
+      currentOperationCancelled = false;
+      currentOperationJobId = null;
+      isOperationPaused = false;
+      setCancellationFlag(false);
+      setPauseFlag(false);
 
       return addedCount;
     }
@@ -451,6 +498,8 @@ export const useJobsStore = defineStore(
       moveJob,
       createJobsFromPaths,
       cancelCurrentOperation,
+      pauseCurrentOperation,
+      resumeCurrentOperation,
       getCancelledPaths,
       clearCancelledPaths,
       setProgressCallback: setProgressCallbackInternal,

@@ -15,12 +15,17 @@ import { stat, readDir } from "@tauri-apps/plugin-fs";
 import { basename, dirname, join } from "@tauri-apps/api/path";
 import type { FileItem } from "@/types/types";
 
-// Global cancellation flag - will be set by the jobsStore
+// Global cancellation and pause flags - will be set by the jobsStore
 let isCancelled = false;
+let isPaused = false;
 let progressCallback: ((current: number, total: number, message: string) => void) | null = null;
 
 export function setCancellationFlag(cancelled: boolean): void {
   isCancelled = cancelled;
+}
+
+export function setPauseFlag(paused: boolean): void {
+  isPaused = paused;
 }
 
 export function setProgressCallback(callback: ((current: number, total: number, message: string) => void) | null): void {
@@ -48,16 +53,21 @@ async function getDirectoryContents(path: string, depth: number = 0): Promise<{
   try {
     const entries = await readDir(path);
 
-    // Check for cancellation more frequently at deeper levels
+    // Check for cancellation and pause more frequently at deeper levels
     const checkInterval = Math.max(1, Math.floor(entries.length / 10));
 
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
 
-      // Check for cancellation more frequently for large directories
+      // Check for cancellation and pause more frequently for large directories
       if (i % checkInterval === 0 || depth > 2) {
         if (isCancelled) {
           throw new Error("Operation cancelled");
+        }
+
+        // Check for pause and wait if paused
+        while (isPaused && !isCancelled) {
+          await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before checking again
         }
       }
 

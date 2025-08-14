@@ -40,7 +40,7 @@
         :disabled="props.disabled"
         :first-icon-name="props.firstIconName"
         :first-icon-size="props.firstIconSize"
-        :last-icon-name="props.lastIconName"
+        :last-icon-name="smartLastIconName"
         :last-icon-size="props.lastIconSize"
         @click.stop="(e: MouseEvent) => handleButtonClick(e)"
         @mouseenter="(e: MouseEvent) => handleMouseEnter(e)"
@@ -109,7 +109,8 @@ type Placement =
   | "left-start"
   | "left-end"
   | "right-start"
-  | "right-end";
+  | "right-end"
+  | "right-center";
 
 type BtnTheme = "default" | "lite" | "liter" | "dark" | "darkr" | "primary" | "danger" | "warning" | "info";
 
@@ -148,7 +149,7 @@ const props = defineProps({
   },
   lastIconName: {
     type: String,
-    default: "mdi:dots-vertical",
+    default: "mdi:chevron-down",
   },
   lastIconSize: {
     type: [String, Number],
@@ -171,6 +172,22 @@ const customButtonStyles = computed(() => {
   const classes = new Set(props.buttonStyleClass ? props.buttonStyleClass.split(" ") : []);
   classes.add("options-btn");
   return Array.from(classes).filter(Boolean).join(" ");
+});
+
+// Smart icon logic: use vertical ellipsis if no content, downward caret if there's content
+const smartLastIconName = computed(() => {
+  // If lastIconName is explicitly set, use it
+  if (props.lastIconName !== "mdi:chevron-down") {
+    return props.lastIconName;
+  }
+  
+  // Check if there's button content
+  const hasButtonContent = slots["button-content"] && slots["button-content"]();
+  const buttonContentText = hasButtonContent ? 
+    (Array.isArray(hasButtonContent) ? hasButtonContent.map(vnode => vnode.children).join('') : hasButtonContent.children) : '';
+  
+  // If there's text content, use downward caret, otherwise use vertical ellipsis
+  return buttonContentText && buttonContentText.trim() ? "mdi:chevron-down" : "mdi:dots-vertical";
 });
 
 const slots = useSlots();
@@ -319,6 +336,10 @@ const adjustDropdownPosition = async (): Promise<void> => {
       break;
     case "right-end":
       top = anchorBottom - ddHeight;
+      left = anchorRight + gap;
+      break;
+    case "right-center":
+      top = anchorTop + (anchorBottom - anchorTop) / 2 - ddHeight / 2;
       left = anchorRight + gap;
       break;
     case "bottom-start":

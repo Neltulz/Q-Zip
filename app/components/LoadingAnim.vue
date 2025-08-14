@@ -31,9 +31,10 @@
           
           <!-- Progress information -->
           <div v-if="showProgress" class="progress-info">
-            <div class="progress-text">{{ progressMessage }}</div>
+            <div class="scanning-label">Scanning item:</div>
+            <div class="filename-text">{{ processedFilename }}</div>
             <div class="progress-count">{{ currentItem }}/{{ totalItems }} items</div>
-            <div v-if="totalItems > 0" class="progress-bar">
+            <div v-if="totalItems && totalItems > 0" class="progress-bar">
               <div class="progress-fill" :style="{ width: `${progressPercentage}%` }"></div>
             </div>
           </div>
@@ -41,14 +42,54 @@
           <div v-if="$slots.default" class="loading-message">
             <slot />
           </div>
-          <CustomButton
-            button-style-class="default"
-            data-name="cancel-loading-btn"
-            first-icon-name="mdi:cancel"
-            @click="handleCancelClick"
-          >
-            Cancel
-          </CustomButton>
+          <div class="button-group">
+            <CustomButton
+              button-style-class="default"
+              data-name="pause-loading-btn"
+              :first-icon-name="isPaused ? 'mdi:play' : 'mdi:pause'"
+              @click="handlePauseClick"
+            >
+              {{ isPaused ? 'Resume' : 'Pause' }}
+            </CustomButton>
+            <DropdownMenu
+              ref="cancelDropdownRef"
+              btn-theme="danger"
+              button-style-class="default"
+              data-name="cancel-dropdown"
+              dropdown-data-name="cancel-dropdown"
+              first-icon-name="mdi:cancel"
+              placement="right-center"
+
+            >
+              <template #button-content>
+                Cancel
+              </template>
+              <template #default>
+                <div class="cancel-confirmation">
+                  <div class="confirmation-text">Confirm Cancel</div>
+                  <div class="confirmation-buttons">
+                    <CustomButton
+                      button-style-class="default"
+                      btn-theme="danger"
+                      data-name="confirm-cancel-btn"
+                      first-icon-name="mdi:check"
+                      @click="handleConfirmCancel"
+                    >
+                      Yes, please cancel
+                    </CustomButton>
+                    <CustomButton
+                      button-style-class="default"
+                      data-name="nevermind-btn"
+                      first-icon-name="mdi:close"
+                      @click="handleNevermind"
+                    >
+                      Nevermind
+                    </CustomButton>
+                  </div>
+                </div>
+              </template>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </div>
@@ -56,8 +97,9 @@
 </template>
 
 <script setup lang="ts">
-import { watch, ref, computed } from "vue";
+import { watch, ref, computed, nextTick } from "vue";
 import CustomButton from "./CustomButton.vue";
+import DropdownMenu from "./DropdownMenu.vue";
 import { logLoading } from "@/utils/loggers";
 
 const props = defineProps<{
@@ -67,7 +109,10 @@ const props = defineProps<{
   progressMessage?: string;
 }>();
 
-const emit = defineEmits(["cancel", "animation-finished"]);
+const emit = defineEmits(["cancel", "pause", "animation-finished", "nevermind"]);
+
+const cancelDropdownRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
+const isPaused = ref(false);
 
 const showProgress = computed(() => {
   return props.totalItems !== undefined && props.totalItems > 0;
@@ -78,21 +123,72 @@ const progressPercentage = computed(() => {
   return Math.round((props.currentItem || 0) / props.totalItems * 100);
 });
 
+const processedFilename = computed(() => {
+  if (!props.progressMessage) return '';
+  // Remove "Scanning file: " prefix if it exists
+  return props.progressMessage.replace(/^Scanning file:\s*/, '');
+});
+
 watch(
   () => props.visible,
   (newValue) => {
     logLoading("LoadingAnim", `Visibility changed to: ${newValue}`);
+    // Reset pause state when loading starts or ends
+    if (newValue) {
+      isPaused.value = false;
+    } else {
+      // Reset pause state and close the dropdown when loading ends
+      isPaused.value = false;
+      // Ensure dropdown is closed when loading ends
+      nextTick(() => {
+        if (cancelDropdownRef.value) {
+          cancelDropdownRef.value.closeDropdown();
+        }
+      });
+    }
   }
 );
 
 const onAfterLeave = () => {
   logLoading("LoadingAnim", "Fade-out transition finished. Emitting animation-finished.");
+  // Ensure dropdown is closed after transition
+  nextTick(() => {
+    if (cancelDropdownRef.value) {
+      cancelDropdownRef.value.closeDropdown();
+    }
+  });
   emit("animation-finished");
 };
 
 const handleCancelClick = () => {
   logLoading("LoadingAnim", "Cancel button clicked.");
+  // Reset pause state when cancelling
+  isPaused.value = false;
   emit("cancel");
+};
+
+const handlePauseClick = () => {
+  logLoading("LoadingAnim", `Pause button clicked. Current state: ${isPaused.value ? 'paused' : 'playing'}`);
+  isPaused.value = !isPaused.value;
+  emit("pause", isPaused.value);
+};
+
+const handleConfirmCancel = () => {
+  logLoading("LoadingAnim", "Confirm cancel button clicked.");
+  emit("cancel");
+  // Close the dropdown properly
+  if (cancelDropdownRef.value) {
+    cancelDropdownRef.value.closeDropdown();
+  }
+};
+
+const handleNevermind = () => {
+  logLoading("LoadingAnim", "Nevermind button clicked.");
+  emit("nevermind");
+  // Close the dropdown properly
+  if (cancelDropdownRef.value) {
+    cancelDropdownRef.value.closeDropdown();
+  }
 };
 </script>
 
@@ -112,9 +208,9 @@ const handleCancelClick = () => {
 .loading-container {
   background-color: var(--bg-clr-darkr);
   border: 1px solid var(--brdr-clr-lite);
-  padding: 20px;
+  padding: 24px;
   border-radius: 8px;
-  min-width: 300px;
+  min-width: 320px;
 }
 
 .loading-content {
@@ -133,11 +229,21 @@ const handleCancelClick = () => {
   max-width: 280px;
 }
 
-.progress-text {
+.scanning-label {
   font-size: 14px;
   color: var(--txt-clr-liter);
   text-align: center;
-  word-break: break-word;
+  font-weight: 500;
+}
+
+.filename-text {
+  font-size: 14px;
+  color: var(--txt-clr-liter);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .progress-count {
@@ -156,7 +262,7 @@ const handleCancelClick = () => {
 
 .progress-fill {
   height: 100%;
-  background-color: var(--accent-clr);
+  background-color: var(--accent-clr, hsl(211, 100%, 50%));
   border-radius: 2px;
   transition: width 0.3s ease;
 }
@@ -167,12 +273,42 @@ const handleCancelClick = () => {
   text-align: center;
 }
 
+.button-group {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.cancel-confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px;
+  min-width: 200px;
+}
+
+.confirmation-text {
+  font-size: 14px;
+  color: var(--txt-clr-liter);
+  text-align: center;
+  font-weight: 500;
+}
+
+.confirmation-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* SpinKit animation styles */
 .sk-circle {
-  width: 40px;
-  height: 40px;
+  width: 60px;
+  height: 60px;
   position: relative;
+  margin-bottom: 8px;
 }
+
+
 
 .sk-circle .sk-child {
   width: 100%;
@@ -188,7 +324,7 @@ const handleCancelClick = () => {
   margin: 0 auto;
   width: 15%;
   height: 15%;
-  background-color: var(--accent-clr);
+  background-color: var(--accent-clr, hsl(0, 0%, 100%));
   border-radius: 100%;
   animation: sk-circle-bounce-delay 1.2s infinite ease-in-out both;
 }
@@ -235,4 +371,6 @@ const handleCancelClick = () => {
 .fade-leave-to {
   opacity: 0;
 }
+
+
 </style>

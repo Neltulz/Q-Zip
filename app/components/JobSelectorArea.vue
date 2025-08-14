@@ -349,7 +349,8 @@ import InfoTooltip from "./InfoTooltipContainer.vue";
 import { useScrollContainer } from "@/composables/useScrollContainer";
 import { useTooltipManager } from "@/composables/useTooltipManager";
 import { useDropdownManager } from "@/composables/dropdownManager";
-import { logDragDropEvent, logUI, logManagerAction } from "@/utils/loggers";
+import { logDragDropEvent, logUI, logManagerAction, logNotification, logGlobalEvent } from "@/utils/loggers";
+import { DEBUG, debugConfig } from "@/utils/debugConfig";
 
 interface ScrollableOverlayScrollbars extends OverlayScrollbars {
   scroll: (destination: { x?: string | number; y?: string | number }, duration?: number) => void;
@@ -414,21 +415,26 @@ watch(
   (notification: any) => {
     if (notification) {
       const { targetId } = notification;
-      console.log(`[JobSelectorArea] Pending notification received for targetId: ${targetId}`, {
-        notification,
-        jobButtonRefs: Array.from(jobButtonRefs.value.keys()),
-        hasButtonRef: jobButtonRefs.value.has(targetId)
-      });
+      if (DEBUG && debugConfig.logNotifications) {
+        logNotification("JobSelectorArea", `Pending notification received for targetId: ${targetId}`, {
+          notification,
+          jobButtonRefs: Array.from(jobButtonRefs.value.keys()),
+          hasButtonRef: jobButtonRefs.value.has(targetId)
+        });
+      }
       
       nextTick(() => {
         const buttonRef = jobButtonRefs.value.get(targetId);
         const buttonEl = buttonRef?.buttonRef;
-        console.log(`[JobSelectorArea] Button reference lookup:`, {
-          targetId,
-          buttonRef: !!buttonRef,
-          buttonEl: !!buttonEl,
-          buttonRefs: Array.from(jobButtonRefs.value.keys())
-        });
+        
+        if (DEBUG && debugConfig.logNotifications) {
+          logNotification("JobSelectorArea", `Button reference lookup for targetId: ${targetId}`, {
+            targetId,
+            buttonRef: !!buttonRef,
+            buttonEl: !!buttonEl,
+            buttonRefs: Array.from(jobButtonRefs.value.keys())
+          });
+        }
         
         if (buttonEl) {
           buttonEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
@@ -444,14 +450,20 @@ watch(
               left: rect.left - scrollContainerRect.left + scrollEl.scrollLeft,
               width: rect.width,
             };
-            console.log(`[JobSelectorArea] Adding notification with position:`, position);
+            if (DEBUG && debugConfig.logNotifications) {
+              logNotification("JobSelectorArea", `Adding notification with position`, position);
+            }
             uiStore.addNotification({ ...notification, position });
           } else {
-            console.log(`[JobSelectorArea] Adding notification without position (no rect or scrollEl)`);
+            if (DEBUG && debugConfig.logNotifications) {
+              logNotification("JobSelectorArea", `Adding notification without position (no rect or scrollEl)`);
+            }
             uiStore.addNotification(notification);
           }
         } else {
-          console.log(`[JobSelectorArea] Adding notification without position (no buttonEl)`);
+          if (DEBUG && debugConfig.logNotifications) {
+            logNotification("JobSelectorArea", `Adding notification without position (no buttonEl)`);
+          }
           uiStore.addNotification(notification);
         }
         uiStore.clearPendingNotification();
@@ -483,9 +495,10 @@ onUnmounted(() => {
 const setJobButtonRef = (jobId: number | "new-job", el: Element | ComponentPublicInstance | null) => {
   if (el) {
     jobButtonRefs.value.set(jobId, el as InstanceType<typeof CustomButton>);
-    console.log(`[JobSelectorArea] Set job button ref for jobId: ${jobId}`, {
-      jobButtonRefs: Array.from(jobButtonRefs.value.keys())
-    });
+    // Only log ref updates when debugging ref management specifically
+    if (DEBUG && debugConfig.logRefUpdates) {
+      logManagerAction("JobSelectorArea", `Set job button ref for jobId: ${jobId}`);
+    }
   }
 };
 
@@ -556,13 +569,8 @@ const selectJob = (jobId: number): void => {
     // Dispatch the old and new ids so listeners can deterministically
     // deactivate the previous job's FileTable before the store updates.
       // log for debugging
-      try {
-        const { logGlobalEvent } = require("@/utils/loggers");
+      if (DEBUG && debugConfig.logUIEvents) {
         logGlobalEvent("JobSelectorArea", "selectJob dispatching app:selected-job-changed", { oldId, newId: jobId });
-      } catch (e) {
-        // fallback
-        // eslint-disable-next-line no-console
-        console.log("JobSelectorArea.selectJob -> dispatching selected-job-changed", { oldId, newId: jobId });
       }
 
       window.dispatchEvent(new CustomEvent("app:selected-job-changed", { detail: { oldId, newId: jobId } }));

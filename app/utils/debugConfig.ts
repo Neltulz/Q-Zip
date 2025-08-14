@@ -20,7 +20,7 @@
 // Master switch to enable or disable all debugging logs. Use `setAllLoggingEnabled` to toggle at runtime.
 // Master switch to enable or disable all debugging logs. Default OFF for
 // production-like runs; enable explicitly during development or testing.
-export let DEBUG: boolean = true;
+export let DEBUG: boolean = false;
 
 // Individual flags for controlling specific types of logs.
 export const debugConfig: Record<string, boolean> = {
@@ -34,10 +34,10 @@ export const debugConfig: Record<string, boolean> = {
   logClicksAndInputs: false,
 
   // Logs actions and state changes within Pinia stores.
-  logStoreActions: true,
+  logStoreActions: false,
 
   // Logs events specific to the DropdownMenu component.
-  logDropdownEvents: true,
+  logDropdownEvents: false,
 
   // For general UI interactions like scrolling or accordion transitions.
   logUIEvents: false,
@@ -64,10 +64,10 @@ export const debugConfig: Record<string, boolean> = {
   logLoadingEvents: false,
 
   // Logs events related to the Vue rendering lifecycle.
-  logRenderingEvents: true,
+  logRenderingEvents: false,
 
   // Logs events related to UI interactivity and responsiveness.
-  logUIInteractivity: true,
+  logUIInteractivity: false,
 };
 
 // Helper to toggle all logging flags at runtime. This updates the master DEBUG
@@ -89,10 +89,11 @@ try {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).__QZIP_DEBUG = (on: boolean) => setAllLoggingEnabled(!!on);
   // Enable verbose logging automatically only in development builds
+  // DISABLED: Set to false to reduce console noise during development
   try {
     const isDev = (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.DEV) ||
       (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development');
-    if (isDev) {
+    if (isDev && false) { // Changed to false to disable auto-enabling
       try {
         (window as any).__QZIP_DEBUG(true);
       } catch (e) {

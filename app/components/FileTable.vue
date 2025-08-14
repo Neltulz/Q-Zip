@@ -217,6 +217,7 @@ import FileTableToolbar from "./file-table-comp/FileTableToolbar.vue";
 import FileTableContextMenu from "./file-table-comp/FileTableContextMenu.vue";
 import FileTableRow from "./file-table-comp/FileTableRow.vue";
 import { logDragDropEvent, logLifecycle, logRendering, logUI, logMarqueeSelection, logFocus } from "@/utils/loggers";
+import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { open } from "@tauri-apps/plugin-dialog";
 import LoadingAnim from "@/components/LoadingAnim.vue";
@@ -1739,7 +1740,9 @@ const handleContextMenuClosed = () => {
 };
 
 const handleDropdownOpened = () => {
-  console.log('FileTable: handleDropdownOpened called');
+  if (DEBUG && debugConfig.logUIInteractivity) {
+    logUI("FileTable", "handleDropdownOpened called", { jobId: props.jobId });
+  }
   logFocus("FileTable", "Dropdown opened, activating file table", { jobId: props.jobId });
   isActive.value = true;
   // Add a small delay to ensure activation persists through the dropdown opening
@@ -1926,16 +1929,18 @@ onMounted(() => {
           const { logLifecycle } = require("@/utils/loggers");
           logLifecycle("FileTable", `root initial classes: ${Array.from(root.classList).join(" ")}`);
         } catch (e) {
-          // eslint-disable-next-line no-console
-          console.log("FileTable root initial classes:", root.className);
+          if (DEBUG && debugConfig.logComponentMounts) {
+            logLifecycle("FileTable", `root initial classes: ${root.className}`);
+          }
         }
 
         fileTableClassObserver = new MutationObserver((muts) => {
           for (const m of muts) {
             if (m.type === "attributes" && m.attributeName === "class") {
               const el = m.target as HTMLElement;
-              // eslint-disable-next-line no-console
-              console.log(`FileTable.classMutation: job=${props.jobId} class="${el.className}"`);
+              if (DEBUG && debugConfig.logComponentMounts) {
+                logLifecycle("FileTable", `class mutation: job=${props.jobId} class="${el.className}"`);
+              }
             }
           }
         });
@@ -2112,9 +2117,10 @@ const setActive = (val: boolean) => {
         jobId: props.jobId,
       });
     } catch (e) {
-      // fallback console
-      // eslint-disable-next-line no-console
-      console.log(`FileTable.setActive: job=${props.jobId} -> ${isActive.value} (was ${prev})`);
+      // fallback logging
+      if (DEBUG && debugConfig.logComponentMounts) {
+        logLifecycle("FileTable", `setActive: job=${props.jobId} -> ${isActive.value} (was ${prev})`);
+      }
     }
   } catch (err) {
     logFocus("FileTable", `setActive error: ${err}`, { error: err });

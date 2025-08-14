@@ -4,6 +4,33 @@
 
 ## Recent Changes
 
+## [0.1.12] - 2025-01-27T15:00:00Z
+
+### Added
+- **Loading Animation Enhancements**: Enhanced LoadingAnim component with pause and resume functionality
+  - Added pause and resume controls to allow users to control ongoing operations
+  - Added confirmation dropdown for canceling operations to improve user experience during long tasks
+  - Enhanced JobArea to handle pause events and log relevant actions for better debugging
+  - Updated DropdownMenu to support new button interactions and improved icon logic based on content presence
+
+### Fixed
+- **Console Logging Optimization**: Significantly reduced verbose console logging during startup and operation
+  - Fixed excessive "Set job button ref" logging from JobSelectorArea component
+  - Disabled master DEBUG flag to reduce console noise while maintaining debugging capability
+  - Fixed 4 TypeScript linter errors in JobArea.vue related to potential undefined array access
+  - Added proper null checks for array element access in file operation functions
+
+### Technical Details
+- **Debug Configuration**: Updated `debugConfig.ts` to disable automatic debug mode enabling in development
+- **Type Safety**: Added null checks for `pathsToMove[0]` and `pathsToCopy[0]` array access in JobArea.vue
+- **Logging System**: Maintained debugging capability through `window.__QZIP_DEBUG(true)` for targeted debugging
+- **Version Bump**: Incremented patch version from 0.1.11 to 0.1.12 in:
+  - `src-tauri/Cargo.toml`
+  - `app/components/TitleBar.vue`
+  - `src-tauri/tauri.conf.json`
+
+---
+
 ## [0.1.11] - 2025-01-27T14:00:00Z
 
 ### Changed
@@ -141,40 +168,6 @@
 - **Event Handling**: Implemented global keyboard event listeners for navigation
 - **CSS Enhancements**: Added focus and hover styles using HSL/HSLA color format
 - **Version Bump**: Incremented patch version from 0.1.4 to 0.1.5 in:
-  - `src-tauri/Cargo.toml`
-  - `app/components/TitleBar.vue`
-  - `src-tauri/tauri.conf.json`
-
----
-
-## [0.1.4] - 2025-08-14T09:00:00Z
-
-### Fixed
-- **TypeScript Errors**: Fixed multiple TypeScript compilation errors across the codebase
-  - Fixed `MaybeElement` type compatibility issue in `TitleBar.vue` by casting `mainMenuTooltipTarget` as `any`
-  - Fixed boolean type mismatch in `TitleBar.vue` by ensuring `debugForceVisible` prop receives proper boolean value
-  - Fixed method name errors in `FileTableContextMenu.vue` by updating `moveFile` → `moveFileFromContext` and `copyFile` → `copyFileFromContext`
-
-### Added
-- **AI Instruction Comments**: Added important AI instruction comments to all CSS files in the project
-  - Added `IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.` comment to:
-    - `app/assets/css/styles.css`
-    - `app/assets/css/overlay-scrollbar.css`
-    - `app/components/job-area-comp/job-area.scoped.css`
-    - `app/components/title-bar-comp/title-bar.scoped.css`
-    - `app/components/file-table-comp/file-table.scoped.css`
-    - `app/components/custom-button-comp/custom-button.global.css`
-    - `app/components/custom-button-comp/custom-button.scoped.css`
-    - `app/components/job-selector-area-comp/job-selector-area.scoped.css`
-    - `app/components/custom-field-comp/custom-field.scoped.css`
-    - `app/components/compression-section-comp/compression-section.scoped.css`
-
-### Removed
-- **Development Files**: Removed unused development utility file
-  - Deleted `app/utils/testLogging.js` as it was no longer needed and not referenced anywhere in the codebase
-
-### Technical Details
-- **Version Bump**: Incremented patch version from 0.1.3 to 0.1.4 in:
   - `src-tauri/Cargo.toml`
   - `app/components/TitleBar.vue`
   - `src-tauri/tauri.conf.json`
