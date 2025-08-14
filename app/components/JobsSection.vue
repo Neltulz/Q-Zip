@@ -1,4 +1,8 @@
 <!-- components/JobsSection.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  JobsSection.vue @preserve
+-->
 <!--
   Description:
   This component is a container for the JobSelectorArea and JobArea.

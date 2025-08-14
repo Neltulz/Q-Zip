@@ -1,6 +1,9 @@
 <!-- styles for drag region moved to scoped CSS file -->
 
-<!-- components/TitleBar.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  components/TitleBar.vue @preserve 
+-->
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!--
   Description: This component defines the application's title bar, including
@@ -233,11 +236,11 @@
 
         <!-- Center nav tooltip (single instance used for all center buttons) -->
         <InfoTooltip
-          :visible="centerTooltipIsActive || (debugForceJobQueue && centerTooltipText && centerTooltipText.toLowerCase().includes('job queue'))"
+          :visible="!!(centerTooltipIsActive || (debugForceJobQueue && centerTooltipText && centerTooltipText.toLowerCase().includes('job queue')))"
           :content="{ text: centerTooltipText || (debugForceJobQueue ? 'Job Queue' : '') }"
           :target="debugForceCenterTarget || centerTooltipTarget"
           placement="bottom"
-          :debugForceVisible="debugForceJobQueue"
+          :debugForceVisible="!!debugForceJobQueue"
         />
         <!-- Custom Zoom Indicator Button (hidden by default) -->
         <div v-if="showZoomIndicator" class="titlebar-zoom-indicator" style="grid-row:1">
@@ -351,7 +354,7 @@ const centerTooltipIsActive = computed(() => {
     return activeId === centerTooltipNameCandidate.value;
   }
   // when forcing Job Queue for debug, allow the tooltip to be visible
-  if (debugForceJobQueue && centerTooltipText.value && centerTooltipText.value.toLowerCase().includes('job queue')) return true;
+  if (debugForceJobQueue.value && centerTooltipText.value && centerTooltipText.value.toLowerCase().includes('job queue')) return true;
   return false;
 });
 
@@ -470,7 +473,7 @@ const mainMenuTooltipTarget = computed(() => {
 
   const btn = document.querySelector("[data-name='options-btn-for-main-menu-dropdown']") as HTMLElement | null;
   return (btn?.querySelector(".visual-style") as HTMLElement | null) ?? btn;
-});
+}) as any;
 
 const isMainMenuActive = computed(() => {
   const el = document.getElementById("app-menu");

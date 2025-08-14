@@ -1,3 +1,7 @@
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+// useScrollContainer.ts
+
 import { ref, provide, inject, markRaw } from 'vue';
 import type { Ref, InjectionKey } from 'vue';
 

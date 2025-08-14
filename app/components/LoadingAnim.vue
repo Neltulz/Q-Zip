@@ -1,3 +1,8 @@
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  LoadingAnim.vue @preserve
+-->
+
 <template>
   <transition name="fade" @after-leave="onAfterLeave">
     <div v-show="visible" class="loading-overlay">

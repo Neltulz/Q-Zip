@@ -13,6 +13,10 @@
     @contextmenu.prevent.stop="handleContextMenu(file, $event)"
   >
     <!-- Checkbox Cell -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  FileTableRow.vue @preserve
+-->
     <div v-if="showCheckboxes" class="item-checkbox">
       <CustomButton
         button-style-class="minimal-trans-btn"
@@ -28,6 +32,10 @@
       </CustomButton>
     </div>
     <!-- Name Cell -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  FileTableRow.vue @preserve
+-->
     <div class="item-name">
       <div
         class="item-name-content"
@@ -53,6 +61,10 @@
       />
     </div>
     <!-- Other Cells -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  FileTableRow.vue @preserve
+-->
     <div class="item-size">
       <div
         class="size-bar"

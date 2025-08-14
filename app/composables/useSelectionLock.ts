@@ -1,3 +1,7 @@
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+// useSelectionLock.ts
+
 /**
  * Ref-counted global selection lock helper.
  *

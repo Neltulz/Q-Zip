@@ -1,5 +1,13 @@
 <!-- layouts/welcome.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  welcome.vue @preserve
+-->
 <!-- eslint-disable vue/html-self-closing @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  welcome.vue @preserve
+-->
 <!--
   Description: This file defines the welcome layout. It always displays options
   to "Start Fresh" or "Restore Previous Session". The "Restore" button and the

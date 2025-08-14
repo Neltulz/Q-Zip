@@ -1,4 +1,6 @@
 // app/composables/useTooltipContainer.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
 import { ref, type Ref } from "vue";
 
 // Shared state to track if any tooltips are being used

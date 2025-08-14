@@ -1,4 +1,7 @@
-/* "components/file-table-comp/file-table.scoped.css" --for-- "components/FileTable.vue" */
+/* 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  "components/file-table-comp/file-table.scoped.css" --for-- "components/FileTable.vue" 
+*/
 
 /* Global style to prevent text selection during resize */
 :global(body.is-resizing *) {

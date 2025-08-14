@@ -1,4 +1,8 @@
 <!-- components/page-components/PageJobSetup.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  PageJobSetup.vue @preserve
+-->
 <template>
   <div id="main-page" class="page" data-component-name="PageJobSetup">
     <PageHeader>

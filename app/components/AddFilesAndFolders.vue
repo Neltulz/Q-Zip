@@ -1,4 +1,8 @@
 <!-- components/AddFilesAndFolders.vue @preserve (formerly DropZone.vue) -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  AddFilesAndFolders.vue @preserve
+-->
 <template>
   <div class="add-files-wrapper" :data-job-id="jobId" data-component-name="AddFilesAndFolders">
     <div class="add-files-content">

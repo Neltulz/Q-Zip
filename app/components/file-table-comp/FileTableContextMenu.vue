@@ -1,5 +1,9 @@
 <template>
   <!-- FileTableContextMenu: Right-click context menu for file/folder actions -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  FileTableContextMenu.vue @preserve
+-->
   <div v-if="props.showRowActions" class="row-actions" @click.stop>
     <DropdownMenu
       :ref="(el) => setFileMenuRef(file, el)"
@@ -167,9 +171,9 @@
           @click="
             () => {
               if (clipboardStore.isCut) {
-                moveFile(jobId, file.path);
+                moveFileFromContext(jobId, file.path);
               } else {
-                copyFile(jobId, file.path);
+                copyFileFromContext(jobId, file.path);
               }
               closeMain();
             }

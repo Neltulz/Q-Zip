@@ -1,4 +1,7 @@
-/* "components/title-bar-comp/title-bar.scoped.css" --for-- "components/TitleBar.vue" */
+/* 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  "components/title-bar-comp/title-bar.scoped.css" --for-- "components/TitleBar.vue" 
+*/
 
 #title-bar {
   /* Place the title-bar inside the native decorum toolbar grid. */

@@ -1,4 +1,6 @@
-// composables/useResetManager.ts @preserve
+// composables/useResetManager.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 /**
  * @preserve
  * Description: This composable centralizes all reset logic for the application's

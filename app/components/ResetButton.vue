@@ -1,4 +1,8 @@
 <!-- components/ResetButton.vue -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  ResetButton.vue @preserve
+-->
 <!--
   Description:
   A reusable button component that triggers a reset function when clicked.

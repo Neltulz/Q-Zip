@@ -1,4 +1,8 @@
 <!-- components/page-components/PageProgress.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  PageProgress.vue @preserve
+-->
 <template>
   <div id="progress-page" class="page" data-component-name="PageProgress">
     <PageHeader>

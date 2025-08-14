@@ -1,4 +1,6 @@
-// plugins/bounceDirective.ts @preserve
+// plugins/bounceDirective.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 
 // * Usage Example: @preserve
 //   Apply the `v-bounce-on-click` directive to a button or link element that contains an icon with the class `bounce-icon-on-click`. @preserve

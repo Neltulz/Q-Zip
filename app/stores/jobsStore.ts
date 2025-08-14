@@ -1,3 +1,7 @@
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+// jobsStore.ts
+
 /** @preserve
  * This store manages jobs and global compression settings for the
  * application. It handles job creation, file management within jobs,

@@ -1,4 +1,6 @@
-// plugins/debugNotifications.client.ts @preserve
+// plugins/debugNotifications.client.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 
 // This plugin helps debug where the notification element is coming from
 

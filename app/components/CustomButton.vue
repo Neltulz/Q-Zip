@@ -1,5 +1,9 @@
 <!-- #region top-comments -->
 <!-- eslint-disable vue/html-self-closing @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  CustomButton.vue @preserve
+-->
 <!-- components/CustomButton.vue @preserve -->
 <!--
   Description:

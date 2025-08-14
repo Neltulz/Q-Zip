@@ -1,3 +1,7 @@
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+// layoutStore.ts
+
 /**
  * @preserve
  * Description: This Pinia store manages the active layout for the application.

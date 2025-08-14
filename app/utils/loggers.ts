@@ -1,4 +1,6 @@
-// utils/loggers.ts @preserve
+// utils/loggers.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 /**
  * @preserve
  * Description:

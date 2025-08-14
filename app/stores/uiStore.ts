@@ -1,4 +1,6 @@
-// stores/uiStore.ts @preserve
+// stores/uiStore.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 import { defineStore } from "pinia";
 import { reactive, ref, type Ref } from "vue";
 import { useJobsStore, type FileItem } from "@/stores/jobsStore";

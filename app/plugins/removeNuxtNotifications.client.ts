@@ -1,4 +1,6 @@
-// plugins/removeNuxtNotifications.client.ts @preserve
+// plugins/removeNuxtNotifications.client.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 
 // This plugin removes Nuxt UI's notification container from the DOM
 // since we have our own custom notification system

@@ -1,3 +1,5 @@
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
 // app/composables/useTooltipManager.ts
 import { ref, type Ref } from "vue";
 

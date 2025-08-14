@@ -1,4 +1,6 @@
-// utils/fileUtils.ts @preserve
+// utils/fileUtils.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 /** @preserve
  * File Utilities
  *

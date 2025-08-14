@@ -1,4 +1,8 @@
 <!-- components/page-components/PageJobQueue.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  PageJobQueue.vue @preserve
+-->
 <template>
   <div id="job-queue-page" class="page" data-component-name="PageJobQueue">
     <PageHeader>

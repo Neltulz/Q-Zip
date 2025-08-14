@@ -1,4 +1,7 @@
-/* "components/compression-section-comp/compression-section.scoped.css" --for-- "components/CompressionSectionNew.vue" */
+/* 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  "components/compression-section-comp/compression-section.scoped.css" --for-- "components/CompressionSectionNew.vue" 
+*/
 
 #compression-section {
   background-color: var(--bg-clr-lite);

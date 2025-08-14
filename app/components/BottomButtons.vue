@@ -1,4 +1,8 @@
 <!-- components/BottomButtons.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  BottomButtons.vue @preserve
+-->
 <template>
   <div :id="divId" class="buttons bottom-buttons" data-component-name="BottomButtons">
     <slot />

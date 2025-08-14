@@ -1,5 +1,8 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
-<!-- app.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  app.vue @preserve 
+-->
 <template>
   <div class="app-container">
     <TitleBar />

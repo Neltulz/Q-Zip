@@ -1,7 +1,23 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  CustomFieldNew.vue @preserve
+-->
 <!-- components/CustomFieldNew.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  CustomFieldNew.vue @preserve
+-->
 <!-- TODO: Create ==Technical Challenge== Create a Select with Input or Textarea built in. ... @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  CustomFieldNew.vue @preserve
+-->
 <!-- TODO (continued): ... Would be useful for the "Output Location" field, or Compression Parameter Fields @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  CustomFieldNew.vue @preserve
+-->
 
 <template>
   <div

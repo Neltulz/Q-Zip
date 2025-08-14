@@ -1,3 +1,7 @@
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+// navigationStore.ts
+
 /* stores/navigationStore.ts @preserve */
 import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";

@@ -1,3 +1,8 @@
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  FileTableToolbar.vue @preserve
+-->
+
 <template>
   <ToolBar v-if="showToolbar" class="file-table-toolbar" :class="{ 'is-active': isFiletableActive }" @click="handleToolbarClick">
     <template #start>

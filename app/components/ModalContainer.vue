@@ -1,5 +1,13 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  ModalContainer.vue @preserve
+-->
 <!-- components/ModalContainer.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  ModalContainer.vue @preserve
+-->
 <!--
   Description:
   This component acts as a container for all dynamically rendered modals.

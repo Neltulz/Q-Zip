@@ -1,3 +1,7 @@
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+// useZoom.ts
+
 const STORAGE_KEY = "app-zoom-factor";
 const DEFAULT = 1.0;
 const STEP = 0.05; // change increment to 0.05 per request

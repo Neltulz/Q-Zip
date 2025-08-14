@@ -1,5 +1,9 @@
 <template>
   <!-- FileTableHeader: Table header with sorting and resizing -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  FileTableHeader.vue @preserve
+-->
   <div class="table-header">
     <div v-if="showCheckboxes" class="item-checkbox">
       <CustomButton

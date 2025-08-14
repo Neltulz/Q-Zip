@@ -1,6 +1,18 @@
 <!-- eslint-disable vue/no-v-html @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  BaseModal.vue @preserve
+-->
 <!-- eslint-disable vue/html-self-closing @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  BaseModal.vue @preserve
+-->
 <!-- components/BaseModal.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  BaseModal.vue @preserve
+-->
 <template>
   <teleport to="body">
     <div

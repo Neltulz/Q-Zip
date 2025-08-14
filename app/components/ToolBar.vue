@@ -1,4 +1,8 @@
 <!-- components/ToolBar.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  ToolBar.vue @preserve
+-->
 <template>
   <div class="toolbar" data-component-name="ToolBar">
     <div class="start-buttons">

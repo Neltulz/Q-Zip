@@ -1,6 +1,14 @@
 <!-- #region top-comments -->
 <!-- eslint-disable vue/html-self-closing @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  DropdownMenu.vue @preserve
+-->
 <!-- components/DropdownMenu.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  DropdownMenu.vue @preserve
+-->
 <!--
   Description:
 

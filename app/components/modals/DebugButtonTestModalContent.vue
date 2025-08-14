@@ -1,5 +1,13 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  DebugButtonTestModalContent.vue @preserve
+-->
 <!-- components/modals/DebugButtonTestModalContent.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  DebugButtonTestModalContent.vue @preserve
+-->
 <!--
   Description:
   The content for the button test modal. Displays various button styles.

@@ -1,4 +1,6 @@
-// types/pinia.d.ts @preserve
+// types/pinia.d.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 
 import "pinia";
 import "pinia-plugin-persistedstate";

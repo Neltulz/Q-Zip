@@ -1,4 +1,6 @@
-// stores/userPreferencesStore.ts @preserve
+// stores/userPreferencesStore.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 
 /**
  * @preserve

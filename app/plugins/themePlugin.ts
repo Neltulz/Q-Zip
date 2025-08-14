@@ -1,4 +1,6 @@
-// plugins/themePlugin.ts @preserve
+// plugins/themePlugin.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 
 /*
  * Theme Management Plugin

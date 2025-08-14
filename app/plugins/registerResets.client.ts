@@ -1,4 +1,6 @@
-// plugins/registerResets.client.ts @preserve
+// plugins/registerResets.client.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 import { defineNuxtPlugin } from "nuxt/app";
 import { useResetManager } from "@/composables/useResetManager";
 import { useThemeStore } from "@/stores/themeStore";

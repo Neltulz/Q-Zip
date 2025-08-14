@@ -1,4 +1,8 @@
 <!-- layouts/default.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  default.vue @preserve
+-->
 <!-- Description: This file defines the default layout of the application, including the main content area where different pages are displayed with transition animations. The TitleBar is now managed globally in app.vue. -->
 <!-- Usage Example: This layout is automatically applied as the main layout for the Nuxt.js application. -->
 <template>

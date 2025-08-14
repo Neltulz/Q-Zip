@@ -1,5 +1,13 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  AccordionComp.vue @preserve
+-->
 <!-- components/AccordionComp.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  AccordionComp.vue @preserve
+-->
 <!--
  * Accordion Component
   A customizable accordion component for displaying collapsible sections.

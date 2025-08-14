@@ -1,4 +1,6 @@
-// composables/dropdownManager.ts @preserve
+// composables/dropdownManager.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 
 // A Vue composable that manages multiple dropdown menus by tracking their open states,
 // handling global click events to close dropdowns when clicking outside, and supporting

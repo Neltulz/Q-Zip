@@ -1,5 +1,13 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  JobArea.vue @preserve
+-->
 <!-- components/JobArea.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  JobArea.vue @preserve
+-->
 <template>
   <div ref="jobAreaRef" class="job-area" data-component-name="JobArea">
     <!-- Context menu for the job area -->

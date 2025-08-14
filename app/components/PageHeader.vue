@@ -1,4 +1,8 @@
 <!-- components/PageHeader.vue -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  PageHeader.vue @preserve
+-->
 <template>
   <div class="page-header" data-component-name="PageHeader">
     <div class="icon-area">

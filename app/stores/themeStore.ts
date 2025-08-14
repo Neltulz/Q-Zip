@@ -1,4 +1,6 @@
-// stores/themeStore.ts @preserve
+// stores/themeStore.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 
 /** @preserve
  * Manages the application's theme ('light', 'dark', 'system') using Pinia.

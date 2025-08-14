@@ -1,3 +1,5 @@
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
 // stores/clipboardStore.ts
 import { defineStore } from 'pinia';
 import { ref, computed, type Ref } from 'vue'; // Import ref and computed for Composition API style

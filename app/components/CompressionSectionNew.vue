@@ -1,5 +1,13 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  CompressionSectionNew.vue @preserve
+-->
 <!-- components/CompressionSectionNew.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  CompressionSectionNew.vue @preserve
+-->
 
 <template>
   <section id="compression-section" data-component-name="CompressionSectionNew">

@@ -1,4 +1,8 @@
 <!-- components/LockButton.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  LockButton.vue @preserve
+-->
 <template>
   <CustomButton
     :first-icon-name="isLocked ? 'mdi:lock' : 'mdi:lock-open'"

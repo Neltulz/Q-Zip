@@ -1,4 +1,6 @@
-// utils/debugConfig.ts @preserve
+// utils/debugConfig.ts
+// 
+// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 
 /**@preserve
  * Centralized configuration for debugging flags.

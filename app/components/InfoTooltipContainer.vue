@@ -1,5 +1,13 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  InfoTooltipContainer.vue @preserve
+-->
 <!-- components/InfoTooltipContainer.vue @preserve -->
+<!-- 
+  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
+  InfoTooltipContainer.vue @preserve
+-->
 
 <!--
   InfoTooltipContainer.vue
