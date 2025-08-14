@@ -175,6 +175,8 @@
                 :min-max-folder-modified="minMaxFolderModified"
                 :min-max-file-created="minMaxFileCreated"
                 :min-max-folder-created="minMaxFolderCreated"
+                :focused-row-index="focusedRowIndex"
+                :row-index="sortedFiles.findIndex(f => f.path === file.path)"
                 @toggle-file-selection="toggleFileSelection"
                 @click-row="clickRowByPath"
                 @context-menu="handleContextMenu"
@@ -289,13 +291,21 @@ const scrollComponentRef = ref<InstanceType<typeof OverlayScrollbarsComponent> |
 const viewportRef = ref<HTMLElement | null>(null);
 const fileTableCompRef = ref<HTMLElement | null>(null);
 const fileMenuRefs = ref(new Map<string, any>());
+// --- REACTIVE STATE ---
 const selectedFiles = ref<string[]>([]);
+const sortKey = ref<keyof FileItem>("name");
+const sortDirection = ref<"asc" | "desc">("asc");
+const isActive = ref(false);
+const isScrolling = ref(false);
+const isMarqueeActive = ref(false);
+const marqueeIsAdditive = ref(false);
+const marqueeAnchorX = ref(0);
+const marqueeAnchorY = ref(0);
 const lastClickedIndex = ref<number | null>(null);
-const isActive = ref<boolean>(false);
+const focusedRowIndex = ref<number | null>(null); // Track which row has focus
 // Respect prop to allow disabling activation in contexts like modals
 const allowActivation = computed(() => (props as any).activatable !== false);
 let updateStartTime = 0;
-const isScrolling = ref(false);
 let scrollTimeout: NodeJS.Timeout | null = null;
 
 const scrollTop = ref(0);
@@ -304,9 +314,6 @@ const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-ligh
 const jobs = computed(() => jobsStore.jobs);
 
 
-
-const sortKey = ref<keyof FileItem>("name");
-const sortDirection = ref<"asc" | "desc">("asc");
 
 // --- MEMOIZED SORTING OPERATIONS ---
 // Memoized sorting function with dependency tracking
@@ -446,13 +453,9 @@ const handleScroll = () => {
 };
 
 // Marquee selection state
-const isMarqueeActive = ref(false);
-const marqueeAnchorX = ref(0);
-const marqueeAnchorY = ref(0);
 const marqueePreviewSelection = ref<string[]>([]);
 const marqueePreviewAdd = ref<string[]>([]);
 const marqueePreviewRemove = ref<string[]>([]);
-const marqueeIsAdditive = ref(false);
 const marqueeIsInvert = ref(false);
 const localSelectionBox = ref<HTMLElement | null>(null);
 const localMarqueeRect = reactive({ x: 0, y: 0, width: 0, height: 0 });
@@ -1107,6 +1110,9 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
   const clickedIndex = sortedFiles.value.findIndex((f) => f.path === path);
   if (clickedIndex === -1) return;
 
+  // Set focus to the clicked row
+  focusedRowIndex.value = clickedIndex;
+
   const isCtrlPressed = event.ctrlKey || event.metaKey;
 
   if (event.shiftKey && lastClickedIndex.value !== null) {
@@ -1172,6 +1178,25 @@ const deselectAll = () => {
   if (!props.isSelectable) return;
   selectedFiles.value = [];
   lastClickedIndex.value = null;
+  // Keep focus on the last focused row even when deselecting
+};
+
+// Initialize focus on the last selected row or first row
+const initializeFocus = () => {
+  if (sortedFiles.value.length === 0) return;
+  
+  // If there are selected files, focus on the first selected file
+  if (selectedFiles.value.length > 0) {
+    const firstSelectedPath = selectedFiles.value[0];
+    const selectedIndex = sortedFiles.value.findIndex(f => f.path === firstSelectedPath);
+    if (selectedIndex !== -1) {
+      focusedRowIndex.value = selectedIndex;
+      return;
+    }
+  }
+  
+  // If no selected files or selected file not found, focus on first row
+  focusedRowIndex.value = 0;
 };
 
 const handleDragStart = (event: DragEvent, path: string) => {
@@ -1430,6 +1455,11 @@ watch(visibleFiles, (newVisibleFiles) => {
 // Watch for changes in the files prop to ensure component updates when files are added/removed
 watch(() => props.files, (newFiles, oldFiles) => {
   logRendering("FileTable", `Files prop changed: ${oldFiles?.length || 0} -> ${newFiles?.length || 0} files`);
+  
+  // Initialize focus when files change (e.g., on refresh)
+  if (newFiles.length > 0 && focusedRowIndex.value === null) {
+    initializeFocus();
+  }
 }, { deep: true });
 
 // Emit selection changes so parent components (e.g., JobArea) stay in sync
@@ -1514,16 +1544,25 @@ onMounted(() => {
   
   window.addEventListener('mousemove', handleGlobalDragMove);
   window.addEventListener('dragend', handleGlobalDragEnd);
+  window.addEventListener('keydown', handleKeyDown);
   
   // Store the handlers for cleanup
   const cleanup = () => {
     window.removeEventListener('mousemove', handleGlobalDragMove);
     window.removeEventListener('dragend', handleGlobalDragEnd);
+    window.removeEventListener('keydown', handleKeyDown);
     stopDragScroll();
   };
   
   // Clean up on unmount
   onUnmounted(cleanup);
+
+  // Initialize focus when component is mounted
+  nextTick(() => {
+    if (sortedFiles.value.length > 0) {
+      initializeFocus();
+    }
+  });
 
   // Watch the root element for class changes so we can diagnose 'is-active' toggles
   try {
@@ -1694,6 +1733,49 @@ watch(
     }
   }
 );
+
+// Handle keyboard navigation
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (!isActive.value || sortedFiles.value.length === 0) return;
+
+  switch (event.key) {
+    case 'ArrowUp':
+      event.preventDefault();
+      if (focusedRowIndex.value !== null && focusedRowIndex.value > 0) {
+        focusedRowIndex.value--;
+      } else if (focusedRowIndex.value === null) {
+        focusedRowIndex.value = sortedFiles.value.length - 1;
+      }
+      break;
+    case 'ArrowDown':
+      event.preventDefault();
+      if (focusedRowIndex.value !== null && focusedRowIndex.value < sortedFiles.value.length - 1) {
+        focusedRowIndex.value++;
+      } else if (focusedRowIndex.value === null) {
+        focusedRowIndex.value = 0;
+      }
+      break;
+    case 'Enter':
+    case ' ':
+      event.preventDefault();
+      if (focusedRowIndex.value !== null) {
+        const focusedFile = sortedFiles.value[focusedRowIndex.value];
+        if (focusedFile) {
+          const focusedPath = focusedFile.path;
+          if (event.shiftKey) {
+            // Shift+Enter: add to selection
+            if (!selectedFiles.value.includes(focusedPath)) {
+              selectedFiles.value.push(focusedPath);
+            }
+          } else {
+            // Enter: select only this file
+            selectedFiles.value = [focusedPath];
+          }
+        }
+      }
+      break;
+  }
+};
 
 // Reserve space for the loading backdrop so dialogs/modals don't jump
 // Use the same height as the table would have if loaded

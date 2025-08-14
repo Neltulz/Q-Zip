@@ -6,6 +6,7 @@
       'preview-selected': isMarqueeActive && marqueePreviewSelection.includes(file.path),
       'is-cut': cutFiles.includes(file.path) && jobId === cutSourceJobId,
       'is-folder': file.type === 'Folder',
+      'is-focused': isFocused,
     }"
     :data-path="file.path"
     data-has-context-menu="true"
@@ -146,6 +147,8 @@ const props = defineProps<{
   minMaxFolderModified: { min: number; max: number };
   minMaxFileCreated: { min: number; max: number };
   minMaxFolderCreated: { min: number; max: number };
+  focusedRowIndex: number | null;
+  rowIndex: number;
 }>();
 
 const emit = defineEmits<{
@@ -186,6 +189,9 @@ const CREATION_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
 
 const formatModifiedDate = (timestamp: number): string => MODIFIED_DATE_FORMATTER.format(new Date(timestamp));
 const formatCreationDate = (timestamp: number): string => CREATION_DATE_FORMATTER.format(new Date(timestamp));
+
+// Check if this row is focused
+const isFocused = computed(() => props.focusedRowIndex === props.rowIndex);
 
 const normalizeTimestamp = (timestamp: number, range: { min: number; max: number }): number => {
   if (range.max === range.min) return 50; // If all items have the same date, show a half-bar
@@ -261,6 +267,21 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   &.is-folder.selected {
     background-color: hsla(var(--blu-hue), var(--blu-sat), var(--blu-lite-lum), 0.35);
     color: white;
+  }
+
+  /* Focus indicator - 1px border around the focused row */
+  &.is-focused {
+    outline: 1px solid var(--blu-lite);
+    outline-offset: -1px;
+  }
+
+  /* Hover state - dimmer than selection */
+  &:hover:not(.selected) {
+    background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.15);
+  }
+
+  &.is-folder:hover:not(.selected) {
+    background-color: hsla(var(--blu-hue), var(--blu-sat), var(--blu-lite-lum), 0.15);
   }
 }
 

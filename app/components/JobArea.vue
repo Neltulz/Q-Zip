@@ -24,6 +24,7 @@
             () => {
               handlePaste();
               close();
+              restoreFileTableFocus();
             }
           "
         >
@@ -147,6 +148,15 @@ watch(
   },
   { deep: true }
 );
+
+// Restore file table focus when context menu closes
+const restoreFileTableFocus = () => {
+  if (fileTableRef.value) {
+    nextTick(() => {
+      fileTableRef.value?.setActive(true);
+    });
+  }
+};
 
 // If the FileTable component wasn't mounted at the time the selectedJobId
 // watcher ran, activating it would be missed. Watch the fileTableRef and if
@@ -306,6 +316,12 @@ const showJobContextMenu = (event: MouseEvent) => {
   if ((event.target as Element).closest('.file-row[data-has-context-menu="true"]')) {
     return;
   }
+  
+  // Clear file selection when right-clicking in empty area (standard file manager behavior)
+  if (fileTableRef.value) {
+    fileTableRef.value.deselectAll();
+  }
+  
   jobContextMenuRef.value?.openDropdown({ x: event.clientX, y: event.clientY });
 };
 

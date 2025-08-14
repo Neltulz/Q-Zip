@@ -19,7 +19,11 @@ Q-Zip is a Tauri-based desktop application for file compression and archiving, b
 - **Update Changelog:** Update the changelog (create one if it doesn't exist) using markdown inside a CSS file
 
 ## When Making Changes
-1. **ALWAYS increment the version number** - Increment the third number (patch version) in both `src-tauri/Cargo.toml` and `app/components/TitleBar.vue` and `tauri.conf.json`
+1. **ALWAYS increment the version number** - Increment the third number (patch version) in:
+   - `src-tauri/Cargo.toml` - `version = "0.1.X"`
+   - `app/components/TitleBar.vue` - `<span class="ver-num">v0.1.X</span>`
+   - `src-tauri/tauri.conf.json` - `"version": "0.1.X",`
+   - `src-tauri/tauri.conf.json` - `"title": "Q-Zip v0.1.X",` (window title)
 2. Check existing similar components for patterns
 3. Follow the established file organization
 4. Use HSL/HSLA colors exclusively
