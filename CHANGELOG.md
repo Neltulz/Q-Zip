@@ -1,5 +1,26 @@
 # Q-Zip Changelog
 
+## [0.1.6] - 2024-12-19 17:15:00 UTC
+
+### Fixed
+- **Context Menu Focus Management**: Fixed file table losing active status after context menu interactions
+  - Fixed focus restoration when clicking "Cancel" button in context menus
+  - Enhanced focus debugging with comprehensive logging system
+  - Modified `FileTable.vue` outside handler to prevent deactivation for active jobs
+  - Added `logFocus` function to `app/utils/loggers.ts` for detailed focus state tracking
+  - Improved focus management in `JobArea.vue` and `dropdownManager.ts`
+
+### Technical Details
+- **Focus Debugging**: Added extensive logging to track focus state changes across components
+- **Event Handling**: Modified global click handlers to preserve focus for active job tables
+- **Component Updates**: Enhanced `FileTable.vue`, `JobArea.vue`, and `dropdownManager.ts` with focus-aware behavior
+- **Version Bump**: Incremented patch version from 0.1.5 to 0.1.6 in:
+  - `src-tauri/Cargo.toml`
+  - `app/components/TitleBar.vue`
+  - `src-tauri/tauri.conf.json`
+
+---
+
 ## [0.1.5] - 2024-12-19 16:47:00 UTC
 
 ### Added
@@ -11,7 +32,7 @@
   - Added focus persistence when deselecting files (maintains focus indicator)
 
 ### Fixed
-- **File Table Behavior**: Fixed non-standard right-click behavior to match Directory Opus expectations
+- **File Table Behavior**: Fixed non-standard right-click behavior
   - Fixed selection clearing when right-clicking in empty areas (standard file manager behavior)
   - Fixed file table losing active status after context menu interactions
   - Fixed focus restoration after context menu closes

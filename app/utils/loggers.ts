@@ -18,12 +18,12 @@ import { DEBUG, debugConfig } from "./debugConfig";
 
 // Helper function to get a formatted timestamp
 const getTimestamp = (): string => {
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
-    const milliseconds = now.getMilliseconds().toString().padStart(3, '0');
-    return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const seconds = now.getSeconds().toString().padStart(2, '0');
+  const milliseconds = now.getMilliseconds().toString().padStart(3, '0');
+  return `${hours}:${minutes}:${seconds}.${milliseconds}`;
 };
 
 // Base styles for the log messages
@@ -238,6 +238,18 @@ export const logMarqueeSelection = (callerName: string, message: string, data?: 
       console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, marqueeStyle, data);
     } else {
       console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, marqueeStyle);
+    }
+  }
+};
+
+// --- Logger for Focus Management Events ---
+const focusStyle: string = `${baseStyle} background-color: #ff5722;`; // Deep Orange
+export const logFocus = (callerName: string, message: string, data?: unknown): void => {
+  if (DEBUG && debugConfig.logUIInteractivity) {
+    if (data) {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, focusStyle, data);
+    } else {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, focusStyle);
     }
   }
 };

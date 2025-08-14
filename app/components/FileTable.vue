@@ -189,6 +189,7 @@
                 @copy-to-new-job="copyFileToNewJob"
                 @selection-changed="(paths) => selectedFiles = paths"
                 @set-file-menu-ref="setFileMenuRef"
+                @context-menu-closed="emit('file-table-context-menu-closed')"
               />
             </template>
           </div>
@@ -209,7 +210,7 @@ import FileTableHeader from "./file-table-comp/FileTableHeader.vue";
 import FileTableToolbar from "./file-table-comp/FileTableToolbar.vue";
 import FileTableContextMenu from "./file-table-comp/FileTableContextMenu.vue";
 import FileTableRow from "./file-table-comp/FileTableRow.vue";
-import { logDragDropEvent, logLifecycle, logRendering, logUI, logMarqueeSelection } from "@/utils/loggers";
+import { logDragDropEvent, logLifecycle, logRendering, logUI, logMarqueeSelection, logFocus } from "@/utils/loggers";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { open } from "@tauri-apps/plugin-dialog";
 import LoadingAnim from "@/components/LoadingAnim.vue";
@@ -279,6 +280,7 @@ const emit = defineEmits([
   "add-files",
   "add-folders",
   "cancel-load",
+  "file-table-context-menu-closed", // New event
 ]);
 
 const themeStore = useThemeStore();
@@ -1415,14 +1417,21 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   }
 };
 
-const handleContextMenu = (file: FileItem, event: MouseEvent) => {
+const handleContextMenu = (file: FileItem, event: MouseEvent, preserveSelection: boolean) => {
   if (!isSelectableEnabled.value) return;
   
-  if (!selectedFiles.value.includes(file.path)) {
-    selectedFiles.value = [file.path];
-    const fileIndex = sortedFiles.value.findIndex((f) => f.path === file.path);
-    if (fileIndex !== -1) {
-      lastClickedIndex.value = fileIndex;
+  // If not preserving selection (i.e., right-clicked outside .item-name-content), deselect all
+  if (!preserveSelection) {
+    selectedFiles.value = [];
+    lastClickedIndex.value = null;
+  } else {
+    // Only select the file if right-clicking on .item-name-content AND it's not already selected
+    if (!selectedFiles.value.includes(file.path)) {
+      selectedFiles.value = [file.path];
+      const fileIndex = sortedFiles.value.findIndex((f) => f.path === file.path);
+      if (fileIndex !== -1) {
+        lastClickedIndex.value = fileIndex;
+      }
     }
   }
   
@@ -1654,7 +1663,20 @@ onMounted(() => {
   window.addEventListener("click", globalClickHandler);
   // Listen for app-level outside clicks to deactivate job-content
   const outsideHandler = () => {
-    isActive.value = false;
+    logFocus("FileTable", "outsideHandler called", {
+      jobId: props.jobId,
+      currentIsActive: isActive.value,
+      selectedJobId: jobsStore.selectedJobId
+    });
+    
+    // Only deactivate if this is not the currently selected job
+    // This prevents the file table from becoming inactive when context menus close
+    if (props.jobId !== jobsStore.selectedJobId) {
+      logFocus("FileTable", "outsideHandler: deactivating (not selected job)");
+      isActive.value = false;
+    } else {
+      logFocus("FileTable", "outsideHandler: keeping active (selected job)");
+    }
   };
   window.addEventListener("app:clicked-outside-job-content", outsideHandler as EventListener);
 });
@@ -1674,12 +1696,26 @@ onUnmounted(() => {
 // Programmatic setter so parents can toggle active state. Log for debugging.
 const setActive = (val: boolean) => {
   try {
+    logFocus("FileTable", `setActive called with val=${val}, allowActivation=${allowActivation.value}`, {
+      jobId: props.jobId,
+      currentIsActive: isActive.value,
+      allowActivation: allowActivation.value
+    });
+    
     if (!allowActivation.value) {
       // ignore attempts to activate when activatable is false
+      logFocus("FileTable", "setActive ignored - activation not allowed");
       return;
     }
     const prev = isActive.value;
     isActive.value = !!val;
+    
+    logFocus("FileTable", `setActive completed -> ${isActive.value} (was ${prev})`, {
+      jobId: props.jobId,
+      previousValue: prev,
+      newValue: isActive.value
+    });
+    
     // log lifecycle/state change
     try {
       // prefer logLifecycle (component state changes)
@@ -1694,6 +1730,7 @@ const setActive = (val: boolean) => {
       console.log(`FileTable.setActive: job=${props.jobId} -> ${isActive.value} (was ${prev})`);
     }
   } catch (err) {
+    logFocus("FileTable", `setActive error: ${err}`, { error: err });
     // ignore
   }
 };
@@ -1711,12 +1748,25 @@ watch(
   (val) => {
     const root = fileTableCompRef.value;
     if (!root) return;
+    
+    logFocus("FileTable", `isActive watcher triggered: val=${val}, allowActivation=${allowActivation.value}`, {
+      jobId: props.jobId,
+      hasRoot: !!root,
+      currentClasses: root.className
+    });
+    
     if (allowActivation.value) {
-      if (val) root.classList.add("is-active");
-      else root.classList.remove("is-active");
+      if (val) {
+        root.classList.add("is-active");
+        logFocus("FileTable", "Added is-active class", { jobId: props.jobId });
+      } else {
+        root.classList.remove("is-active");
+        logFocus("FileTable", "Removed is-active class", { jobId: props.jobId });
+      }
     } else {
       // ensure class removed if activation disabled
       root.classList.remove("is-active");
+      logFocus("FileTable", "Removed is-active class (activation disabled)", { jobId: props.jobId });
     }
   }
 );

@@ -59,6 +59,7 @@
         @copy-files="handleContextMenuCopyFiles"
         @copy-to-new-job="copyFileToNewJob"
         @selection-changed="(paths) => selectedFiles = paths"
+        @context-menu-closed="handleContextMenuClosed"
       />
     </div>
     <!-- Other Cells -->
@@ -154,7 +155,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'toggle-file-selection': [path: string];
   'click-row': [event: MouseEvent, path: string];
-  'context-menu': [file: FileItem, event: MouseEvent];
+  'context-menu': [file: FileItem, event: MouseEvent, preserveSelection: boolean];
   'drag-start': [event: DragEvent, path: string];
   'drag-end': [];
   'remove-file': [path: string];
@@ -164,6 +165,7 @@ const emit = defineEmits<{
   'copy-to-new-job': [paths: string[]];
   'selection-changed': [paths: string[]];
   'set-file-menu-ref': [file: FileItem, el: any];
+  'context-menu-closed': [];
 }>();
 
 const formatBytes = (bytes: number): string => {
@@ -208,7 +210,15 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
 };
 
 const handleContextMenu = (file: FileItem, event: MouseEvent) => {
-  emit('context-menu', file, event);
+  // Check if the right-click target is the .item-name-content
+  const target = event.target as Element;
+  const isNameContent = target.closest('.item-name-content');
+  
+  emit('context-menu', file, event, isNameContent !== null);
+};
+
+const handleContextMenuClosed = () => {
+  emit('context-menu-closed');
 };
 
 const handleDragStart = (event: DragEvent, path: string) => {

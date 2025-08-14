@@ -26,6 +26,7 @@
             () => {
               removeFile(file.path);
               closeMain();
+              emit('context-menu-closed');
             }
           "
         >
@@ -56,6 +57,7 @@
                   copyFileFromContext(job.id, file.path);
                   closeSub();
                   closeMain();
+                  emit('context-menu-closed');
                 }
               "
             >
@@ -74,6 +76,7 @@
                   copyFileToNewJobFromContext(file.path);
                   closeSub();
                   closeMain();
+                  emit('context-menu-closed');
                 }
               "
             >
@@ -105,6 +108,7 @@
                   moveFileFromContext(job.id, file.path);
                   closeSub();
                   closeMain();
+                  emit('context-menu-closed');
                 }
               "
             >
@@ -123,6 +127,7 @@
                   moveFileToNewJobFromContext(file.path);
                   closeSub();
                   closeMain();
+                  emit('context-menu-closed');
                 }
               "
             >
@@ -141,6 +146,7 @@
             () => {
               performCutFor(file.path);
               closeMain();
+              emit('context-menu-closed');
             }
           "
         >
@@ -156,6 +162,7 @@
             () => {
               performCopyFor(file.path);
               closeMain();
+              emit('context-menu-closed');
             }
           "
         >
@@ -176,6 +183,7 @@
                 copyFileFromContext(jobId, file.path);
               }
               closeMain();
+              emit('context-menu-closed');
             }
           "
         >
@@ -188,7 +196,12 @@
           first-icon-name="mdi:cancel"
           :first-icon-size="20"
           shortcut-text="Esc"
-          @click="closeMain()"
+          @click="
+            () => {
+              closeMain();
+              emit('context-menu-closed');
+            }
+          "
         >
           Cancel
         </CustomButton>
@@ -219,6 +232,7 @@ const emit = defineEmits([
   "copy-files",
   "copy-to-new-job",
   "selection-changed",
+  "context-menu-closed",
 ]);
 
 const jobsStore = useJobsStore();

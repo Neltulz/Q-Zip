@@ -59,6 +59,7 @@
             @selection-changed="handleSelectionChange"
             @add-files="addItemsToJob"
             @add-folders="addItemsToJob"
+            @file-table-context-menu-closed="restoreFileTableFocus"
           />
         </div>
       </div>
@@ -77,7 +78,7 @@ import FileTable from "@/components/FileTable.vue";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import type { FileItem } from "@/types/types";
 import LoadingAnim from "@/components/LoadingAnim.vue";
-import { logLoading, logRendering, logUI } from "@/utils/loggers";
+import { logLoading, logRendering, logUI, logFocus } from "@/utils/loggers";
 
 type FileOperationPayload = {
   targetJobId: number;
@@ -151,10 +152,18 @@ watch(
 
 // Restore file table focus when context menu closes
 const restoreFileTableFocus = () => {
+  logFocus("JobArea", "restoreFileTableFocus called", {
+    hasFileTableRef: !!fileTableRef.value,
+    activeJobId: activeJob.value?.id
+  });
+  
   if (fileTableRef.value) {
     nextTick(() => {
+      logFocus("JobArea", "restoreFileTableFocus: calling setActive(true) in nextTick");
       fileTableRef.value?.setActive(true);
     });
+  } else {
+    logFocus("JobArea", "restoreFileTableFocus: fileTableRef is null");
   }
 };
 

@@ -7,7 +7,7 @@
 // nested dropdowns by closing only unrelated dropdowns when a new one is opened.
 
 import { ref, watch, onBeforeUnmount, watchEffect } from "vue";
-import { logManagerAction, logGlobalEvent, logWarning } from "@/utils/loggers";
+import { logManagerAction, logGlobalEvent, logWarning, logFocus } from "@/utils/loggers";
 
 // Define the structure of a dropdown object
 export interface Dropdown {
@@ -154,6 +154,11 @@ const cancelSubmenuClosure = (): void => {
  * @param reason - A string describing why the dropdowns are being closed.
  */
 const closeAllDropdowns = (reason?: string): void => {
+  logFocus("dropdownManager", `closeAllDropdowns called with reason: ${reason}`, {
+    openDropdownsCount: openDropdowns.value.length,
+    dropdownNames: openDropdowns.value.map(d => d.dropdownContent?.getAttribute('data-belongs-to') || 'unknown')
+  });
+
   // Start hiding the overlay immediately so it can fade out concurrently
   // with dropdown close animations.
   try {
@@ -202,6 +207,8 @@ const closeAllDropdowns = (reason?: string): void => {
   }
   // ALWAYS cancel any pending submenu closure timer when closing all dropdowns.
   cancelSubmenuClosure();
+
+  logFocus("dropdownManager", "closeAllDropdowns completed");
 };
 
 // Handle global clicks to close dropdowns if the click is outside any dropdown content
