@@ -1,5 +1,9 @@
 # Q-Zip Changelog
 
+> **Note:** This changelog maintains only the most recent 20 versions for readability and performance. Older versions are archived when new versions are added.
+
+## Recent Changes
+
 ## [0.1.8] - 2024-12-19 19:00:00 UTC
 
 ### Fixed

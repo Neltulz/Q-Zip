@@ -16,7 +16,10 @@ Q-Zip is a Tauri-based desktop application for file compression and archiving, b
 - **Preserve & Update Comments:** Preserve overall structure of file-top comments (including `@preserve` and ESLint directives), but update descriptive content to reflect code modifications
 - **Provide Full Code:** Always provide complete code for modified files, not just snippets
 - **Skip Unchanged Files:** Do not include files that were not modified
-- **Update Changelog:** Update the changelog (create one if it doesn't exist) using markdown inside a CSS file
+- **Update Changelog:** Update the changelog (create one if it doesn't exist) using markdown
+  - **Changelog Limit:** Keep only the most recent 20 versions in the changelog
+  - **Archive Old Versions:** When adding a new version that would exceed 20 entries, remove the oldest version entry
+  - **Format:** Use consistent markdown formatting with version numbers, dates, and categorized changes
 
 ## When Making Changes
 1. **ALWAYS increment the version number** - Increment the third number (patch version) in:
