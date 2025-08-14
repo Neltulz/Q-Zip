@@ -1,0 +1,25 @@
+---
+description: "Coding style guidelines for CSS/SCSS and Vue.js components."
+globs: ["**/*.vue", "**/*.css", "**/*.scss"]
+alwaysApply: false
+---
+# Code Style Guidelines
+## CSS/SCSS
+- **Color Format**: Use HSL/HSLA.
+- **CSS Nesting**: Use native CSS nesting wherever possible.
+- **Logical Properties**: Use logical CSS properties (e.g., `margin-inline`, `padding-block`).
+- **Nested Selectors**: Prefix nested selectors like `:has` or `:deep` with ampersand (`&`).
+- **Property Organization**: Alphabetize CSS properties.
+- **CSS Variables**: Place CSS variables at the top of a rule, followed by an empty line.
+- **Individual Properties**: Use individual logical properties instead of shorthands.
+- **Component Styling**: Use scoped CSS files.
+- **Global Styles**: Use global CSS files for shared styles.
+
+## Vue.js Components
+- Use Composition API with `<script setup>` syntax.
+- Use TypeScript for type safety.
+- Follow Vue 3 best practices.
+- Hyphenate all attributes.
+- Use `defineProps<...>()` directly unless `props` is explicitly accessed.
+- Use self-closing tags for empty elements.
+- Use Nuxt auto-imports; do not add component import statements.

@@ -1,11 +1,9 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   DebugButtonTestModalContent.vue @preserve
 -->
 <!-- components/modals/DebugButtonTestModalContent.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   DebugButtonTestModalContent.vue @preserve
 -->
 <!--
@@ -103,11 +101,9 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 // No script needed, this is just for display.
 </script>
-
 <style>
 /* This style must be global because the modal is teleported.
       Using CSS Grid for a more robust column layout. */

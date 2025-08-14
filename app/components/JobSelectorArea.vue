@@ -1,14 +1,11 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   JobSelectorArea.vue @preserve
 -->
 <!-- components/JobSelectorArea.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   JobSelectorArea.vue @preserve
 -->
-
 <template>
   <nav
     class="job-selector-area"
@@ -70,7 +67,6 @@
               />
             </div>
           </CustomButton>
-
           <!-- Context Menu for each job tab -->
           <DropdownMenu
             :ref="(el) => setContextMenuRef(job.id, el)"
@@ -126,7 +122,6 @@
               </CustomButton>
             </template>
           </DropdownMenu>
-
           <!-- Dropdown for drag-and-drop actions -->
           <DropdownMenu
             :ref="(el) => setDragActionMenuRef(job.id, el)"
@@ -178,7 +173,6 @@
               </CustomButton>
             </template>
           </DropdownMenu>
-
           <InfoTooltip
             :visible="tooltipManager.activeTooltipId.value === 'job-' + job.id"
             :content="{ text: 'Right click for more options' }"
@@ -188,7 +182,6 @@
         </template>
       </div>
     </OverlayScrollbarsComponent>
-
     <div class="job-selector-btn-wrapper">
       <div
         class="job-selector-btns-start"
@@ -270,7 +263,6 @@
           :debug-force-visible="false"
         />
       </div>
-
       <div class="job-selector-btns-end">
         <DropdownMenu
           ref="extraOptionsDropdownRef"
@@ -331,7 +323,6 @@
     </div>
   </nav>
 </template>
-
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance, onBeforeUpdate } from "vue";
 import { useJobsStore } from "@/stores/jobsStore";
@@ -351,13 +342,10 @@ import { useTooltipManager } from "@/composables/useTooltipManager";
 import { useDropdownManager } from "@/composables/dropdownManager";
 import { logDragDropEvent, logUI, logManagerAction, logNotification, logGlobalEvent } from "@/utils/loggers";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-
 interface ScrollableOverlayScrollbars extends OverlayScrollbars {
   scroll: (destination: { x?: string | number; y?: string | number }, duration?: number) => void;
 }
-
 const { setScrollContainer } = useScrollContainer();
-
 const themeStore = useThemeStore();
 const jobsStore = useJobsStore();
 const uiStore = useUiStore();
@@ -365,24 +353,17 @@ const modalsStore = useModalsStore();
 const dragDropStore = useDragDropStore();
 const tooltipManager = useTooltipManager();
 const { closeAllDropdowns } = useDropdownManager();
-
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
 const jobsList = computed(() => jobsStore.jobs);
-
 const hoveredJobId = ref<number | "new-job" | null>(null);
-
 const scrollComponentRef = ref<InstanceType<typeof OverlayScrollbarsComponent> | null>(null);
-
 const jobButtonRefs = ref(new Map<number | "new-job", InstanceType<typeof CustomButton>>());
 const jobContextMenuRefs = ref(new Map<number, InstanceType<typeof DropdownMenu>>());
 const dragActionDropdownRefs = ref(new Map<number | "new-job", InstanceType<typeof DropdownMenu>>());
 const extraOptionsDropdownRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
-
 const pendingDropFilePaths = ref<string[]>([]);
 const pendingDropSourceJobId = ref<number | null>(null);
-
 const jobNotificationStates = ref<Map<number | "new-job", NotificationType>>(new Map());
-
 const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
 const extraOptionsTarget = computed(() => {
   const el = extraOptionsDropdownRef.value as any;
@@ -390,14 +371,12 @@ const extraOptionsTarget = computed(() => {
   // Try common exposed refs, fall back to querying DOM inside the component
   return el.buttonRef ?? el.$el?.querySelector?.('.visual-style') ?? null;
 });
-
 watch(
   () => uiStore.notifications,
   (notifications: Notification[], oldNotifications: Notification[]) => {
     const newNotifications = notifications.filter(
       (n: Notification) => !oldNotifications.some((on: Notification) => on.id === n.id)
     );
-
     newNotifications.forEach((notification: Notification) => {
       if (notification.targetId) {
         jobNotificationStates.value.set(notification.targetId, notification.glowType);
@@ -409,7 +388,6 @@ watch(
   },
   { deep: true }
 );
-
 watch(
   () => uiStore.pendingNotification,
   (notification: any) => {
@@ -422,11 +400,9 @@ watch(
           hasButtonRef: jobButtonRefs.value.has(targetId)
         });
       }
-      
       nextTick(() => {
         const buttonRef = jobButtonRefs.value.get(targetId);
         const buttonEl = buttonRef?.buttonRef;
-        
         if (DEBUG && debugConfig.logNotifications) {
           logNotification("JobSelectorArea", `Button reference lookup for targetId: ${targetId}`, {
             targetId,
@@ -435,14 +411,11 @@ watch(
             buttonRefs: Array.from(jobButtonRefs.value.keys())
           });
         }
-        
         if (buttonEl) {
           buttonEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-
           const visualStyleEl = buttonEl.querySelector(".visual-style");
           const rect = visualStyleEl?.getBoundingClientRect();
           const scrollEl = scrollComponentRef.value?.osInstance()?.elements().viewport;
-
           if (rect && scrollEl) {
             const scrollContainerRect = scrollEl.getBoundingClientRect();
             const position = {
@@ -472,7 +445,6 @@ watch(
   },
   { deep: true }
 );
-
 watch(
   scrollComponentRef,
   (newRef: any) => {
@@ -486,12 +458,10 @@ watch(
   },
   { immediate: true }
 );
-
 onUnmounted(() => {
   setScrollContainer(null);
   window.removeEventListener("keydown", handleKeyDown);
 });
-
 const setJobButtonRef = (jobId: number | "new-job", el: Element | ComponentPublicInstance | null) => {
   if (el) {
     jobButtonRefs.value.set(jobId, el as InstanceType<typeof CustomButton>);
@@ -501,37 +471,31 @@ const setJobButtonRef = (jobId: number | "new-job", el: Element | ComponentPubli
     }
   }
 };
-
 const setContextMenuRef = (jobId: number, el: Element | ComponentPublicInstance | null) => {
   if (el) {
     jobContextMenuRefs.value.set(jobId, el as InstanceType<typeof DropdownMenu>);
   }
 };
-
 const setDragActionMenuRef = (jobId: number | "new-job", el: Element | ComponentPublicInstance | null) => {
   if (el) {
     dragActionDropdownRefs.value.set(jobId, el as InstanceType<typeof DropdownMenu>);
   }
 };
-
 onBeforeUpdate(() => {
   jobButtonRefs.value.clear();
   jobContextMenuRefs.value.clear();
   dragActionDropdownRefs.value.clear();
 });
-
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.ctrlKey && event.key.toLowerCase() === "t") {
     event.preventDefault();
     addJob();
   }
 };
-
 onMounted(() => {
   jobsStore.initialize();
   window.addEventListener("keydown", handleKeyDown);
 });
-
 watch(
   jobsList,
   (newJobs, oldJobs) => {
@@ -546,7 +510,6 @@ watch(
   },
   { deep: true }
 );
-
 watch(
   () => jobsStore.selectedJobId,
   (newId, oldId) => {
@@ -561,7 +524,6 @@ watch(
     }
   }
 );
-
 const selectJob = (jobId: number): void => {
   if (dragDropStore.isInternalDragActive) return;
   const oldId = jobsStore.selectedJobId;
@@ -572,7 +534,6 @@ const selectJob = (jobId: number): void => {
       if (DEBUG && debugConfig.logUIEvents) {
         logGlobalEvent("JobSelectorArea", "selectJob dispatching app:selected-job-changed", { oldId, newId: jobId });
       }
-
       window.dispatchEvent(new CustomEvent("app:selected-job-changed", { detail: { oldId, newId: jobId } }));
   } catch (e) {
     // ignore non-browser env
@@ -587,19 +548,16 @@ const selectJob = (jobId: number): void => {
     // ignore
   }
 };
-
 const showJobContextMenu = (event: MouseEvent, jobId: number) => {
   const contextMenu = jobContextMenuRefs.value.get(jobId);
   if (contextMenu) {
     contextMenu.openDropdown({ x: event.clientX, y: event.clientY });
   }
 };
-
 const addJob = (): void => {
   const newJobId = jobsStore.addJob();
   jobsStore.selectJob(newJobId);
 };
-
 const removeJob = (jobId: number): void => {
   const modalOptions: ModalOptions = {
     icon: "mdi:alert-outline",
@@ -622,7 +580,6 @@ const removeJob = (jobId: number): void => {
     // Note: No FileTable to reactivate in JobSelectorArea
   });
 };
-
 const confirmRemoveAllJobs = (): void => {
   const modalOptions: ModalOptions = {
     icon: "mdi:alert-outline",
@@ -642,7 +599,6 @@ const confirmRemoveAllJobs = (): void => {
     // Note: No FileTable to reactivate in JobSelectorArea
   });
 };
-
 const handleDragOver = (event: DragEvent): void => {
   if (dragDropStore.isInternalDragActive) {
     // File operation from FileTable
@@ -655,20 +611,17 @@ const handleDragOver = (event: DragEvent): void => {
     }
   }
 };
-
 const handleDragLeave = (event: DragEvent): void => {
   if (dragDropStore.isInternalDragActive) {
     handleJobTabDragLeave(event);
   }
 };
-
 const onDrop = (targetJobId: number | null): void => {
   if (dragDropStore.isInternalDragActive) {
     dragDropStore.endInternalDrag();
     hoveredJobId.value = null;
   }
 };
-
 const handleJobTabDragOver = (event: DragEvent, targetIdentifier: number | "new-job") => {
   if (dragDropStore.isInternalDragActive) {
     event.preventDefault();
@@ -680,7 +633,6 @@ const handleJobTabDragOver = (event: DragEvent, targetIdentifier: number | "new-
     }
   }
 };
-
 const handleJobTabDragLeave = (event: DragEvent) => {
   if (dragDropStore.isInternalDragActive) {
     const currentTarget = event.currentTarget as HTMLElement;
@@ -690,14 +642,11 @@ const handleJobTabDragLeave = (event: DragEvent) => {
     }
   }
 };
-
 const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job") => {
   event.preventDefault();
   event.stopPropagation();
-
   // This is a file operation from FileTable
   dragDropStore.setDropOccurred(true);
-
   if (targetIdentifier === dragDropStore.internalDragSourceJobId) {
     dragDropStore.endInternalDrag();
     return;
@@ -705,7 +654,6 @@ const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job"
   pendingDropFilePaths.value = [...dragDropStore.internalDraggedFiles];
   pendingDropSourceJobId.value = dragDropStore.internalDragSourceJobId;
   hoveredJobId.value = null;
-
   nextTick(() => {
     const dropdown = dragActionDropdownRefs.value.get(targetIdentifier);
     if (dropdown) {
@@ -715,37 +663,29 @@ const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job"
     }
   });
 };
-
 const handleDragAction = (operation: "move" | "copy", targetIdentifier: number | "new-job") => {
   logManagerAction("JobSelectorArea", `handleDragAction called: operation=${operation}, target=${targetIdentifier}`);
-  
   const droppedFilePaths = pendingDropFilePaths.value;
   const sourceJobId = pendingDropSourceJobId.value;
-
   if (!sourceJobId || droppedFilePaths.length === 0) {
     logManagerAction("JobSelectorArea", "handleDragAction: Invalid source job or no files, ending drag");
     dragDropStore.endInternalDrag();
     return;
   }
-
   const sourceJob = jobsStore.jobs.find((j) => j.id === sourceJobId);
   if (!sourceJob) {
     logManagerAction("JobSelectorArea", "handleDragAction: Source job not found, ending drag");
     dragDropStore.endInternalDrag();
     return;
   }
-
   const pathSet = new Set(droppedFilePaths);
   const filesToOperateOn = sourceJob.files.filter((f) => pathSet.has(f.path));
-
   // End the drag operation immediately when opening the confirmation modal
   // This will clear the dashed lines and visual indicators
   logManagerAction("JobSelectorArea", "handleDragAction: Ending drag operation before opening modal");
   dragDropStore.endInternalDrag();
-
   openOperationConfirmModal(operation, filesToOperateOn, targetIdentifier, sourceJobId);
 };
-
 const openOperationConfirmModal = (
   operation: "move" | "copy",
   files: FileItem[],
@@ -753,7 +693,6 @@ const openOperationConfirmModal = (
   sourceJobId: number | null
 ) => {
   logManagerAction("JobSelectorArea", `openOperationConfirmModal called: operation=${operation}, target=${targetJobId}, files=${files.length}`);
-  
   // Explicitly close any open drag action dropdowns before opening the modal
   const targetIdentifier = targetJobId;
   const dropdown = dragActionDropdownRefs.value.get(targetIdentifier);
@@ -761,11 +700,9 @@ const openOperationConfirmModal = (
     logManagerAction("JobSelectorArea", `Explicitly closing drag action dropdown for target: ${targetIdentifier}`);
     dropdown.closeDropdown();
   }
-  
   const targetJob = jobsStore.jobs.find((j) => j.id === targetJobId);
   let itemsToProcess: FileItem[] = [];
   let itemsToSkip: FileItem[] = [];
-
   if (targetJob) {
     const targetFilePaths = new Set(targetJob.files.map((f) => f.path));
     for (const file of files) {
@@ -778,7 +715,6 @@ const openOperationConfirmModal = (
   } else {
     itemsToProcess.push(...files);
   }
-
   const opString = operation === "move" ? "Move" : "Copy";
   const targetName = targetJobId === "new-job" ? "a new job" : `Job ${targetJobId}`;
   const modalOptions: ModalOptions = {
@@ -797,7 +733,6 @@ const openOperationConfirmModal = (
     footerJustifyContent: "center",
     closeOnClickOutside: true,
   };
-
   logManagerAction("JobSelectorArea", "openOperationConfirmModal: Opening modal");
   modalsStore.openModal(
     "ResetConfirmationModalContent",
@@ -813,14 +748,12 @@ const openOperationConfirmModal = (
         // Extract conflict resolution from the data, with fallback based on operation
         const conflictResolution = data?.conflictResolution || (operation === 'move' ? 'replace' : 'skip');
         logManagerAction("JobSelectorArea", `Using conflict resolution: ${conflictResolution}`);
-        
         uiStore.handleFileOperation(operation, files, targetJobId, { 
           sourceJobId, 
           conflictResolution
         });
       }
       // Drag operation was already ended in handleDragAction, so no need to call it again
-      
       // Reactivate the file table after modal closes
       const currentJobId = jobsStore.selectedJobId;
       if (currentJobId !== null) {
@@ -834,38 +767,30 @@ const openOperationConfirmModal = (
     }
   );
 };
-
 const handleJobMouseEnter = (jobId: number): void => {
   tooltipManager.showTooltip('job-' + jobId);
 };
-
 const handleJobMouseLeave = (): void => {
   tooltipManager.hideTooltip();
 };
-
 const handleAddJobMouseEnter = (): void => {
   tooltipManager.showTooltip('add-job');
 };
-
 const handleAddJobMouseLeave = (): void => {
   tooltipManager.hideTooltip();
 };
-
 const handleExtraOptionsMouseEnter = (): void => {
   tooltipManager.showTooltip('job-selector-options');
 };
-
 const handleExtraOptionsMouseLeave = (): void => {
   tooltipManager.hideTooltip();
 };
-
 const reorderJob = (index: number, direction: "left" | "right"): void => {
   const fromIndex = index;
   const toIndex = direction === "left" ? index - 1 : index + 1;
   jobsStore.moveJob(fromIndex, toIndex);
 };
 </script>
-
 <style scoped>
 @import "./job-selector-area-comp/job-selector-area.scoped.css";
 /* Scoped styles remain the same */

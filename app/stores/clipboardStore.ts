@@ -1,23 +1,19 @@
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
 // stores/clipboardStore.ts
 import { defineStore } from 'pinia';
 import { ref, computed, type Ref } from 'vue'; // Import ref and computed for Composition API style
 import type { FileItem } from '@/types/types'; // Assuming you have a FileItem type in src/types/types.ts
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface ClipboardState {
   clipboard: FileItem[];
   isCut: boolean;
   sourceJobId: number | null;
 }
-
 export const useClipboardStore = defineStore('clipboard', () => {
   // --- STATE ---
   const clipboard: Ref<FileItem[]> = ref([]);
   const isCut: Ref<boolean> = ref(false);
   const sourceJobId: Ref<number | null> = ref(null);
-
   // --- ACTIONS ---
   /**
    * Copies the given files to the clipboard.
@@ -30,7 +26,6 @@ export const useClipboardStore = defineStore('clipboard', () => {
     isCut.value = false;
     sourceJobId.value = jobId;
   }
-
   /**
    * Cuts the given files to the clipboard.
    * @param files The FileItem objects to cut.
@@ -42,7 +37,6 @@ export const useClipboardStore = defineStore('clipboard', () => {
     isCut.value = true;
     sourceJobId.value = jobId;
   }
-
   /**
    * Clears the clipboard.
    */
@@ -52,7 +46,6 @@ export const useClipboardStore = defineStore('clipboard', () => {
     isCut.value = false;
     sourceJobId.value = null;
   }
-
   /**
    * Checks if there are items in the clipboard.
    * @returns True if clipboard contains items, false otherwise.
@@ -60,14 +53,12 @@ export const useClipboardStore = defineStore('clipboard', () => {
   function hasClipboardItems(): boolean {
     return clipboard.value.length > 0;
   }
-
   // --- GETTERS ---
   /**
    * Returns an array of file paths if the clipboard contains cut items.
    * Used to apply visual "dimming" to cut files in the source table.
    */
   const cutFilePaths = computed(() => isCut.value ? clipboard.value.map((file: FileItem) => file.path) : []);
-
   return {
     clipboard,
     isCut,

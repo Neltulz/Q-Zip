@@ -1,34 +1,28 @@
 // stores/uiStore.ts
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 import { defineStore } from "pinia";
 import { reactive, ref, type Ref } from "vue";
 import { useJobsStore, type FileItem } from "@/stores/jobsStore";
 import { useClipboardStore } from "./clipboardStore";
-
 export type JobSelectorOrientation = "horizontal" | "vertical";
 export type PanelWidth = string;
 export type NotificationType = "success" | "warning" | "error" | "info";
-
 export interface NotificationPosition {
   top: number;
   left: number;
   width: number;
 }
-
 export interface NotificationMessageDetails {
   sourceJobId: number | null;
   destinationJobId: number;
   filePaths: string[];
   reasons?: Record<string, string>;
 }
-
 export interface NotificationMessage {
   text: string;
   type: NotificationType;
   details?: NotificationMessageDetails;
 }
-
 export interface Notification {
   id: number;
   title: string;
@@ -40,9 +34,7 @@ export interface Notification {
   timeoutId: number | null;
   isRemoving?: boolean;
 }
-
 type PendingNotificationPayload = Omit<Notification, "id" | "timeoutId" | "position" | "duration"> & { duration?: number };
-
 // NEW: Interface for the marquee box state
 export interface MarqueeBox {
   visible: boolean;
@@ -51,7 +43,6 @@ export interface MarqueeBox {
   width: number;
   height: number;
 }
-
 export const useUiStore = defineStore(
   "ui",
   () => {
@@ -61,7 +52,6 @@ export const useUiStore = defineStore(
     const notifications: Ref<Notification[]> = ref([]);
     const notificationQueue: Ref<Notification[]> = ref([]);
     const pendingNotification = ref<PendingNotificationPayload | null>(null);
-
     // NEW: Central state for the marquee selection box
     const marqueeBox = reactive<MarqueeBox>({
       visible: false,
@@ -70,7 +60,6 @@ export const useUiStore = defineStore(
       width: 0,
       height: 0,
     });
-
     // Centralized File Operation Logic
     function handleFileOperation(
       operation: "move" | "copy",
@@ -80,32 +69,24 @@ export const useUiStore = defineStore(
     ) {
       const jobsStore = useJobsStore();
       const clipboardStore = useClipboardStore();
-
       const sourceJobId = options.sourceJobId;
       if (!sourceJobId) return;
-
       const sourceJob = jobsStore.jobs.find((j) => j.id === sourceJobId);
       if (!sourceJob) return;
-
       let numericTargetId: number;
-
       if (targetJobId === "new-job") {
         numericTargetId = jobsStore.addJob();
       } else {
         numericTargetId = targetJobId;
       }
-
       const targetJob = jobsStore.jobs.find((j) => j.id === numericTargetId);
       if (!targetJob) return;
-
       const filePaths = files.map(f => f.path);
       const targetFilePaths = new Set(targetJob.files.map((f) => f.path));
       const conflictResolution = options.conflictResolution || (operation === 'move' ? 'replace' : 'skip');
-
       let newFilePaths: string[];
       let skippedFilePaths: string[];
       let replacedFilePaths: string[];
-
       if (conflictResolution === 'replace') {
         // For replace, separate new files from existing files that will be replaced
         newFilePaths = filePaths.filter((path) => !targetFilePaths.has(path));
@@ -117,14 +98,11 @@ export const useUiStore = defineStore(
         skippedFilePaths = filePaths.filter((path) => targetFilePaths.has(path));
         replacedFilePaths = [];
       }
-
       const opPastTense = operation === "move" ? "moved" : "copied";
-
       const messages: NotificationMessage[] = [];
       let glowType: NotificationType = "info";
       let operationSucceeded = false;
       let operationFailed = false;
-
       // Handle new files
       if (newFilePaths.length > 0) {
         try {
@@ -157,7 +135,6 @@ export const useUiStore = defineStore(
           });
         }
       }
-
       // Handle replaced files
       if (replacedFilePaths.length > 0) {
         try {
@@ -190,7 +167,6 @@ export const useUiStore = defineStore(
           });
         }
       }
-
       // Handle skipped files (only when conflict resolution is 'skip')
       if (skippedFilePaths.length > 0 && conflictResolution === 'skip') {
         const reasons: Record<string, string> = {};
@@ -206,7 +182,6 @@ export const useUiStore = defineStore(
           clipboardStore.clear();
         }
       }
-
       if (operationFailed) {
         glowType = "error";
       } else if (operationSucceeded) {
@@ -214,7 +189,6 @@ export const useUiStore = defineStore(
       } else if (skippedFilePaths.length > 0) {
         glowType = "warning";
       }
-
       if (messages.length > 0) {
         const title = `${operation.charAt(0).toUpperCase() + operation.slice(1)} Complete`;
         triggerJobNotification({
@@ -225,26 +199,20 @@ export const useUiStore = defineStore(
           duration: 8000,
         });
       }
-
       // NOTE: Previously we switched the UI to the destination job after a
       // successful move/copy. Keep the current job selected so the user remains
       // in context; notifications will inform them of the transfer instead.
     }
-
-
     function toggleJobSelectorOrientation(): void {
       jobSelectorOrientation.value = jobSelectorOrientation.value === "horizontal" ? "vertical" : "horizontal";
     }
-
     function setPanelWidths(jobsWidth: PanelWidth, compressWidth: PanelWidth): void {
       jobsSectionWidth.value = jobsWidth;
       compressSectionWidth.value = compressWidth;
     }
-
     function addNotification(notification: Omit<Notification, "id" | "timeoutId" | "duration"> & { duration?: number }): void {
       const id = Date.now() + Math.random();
       const duration = notification.duration ?? 5000;
-
       const newNotification: Notification = {
         id,
         duration,
@@ -252,7 +220,6 @@ export const useUiStore = defineStore(
         timeoutId: null,
         isRemoving: false,
       };
-
       console.log(`[uiStore] addNotification called:`, {
         id,
         title: newNotification.title,
@@ -260,7 +227,6 @@ export const useUiStore = defineStore(
         currentNotificationsCount: notifications.value.length,
         queueLength: notificationQueue.value.length
       });
-
       // If no notifications are currently displayed, show this one immediately
       if (notifications.value.length === 0) {
         // Add a small delay for the initial notification to ensure smooth fade-in
@@ -285,33 +251,27 @@ export const useUiStore = defineStore(
         });
       }
     }
-
     function removeNotification(id: number): void {
       const index = notifications.value.findIndex((n) => n.id === id);
       if (index > -1) {
         const notification = notifications.value[index];
         if (!notification) return;
-
         if (notification.timeoutId) {
           clearTimeout(notification.timeoutId);
         }
-
         // Mark the notification as removing to trigger fade-out
         notification.isRemoving = true;
-
         // Wait for the fade-out transition to complete before actually removing
         setTimeout(() => {
           const currentIndex = notifications.value.findIndex((n) => n.id === id);
           if (currentIndex > -1) {
             notifications.value.splice(currentIndex, 1);
           }
-
           // After removing a notification, show the next one from the queue
           showNextNotification();
         }, 600); // Wait for the fade-out transition to complete (0.6s)
       }
     }
-
     function pauseNotificationTimeout(id: number): void {
       const notification = notifications.value.find((n) => n.id === id);
       if (notification && notification.timeoutId) {
@@ -319,7 +279,6 @@ export const useUiStore = defineStore(
         notification.timeoutId = null;
       }
     }
-
     function resumeNotificationTimeout(id: number): void {
       const notification = notifications.value.find((n) => n.id === id);
       if (notification && notification.timeoutId === null) {
@@ -328,15 +287,12 @@ export const useUiStore = defineStore(
         }, notification.duration);
       }
     }
-
     function triggerJobNotification(notification: PendingNotificationPayload) {
       pendingNotification.value = notification;
     }
-
     function clearPendingNotification() {
       pendingNotification.value = null;
     }
-
     function showNextNotification(): void {
       if (notificationQueue.value.length > 0 && notifications.value.length === 0) {
         // Add a small delay before showing the next notification to ensure smooth transition
@@ -350,7 +306,6 @@ export const useUiStore = defineStore(
         }, 200); // Small delay for smooth transition
       }
     }
-
     function resetUi(): void {
       jobSelectorOrientation.value = "horizontal";
       jobsSectionWidth.value = "3fr";
@@ -360,7 +315,6 @@ export const useUiStore = defineStore(
       // Reset marquee box on UI reset
       Object.assign(marqueeBox, { visible: false, x: 0, y: 0, width: 0, height: 0 });
     }
-
     return {
       jobSelectorOrientation,
       jobsSectionWidth,

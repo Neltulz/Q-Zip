@@ -1,7 +1,5 @@
 // stores/themeStore.ts
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
-
 /** @preserve
  * Manages the application's theme ('light', 'dark', 'system') using Pinia.
  * Works with the theme plugin to sync with the system's color
@@ -34,19 +32,15 @@
  * CompressionSection.vue, JobSelectorArea.vue, themePlugin.ts, TitleBar.vue
  */
 // @preserve
-
 import { defineStore } from "pinia";
 import { computed, ref, type Ref } from "vue";
-
 export type Theme = "light" | "dark" | "system";
-
 export const useThemeStore = defineStore(
   "theme",
   () => {
     // State
     const theme: Ref<Theme> = ref("system");
     const isSystemDark: Ref<boolean> = ref(false);
-
     // Getters
     const isEffectiveDark = computed((): boolean => {
       if (theme.value === "system") {
@@ -54,21 +48,17 @@ export const useThemeStore = defineStore(
       }
       return theme.value === "dark";
     });
-
     // Actions
     function setTheme(newTheme: Theme): void {
       console.log(`[themeStore] Setting theme to: ${newTheme}`);
       theme.value = newTheme;
     }
-
     function resetTheme(): void {
       theme.value = "system";
     }
-
     function setSystemDark(isDark: boolean): void {
       isSystemDark.value = isDark;
     }
-
     return {
       theme,
       isSystemDark,

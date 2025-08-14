@@ -1,6 +1,5 @@
 // plugins/registerResets.client.ts
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 import { defineNuxtPlugin } from "nuxt/app";
 import { useResetManager } from "@/composables/useResetManager";
 import { useThemeStore } from "@/stores/themeStore";
@@ -11,14 +10,11 @@ import {
   DEFAULT_WINDOW_WIDTH,
   DEFAULT_WINDOW_HEIGHT,
 } from "@/utils/appConfig";
-
 export default defineNuxtPlugin(() => {
   const { register } = useResetManager();
-
   const themeStore = useThemeStore();
   const uiStore = useUiStore();
   const jobsStore = useJobsStore();
-
   // Register all available reset actions
   register({
     name: "Reset Theme",
@@ -26,28 +22,24 @@ export default defineNuxtPlugin(() => {
     tooltip: "Reset the application theme to its default.",
     action: () => themeStore.resetTheme(),
   });
-
   register({
     name: "Reset UI",
     icon: "mdi:application-cog-outline",
     tooltip: "Reset UI panels and layouts to their default sizes and positions.",
     action: () => uiStore.resetUi(),
   });
-
   register({
     name: "Reset Jobs",
     icon: "mdi:database-remove-outline",
     tooltip: "Clear all current jobs and start fresh with one new job.",
     action: () => jobsStore.resetJobs(),
   });
-
   register({
     name: "Reset Settings",
     icon: "mdi:cog-outline",
     tooltip: "Reset the global compression settings to their default values.",
     action: () => jobsStore.resetGlobalSettings(),
   });
-
   register({
     name: "Reset Window",
     icon: "mdi:arrow-expand-all",

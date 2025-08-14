@@ -1,13 +1,9 @@
 // plugins/debugNotifications.client.ts
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
-
 // This plugin helps debug where the notification element is coming from
-
 export default defineNuxtPlugin(() => {
   // Only run on client side
   if (process.server) return;
-
   // Function to debug the notification element
   const debugNotificationElement = () => {
     // Find the element with aria-label="Notifications (F8)"
@@ -18,7 +14,6 @@ export default defineNuxtPlugin(() => {
       console.log('Element attributes:', Array.from(notificationElement.attributes).map(attr => `${attr.name}="${attr.value}"`));
       console.log('Element classes:', notificationElement.className);
       console.log('Element style:', notificationElement.getAttribute('style'));
-
       // Check if it has any Vue-specific attributes
       const vueAttrs = Array.from(notificationElement.attributes).filter(attr =>
         attr.name.startsWith('data-v-') ||
@@ -26,19 +21,16 @@ export default defineNuxtPlugin(() => {
         attr.name === 'data-vue'
       );
       console.log('Vue attributes:', vueAttrs);
-
       // Check the stack trace to see where it was created
       console.trace('Notification element found - stack trace:');
     }
   };
-
   // Check immediately if DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', debugNotificationElement);
   } else {
     debugNotificationElement();
   }
-
   // Also watch for when it gets added
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -59,7 +51,6 @@ export default defineNuxtPlugin(() => {
       });
     });
   });
-
   // Start observing
   observer.observe(document.body, {
     childList: true,

@@ -1,7 +1,5 @@
 // plugins/bounceDirective.ts
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
-
 // * Usage Example: @preserve
 //   Apply the `v-bounce-on-click` directive to a button or link element that contains an icon with the class `bounce-icon-on-click`. @preserve
 //   When the element is clicked, the icon will have the `bounce` class added for 250ms, triggering a CSS animation. @preserve
@@ -17,10 +15,8 @@
    </NuxtLink>
    @preserve
  */
-
    import { defineNuxtPlugin } from "nuxt/app";
    import type { NuxtApp } from "nuxt/app";
-   
    export default defineNuxtPlugin((nuxtApp: NuxtApp) => {
      nuxtApp.vueApp.directive("bounce-on-click", {
        mounted(el: HTMLElement) {

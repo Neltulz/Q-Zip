@@ -1,8 +1,6 @@
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   LoadingAnim.vue @preserve
 -->
-
 <template>
   <transition name="fade" @after-leave="onAfterLeave">
     <div v-show="visible" class="loading-overlay">
@@ -28,7 +26,6 @@
             <div class="sk-circle11 sk-child"></div>
             <div class="sk-circle12 sk-child"></div>
           </div>
-          
           <!-- Progress information -->
           <div v-if="showProgress" class="progress-info">
             <div class="scanning-label">Scanning item:</div>
@@ -38,7 +35,6 @@
               <div class="progress-fill" :style="{ width: `${progressPercentage}%` }"></div>
             </div>
           </div>
-          
           <div v-if="$slots.default" class="loading-message">
             <slot />
           </div>
@@ -59,7 +55,6 @@
               dropdown-data-name="cancel-dropdown"
               first-icon-name="mdi:cancel"
               placement="right-center"
-
             >
               <template #button-content>
                 Cancel
@@ -95,40 +90,32 @@
     </div>
   </transition>
 </template>
-
 <script setup lang="ts">
 import { watch, ref, computed, nextTick } from "vue";
 import CustomButton from "./CustomButton.vue";
 import DropdownMenu from "./DropdownMenu.vue";
 import { logLoading } from "@/utils/loggers";
-
 const props = defineProps<{
   visible: boolean;
   currentItem?: number;
   totalItems?: number;
   progressMessage?: string;
 }>();
-
 const emit = defineEmits(["cancel", "pause", "animation-finished", "nevermind"]);
-
 const cancelDropdownRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
 const isPaused = ref(false);
-
 const showProgress = computed(() => {
   return props.totalItems !== undefined && props.totalItems > 0;
 });
-
 const progressPercentage = computed(() => {
   if (!props.totalItems || props.totalItems === 0) return 0;
   return Math.round((props.currentItem || 0) / props.totalItems * 100);
 });
-
 const processedFilename = computed(() => {
   if (!props.progressMessage) return '';
   // Remove "Scanning file: " prefix if it exists
   return props.progressMessage.replace(/^Scanning file:\s*/, '');
 });
-
 watch(
   () => props.visible,
   (newValue) => {
@@ -148,7 +135,6 @@ watch(
     }
   }
 );
-
 const onAfterLeave = () => {
   logLoading("LoadingAnim", "Fade-out transition finished. Emitting animation-finished.");
   // Ensure dropdown is closed after transition
@@ -159,20 +145,17 @@ const onAfterLeave = () => {
   });
   emit("animation-finished");
 };
-
 const handleCancelClick = () => {
   logLoading("LoadingAnim", "Cancel button clicked.");
   // Reset pause state when cancelling
   isPaused.value = false;
   emit("cancel");
 };
-
 const handlePauseClick = () => {
   logLoading("LoadingAnim", `Pause button clicked. Current state: ${isPaused.value ? 'paused' : 'playing'}`);
   isPaused.value = !isPaused.value;
   emit("pause", isPaused.value);
 };
-
 const handleConfirmCancel = () => {
   logLoading("LoadingAnim", "Confirm cancel button clicked.");
   emit("cancel");
@@ -181,7 +164,6 @@ const handleConfirmCancel = () => {
     cancelDropdownRef.value.closeDropdown();
   }
 };
-
 const handleNevermind = () => {
   logLoading("LoadingAnim", "Nevermind button clicked.");
   emit("nevermind");
@@ -191,7 +173,6 @@ const handleNevermind = () => {
   }
 };
 </script>
-
 <style scoped>
 .loading-overlay {
   position: absolute;
@@ -204,7 +185,6 @@ const handleNevermind = () => {
   backdrop-filter: blur(2px);
   transition: opacity 0.3s ease;
 }
-
 .loading-container {
   background-color: var(--bg-clr-darkr);
   border: 1px solid var(--brdr-clr-lite);
@@ -212,14 +192,12 @@ const handleNevermind = () => {
   border-radius: 8px;
   min-width: 320px;
 }
-
 .loading-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
 }
-
 .progress-info {
   display: flex;
   flex-direction: column;
@@ -228,14 +206,12 @@ const handleNevermind = () => {
   width: 100%;
   max-width: 280px;
 }
-
 .scanning-label {
   font-size: 14px;
   color: var(--txt-clr-liter);
   text-align: center;
   font-weight: 500;
 }
-
 .filename-text {
   font-size: 14px;
   color: var(--txt-clr-liter);
@@ -245,13 +221,11 @@ const handleNevermind = () => {
   text-overflow: ellipsis;
   max-width: 100%;
 }
-
 .progress-count {
   font-size: 12px;
   color: var(--txt-clr-lite);
   font-weight: 500;
 }
-
 .progress-bar {
   width: 100%;
   height: 4px;
@@ -259,26 +233,22 @@ const handleNevermind = () => {
   border-radius: 2px;
   overflow: hidden;
 }
-
 .progress-fill {
   height: 100%;
   background-color: var(--accent-clr, hsl(211, 100%, 50%));
   border-radius: 2px;
   transition: width 0.3s ease;
 }
-
 .loading-message {
   font-size: 14px;
   color: var(--txt-clr-liter);
   text-align: center;
 }
-
 .button-group {
   display: flex;
   gap: 12px;
   justify-content: center;
 }
-
 .cancel-confirmation {
   display: flex;
   flex-direction: column;
@@ -286,20 +256,17 @@ const handleNevermind = () => {
   padding: 8px;
   min-width: 200px;
 }
-
 .confirmation-text {
   font-size: 14px;
   color: var(--txt-clr-liter);
   text-align: center;
   font-weight: 500;
 }
-
 .confirmation-buttons {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-
 /* SpinKit animation styles */
 .sk-circle {
   width: 60px;
@@ -307,9 +274,6 @@ const handleNevermind = () => {
   position: relative;
   margin-bottom: 8px;
 }
-
-
-
 .sk-circle .sk-child {
   width: 100%;
   height: 100%;
@@ -317,7 +281,6 @@ const handleNevermind = () => {
   left: 0;
   top: 0;
 }
-
 .sk-circle .sk-child:before {
   content: '';
   display: block;
@@ -328,7 +291,6 @@ const handleNevermind = () => {
   border-radius: 100%;
   animation: sk-circle-bounce-delay 1.2s infinite ease-in-out both;
 }
-
 .sk-circle .sk-circle2 { transform: rotate(30deg); }
 .sk-circle .sk-circle3 { transform: rotate(60deg); }
 .sk-circle .sk-circle4 { transform: rotate(90deg); }
@@ -340,7 +302,6 @@ const handleNevermind = () => {
 .sk-circle .sk-circle10 { transform: rotate(270deg); }
 .sk-circle .sk-circle11 { transform: rotate(300deg); }
 .sk-circle .sk-circle12 { transform: rotate(330deg); }
-
 .sk-circle .sk-circle2:before { animation-delay: -1.1s; }
 .sk-circle .sk-circle3:before { animation-delay: -1.0s; }
 .sk-circle .sk-circle4:before { animation-delay: -0.9s; }
@@ -352,7 +313,6 @@ const handleNevermind = () => {
 .sk-circle .sk-circle10:before { animation-delay: -0.3s; }
 .sk-circle .sk-circle11:before { animation-delay: -0.2s; }
 .sk-circle .sk-circle12:before { animation-delay: -0.1s; }
-
 @keyframes sk-circle-bounce-delay {
   0%, 80%, 100% {
     transform: scale(0);
@@ -360,17 +320,13 @@ const handleNevermind = () => {
     transform: scale(1.0);
   }
 }
-
 /* Transition animations */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
 }
-
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
-
-
 </style>

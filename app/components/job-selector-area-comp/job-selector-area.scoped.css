@@ -1,15 +1,12 @@
 /* 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   components/job-selector-area-comp/job-selector-area.scoped.css 
 */
-
 /* Global override to fix outline transition */
 :global(.job-selector > .visual-style),
 :global(.add-job-btn > .visual-style) {
   outline: 2px solid transparent;
   outline-offset: 2px;
 }
-
 .job-selector-area {
   display: grid;
   grid-column: 1;
@@ -18,71 +15,56 @@
   grid-template-rows: 1fr;
   padding-inline: var(--pad-in);
 }
-
 .job-selector-area.internal-drag-active {
   cursor: not-allowed;
 }
-
 .job-selector-area.internal-drag-active :deep(.job-selector),
 .job-selector-area.internal-drag-active :deep(.add-job-btn) {
   cursor: pointer;
 }
-
 .job-selector-area.internal-drag-active :deep(.job-selector.active.drop-target-hover) {
   cursor: not-allowed;
 }
-
 .job-selector-area.internal-drag-active :deep(button.job-selector *) {
   pointer-events: none;
 }
-
 :deep(body.is-external-drag-over .os-viewport) {
   pointer-events: none;
 }
-
 .job-selector-area:has(.job-selector-btn-wrapper:empty) {
   grid-template-columns: auto auto;
 }
-
 .job-selector-area:has(.job-selector-btn-wrapper:empty) {
   grid-template-columns: 1fr;
 }
-
 .job-selector-btn-wrapper {
   align-items: center;
   display: flex;
   justify-content: space-between;
 }
-
 .job-selector-btn-wrapper .job-selector-btns-start {
   display: flex;
 }
-
 .job-selector-btn-wrapper .job-selector-btns-end {
   display: flex;
 }
-
 .job-selector-btn-wrapper:empty {
   display: none;
 }
-
 .add-job-btn {
   --btn-pad-blok: 0;
   --btn-pad-in: 0;
 }
-
 .remove-all-jobs-btn {
   --btn-pad-blok: 0;
   --btn-pad-in: 0;
 }
-
 .job-selector-list {
   align-items: center;
   display: inline-flex;
   overflow-x: hidden;
   overflow-y: auto;
 }
-
 .job-selector-list > :deep(button.job-selector) {
   --btn-line-thickness: 2px;
   --line-orientation: horizontal;
@@ -94,11 +76,9 @@
   position: relative;
   transition: opacity 0.2s ease-in-out;
 }
-
 .job-selector-list > :deep(button.job-selector.is-dragged) {
   opacity: 0.4;
 }
-
 /* --- Drag & Drop Hover Styles --- */
 /* Only show file operation hover styles when internal drag is active (file operations) */
 .job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector:not(.active) > .visual-style),
@@ -108,29 +88,24 @@
   box-shadow: none;
   transition: all 0.2s ease-in-out;
 }
-
 .job-selector-area.internal-drag-active
   :deep(.job-selector-list button.job-selector.drop-target-hover:not(.active) > .visual-style),
 .job-selector-area.internal-drag-active :deep(.add-job-btn.drop-target-hover .visual-style) {
   outline-color: hsla(204, 80%, 60%, 0.85);
   outline-style: dashed;
 }
-
 .job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector.active.drop-target-hover > .visual-style) {
   opacity: 1 !important;
   outline-color: transparent;
   box-shadow: none;
 }
-
 /* Job tab reordering styles - only show when NOT in internal drag mode */
 .job-selector-area:not(.internal-drag-active) :deep(.job-selector-list button.job-selector.is-dragged) {
   opacity: 0.4;
 }
-
 .job-selector-list > :deep(button.job-selector.drop-target-hover *) {
   pointer-events: none;
 }
-
 .job-selector-list > :deep(button.job-selector.drag-over::after) {
   background-color: hsla(var(--accent-hsl), 0.75);
   block-size: calc(100% - 32px);
@@ -140,12 +115,10 @@
   position: absolute;
   z-index: 1;
 }
-
 /* Job selector hotzones for drag and drop */
 .job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector) {
   position: relative;
 }
-
 /* Hotzone overlays - only visible during drag operations */
 .job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::before,
 .job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::after {
@@ -160,7 +133,6 @@
   transition: background-color 0.2s ease-in-out;
   opacity: 0;
 }
-
 /* Left hotzone - only visible when dragging */
 .job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::before {
   inset-inline-start: 0;
@@ -168,7 +140,6 @@
   opacity: 0;
   transition: opacity 0.2s ease-in-out;
 }
-
 /* Right hotzone - only visible when dragging */
 .job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::after {
   inset-inline-start: 50%;
@@ -176,13 +147,11 @@
   opacity: 0;
   transition: opacity 0.2s ease-in-out;
 }
-
 /* Show hotzones when dragging */
 body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::before,
 body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::after {
   opacity: 1;
 }
-
 /* White lines BETWEEN job selectors during drag */
 .job-selector-line {
   inline-size: 2px;
@@ -195,12 +164,10 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   z-index: 5;
   pointer-events: none;
 }
-
 .job-selector-line.hotzone-hover {
   background: hsla(204, 80%, 60%, 0.9);
   box-shadow: 0 0 4px hsla(204, 80%, 60%, 0.5);
 }
-
 /* End-of-list hotzone */
 .end-list-hotzone {
   inline-size: 60px;
@@ -214,11 +181,9 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   top: 0;
   z-index: 10;
 }
-
 .end-list-hotzone:hover {
   background: rgba(255, 0, 0, 0.2);
 }
-
 /* Beginning-of-list hotzone */
 .begin-list-hotzone {
   inline-size: 60px;
@@ -232,30 +197,24 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   top: 0;
   z-index: 10;
 }
-
 .begin-list-hotzone:hover {
   background: rgba(255, 0, 0, 0.2);
 }
-
 /* Remove the old hotzone-hover class from job selectors since we're using separate line elements */
 .job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector.hotzone-hover::after) {
   display: none;
 }
-
 .job-selector-list > :deep(button.job-selector > .visual-style),
 .job-selector-list > :deep(button.job-selector:before) {
   --visual-style-inset: 8px;
 }
-
 .job-selector-list > :deep(button.job-selector > .visual-style) {
   transform-origin: bottom;
 }
-
 .job-selector-list > :deep(button.job-selector.active > .visual-style) {
   background-color: var(--btn-bg-hvr-clr);
   border-color: var(--btn-bg-hvr-clr);
 }
-
 /* Vertical blue line indicator for active job selector buttons */
 .job-selector-list > :deep(button.job-selector.active > .visual-style::before),
 .job-selector-list > :deep(button.job-selector.active-line-inline > .visual-style::before) {
@@ -270,14 +229,12 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   opacity: 1;
   z-index: 2;
 }
-
 /* Hide the global CustomButton pseudo-element for job-selector active state to avoid
    accidentally showing the indicator behind nested controls (like the close button). */
 .job-selector-list > :deep(button.job-selector.active > .visual-style::before),
 .job-selector-list > :deep(button.job-selector.active-line-inline > .visual-style::before) {
   display: none !important;
 }
-
 /* Render a dedicated left-side indicator on the job button itself. This places
    the bar at the very left edge of the tab and avoids interfering with nested
    controls inside the button. */
@@ -298,18 +255,15 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   z-index: 3;
   pointer-events: none;
 }
-
 /* Explicitly hide any visual-style pseudo-elements inside the job options/close button
    to ensure they don't show the thin line. */
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-options > button.close-job-btn > .visual-style::before) {
   display: none !important;
 }
-
 .job-selector-list > :deep(button.job-selector:hover > .button-content .job-sel-options .dropdown-menu > button.options-btn),
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu.active > button.options-btn) {
   opacity: 1;
 }
-
 .job-selector-list > :deep(button.job-selector > .button-content) {
   column-gap: 8px;
   display: grid;
@@ -320,7 +274,6 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   padding-inline-end: var(--pad-in);
   padding-inline-start: calc(var(--pad-in) * 1.5);
 }
-
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-icon) {
   align-items: center;
   display: flex;
@@ -328,7 +281,6 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   justify-content: center;
   width: 24px;
 }
-
 .job-selector-list > :deep(button.job-selector > .button-content .job-info) {
   align-items: start;
   display: flex;
@@ -337,18 +289,15 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   justify-content: center;
   white-space: nowrap;
 }
-
 .job-selector-list > :deep(button.job-selector > .button-content .job-info .job-sel-title) {
   line-height: 1;
   white-space: nowrap;
 }
-
 .job-selector-list > :deep(button.job-selector > .button-content .job-info .job-sel-num-files) {
   font-size: 0.8rem;
   line-height: 1;
   white-space: nowrap;
 }
-
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-options) {
   align-items: center;
   grid-area: job-sel-options;
@@ -357,11 +306,9 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   padding: 0;
   white-space: nowrap;
 }
-
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu > button.options-btn) {
   opacity: 0;
 }
-
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu .custom-button .visual-style) {
   --btn-bg-hvr-clr: var(--btn-bg-hvr-clr-liter);
 }

@@ -1,24 +1,7 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
-<!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
-  CustomFieldNew.vue @preserve
--->
 <!-- components/CustomFieldNew.vue @preserve -->
-<!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
-  CustomFieldNew.vue @preserve
--->
 <!-- TODO: Create ==Technical Challenge== Create a Select with Input or Textarea built in. ... @preserve -->
-<!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
-  CustomFieldNew.vue @preserve
--->
 <!-- TODO (continued): ... Would be useful for the "Output Location" field, or Compression Parameter Fields @preserve -->
-<!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
-  CustomFieldNew.vue @preserve
--->
-
 <template>
   <div
     ref="fieldRef"
@@ -184,17 +167,14 @@
     </template>
   </div>
 </template>
-
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logButtonPress, logButtonRelease, logInteraction } from "@/utils/loggers";
-
 interface Option {
   value: string | number;
   text: string;
 }
-
 const props = withDefaults(
   defineProps<{
     autocomplete?: string;
@@ -234,14 +214,11 @@ const props = withDefaults(
     type: "text",
   }
 );
-
 const emit = defineEmits<{
   (e: "reset-to-global" | "unset-or-clear", fieldId: string): void;
   (e: "update:model-value", value: string | number | boolean): void;
 }>();
-
 const fieldRef = ref<HTMLElement | null>(null);
-
 const generatedId = computed(() => {
   const baseId = props.title
     ? props.title
@@ -253,9 +230,7 @@ const generatedId = computed(() => {
   const prefix = props.isJobSettings ? "job" : "global";
   return `${prefix}-${baseId}`;
 });
-
 const dropdownDataName = computed(() => `reset-options-for-${props.fieldId}`);
-
 const inputTypeClass = computed((): string => {
   switch (props.inputType) {
     case "checkbox":
@@ -272,11 +247,9 @@ const inputTypeClass = computed((): string => {
       return "";
   }
 });
-
 const modelValueStr = computed((): string => String(props.modelValue ?? ""));
 const globalValueStr = computed((): string => String(props.globalValue ?? ""));
 const defaultValueStr = computed((): string => String(props.defaultValue ?? ""));
-
 const showResetOptions = computed((): boolean => {
   if (props.inputType === "custom") return false;
   if (props.isJobSettings) {
@@ -293,7 +266,6 @@ const showResetOptions = computed((): boolean => {
     );
   }
 });
-
 const showSingleButton = computed((): boolean => {
   if (!showResetOptions.value) return false;
   const showResetToGlobal: boolean = props.isJobSettings && modelValueStr.value !== globalValueStr.value;
@@ -302,14 +274,12 @@ const showSingleButton = computed((): boolean => {
     ((props.inputType === "input" || props.inputType === "text-area") && modelValueStr.value !== "");
   return (showResetToGlobal && !showUnsetOrClear) || (!showResetToGlobal && showUnsetOrClear);
 });
-
 const handleMouseDown = (_event: MouseEvent): void => {
   logButtonPress("CustomFieldNew", `PRESS: ${props.inputType} - "${props.title}"`);
 };
 const handleMouseUp = (_event: MouseEvent): void => {
   logButtonRelease("CustomFieldNew", `RELEASE: ${props.inputType} - "${props.title}"`);
 };
-
 const handleChange = (event: Event): void => {
   if (props.inputType === "select") {
     const select = event.target as HTMLSelectElement;
@@ -321,7 +291,6 @@ const handleChange = (event: Event): void => {
     }
   }
 };
-
 const handleInput = (event: Event): void => {
   const input = event.target as HTMLInputElement | HTMLTextAreaElement;
   let newValue: string | number = input.value;
@@ -334,20 +303,17 @@ const handleInput = (event: Event): void => {
   emit("update:model-value", newValue);
   logInteraction("CustomFieldNew", `INPUT: ${props.inputType} - "${props.title}" | Value: "${newValue}"`);
 };
-
 const handleCheckboxChange = (event: Event): void => {
   const input = event.target as HTMLInputElement;
   emit("update:model-value", input.checked);
   logInteraction("CustomFieldNew", `CHANGE: ${props.inputType} - "${props.title}" | Checked: ${input.checked}`);
 };
-
 const selectedText = computed((): string => {
   if (props.inputType !== "select") return "";
   if (props.modelValue === undefined) return "";
   const selectedOption = props.options?.find((opt) => opt.value === props.modelValue);
   return selectedOption ? selectedOption.text : "";
 });
-
 onMounted((): void => {
   if (DEBUG && debugConfig.logComponentMounts) {
     // const fieldName: string =
@@ -364,7 +330,6 @@ onMounted((): void => {
   }
 });
 </script>
-
 <style scoped>
 @import "./custom-field-comp/custom-field.scoped.css";
 </style>

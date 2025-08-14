@@ -1,7 +1,6 @@
 <template>
   <!-- FileTableHeader: Table header with sorting and resizing -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   FileTableHeader.vue @preserve
 -->
   <div class="table-header">
@@ -69,20 +68,16 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import CustomButton from "../CustomButton.vue";
 import { defineProps, defineEmits } from "vue";
-
 const props = defineProps({
   showCheckboxes: Boolean,
   allSelected: Boolean,
   sortKey: String,
   sortDirection: String,
 });
-
 const emit = defineEmits(["toggle-all", "sort", "start-resize"]);
-
 // Resizing logic will be passed in from parent for now
 const startResize = (event: MouseEvent, column: string) => {
   // Emit to parent to handle
@@ -99,7 +94,6 @@ const startResize = (event: MouseEvent, column: string) => {
   emit("start-resize", event, column);
 };
 </script>
-
 <style scoped>
 .table-header {
   background-color: var(--bg-clr-liter);

@@ -4,6 +4,33 @@
 
 ## Recent Changes
 
+## [0.1.13] - 2025-01-27T17:00:00Z
+
+### Added
+- **Dropdown Debug Logging**: Enabled comprehensive debug logging for DropdownMenu component to troubleshoot backdrop closing issues
+  - Enabled master DEBUG flag to activate all logging systems
+  - Enabled `logDropdownEvents` for dropdown-specific event tracking
+  - Enabled `logClicksAndInputs` for button click tracking
+  - Enabled `logComposableManagerEvents` for dropdown manager state tracking
+  - Enabled `logUIEvents` for general UI interaction tracking
+  - Enabled `logMissingPropWarnings` for potential issue detection
+  - Enhanced debugging capability to track submenu behavior and backdrop visibility issues
+
+### Fixed
+- **Dropdown Backdrop Race Condition**: Fixed backdrop fading back in after closing dropdowns due to debounced watcher race condition
+  - Fixed `closeAllDropdowns` function to immediately clear the openDropdowns array before closing individual dropdowns
+  - Prevented debounced watcher from incorrectly showing overlay when all dropdowns should be closed
+  - Added proper handling for dropdowns trying to unregister after array has been cleared
+  - Resolved timing issue between dropdown closure and overlay visibility management
+
+### Technical Details
+- **Debug Configuration**: Updated `debugConfig.ts` to enable targeted logging for dropdown troubleshooting
+- **Logging System**: Activated comprehensive logging for dropdown manager, button interactions, and UI events
+- **Troubleshooting**: Enabled logging to identify backdrop closing malfunctions related to submenu behavior
+- **Race Condition Fix**: Modified dropdown manager to prevent overlay from reappearing after all dropdowns are closed
+
+---
+
 ## [0.1.12] - 2025-01-27T15:00:00Z
 
 ### Added

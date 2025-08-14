@@ -1,7 +1,5 @@
 // stores/userPreferencesStore.ts
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
-
 /**
  * @preserve
  * Description: This Pinia store manages user preferences related to the application's
@@ -34,10 +32,8 @@
  * userPreferencesStore.setAutoCheckOnSelect(false);
  */
 // @preserve
-
 import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";
-
 export const useUserPreferencesStore = defineStore(
   "userPreferences",
   () => {
@@ -47,7 +43,6 @@ export const useUserPreferencesStore = defineStore(
     const rememberChoicePreference: Ref<boolean> = ref(false); // New: State of the "Remember My Choice" checkbox
     const checkboxMode: Ref<boolean> = ref(true); // File table checkbox mode (enabled by default)
     const autoCheckOnSelect: Ref<boolean> = ref(true); // Auto check selected rows (enabled by default)
-
     // Actions
     /**
      * Sets the preference for skipping the welcome screen on subsequent launches.
@@ -56,7 +51,6 @@ export const useUserPreferencesStore = defineStore(
     function setSkipWelcomeScreen(value: boolean): void {
       skipWelcomeScreen.value = value;
     }
-
     /**
      * Sets the default behavior when the welcome screen is skipped.
      * @param value - `true` to start a fresh session, `false` to restore the previous session.
@@ -64,7 +58,6 @@ export const useUserPreferencesStore = defineStore(
     function setStartFreshDefault(value: boolean): void {
       startFreshDefault.value = value;
     }
-
     /**
      * Sets the state of the "Remember My Choice" checkbox.
      * @param value - `true` if the checkbox is checked, `false` otherwise.
@@ -72,7 +65,6 @@ export const useUserPreferencesStore = defineStore(
     function setRememberChoicePreference(value: boolean): void {
       rememberChoicePreference.value = value;
     }
-
     /**
      * Sets the file table checkbox mode preference.
      * @param value - `true` to enable checkbox mode, `false` to disable it.
@@ -80,7 +72,6 @@ export const useUserPreferencesStore = defineStore(
     function setCheckboxMode(value: boolean): void {
       checkboxMode.value = value;
     }
-
     /**
      * Sets the auto check on select preference.
      * @param value - `true` to enable auto checking selected rows, `false` to disable it.
@@ -88,7 +79,6 @@ export const useUserPreferencesStore = defineStore(
     function setAutoCheckOnSelect(value: boolean): void {
       autoCheckOnSelect.value = value;
     }
-
     /**
      * Resets all user preferences managed by this store to their initial default values.
      */
@@ -99,7 +89,6 @@ export const useUserPreferencesStore = defineStore(
       checkboxMode.value = true; // Reset to default enabled state
       autoCheckOnSelect.value = true; // Reset to default enabled state
     }
-
     return {
       skipWelcomeScreen,
       startFreshDefault,

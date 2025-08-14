@@ -1,13 +1,5 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
-<!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
-  CustomInput.vue @preserve
--->
 <!-- components/CustomInput.vue @preserve -->
-<!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
-  CustomInput.vue @preserve
--->
 <template>
   <div :class="['custom-input', { 'can-be-reset': canBeReset }]" data-component-name="CustomInput">
     <div v-if="hasButtonsStart" class="btns-wrapper-start">
@@ -63,16 +55,13 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { computed, useSlots } from "vue";
-
 // Define the Option interface for type safety
 interface Option {
   value: string | number;
   text: string;
 }
-
 // Define props with explicit types
 const props = defineProps<{
   inputId?: string;
@@ -84,19 +73,15 @@ const props = defineProps<{
   type?: string; // For inputType="input", default "text"
   autocomplete?: string; // For inputType="input"
 }>();
-
 // Define emits with explicit event type
 const emit = defineEmits<{
   (e: "update:modelValue", value: string | number): void;
 }>();
-
 // Get the slots object to check slot content
 const slots = useSlots();
-
 // Computed properties to check if slots have content
 const hasButtonsStart = computed((): boolean => !!slots["buttons-start"] && slots["buttons-start"]().length > 0);
 const hasButtonsEnd = computed((): boolean => !!slots["buttons-end"] && slots["buttons-end"]().length > 0);
-
 // Computed property for dynamic wrapper class based on input-type
 const inputTypeClass = computed((): string => {
   switch (props.inputType) {
@@ -112,7 +97,6 @@ const inputTypeClass = computed((): string => {
       return "select-custom"; // Fallback, though validator ensures valid input-type
   }
 });
-
 // Handle select change event
 const handleChange = (event: Event): void => {
   if (props.inputType === "select") {
@@ -124,18 +108,15 @@ const handleChange = (event: Event): void => {
     }
   }
 };
-
 // Handle input and textarea input events
 const handleInput = (event: Event): void => {
   const input = event.target as HTMLInputElement | HTMLTextAreaElement;
   emit("update:modelValue", input.value);
 };
-
 // Function for custom slot to update modelValue
 const updateValue = (newValue: string | number): void => {
   emit("update:modelValue", newValue);
 };
-
 // Compute the selected text for display (only for select)
 const selectedText = computed((): string => {
   if (props.inputType !== "select") return "";
@@ -143,7 +124,6 @@ const selectedText = computed((): string => {
   return selectedOption ? selectedOption.text : "";
 });
 </script>
-
 <style scoped>
 .custom-input {
   align-items: stretch;
@@ -154,31 +134,24 @@ const selectedText = computed((): string => {
   border-radius: var(--brdr-rad-smal);
   position: relative;
   z-index: 0;
-
   &:has(.reset-btn) .custom-input .input-wrapper-deep.input-type-text-area .native-textarea {
     padding-inline-end: var(--min-tch-tgt);
   }
-
   &:has(.reset-btn) .input-wrapper-deep.input-type-input .native-input {
     padding-inline-end: var(--min-tch-tgt);
   }
-
   &:has(.btns-wrapper-start) {
     grid-template-columns: auto 1fr;
   }
-
   &:has(.btns-wrapper-end) {
     grid-template-columns: 1fr auto;
   }
-
   &:has(.btns-wrapper-start ~ .btns-wrapper-end) {
     grid-template-columns: auto 1fr auto;
   }
-
   > *:not(:first-child) {
     margin-inline-start: -1px;
   }
-
   /* Buttons before the input, remove border-radius from input div */
   .btns-wrapper-start + .input-wrapper-deep {
     &.input-type-select,
@@ -188,13 +161,11 @@ const selectedText = computed((): string => {
       border-end-start-radius: 0;
     }
   }
-
   .input-wrapper-deep {
     min-height: var(--min-tch-tgt);
     overflow: hidden;
     position: relative;
     z-index: 100;
-
     &.input-type-select,
     &.input-type-input,
     &.input-type-text-area {
@@ -205,13 +176,11 @@ const selectedText = computed((): string => {
       border: 1px solid var(--brdr-clr-lite);
       border-radius: var(--brdr-rad-smal);
       display: flex;
-
       /* Buttons after the input, remove border-radius from input div */
       &:has(+ .btns-wrapper-end) {
         border-start-end-radius: 0;
         border-end-end-radius: 0;
       }
-
       input,
       select,
       textarea {
@@ -220,7 +189,6 @@ const selectedText = computed((): string => {
         /* Removed focus-visible/focus rules per user preference */
       }
     }
-
     &.input-type-select {
       .native-select {
         cursor: pointer;
@@ -231,18 +199,15 @@ const selectedText = computed((): string => {
         position: absolute;
         width: 100%;
         z-index: 1;
-
         &:disabled {
           cursor: not-allowed;
         }
       }
-
       .chevron {
         inset-inline-end: 8px;
         pointer-events: none;
         position: absolute;
       }
-
       .select-text {
         flex: 1;
         margin-inline-end: 24px;
@@ -256,18 +221,15 @@ const selectedText = computed((): string => {
         align-items: center;
         display: flex;
       }
-
       .reset-btn-wrapper {
         inset-inline-end: 24px;
         position: absolute;
         z-index: 2;
-
         &:has(.reset-btn[disabled]) {
           pointer-events: none;
         }
       }
     }
-
     &.input-type-input {
       .native-input {
         background-color: transparent;
@@ -276,13 +238,11 @@ const selectedText = computed((): string => {
         flex: 1;
         outline: none;
         width: 100%;
-
         &:disabled {
           cursor: not-allowed;
         }
       }
     }
-
     &.input-type-text-area {
       .native-textarea {
         background-color: transparent;
@@ -293,68 +253,57 @@ const selectedText = computed((): string => {
         width: 100%;
         resize: vertical;
         padding-block: var(--pad-blok);
-
         &:disabled {
           cursor: not-allowed;
         }
       }
     }
-
     .reset-btn-wrapper {
       inset-inline-end: 0;
       position: absolute;
       z-index: 2;
-
       &:has(.reset-btn[disabled]) {
         pointer-events: none;
       }
     }
   }
-
   &:has(.native-select:focus, .native-input:focus, .native-textarea:focus) {
     .input-wrapper-deep {
       border-color: var(--blu-lite);
       box-shadow: 0 0 0 2px hsla(210, 100%, 50%, 0.25);
     }
   }
-
   .btns-wrapper-start,
   .btns-wrapper-end {
     align-items: stretch;
     display: flex;
-
     &:deep(> button),
     &:deep(> .button) {
       background-color: var(--bg-clr-lite);
       border: 1px solid var(--brdr-clr-liter);
       border-radius: var(--brdr-rad-smal);
       box-shadow: none;
-
       &:after {
         border-radius: 0;
       }
     }
   }
-
   .btns-wrapper-start {
     &:deep(> button),
     &:deep(> .button) {
       border-end-end-radius: 0;
       border-start-end-radius: 0;
-
       &:not(:first-child) {
         border-end-start-radius: 0;
         border-start-start-radius: 0;
       }
     }
   }
-
   .btns-wrapper-end {
     &:deep(> button),
     &:deep(> .button) {
       border-end-start-radius: 0;
       border-start-start-radius: 0;
-
       &:not(:last-child) {
         border-end-end-radius: 0;
         border-start-end-radius: 0;
@@ -362,7 +311,6 @@ const selectedText = computed((): string => {
     }
   }
 }
-
 .field:has(> .field-title) .input-wrapper-deep {
   padding-block-start: 24px;
 }

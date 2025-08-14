@@ -1,7 +1,5 @@
 <!-- styles for drag region moved to scoped CSS file -->
-
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   components/TitleBar.vue @preserve 
 -->
 <!-- eslint-disable vue/html-self-closing @preserve -->
@@ -86,7 +84,6 @@
                   </CustomButton>
                 </template>
               </DropdownMenu>
-
               <DropdownMenu
                 :is-submenu="true"
                 btn-theme="liter"
@@ -130,9 +127,7 @@
                   </CustomButton>
                 </template>
               </DropdownMenu>
-
               <hr />
-
               <CustomButton
                 btn-theme="liter"
                 button-style-class="trans-btn"
@@ -144,7 +139,6 @@
               >
                 Button Test
               </CustomButton>
-
               <hr />
               <CustomButton
                 btn-theme="liter"
@@ -165,9 +159,8 @@
             :target="mainMenuTooltipTarget"
             placement="bottom-start"
           />
-          <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.12</span></span>
+          <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.13</span></span>
         </div>
-
           <div class="center-nav-btns" :class="{ disabled: isWelcomeLayout }">
           <CustomButton
             btn-theme="liter"
@@ -182,7 +175,6 @@
             @mouseenter="showCenterTooltip('Return to the welcome screen', 'nav-to-welcome')"
             @mouseleave="hideCenterTooltip"
           />
-
           <div class="btn-group">
             <CustomButton
               btn-theme="liter"
@@ -233,7 +225,6 @@
             </CustomButton>
           </div>
         </div>
-
         <!-- Center nav tooltip (single instance used for all center buttons) -->
         <InfoTooltip
           :visible="!!(centerTooltipIsActive || (debugForceJobQueue && centerTooltipText && centerTooltipText.toLowerCase().includes('job queue')))"
@@ -258,7 +249,6 @@
     </div>
   </teleport>
 </template>
-
 <script lang="ts" setup>
 import { computed, ref, watch } from "vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -271,7 +261,6 @@ import InfoTooltip from "@/components/InfoTooltipContainer.vue";
 import { useResetManager } from "@/composables/useResetManager";
 import { useModalsStore } from "@/stores/modalsStore";
 import type { ModalOptions } from "@/types/modal";
-
 const themeStore = useThemeStore();
 const navStore = useNavigationStore();
 const layoutStore = useLayoutStore();
@@ -280,15 +269,12 @@ const dropdownManager = useDropdownManager();
 const { scheduleSubmenuClosure } = dropdownManager;
 const { resettables, resetAll } = useResetManager();
 const modalsStore = useModalsStore();
-
 const isWelcomeLayout = computed((): boolean => {
   return layoutStore.currentLayout === "welcome";
 });
-
 // Main Menu tooltip state
 const mainMenuTooltipVisible = ref(false);
 const appMenuDropdownRef = ref<any | null>(null);
-
 // Center navigation tooltip state
 const centerTooltipVisible = ref(false);
 const centerTooltipText = ref("");
@@ -296,7 +282,6 @@ const navToWelcomeRef = ref<any | null>(null);
 const navToJobSetupRef = ref<any | null>(null);
 const navToJobQueueRef = ref<any | null>(null);
 const navToProgressRef = ref<any | null>(null);
-
 const centerTooltipTarget = computed(() => {
   // Resolve by data-name -> prefer exposed visual style
   const nameToRef: Record<string, any> = {
@@ -330,16 +315,13 @@ const centerTooltipTarget = computed(() => {
   const el = document.querySelector(`[data-name='${centerTooltipNameCandidate.value}']`);
   return (el?.querySelector('.visual-style') as HTMLElement) ?? el;
 });
-
 // Helper reactive to store the last hovered center button's data-name
 const centerTooltipNameCandidate = ref('');
-
 // Use the shared tooltip manager (same used by JobSelectorArea) so center
 // nav button tooltips get the same delayed show/hide behavior and don't
 // unmount/remount when switching between adjacent buttons.
 import { useTooltipManager } from '@/composables/useTooltipManager';
 const tooltipManager = useTooltipManager();
-
 // Compute whether the center tooltip should be visible based on the shared
 // tooltip manager's active id or the debug force flag. We keep `centerTooltipVisible`
 // for backward-compat but the InfoTooltip uses this computed value so that the
@@ -357,7 +339,6 @@ const centerTooltipIsActive = computed(() => {
   if (debugForceJobQueue.value && centerTooltipText.value && centerTooltipText.value.toLowerCase().includes('job queue')) return true;
   return false;
 });
-
 const showCenterTooltip = (text: string, dataName: string) => {
   // suppress native title immediately to avoid OS/browser tooltip
   try {
@@ -369,12 +350,10 @@ const showCenterTooltip = (text: string, dataName: string) => {
   } catch (e) {
     /* ignore */
   }
-
   centerTooltipText.value = text;
   centerTooltipNameCandidate.value = dataName;
   tooltipManager.showTooltip(dataName);
 };
-
 const hideCenterTooltip = () => {
   // restore original title if we removed it earlier (but don't immediately hide UI)
   try {
@@ -391,10 +370,8 @@ const hideCenterTooltip = () => {
   } catch (e) {
     /* ignore */
   }
-
   tooltipManager.hideTooltip();
 };
-
 // Debug: force the Job Queue center tooltip to be visible and anchored to the
 // Job Queue button even when not hovered. This is for temporary debugging only.
 import { ref as vueRef2, computed as vueComputed2 } from 'vue';
@@ -411,14 +388,11 @@ const resolveVisualElement = (r: any) => {
     return null;
   }
 };
-
 import { onMounted, watch as vueWatch } from 'vue';
-
 // When forcing the Job Queue tooltip, we may need to wait for the rendered
 // DOM element to exist. Use a small retry mechanism and store the found
 // element here so InfoTooltip always receives a concrete Element reference.
 const debugForcedElement = vueRef2<HTMLElement | null>(null);
-
 const attemptResolveJobQueueElement = (maxTries = 30, delayMs = 50) => {
   let tries = 0;
   const tryFind = () => {
@@ -428,7 +402,6 @@ const attemptResolveJobQueueElement = (maxTries = 30, delayMs = 50) => {
       debugForcedElement.value = compResolved as HTMLElement;
       return;
     }
-
     // DOM fallback by data-name
     try {
       const btn = document.querySelector("[data-name='nav-to-job-queue']") as HTMLElement | null;
@@ -440,7 +413,6 @@ const attemptResolveJobQueueElement = (maxTries = 30, delayMs = 50) => {
     } catch (e) {
       /* ignore */
     }
-
     tries += 1;
     if (tries < maxTries) {
       setTimeout(tryFind, delayMs);
@@ -448,21 +420,17 @@ const attemptResolveJobQueueElement = (maxTries = 30, delayMs = 50) => {
   };
   tryFind();
 };
-
 onMounted(() => {
   if (debugForceJobQueue.value) attemptResolveJobQueueElement();
 });
-
 vueWatch(debugForceJobQueue, (val) => {
   if (val) attemptResolveJobQueueElement();
   else debugForcedElement.value = null;
 });
-
 const debugForceCenterTarget = vueComputed2(() => {
   if (!debugForceJobQueue.value) return null;
   return debugForcedElement.value ?? resolveVisualElement(navToJobQueueRef.value) ?? navToJobQueueRef.value;
 });
-
 const mainMenuTooltipTarget = computed(() => {
   // Prefer the DropdownMenu component's exposed visual-style getter if available
   const comp = appMenuDropdownRef.value as any;
@@ -470,33 +438,27 @@ const mainMenuTooltipTarget = computed(() => {
     const el = comp.getTriggerVisualStyle();
     if (el instanceof Element) return el;
   }
-
   const btn = document.querySelector("[data-name='options-btn-for-main-menu-dropdown']") as HTMLElement | null;
   return (btn?.querySelector(".visual-style") as HTMLElement | null) ?? btn;
 }) as any;
-
 const isMainMenuActive = computed(() => {
   const el = document.getElementById("app-menu");
   return !!(el && el.classList.contains("active"));
 });
-
 const showMainMenuTooltip = () => {
   mainMenuTooltipVisible.value = true;
 };
 const hideMainMenuTooltip = () => {
   mainMenuTooltipVisible.value = false;
 };
-
 // If the menu opens, ensure the tooltip is hidden
 watch(isMainMenuActive, (val) => {
   if (val) mainMenuTooltipVisible.value = false;
 });
-
 const setTheme = (theme: Theme): void => {
   themeStore.setTheme(theme);
   dropdownManager.closeAllDropdowns("Theme selected");
 };
-
 const handleButtonTestClick = (): void => {
   const modalOptions: ModalOptions = {
     title: "Button Component Test",
@@ -513,15 +475,12 @@ const handleButtonTestClick = (): void => {
   modalsStore.openModal("DebugButtonTestModalContent", modalOptions);
   dropdownManager.closeAllDropdowns("Clicked 'Button Test'");
 };
-
 const handleNavToWelcome = (): void => {
   userPreferencesStore.setSkipWelcomeScreen(false);
   layoutStore.showWelcomeLayout();
 };
-
 const showResetConfirmation = (resetName: string, action: () => void | Promise<void>): void => {
   let formattedDescription: string;
-
   switch (resetName) {
     case "Reset Theme":
       formattedDescription = `This will reset the application's <strong><em>Theme</em></strong> to its default.`;
@@ -545,9 +504,7 @@ const showResetConfirmation = (resetName: string, action: () => void | Promise<v
       formattedDescription = `You are about to reset <strong><em>${resetName}</em></strong>. This action cannot be undone.`;
       break;
   }
-
   const description = [formattedDescription, "Are you sure you want to proceed?"];
-
   const modalOptions: ModalOptions = {
     icon: "mdi:alert-outline",
     title: `Confirm ${resetName}`,
@@ -571,9 +528,7 @@ const showResetConfirmation = (resetName: string, action: () => void | Promise<v
     footerJustifyContent: "center",
     closeOnClickOutside: true,
   };
-
   const props = { description };
-
   modalsStore.openModal("ResetConfirmationModalContent", modalOptions, props, (modalAction: string) => {
     if (modalAction === "proceed") {
       action();
@@ -581,13 +536,11 @@ const showResetConfirmation = (resetName: string, action: () => void | Promise<v
   });
   dropdownManager.closeAllDropdowns(`Clicked '${resetName}'`);
 };
-
 const handleResetAll = (): void => {
   const description = [
     `You are about to reset <strong><em>all UI elements, jobs, and settings</em></strong> to their defaults. This is a comprehensive reset and cannot be undone.`,
     "Are you sure you want to proceed?",
   ];
-
   const action = async () => {
     await resetAll();
     const resetWindowAction = resettables.value.find((r) => r.name === "Reset Window")?.action;
@@ -595,7 +548,6 @@ const handleResetAll = (): void => {
       await resetWindowAction();
     }
   };
-
   const modalOptions: ModalOptions = {
     icon: "mdi:nuke",
     title: "Confirm Reset All",
@@ -619,9 +571,7 @@ const handleResetAll = (): void => {
     footerJustifyContent: "center",
     closeOnClickOutside: true,
   };
-
   const props = { description };
-
   modalsStore.openModal("ResetConfirmationModalContent", modalOptions, props, (modalAction: string) => {
     if (modalAction === "proceed") {
       action();
@@ -629,18 +579,15 @@ const handleResetAll = (): void => {
   });
   dropdownManager.closeAllDropdowns("Clicked 'Reset All'");
 };
-
 const handleExit = (): void => {
   dropdownManager.closeAllDropdowns("Exiting app");
   getCurrentWindow().close();
 };
-
 // Zoom indicator state
 import { ref as vueRef, onMounted as vueOnMounted, onUnmounted as vueOnUnmounted } from "vue";
 import { resetZoom } from "@/composables/useZoom";
 const showZoomIndicator = vueRef(false);
 const zoomText = vueRef("100%");
-
 const updateZoomIndicator = (val: number) => {
   if (!val || val === 1) {
     showZoomIndicator.value = false;
@@ -649,11 +596,9 @@ const updateZoomIndicator = (val: number) => {
     zoomText.value = `${Math.round(val * 100)}%`;
   }
 };
-
 const resetGlobalZoom = () => {
   resetZoom();
 };
-
 vueOnMounted(() => {
   window.addEventListener("app:global-zoom-changed", (ev: Event) => {
     const e = ev as CustomEvent<number>;
@@ -662,7 +607,6 @@ vueOnMounted(() => {
   // compute position for zoom indicator so it sits left of native window controls
   // We no longer compute --titlebar-zoom-right; the zoom indicator uses the middle grid column.
 });
-
 vueOnUnmounted(() => {
   window.removeEventListener("app:global-zoom-changed", (ev: Event) => {
     const e = ev as CustomEvent<number>;
@@ -671,23 +615,19 @@ vueOnUnmounted(() => {
   window.removeEventListener('resize', () => {});
 });
 </script>
-
 <style>
 :root {
   --title-bar-height: 40px;
 }
-
 #app-menu {
   z-index: 10000;
 }
-
 body:has(.modal-wrapper.modal-open) #app-menu {
   & > .custom-button {
     opacity: 0.25 !important;
     pointer-events: none !important;
   }
 }
-
 /*
 Use the :has() selector to detect when a modal is open anywhere in the body
 and apply disabled styles to the center navigation buttons.
@@ -696,7 +636,6 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
   opacity: 0.25;
   pointer-events: none;
 }
-
 [data-tauri-decorum-tb] {
   /* Turn the native toolbar container into a 3-column grid:
      1fr = main title area, 2nd column = zoom indicator, 3rd column = native window controls */
@@ -708,25 +647,21 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
   height: var(--title-bar-height) !important;
   z-index: 0 !important;
 }
-
 /* Ensure all direct children of the native toolbar sit on the first grid row
    so they flow horizontally into the columns we defined rather than stacking. */
 [data-tauri-decorum-tb] > * {
   grid-row: 1 !important;
 }
-
 /* Place the zoom indicator into the middle column if present. */
 [data-tauri-decorum-tb] > .titlebar-zoom-indicator {
   grid-column: 2;
   justify-self: end;
 }
-
 /* Ensure our #title-bar (Vue root) occupies the main area */
 #title-bar {
   grid-column: 1;
   grid-row: 1;
 }
-
 [data-tauri-decorum-tb] button,
 [data-tauri-decorum-tb] .button {
   background-color: transparent;
@@ -738,12 +673,10 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
   padding: 0;
   z-index: 10000;
 }
-
 [data-tauri-decorum-tb] button:after,
 [data-tauri-decorum-tb] .button:after {
   border-radius: 0;
 }
-
 /* Force native window control buttons into the 3rd grid column */
 [data-tauri-decorum-tb] button.decorum-tb-btn,
 [data-tauri-decorum-tb] .button.decorum-tb-btn {
@@ -752,18 +685,15 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
   position: relative;
   z-index: 100;
 }
-
 [data-tauri-decorum-tb] button.decorum-tb-btn:hover,
 [data-tauri-decorum-tb] .button.decorum-tb-btn:hover {
   border: 0;
 }
-
 [data-tauri-decorum-tb] button#decorum-tb-minimize,
 [data-tauri-decorum-tb] button#decorum-tb-maximize,
 [data-tauri-decorum-tb] button#decorum-tb-close {
   cursor: default;
 }
-
 /* Place native window control buttons relative to the end of the grid using negative indices */
 [data-tauri-decorum-tb] button#decorum-tb-close {
   grid-column: -1; /* last column */
@@ -774,19 +704,15 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
 [data-tauri-decorum-tb] button#decorum-tb-minimize {
   grid-column: -3; /* third-to-last */
 }
-
 [data-tauri-decorum-tb] button#decorum-tb-minimize:hover {
   background-color: var(--btn-bg-hvr-clr-lite);
 }
-
 [data-tauri-decorum-tb] button#decorum-tb-maximize:hover {
   background-color: var(--btn-bg-hvr-clr-lite);
 }
-
 [data-tauri-decorum-tb] button#decorum-tb-close:hover {
   background-color: hsl(0, 80%, 40%);
 }
-
 /* Ensure the drag region element is placed into the first grid cell so it
    occupies the main title area for dragging (global styles must apply). */
 [data-tauri-decorum-tb] > [data-tauri-drag-region],
@@ -797,7 +723,6 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
   z-index: 1;
 }
 </style>
-
 <style scoped>
 @import "./title-bar-comp/title-bar.scoped.css";
 </style>

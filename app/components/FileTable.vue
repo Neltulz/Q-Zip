@@ -1,30 +1,24 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   FileTable.vue @preserve
 -->
 <!-- components/FileTable.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   FileTable.vue @preserve
 -->
-
 <!--
   RECOMMENDATIONS FOR IMPROVEMENT:
-
   1. COMPONENT DECOMPOSITION
      - Break into smaller, focused components:
        * ✅ FileTableHeader.vue (sorting, column resizing)
        * ✅ FileTableRow.vue (individual row rendering)
        * ✅ FileTableToolbar.vue (add/remove/move/copy actions)
        * ✅ FileTableContextMenu.vue (right-click menu)
-
   2. PERFORMANCE OPTIMIZATIONS
      - ✅ Add memoization for expensive computations (sortedFiles, columnStyles)
      - ✅ Use useMemo or similar for sorting operations
      - ✅ Optimize large template with many conditional renders
      - ✅ Consider lazy loading for context menus
-
   3. ERROR HANDLING
      - Add comprehensive error handling for job operations
        * [Critically Important (5)] Add validation for file paths to ensure they exist and are accessible
@@ -53,33 +47,28 @@
        * [Important (3)] Add validation for file size limits and system constraints
        * [Somewhat Important (2)] Handle cases where files are moved/deleted after being added to job
        * [Low Priority (1)] Add support for detecting file modifications after job creation
-
   4. TESTING
      - Implement comprehensive unit tests for complex interactions
      - ✅ Test virtual scrolling with large datasets (Result: Better, but not perfect)
      - ✅Test drag & drop functionality
      - Test keyboard navigation and accessibility
      - Add integration tests for file operations
-
   5. DOCUMENTATION
      - Add JSDoc comments for complex functions
      - Document component props and events
      - Add usage examples and best practices
      - Document performance considerations
-
   6. ACCESSIBILITY
      - Add more ARIA labels and descriptions
      - Improve keyboard navigation (Tab, Arrow keys)
      - Add screen reader announcements for state changes
      - Ensure proper focus management
-
   7. UI/UX ENHANCEMENTS
      - Add fancy animations/highlights to job selectors that have notifications above them
      - Consider pulse effects, glow animations, or attention-grabbing visual cues
      - Implement smooth transitions for notification states
      - Add visual feedback for drag operations across job boundaries
 -->
-
 <template>
   <div
     ref="fileTableCompRef"
@@ -123,7 +112,6 @@
        @activate-filetable="setActive(true)"
        @refresh-files="handleRefreshFiles"
      />
-
     <OverlayScrollbarsComponent
       ref="scrollComponentRef"
       class="table-scroll-wrapper"
@@ -149,12 +137,9 @@
           @sort="handleSort"
           @start-resize="startResize"
         />
-
         <!-- Local selection box: updated directly via DOM to avoid reactive writes every frame -->
         <div ref="localSelectionBox" class="selection-box" style="display: none" />
-
         <!-- debug hotzones removed -->
-
         <!-- Spacer for Virtual Scroll -->
         <div class="virtual-scroll-spacer" :style="{ height: `${totalHeight}px` }">
           <!-- Content container for visible rows -->
@@ -203,7 +188,6 @@
     </OverlayScrollbarsComponent>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUpdate, reactive, onUnmounted, onMounted, onUpdated, nextTick } from "vue";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
@@ -221,52 +205,41 @@ import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { open } from "@tauri-apps/plugin-dialog";
 import LoadingAnim from "@/components/LoadingAnim.vue";
-
 // --- VIRTUAL SCROLLING CONSTANTS ---
 const ROW_HEIGHT = 35;
 const BUFFER_ROWS = 10;
-
 // --- MEMOIZATION HELPERS ---
 // Simple memoization utility for expensive computations
 const createMemoizedComputed = <T>(fn: () => T, deps: (() => any)[]) => {
   let lastDeps: any[] = [];
   let lastResult: T | null = null;
-  
   return computed(() => {
     const currentDeps = deps.map(dep => dep());
     const depsChanged = currentDeps.some((dep, index) => dep !== lastDeps[index]);
-    
     if (depsChanged || lastResult === null) {
       lastDeps = currentDeps;
       lastResult = fn();
     }
-    
     return lastResult!;
   });
 };
-
 // Force refresh utility for memoized computations
 const forceRefresh = ref(0);
 let forceRefreshTimeout: NodeJS.Timeout | null = null;
-
 const createRefreshableMemoizedComputed = <T>(fn: () => T, deps: (() => any)[]) => {
   let lastDeps: any[] = [];
   let lastResult: T | null = null;
-  
   return computed(() => {
     // Include forceRefresh in dependencies to allow manual refresh
     const currentDeps = [...deps.map(dep => dep()), forceRefresh.value];
     const depsChanged = currentDeps.some((dep, index) => dep !== lastDeps[index]);
-    
     if (depsChanged || lastResult === null) {
       lastDeps = currentDeps;
       lastResult = fn();
     }
-    
     return lastResult!;
   });
 };
-
 // Debounced force refresh function
 const debouncedForceRefresh = () => {
   if (forceRefreshTimeout) {
@@ -277,11 +250,9 @@ const debouncedForceRefresh = () => {
     forceRefreshTimeout = null;
   }, 50); // 50ms debounce
 };
-
 // --- LAZY LOADING FOR CONTEXT MENUS ---
 // Note: Context menus are handled by FileTableRow components, so lazy loading is not needed here
 // Keeping the structure for potential future use
-
 const props = withDefaults(
   defineProps<{
     jobId: number;
@@ -309,7 +280,6 @@ const props = withDefaults(
     marqueeSelectionEnabled: true,
   }
 );
-
 const emit = defineEmits([
   "selection-changed",
   "remove-files",
@@ -324,14 +294,11 @@ const emit = defineEmits([
   "dropdown-opened",
   "refresh-files",
 ]);
-
 const themeStore = useThemeStore();
 const jobsStore = useJobsStore();
 const dragDropStore = useDragDropStore();
-
 const uiStore = useUiStore();
 const userPreferencesStore = useUserPreferencesStore();
-
 const scrollComponentRef = ref<InstanceType<typeof OverlayScrollbarsComponent> | null>(null);
 const viewportRef = ref<HTMLElement | null>(null);
 const fileTableCompRef = ref<HTMLElement | null>(null);
@@ -354,48 +321,37 @@ const focusedRowIndex = ref<number | null>(null); // Track which row has focus
 const allowActivation = computed(() => (props as any).activatable !== false);
 let updateStartTime = 0;
 let scrollTimeout: NodeJS.Timeout | null = null;
-
 const scrollTop = ref(0);
-
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
 const jobs = computed(() => jobsStore.jobs);
-
-
-
 // --- MEMOIZED SORTING OPERATIONS ---
 // Memoized sorting function with dependency tracking
 const sortedFiles = createRefreshableMemoizedComputed(() => {
   const filesCopy = [...props.files];
   const folders = filesCopy.filter((item) => item.type === "Folder");
   const files = filesCopy.filter((item) => item.type !== "Folder");
-
   const sortArray = (arr: FileItem[]) => {
     arr.sort((a, b) => {
       const key = sortKey.value;
       const aValue = a[key] ?? (typeof a[key] === "number" ? 0 : "");
       const bValue = b[key] ?? (typeof b[key] === "number" ? 0 : "");
-
       let comparison = 0;
       if (typeof aValue === "string" && typeof bValue === "string") {
         comparison = aValue.localeCompare(bValue, undefined, { numeric: true });
       } else if (typeof aValue === "number" && typeof bValue === "number") {
         comparison = aValue - bValue;
       }
-
       return sortDirection.value === "asc" ? comparison : -comparison;
     });
   };
-
   sortArray(folders);
   sortArray(files);
-
   return [...folders, ...files];
 }, [
   () => props.files,
   () => sortKey.value,
   () => sortDirection.value
 ]);
-
 const handleSort = (key: keyof FileItem) => {
   // Prevent sorting if we just finished a resize (suppresses the mouseup click that follows)
   if (suppressHeaderClick.value) {
@@ -410,29 +366,24 @@ const handleSort = (key: keyof FileItem) => {
     sortDirection.value = "asc";
   }
 };
-
 // --- MEMOIZED SIZE CALCULATIONS ---
 const maxFileSizeInJob = createMemoizedComputed(() => {
   const fileSizes = props.files.filter((f) => f.type !== "Folder").map((f) => f.size);
   if (fileSizes.length === 0) return 1;
   return Math.max(...fileSizes);
 }, [() => props.files]);
-
 const maxFolderSizeInJob = createMemoizedComputed(() => {
   const folderSizes = props.files.filter((f) => f.type === "Folder").map((f) => f.size);
   if (folderSizes.length === 0) return 1;
   return Math.max(...folderSizes);
 }, [() => props.files]);
-
 // --- MEMOIZED DATE CALCULATIONS ---
 const fileTimestamps = createMemoizedComputed(() =>
   props.files.filter((f) => f.type !== "Folder").map((f) => ({ modified: f.modified ?? 0, created: f.created ?? 0 }))
 , [() => props.files]);
-
 const folderTimestamps = createMemoizedComputed(() =>
   props.files.filter((f) => f.type === "Folder").map((f) => ({ modified: f.modified ?? 0, created: f.created ?? 0 }))
 , [() => props.files]);
-
 const getMinMax = (timestamps: number[]) => {
   if (timestamps.length === 0) return { min: 0, max: 1 };
   const cleanTimestamps = timestamps.filter((t) => t > 0);
@@ -442,49 +393,39 @@ const getMinMax = (timestamps: number[]) => {
     max: Math.max(...cleanTimestamps),
   };
 };
-
 const minMaxFileModified = createMemoizedComputed(() => 
   getMinMax(fileTimestamps.value.map((t) => t.modified))
 , [() => fileTimestamps.value]);
-
 const minMaxFolderModified = createMemoizedComputed(() => 
   getMinMax(folderTimestamps.value.map((t) => t.modified))
 , [() => folderTimestamps.value]);
-
 const minMaxFileCreated = createMemoizedComputed(() => 
   getMinMax(fileTimestamps.value.map((t) => t.created))
 , [() => fileTimestamps.value]);
-
 const minMaxFolderCreated = createMemoizedComputed(() => 
   getMinMax(folderTimestamps.value.map((t) => t.created))
 , [() => folderTimestamps.value]);
-
 // --- MEMOIZED VIRTUAL SCROLLING CALCULATIONS ---
 const totalHeight = createRefreshableMemoizedComputed(() => {
   const height = sortedFiles.value.length * ROW_HEIGHT;
   logRendering("FileTable", `Total height calculated: ${sortedFiles.value.length} files * ${ROW_HEIGHT}px = ${height}px`);
   return height;
 }, [() => sortedFiles.value.length]);
-
 const startIndex = createRefreshableMemoizedComputed(() => {
   return Math.max(0, Math.floor(scrollTop.value / ROW_HEIGHT) - BUFFER_ROWS);
 }, [() => scrollTop.value]);
-
 const endIndex = createRefreshableMemoizedComputed(() => {
   const wrapperHeight = viewportRef.value?.clientHeight || 0;
   return Math.min(sortedFiles.value.length, Math.ceil((scrollTop.value + wrapperHeight) / ROW_HEIGHT) + BUFFER_ROWS);
 }, [() => scrollTop.value, () => viewportRef.value?.clientHeight, () => sortedFiles.value.length]);
-
 const contentOffsetY = createRefreshableMemoizedComputed(() => 
   startIndex.value * ROW_HEIGHT
 , [() => startIndex.value]);
-
 const visibleFiles = createRefreshableMemoizedComputed(() => {
   const files = sortedFiles.value.slice(startIndex.value, endIndex.value);
   logRendering("FileTable", `Visible files calculated: ${files.length} files (${startIndex.value} to ${endIndex.value}) out of ${sortedFiles.value.length} total`);
   return files;
 }, [() => sortedFiles.value, () => startIndex.value, () => endIndex.value]);
-
 // --- RESTORED MISSING FUNCTIONS AND VARIABLES ---
 const handleScroll = () => {
   if (viewportRef.value) {
@@ -498,7 +439,6 @@ const handleScroll = () => {
     isScrolling.value = false;
   }, 150);
 };
-
 // Marquee selection state
 const marqueePreviewSelection = ref<string[]>([]);
 const marqueePreviewAdd = ref<string[]>([]);
@@ -511,9 +451,7 @@ const skipRootClick = ref(false);
 const isClosingContextMenu = ref(false);
 const DRAG_THRESHOLD = 6;
 const isPossibleMarquee = ref(false);
-
 const headerHeight = ref(34);
-
 // Auto-scroll variables
 let autoScrollRaf: number | null = null;
 let lastMouseClientX = 0;
@@ -521,12 +459,10 @@ let lastMouseClientY = 0;
 const AUTO_SCROLL_THRESHOLD = 60;
 const AUTO_SCROLL_MAX_SPEED = 24;
 const HORIZONTAL_RIGHT_BUFFER = 48;
-
 // Development mode check
 const isDevelopment = computed(() => {
   return typeof window !== "undefined" && window.location.hostname === "localhost";
 });
-
 // Marquee helper functions
 const calibrateHeaderHeight = (scrollWrapper: HTMLElement | null) => {
   try {
@@ -536,30 +472,21 @@ const calibrateHeaderHeight = (scrollWrapper: HTMLElement | null) => {
     headerHeight.value = 34;
   }
 };
-
-
-
 const handleComponentMouseDown = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
   if (target.closest(".os-scrollbar")) {
     return;
   }
-
   if (!props.marqueeSelectionEnabled || event.button !== 0) return;
-
   if (target.closest(".item-name-content") || target.closest(".item-checkbox")) {
     return;
   }
-
   const isInteractiveElement = target.closest("button, a, input, select, textarea, .table-header, .resizer");
   if (isInteractiveElement) return;
-  
   const clickedOnName = !!target.closest(".item-name-content");
   const clickedOnCheckbox = !!target.closest(".item-checkbox");
-
   const ctrlPressed = event.ctrlKey || event.metaKey;
   const shiftPressed = event.shiftKey;
-
   // For marquee selection, immediately deselect all files when starting a new selection
   // (unless Ctrl is pressed for additive selection)
   if (!ctrlPressed) {
@@ -570,46 +497,37 @@ const handleComponentMouseDown = (event: MouseEvent) => {
     // In checkbox mode, don't clear checked files - only deselect for visual feedback
     // Checked files should remain checked until explicitly unchecked by the user
   }
-
   event.preventDefault();
   isPossibleMarquee.value = true;
   isMarqueeActive.value = false;
   marqueeIsAdditive.value = ctrlPressed;
   marqueeIsInvert.value = ctrlPressed && shiftPressed;
-
   const scrollWrapper = viewportRef.value;
   if (!scrollWrapper) return;
-
   const scrollWrapperBounds = scrollWrapper.getBoundingClientRect();
   const rootStyles = getComputedStyle(document.documentElement);
   const ftZoomRaw = rootStyles.getPropertyValue("--file-table-zoom") || rootStyles.getPropertyValue("--file-table-zoom-local");
   const parsed = Number(ftZoomRaw ? parsedFloatSafe(ftZoomRaw) : NaN);
   const ftZoom = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-
   const computedAnchorX = event.clientX - scrollWrapperBounds.left + scrollWrapper.scrollLeft;
   const maxContentX = Math.max(0, scrollWrapper.scrollWidth - 1);
   marqueeAnchorX.value = Math.min(maxContentX, Math.max(0, computedAnchorX));
   const computedAnchorY = event.clientY - scrollWrapperBounds.top + scrollWrapper.scrollTop - headerHeight.value;
   const maxContentY = Math.max(0, scrollWrapper.scrollHeight - headerHeight.value - 1);
   marqueeAnchorY.value = Math.min(maxContentY, Math.max(0, computedAnchorY));
-
   window.addEventListener("mousemove", handleMarqueeMouseMove);
   window.addEventListener("mouseup", handleMarqueeMouseUp);
   window.addEventListener("pointerup", handleMarqueeMouseUp);
   window.addEventListener("pointercancel", handleMarqueeMouseUp);
 };
-
 const handleMarqueeMouseMove = (event: MouseEvent) => {
   const scrollWrapper = viewportRef.value;
   if (!scrollWrapper) return;
-
   lastMouseClientX = event.clientX;
   lastMouseClientY = event.clientY;
-
   const scrollWrapperBounds = scrollWrapper.getBoundingClientRect();
   const mouseX_content = event.clientX - scrollWrapperBounds.left + scrollWrapper.scrollLeft;
   const mouseY_content = event.clientY - scrollWrapperBounds.top + scrollWrapper.scrollTop - headerHeight.value;
-
   if (!isMarqueeActive.value && isPossibleMarquee.value) {
     const dx = mouseX_content - marqueeAnchorX.value;
     const dy = mouseY_content - marqueeAnchorY.value;
@@ -633,9 +551,7 @@ const handleMarqueeMouseMove = (event: MouseEvent) => {
     }
     startAutoScroll(scrollWrapper);
   }
-
   if (!isMarqueeActive.value) return;
-
   let scheduled = false as boolean;
   const schedule = () => {
     if (scheduled) return;
@@ -650,46 +566,37 @@ const handleMarqueeMouseMove = (event: MouseEvent) => {
       const maxContentX = Math.max(0, (scrollWrapper.scrollWidth || bounds.width) - HORIZONTAL_RIGHT_BUFFER - 1);
       mx = Math.min(maxContentX, Math.max(0, mx));
       my = Math.min(maxContentY, Math.max(0, my));
-
       const x = Math.min(marqueeAnchorX.value, mx);
       const y = Math.min(marqueeAnchorY.value, my);
       const width = Math.abs(mx - marqueeAnchorX.value);
       const height = Math.abs(my - marqueeAnchorY.value);
-
       localMarqueeRect.x = x;
       localMarqueeRect.y = y;
       localMarqueeRect.width = width;
       localMarqueeRect.height = height;
-
       if (localSelectionBox.value) {
         localSelectionBox.value.style.transform = `translate(${x}px, ${y}px)`;
         localSelectionBox.value.style.width = `${width}px`;
         localSelectionBox.value.style.height = `${height}px`;
       }
-
       const paths = computeSelectionByRectLocal(marqueeIsAdditive.value, x, y, width, height);
       updatePreviewDOM(paths);
     });
   };
-
   schedule();
 };
-
 const startAutoScroll = (scrollWrapper: HTMLElement) => {
   if (autoScrollRaf) return;
-
   const tick = () => {
     if (!isMarqueeActive.value) {
       stopAutoScroll();
       return;
     }
-
     const bounds = scrollWrapper.getBoundingClientRect();
     const y = lastMouseClientY - bounds.top;
     const xPos = lastMouseClientX - bounds.left;
     let speedY = 0;
     let speedX = 0;
-
     if (y < AUTO_SCROLL_THRESHOLD) {
       const pct = (AUTO_SCROLL_THRESHOLD - y) / AUTO_SCROLL_THRESHOLD;
       speedY = -Math.min(AUTO_SCROLL_MAX_SPEED, Math.max(2, AUTO_SCROLL_MAX_SPEED * pct));
@@ -697,7 +604,6 @@ const startAutoScroll = (scrollWrapper: HTMLElement) => {
       const pct = (y - (bounds.height - AUTO_SCROLL_THRESHOLD)) / AUTO_SCROLL_THRESHOLD;
       speedY = Math.min(AUTO_SCROLL_MAX_SPEED, Math.max(2, AUTO_SCROLL_MAX_SPEED * pct));
     }
-
     if (xPos < AUTO_SCROLL_THRESHOLD) {
       const pct = (AUTO_SCROLL_THRESHOLD - xPos) / AUTO_SCROLL_THRESHOLD;
       speedX = -Math.min(AUTO_SCROLL_MAX_SPEED, Math.max(2, AUTO_SCROLL_MAX_SPEED * pct));
@@ -705,30 +611,25 @@ const startAutoScroll = (scrollWrapper: HTMLElement) => {
       const pct = (xPos - (bounds.width - AUTO_SCROLL_THRESHOLD)) / AUTO_SCROLL_THRESHOLD;
       speedX = Math.min(AUTO_SCROLL_MAX_SPEED, Math.max(2, AUTO_SCROLL_MAX_SPEED * pct));
     }
-
     if (speedY !== 0 || speedX !== 0) {
       const maxScrollTop = Math.max(0, scrollWrapper.scrollHeight - bounds.height);
       const desiredTop = scrollWrapper.scrollTop + speedY;
       const newTop = Math.max(0, Math.min(maxScrollTop, desiredTop));
       if (newTop !== scrollWrapper.scrollTop) scrollWrapper.scrollTop = newTop;
-
       const maxScrollLeft = Math.max(0, scrollWrapper.scrollWidth - bounds.width - HORIZONTAL_RIGHT_BUFFER);
       const desiredLeft = scrollWrapper.scrollLeft + speedX;
       const newLeft = Math.max(0, Math.min(maxScrollLeft, desiredLeft));
       if (newLeft !== scrollWrapper.scrollLeft) scrollWrapper.scrollLeft = newLeft;
-
       const mouseX_content = lastMouseClientX - bounds.left + scrollWrapper.scrollLeft;
       let mouseY_content = lastMouseClientY - bounds.top + scrollWrapper.scrollTop - headerHeight.value;
       const maxY = Math.max(0, (scrollWrapper.scrollHeight || totalHeight.value) - headerHeight.value - 1);
       const maxX = Math.max(0, (scrollWrapper.scrollWidth || bounds.width) - HORIZONTAL_RIGHT_BUFFER - 1);
       const clampedMouseX = Math.min(maxX, Math.max(0, mouseX_content));
       mouseY_content = Math.min(maxY, Math.max(0, mouseY_content));
-
       const x = Math.min(marqueeAnchorX.value, clampedMouseX);
       const yPos = Math.min(marqueeAnchorY.value, mouseY_content);
       const width = Math.abs(mouseX_content - marqueeAnchorX.value);
       const height = Math.abs(mouseY_content - marqueeAnchorY.value);
-
       localMarqueeRect.x = x;
       localMarqueeRect.y = yPos;
       localMarqueeRect.width = width;
@@ -739,24 +640,19 @@ const startAutoScroll = (scrollWrapper: HTMLElement) => {
         localSelectionBox.value.style.width = `${width}px`;
         localSelectionBox.value.style.height = `${height}px`;
       }
-
       const paths = computeSelectionByRectLocal(marqueeIsAdditive.value, x, yPos, width, height);
       updatePreviewDOM(paths);
     }
-
     autoScrollRaf = window.requestAnimationFrame(tick);
   };
-
   autoScrollRaf = window.requestAnimationFrame(tick);
 };
-
 const stopAutoScroll = () => {
   if (autoScrollRaf) {
     window.cancelAnimationFrame(autoScrollRaf);
     autoScrollRaf = null;
   }
 };
-
 const handleMarqueeMouseUp = () => {
   skipRootClick.value = true;
   wasMarqueeActive.value = true;
@@ -818,33 +714,25 @@ const handleMarqueeMouseUp = () => {
   window.removeEventListener("pointercancel", handleMarqueeMouseUp);
   stopAutoScroll();
 };
-
 const computeSelectionByRect = (isAdditive: boolean): string[] => {
   const marqueeTop = isMarqueeActive.value ? localMarqueeRect.y : uiStore.marqueeBox.y;
   const marqueeBottom = marqueeTop + (isMarqueeActive.value ? localMarqueeRect.height : uiStore.marqueeBox.height);
   const marqueeLeft = isMarqueeActive.value ? localMarqueeRect.x : uiStore.marqueeBox.x;
   const marqueeRight = marqueeLeft + (isMarqueeActive.value ? localMarqueeRect.width : uiStore.marqueeBox.width);
-
   const startIndexInView = Math.max(0, Math.floor(marqueeTop / ROW_HEIGHT));
   const endIndexInView = Math.min(sortedFiles.value.length, Math.ceil(marqueeBottom / ROW_HEIGHT));
-
   const pathsToSelect: string[] = [];
-
   try {
     const scrollWrapper = viewportRef.value;
     if (scrollWrapper) {
       const scrollBounds = scrollWrapper.getBoundingClientRect();
       const rowNodes = document.querySelectorAll(".virtual-scroll-content .table-row");
-
       for (let i = startIndexInView; i < endIndexInView; i++) {
         const file = sortedFiles.value[i];
         if (!file) continue;
-
         const rowTop = i * ROW_HEIGHT;
         const rowBottom = rowTop + ROW_HEIGHT;
-
         if (!(marqueeBottom > rowTop && marqueeTop < rowBottom)) continue;
-
         const rowNode = rowNodes[i - startIndex.value] as HTMLElement | undefined;
         if (rowNode) {
           const contentNode = rowNode.querySelector(".item-name-content") as HTMLElement | null;
@@ -852,7 +740,6 @@ const computeSelectionByRect = (isAdditive: boolean): string[] => {
             const rect = contentNode.getBoundingClientRect();
             const itemLeft = rect.left - scrollBounds.left;
             const itemRight = itemLeft + rect.width;
-            
             // Only select if marquee intersects with the actual .item-name-content bounds
             if (marqueeRight > itemLeft - 2 && marqueeLeft < itemRight + 2) {
               pathsToSelect.push(file.path);
@@ -865,10 +752,8 @@ const computeSelectionByRect = (isAdditive: boolean): string[] => {
     // If we can't access the DOM elements, don't select anything
     logUI("FileTable", "Error computing marquee selection, no files selected", err);
   }
-
   return pathsToSelect;
 };
-
 const computeSelectionByRectLocal = (
   isAdditive: boolean,
   rectX: number,
@@ -880,25 +765,19 @@ const computeSelectionByRectLocal = (
   const marqueeBottom = rectY + rectH;
   const marqueeLeft = rectX;
   const marqueeRight = rectX + rectW;
-
   const startIndexInView = Math.max(0, Math.floor(marqueeTop / ROW_HEIGHT));
   const endIndexInView = Math.min(sortedFiles.value.length, Math.ceil(marqueeBottom / ROW_HEIGHT));
-
   const pathsToSelect: string[] = [];
-
   try {
     const scrollWrapper = viewportRef.value;
     const scrollBounds = scrollWrapper ? scrollWrapper.getBoundingClientRect() : null;
     const rowNodes = document.querySelectorAll(".virtual-scroll-content .table-row");
-
     for (let i = startIndexInView; i < endIndexInView; i++) {
       const file = sortedFiles.value[i];
       if (!file) continue;
-
       const rowTop = i * ROW_HEIGHT;
       const rowBottom = rowTop + ROW_HEIGHT;
       if (!(marqueeBottom > rowTop && marqueeTop < rowBottom)) continue;
-
       const node = rowNodes[i - startIndex.value] as HTMLElement | undefined;
       if (node && scrollBounds) {
         const contentNode = node.querySelector(".item-name-content") as HTMLElement | null;
@@ -907,7 +786,6 @@ const computeSelectionByRectLocal = (
           const scrollLeft = scrollWrapper ? scrollWrapper.scrollLeft : 0;
           const itemLeft = rect.left - scrollBounds.left + scrollLeft;
           const itemRight = itemLeft + rect.width;
-          
           // Only select if marquee intersects with the actual .item-name-content bounds
           if (marqueeRight > itemLeft - 2 && marqueeLeft < itemRight + 2) {
             pathsToSelect.push(file.path);
@@ -920,10 +798,8 @@ const computeSelectionByRectLocal = (
     // This is better than falling back to incorrect column width calculations
     logUI("FileTable", "Error computing marquee selection, no files selected", err);
   }
-
   return pathsToSelect;
 };
-
 const updatePreviewDOM = (paths: string[]) => {
   const newSet = new Set(paths);
   const rowNodes = document.querySelectorAll(".virtual-scroll-content .table-row");
@@ -935,7 +811,6 @@ const updatePreviewDOM = (paths: string[]) => {
     else if (!shouldHave && has) node.classList.remove("preview-selected");
   });
 };
-
 const clearPreviewDOM = () => {
   const rowNodes = document.querySelectorAll(".virtual-scroll-content .table-row.preview-selected");
   rowNodes.forEach((n) => n.classList.remove("preview-selected"));
@@ -943,7 +818,6 @@ const clearPreviewDOM = () => {
     localSelectionBox.value.style.display = "none";
   }
 };
-
 // --- MEMOIZED COLUMN STYLES ---
 const columnStyles = createMemoizedComputed(() => ({
   "--col-width-checkbox": `${columnWidths.checkbox}px`,
@@ -970,7 +844,6 @@ const columnStyles = createMemoizedComputed(() => ({
   () => columnWidths.foldersTotal,
   () => columnWidths.parentPath
 ]);
-
 // --- MEMOIZED TABLE CONTENT STYLE ---
 const tableContentStyle = createMemoizedComputed(() => {
   const totalWidth = Object.values(columnWidths).reduce((sum, width) => sum + width, 0);
@@ -978,12 +851,10 @@ const tableContentStyle = createMemoizedComputed(() => {
     minInlineSize: `${totalWidth}px`,
   };
 }, [() => Object.values(columnWidths).reduce((sum, width) => sum + width, 0)]);
-
 // --- MEMOIZED FILE TABLE ROOT STYLE ---
 const fileTableRootStyle = createMemoizedComputed(() => ({
   "--file-table-zoom-local": String(fileTableZoom.value),
 }), [() => fileTableZoom.value]);
-
 // --- MEMOIZED LOADING BACKDROP STYLE ---
 const loadingBackdropStyle = createMemoizedComputed(() => {
   const minHeight = Math.max(ROW_HEIGHT * (props.files?.length || 1) + 34, 120);
@@ -991,7 +862,6 @@ const loadingBackdropStyle = createMemoizedComputed(() => {
     minHeight: `${minHeight}px`,
   };
 }, [() => props.files?.length]);
-
 // --- MEMOIZED SELECTION STATE ---
 const allSelected = createMemoizedComputed(() => {
   // In checkbox mode, check if all files are checked
@@ -1002,11 +872,9 @@ const allSelected = createMemoizedComputed(() => {
     return props.files.length > 0 && selectedFiles.value.length === props.files.length;
   }
 }, [() => props.files.length, () => selectedFiles.value.length, () => checkedFiles.value.length, () => userPreferencesStore.checkboxMode]);
-
 // --- OPTIMIZED TEMPLATE CONDITIONALS ---
 // Pre-compute conditional states to reduce template complexity
 const shouldShowToolbar = computed(() => props.showToolbar);
-
 // Computed property that returns the appropriate array for actions based on checkbox mode
 const actionItems = computed(() => {
   // In checkbox mode, use checked files for actions
@@ -1023,7 +891,6 @@ const isSelectableEnabled = computed(() => props.isSelectable);
 const isItemDragEnabled = computed(() => props.itemDragEnabled);
 const isMarqueeSelectionEnabled = computed(() => props.marqueeSelectionEnabled);
 const isActivatable = computed(() => (props as any).activatable !== false);
-
 const columnWidths = reactive({
   checkbox: 40,
   name: 300,
@@ -1037,7 +904,6 @@ const columnWidths = reactive({
   foldersTotal: 100,
   parentPath: 300,
 });
-
 // Per-component zoom factor for FileTable. Uses CSS var `--file-table-zoom` set by useZoom.
 const fileTableZoom = ref<number>(1.0);
 const applyFileTableZoomFromCSS = () => {
@@ -1049,22 +915,18 @@ const applyFileTableZoomFromCSS = () => {
     fileTableZoom.value = 1.0;
   }
 };
-
 // safe parse float helper to avoid stray characters
 const parsedFloatSafe = (s: string) => {
   const m = s.match(/-?\d+(?:\.\d+)?/);
   return m ? Number(m[0]) : NaN;
 };
-
 // initialize from CSS var
 applyFileTableZoomFromCSS();
-
 // Watch for changes to the root CSS var and apply to the component root as a style variable
 // This is now handled by fileTableRootStyle
 // const fileTableRootStyle = computed(() => ({
 //   "--file-table-zoom-local": String(fileTableZoom.value),
 // }));
-
 // MutationObserver to detect style changes on documentElement
 let fileTableZoomObserver: MutationObserver | null = null;
 let fileTableClassObserver: MutationObserver | null = null;
@@ -1088,9 +950,7 @@ onUnmounted(() => {
     fileTableClassObserver = null;
   }
 });
-
 const effectiveZoom = () => (fileTableZoom.value && fileTableZoom.value > 0 ? fileTableZoom.value : 1);
-
 // This is now handled by tableContentStyle
 // const tableContentStyle = computed(() => {
 //   const totalWidth = Object.values(columnWidths).reduce((sum, width) => sum + width, 0);
@@ -1098,13 +958,11 @@ const effectiveZoom = () => (fileTableZoom.value && fileTableZoom.value > 0 ? fi
 //     minInlineSize: `${totalWidth}px`,
 //   };
 // });
-
 const resizingColumn = ref<keyof typeof columnWidths | null>(null);
 const startX = ref(0);
 const startWidth = ref(0);
 const isResizing = ref(false);
 const suppressHeaderClick = ref(false);
-
 const startResize = (event: MouseEvent, column: keyof typeof columnWidths) => {
   logUI("FileTable", `Starting resize for column: ${column}`);
   document.body.classList.add("is-resizing");
@@ -1115,21 +973,17 @@ const startResize = (event: MouseEvent, column: keyof typeof columnWidths) => {
   window.addEventListener("mousemove", doResize);
   window.addEventListener("mouseup", stopResize);
 };
-
 // Use rAF batching to avoid updating reactive state on every mousemove
 let pendingResizeRaf: number | null = null;
 let pendingResizeColumn: keyof typeof columnWidths | null = null;
 let pendingResizeWidth = 0;
-
 const doResize = (event: MouseEvent) => {
   if (!resizingColumn.value) return;
   const delta = event.clientX - startX.value;
   const newWidth = Math.max(30, startWidth.value + delta);
-
   // store pending values
   pendingResizeColumn = resizingColumn.value;
   pendingResizeWidth = newWidth;
-
   if (pendingResizeRaf !== null) return;
   pendingResizeRaf = window.requestAnimationFrame(() => {
     if (pendingResizeColumn) {
@@ -1141,7 +995,6 @@ const doResize = (event: MouseEvent) => {
     pendingResizeWidth = 0;
   });
 };
-
 const stopResize = () => {
   logUI("FileTable", `Stopping resize for column: ${resizingColumn.value}`);
   document.body.classList.remove("is-resizing");
@@ -1163,12 +1016,10 @@ const stopResize = () => {
   window.removeEventListener("mousemove", doResize);
   window.removeEventListener("mouseup", stopResize);
 };
-
 // This is now handled by allSelected
 // const allSelected = computed(() => {
 //   return props.files.length > 0 && selectedFiles.value.length === props.files.length;
 // });
-
 const toggleFileSelection = (path: string) => {
   if (!props.isSelectable) return;
   isActive.value = true;
@@ -1176,7 +1027,6 @@ const toggleFileSelection = (path: string) => {
   const checkedIndex = checkedFiles.value.indexOf(path);
   const fileIndex = sortedFiles.value.findIndex((f) => f.path === path);
   const fileName = sortedFiles.value[fileIndex]?.name;
-  
   if (selectedIndex > -1) {
     selectedFiles.value.splice(selectedIndex, 1);
     logFocus("FileTable", `Toggle selection: Deselected file`, {
@@ -1198,43 +1048,34 @@ const toggleFileSelection = (path: string) => {
       autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
     });
   }
-  
   // Toggle checkbox state
   if (checkedIndex > -1) {
     checkedFiles.value.splice(checkedIndex, 1);
   } else {
     checkedFiles.value.push(path);
   }
-  
   if (fileIndex !== -1) {
     lastClickedIndex.value = fileIndex;
   }
 };
-
 const clickRowByPath = (event: MouseEvent, path: string) => {
   if (!props.isSelectable) return;
-
   // Only treat as a row-selection click if the user clicked the name content or checkbox
   const target = event.target as HTMLElement;
   const clickedOnName = !!target.closest(".item-name-content");
   const clickedOnCheckbox = !!target.closest(".item-checkbox");
-
   if (!clickedOnName && !clickedOnCheckbox) {
     // Clicked elsewhere in the row: deselect all
     deselectAll();
     return;
   }
-
   // Prevent the root click handler from also deselecting
   event.stopPropagation();
-
   const clickedIndex = sortedFiles.value.findIndex((f) => f.path === path);
   if (clickedIndex === -1) return;
-
   // Set focus to the clicked row
   const previousFocusIndex = focusedRowIndex.value;
   focusedRowIndex.value = clickedIndex;
-  
   logFocus("FileTable", `Row clicked: Focus moved to row ${clickedIndex}`, {
     jobId: props.jobId,
     fileName: sortedFiles.value[clickedIndex]?.name,
@@ -1245,14 +1086,11 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
     checkboxMode: userPreferencesStore.checkboxMode,
     autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
   });
-
   const isCtrlPressed = event.ctrlKey || event.metaKey;
-
   if (event.shiftKey && lastClickedIndex.value !== null) {
     const start = Math.min(lastClickedIndex.value, clickedIndex);
     const end = Math.max(lastClickedIndex.value, clickedIndex);
     const rangePaths = sortedFiles.value.slice(start, end + 1).map((f) => f.path);
-
     // If file table is active, add the new range to existing selection instead of replacing
     if (isActive.value && selectedFiles.value.length > 0) {
       const selectionSet = new Set(selectedFiles.value);
@@ -1261,7 +1099,6 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
     } else {
       selectedFiles.value = rangePaths;
     }
-    
     // Auto check on select: if checkbox mode is enabled and auto check is enabled, 
     // automatically check the checkboxes for the range
     if (userPreferencesStore.checkboxMode && userPreferencesStore.autoCheckOnSelect) {
@@ -1269,7 +1106,6 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
       const checkedSet = new Set(checkedFiles.value);
       rangePaths.forEach((p) => checkedSet.add(p));
       checkedFiles.value = Array.from(checkedSet);
-      
       logFocus("FileTable", "Auto check on select: Range automatically checked", {
         jobId: props.jobId,
         rangeSize: rangePaths.length,
@@ -1283,7 +1119,6 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
     toggleFileSelection(path);
   } else {
     selectedFiles.value = [path];
-    
     // Auto check on select: if checkbox mode is enabled and auto check is enabled, 
     // automatically check the checkbox when selecting a row
     if (userPreferencesStore.checkboxMode && userPreferencesStore.autoCheckOnSelect) {
@@ -1291,7 +1126,6 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
       if (!checkedFiles.value.includes(path)) {
         checkedFiles.value.push(path);
       }
-      
       logFocus("FileTable", "Auto check on select: File automatically checked", {
         jobId: props.jobId,
         fileName: sortedFiles.value[clickedIndex]?.name,
@@ -1304,7 +1138,6 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
   lastClickedIndex.value = clickedIndex;
   isActive.value = true;
 };
-
 const handleRootClick = (event: MouseEvent) => {
   isActive.value = true;
   // If we recently ended a marquee drag, ignore this root click (it comes from the mouseup)
@@ -1331,7 +1164,6 @@ const handleRootClick = (event: MouseEvent) => {
   // Otherwise deselect all
   deselectAll();
 };
-
 const handleRootContextMenu = (event: MouseEvent) => {
   // Make the file table active when right-clicking anywhere in it
   isActive.value = true;
@@ -1340,10 +1172,8 @@ const handleRootContextMenu = (event: MouseEvent) => {
     target: (event.target as HTMLElement)?.className
   });
 };
-
 const toggleAll = (): void => {
   if (!props.isSelectable) return;
-  
   if (userPreferencesStore.checkboxMode) {
     // In checkbox mode, toggle the checked state of all files
     if (allSelected.value) {
@@ -1395,13 +1225,11 @@ const toggleAll = (): void => {
   }
   lastClickedIndex.value = null;
 };
-
 const deselectAll = () => {
   if (!props.isSelectable) return;
   const previousSelectionCount = selectedFiles.value.length;
   const previousCheckedCount = checkedFiles.value.length;
   selectedFiles.value = [];
-  
   // When auto check on select is enabled, checked files are tied to selection
   // So when deselecting, we should also clear checked files
   if (userPreferencesStore.checkboxMode && userPreferencesStore.autoCheckOnSelect) {
@@ -1411,10 +1239,8 @@ const deselectAll = () => {
     checkedFiles.value = [];
   }
   // In checkbox mode with auto check disabled, preserve checked files
-  
   lastClickedIndex.value = null;
   // Keep focus on the last focused row even when deselecting
-  
   logFocus("FileTable", `Deselect all: Cleared all selections${userPreferencesStore.checkboxMode && userPreferencesStore.autoCheckOnSelect ? ' and checkboxes (auto check enabled)' : !userPreferencesStore.checkboxMode ? ' and checkboxes' : ''}`, {
     jobId: props.jobId,
     previousSelectionCount,
@@ -1423,11 +1249,9 @@ const deselectAll = () => {
     autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
   });
 };
-
 // Initialize focus on the last selected row or first row
 const initializeFocus = () => {
   if (sortedFiles.value.length === 0) return;
-  
   // If there are selected files, focus on the first selected file
   if (selectedFiles.value.length > 0) {
     const firstSelectedPath = selectedFiles.value[0];
@@ -1444,7 +1268,6 @@ const initializeFocus = () => {
       return;
     }
   }
-  
   // If no selected files or selected file not found, focus on first row
   focusedRowIndex.value = 0;
   logFocus("FileTable", `Initialize focus: Focused on first row (no selection)`, {
@@ -1455,14 +1278,12 @@ const initializeFocus = () => {
     autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
   });
 };
-
 const handleDragStart = (event: DragEvent, path: string) => {
   if (!props.itemDragEnabled) {
     event.preventDefault();
     return;
   }
   let pathsToDrag: string[];
-
   if (actionItems.value.includes(path)) {
     pathsToDrag = [...actionItems.value];
   } else {
@@ -1473,7 +1294,6 @@ const handleDragStart = (event: DragEvent, path: string) => {
     }
     pathsToDrag = [path];
   }
-
   if (event.dataTransfer) {
     event.dataTransfer.setData(
       "text/plain",
@@ -1481,12 +1301,10 @@ const handleDragStart = (event: DragEvent, path: string) => {
     );
     event.dataTransfer.effectAllowed = "copyMove";
   }
-
   isActive.value = true;
   dragDropStore.startInternalDrag(pathsToDrag, null, props.jobId);
   logDragDropEvent("FileTable", `Native drag started for ${pathsToDrag.length} files from job ${props.jobId}.`);
 };
-
 const handleDragEnd = () => {
   logDragDropEvent("FileTable", "Native drag ended.");
   setTimeout(() => {
@@ -1496,25 +1314,19 @@ const handleDragEnd = () => {
     }
   }, 50);
 };
-
 // --- DRAG-TO-SCROLL FUNCTIONALITY ---
 let dragScrollRaf: number | null = null;
 let dragScrollSpeed = 0;
 let dragScrollDirection: 'up' | 'down' | 'left' | 'right' | null = null;
-
 const startDragScroll = (event: MouseEvent) => {
   if (!dragDropStore.isInternalDragActive || !viewportRef.value) return;
-  
   const rect = viewportRef.value.getBoundingClientRect();
   const edgeDistance = 30; // pixels from edge to start scrolling
-  
   const mouseX = event.clientX;
   const mouseY = event.clientY;
-  
   // Determine scroll direction and speed
   let direction: 'up' | 'down' | 'left' | 'right' | null = null;
   let speed = 0;
-  
   if (mouseY < rect.top + edgeDistance) {
     direction = 'up';
     speed = Math.max(2, Math.min(15, (edgeDistance - (mouseY - rect.top)) / 2));
@@ -1528,23 +1340,19 @@ const startDragScroll = (event: MouseEvent) => {
     direction = 'right';
     speed = Math.max(2, Math.min(15, (mouseX - (rect.right - edgeDistance)) / 2));
   }
-  
   if (direction && speed > 0) {
     if (dragScrollDirection !== direction) {
       logUI("FileTable", `Drag scroll started: ${direction} at speed ${speed}`);
     }
     dragScrollDirection = direction;
     dragScrollSpeed = speed;
-    
     if (!dragScrollRaf) {
       const tick = () => {
         if (!viewportRef.value || !dragDropStore.isInternalDragActive) {
           stopDragScroll();
           return;
         }
-        
         const scrollAmount = Math.floor(dragScrollSpeed);
-        
         switch (dragScrollDirection) {
           case 'up':
             viewportRef.value.scrollTop = Math.max(0, viewportRef.value.scrollTop - scrollAmount);
@@ -1565,10 +1373,8 @@ const startDragScroll = (event: MouseEvent) => {
             );
             break;
         }
-        
         dragScrollRaf = requestAnimationFrame(tick);
       };
-      
       dragScrollRaf = requestAnimationFrame(tick);
     }
   } else {
@@ -1578,7 +1384,6 @@ const startDragScroll = (event: MouseEvent) => {
     stopDragScroll();
   }
 };
-
 const stopDragScroll = () => {
   if (dragScrollRaf) {
     cancelAnimationFrame(dragScrollRaf);
@@ -1587,41 +1392,32 @@ const stopDragScroll = () => {
   dragScrollDirection = null;
   dragScrollSpeed = 0;
 };
-
 // --- MISSING FUNCTIONS THAT WERE ACCIDENTALLY REMOVED ---
 const removeSelectedFiles = (): void => {
   emit("remove-files", actionItems.value);
 };
-
 const moveToJob = (targetJobId: number): void => {
   emit("move-files", { targetJobId, files: actionItems.value });
 };
-
 const moveToNewJob = (): void => {
   emit("move-to-new-job", actionItems.value);
 };
-
 const copyToJob = (targetJobId: number): void => {
   emit("copy-files", { targetJobId, files: actionItems.value });
 };
-
 const copyToNewJob = (): void => {
   emit("copy-to-new-job", actionItems.value);
 };
-
 const handleAddFile = async (files: string[]): Promise<void> => {
   emit("add-files", files);
 };
-
 const handleAddFolder = async (folders: string[]): Promise<void> => {
   emit("add-folders", folders);
 };
-
 const removeFile = (path: string): void => {
   // Emit the path as a string so parent can decide whether to act on the full selection
   emit("remove-files", path);
 };
-
 const moveFile = (targetJobId: number, pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
@@ -1630,7 +1426,6 @@ const moveFile = (targetJobId: number, pathOrPaths: string | string[]): void => 
     : [pathOrPaths];
   emit("move-files", { targetJobId, files: paths });
 };
-
 const moveFileToNewJob = (pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
@@ -1640,7 +1435,6 @@ const moveFileToNewJob = (pathOrPaths: string | string[]): void => {
   // Emit array so parent can use selection if appropriate
   emit("move-to-new-job", paths);
 };
-
 const copyFile = (targetJobId: number, pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
@@ -1649,7 +1443,6 @@ const copyFile = (targetJobId: number, pathOrPaths: string | string[]): void => 
     : [pathOrPaths];
   emit("copy-files", { targetJobId, files: paths });
 };
-
 const copyFileToNewJob = (pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
@@ -1659,26 +1452,21 @@ const copyFileToNewJob = (pathOrPaths: string | string[]): void => {
   // Emit array so parent can use selection if appropriate
   emit("copy-to-new-job", paths);
 };
-
 // Handler for context menu copy events (different format)
 const handleContextMenuCopyFiles = (payload: { targetJobId: number; rightClickedPath: string }): void => {
   emit("copy-files", payload);
 };
-
 // Handler for context menu move events (different format)
 const handleContextMenuMoveFiles = (payload: { targetJobId: number; rightClickedPath: string }): void => {
   emit("move-files", payload);
 };
-
 const setFileMenuRef = (file: FileItem, el: any) => {
   if (el) {
     fileMenuRefs.value.set(file.path, el);
   }
 };
-
 const handleContextMenu = (file: FileItem, event: MouseEvent, preserveSelection: boolean) => {
   if (!isSelectableEnabled.value) return;
-  
   // Make the file table active when right-clicking on any file
   isActive.value = true;
   logFocus("FileTable", "Context menu - activating file table", {
@@ -1686,7 +1474,6 @@ const handleContextMenu = (file: FileItem, event: MouseEvent, preserveSelection:
     filePath: file.path,
     preserveSelection
   });
-  
   // If not preserving selection (i.e., right-clicked outside .item-name-content), deselect all
   if (!preserveSelection) {
     selectedFiles.value = [];
@@ -1705,7 +1492,6 @@ const handleContextMenu = (file: FileItem, event: MouseEvent, preserveSelection:
        }
      }
   }
-  
   // Context menu is handled by the FileTableRow component
   const menuRef = fileMenuRefs.value.get(file.path);
   if (menuRef) {
@@ -1714,7 +1500,6 @@ const handleContextMenu = (file: FileItem, event: MouseEvent, preserveSelection:
     // Fallback: if menu ref is not available, try to find it in the DOM
     // This can happen if the component just updated and refs haven't been re-established
     logLifecycle("FileTable", `Menu ref not found for ${file.path}, attempting fallback`);
-    
     // Wait for next tick to allow refs to be established
     nextTick(() => {
       const retryMenuRef = fileMenuRefs.value.get(file.path);
@@ -1726,7 +1511,6 @@ const handleContextMenu = (file: FileItem, event: MouseEvent, preserveSelection:
     });
   }
 };
-
 const handleContextMenuClosed = () => {
   // Set flag to prevent outside click handler from deactivating file table
   isClosingContextMenu.value = true;
@@ -1738,7 +1522,6 @@ const handleContextMenuClosed = () => {
   });
   emit('file-table-context-menu-closed');
 };
-
 const handleDropdownOpened = () => {
   if (DEBUG && debugConfig.logUIInteractivity) {
     logUI("FileTable", "handleDropdownOpened called", { jobId: props.jobId });
@@ -1750,32 +1533,26 @@ const handleDropdownOpened = () => {
     isActive.value = true;
   });
 };
-
 // --- LOGGING ---
 watch(visibleFiles, (newVisibleFiles) => {
   logRendering("FileTable", `Virtual scroll update: now showing ${newVisibleFiles.length} files.`);
 });
-
 // Watch for changes in the files prop to ensure component updates when files are added/removed
 watch(() => props.files, (newFiles, oldFiles) => {
   logRendering("FileTable", `Files prop changed: ${oldFiles?.length || 0} -> ${newFiles?.length || 0} files`);
-  
   // Only force refresh if the number of files changed significantly or if it's a small change
   const fileCountDiff = Math.abs((newFiles?.length || 0) - (oldFiles?.length || 0));
   const shouldForceRefresh = fileCountDiff > 10 || fileCountDiff === 0 || (newFiles?.length || 0) < 50;
-  
   if (shouldForceRefresh) {
     // Use debounced force refresh for better performance during batch operations
     debouncedForceRefresh();
   }
-  
   // Initialize focus when files change (e.g., on refresh)
   if (newFiles.length > 0 && focusedRowIndex.value === null) {
     nextTick(() => {
       initializeFocus();
     });
   }
-  
   // Ensure virtual scrolling updates when files are added/removed
   // Use a debounced approach to avoid excessive updates during batch operations
   if (fileCountDiff > 0) {
@@ -1788,7 +1565,6 @@ watch(() => props.files, (newFiles, oldFiles) => {
     });
   }
 }, { deep: true });
-
 // Watch for force refresh changes to ensure virtual scrolling updates
 // This is now handled by the debounced approach, so we can remove this watch
 // watch(() => forceRefresh.value, (newValue, oldValue) => {
@@ -1804,32 +1580,26 @@ watch(() => props.files, (newFiles, oldFiles) => {
 //     });
 //   }
 // });
-
 // Emit selection changes so parent components (e.g., JobArea) stay in sync
 watch(selectedFiles, (newSelection) => {
   emit("selection-changed", newSelection);
 });
-
 watch(columnStyles, (newStyle) => {
   logRendering("FileTable", `Column styles updated`, newStyle);
 });
-
 // --- LIFECYCLE HOOKS ---
 onMounted(() => {
   // NOOP: already handled above
 });
-
 onBeforeUpdate(() => {
   // Don't clear menu refs immediately - let them be cleared naturally when components unmount
   // This prevents the "initial right click doesn't work" issue
   updateStartTime = performance.now();
   logLifecycle("FileTable", "Component is about to update...");
 });
-
 onUpdated(() => {
   const updateDuration = performance.now() - updateStartTime;
   logLifecycle("FileTable", `Component has been updated. Update duration: ${updateDuration.toFixed(2)}ms`);
-  
   // Clean up stale menu refs after update
   // Only keep refs for files that are still in the current visible files
   const visibleFilePaths = new Set(visibleFiles.value.map(f => f.path));
@@ -1839,7 +1609,6 @@ onUpdated(() => {
     }
   }
 });
-
 watch(scrollComponentRef, (newRef) => {
   if (newRef) {
     const osInstance = newRef.osInstance();
@@ -1860,7 +1629,6 @@ watch(scrollComponentRef, (newRef) => {
         if (contentEl) {
           contentEl.style.setProperty("-webkit-overflow-scrolling", "auto");
         }
-        
         // Force recalculation of virtual scrolling when viewport is set up
         nextTick(() => {
           if (viewportEl) {
@@ -1875,31 +1643,25 @@ watch(scrollComponentRef, (newRef) => {
     }
   }
 });
-
 // --- Global marquee blocker (app-level overlay) ---
 let globalMarqueeBlocker: HTMLElement | null = null;
 // Reference to the global click handler so it can be removed on unmount
 let globalClickHandler: ((e: MouseEvent) => void) | null = null;
 let globalOutsideClickHandler: ((e: MouseEvent) => void) | null = null;
-
 onMounted(() => {
   logLifecycle("FileTable", "Component has been mounted.");
-
   // Add global drag scroll listeners
   const handleGlobalDragMove = (event: MouseEvent) => {
     if (dragDropStore.isInternalDragActive) {
       startDragScroll(event);
     }
   };
-  
   const handleGlobalDragEnd = () => {
     stopDragScroll();
   };
-  
   window.addEventListener('mousemove', handleGlobalDragMove);
   window.addEventListener('dragend', handleGlobalDragEnd);
   window.addEventListener('keydown', handleKeyDown);
-  
   // Store the handlers for cleanup
   const cleanup = () => {
     window.removeEventListener('mousemove', handleGlobalDragMove);
@@ -1907,17 +1669,14 @@ onMounted(() => {
     window.removeEventListener('keydown', handleKeyDown);
     stopDragScroll();
   };
-  
   // Clean up on unmount
   onUnmounted(cleanup);
-
   // Initialize focus when component is mounted
   nextTick(() => {
     if (sortedFiles.value.length > 0) {
       initializeFocus();
     }
   });
-
   // Watch the root element for class changes so we can diagnose 'is-active' toggles
   try {
     nextTick(() => {
@@ -1933,7 +1692,6 @@ onMounted(() => {
             logLifecycle("FileTable", `root initial classes: ${root.className}`);
           }
         }
-
         fileTableClassObserver = new MutationObserver((muts) => {
           for (const m of muts) {
             if (m.type === "attributes" && m.attributeName === "class") {
@@ -1950,7 +1708,6 @@ onMounted(() => {
   } catch (err) {
     // ignore
   }
-
   // create a global blocker appended to body so it captures pointer events outside this component
   try {
     globalMarqueeBlocker = document.createElement("div");
@@ -1963,13 +1720,11 @@ onMounted(() => {
       zIndex: "2000",
       pointerEvents: "auto",
     });
-
     // Watch marquee active state to add/remove from DOM
     watch(
       () => isMarqueeActive.value,
       (val) => {
         if (!globalMarqueeBlocker) return;
-
         if (val) {
           // Add to DOM when marquee becomes active
           if (!document.body.contains(globalMarqueeBlocker)) {
@@ -1986,7 +1741,6 @@ onMounted(() => {
   } catch (err) {
     // ignore if DOM unavailable
   }
-  
   // install a global click handler to deselect when clicking empty space inside .job-content
   // store handler reference so it can be removed on unmount
   globalClickHandler = (event: MouseEvent) => {
@@ -2007,16 +1761,12 @@ onMounted(() => {
       }
     }
   };
-
   window.addEventListener("click", globalClickHandler);
-  
   // Add global outside click handler to deactivate file table when clicking outside
   globalOutsideClickHandler = (event: MouseEvent) => {
     if (skipRootClick.value || isMarqueeActive.value || wasMarqueeActive.value || isClosingContextMenu.value) return;
-    
     const target = event.target as HTMLElement;
     const fileTableElement = fileTableCompRef.value;
-    
     // Check if click is outside the file table component
     if (fileTableElement && !fileTableElement.contains(target)) {
       // Don't deactivate if clicking on toolbar or other file table related elements
@@ -2024,13 +1774,11 @@ onMounted(() => {
                                 target.closest(".file-table-comp") ||
                                 target.closest(".job-content") ||
                                 target.closest(".dropdown-menu");
-      
       // Additional protection: if the click target is the body or html element
       // and we recently had marquee activity, don't deactivate
       if ((target.tagName === 'BODY' || target.tagName === 'HTML') && skipRootClick.value) {
         return;
       }
-      
       if (!isFileTableRelated) {
         logFocus("FileTable", "Outside click detected, deactivating file table", {
           jobId: props.jobId,
@@ -2040,9 +1788,7 @@ onMounted(() => {
       }
     }
   };
-  
   window.addEventListener("click", globalOutsideClickHandler);
-  
   // Listen for app-level outside clicks to deactivate job-content
   const outsideHandler = () => {
     logFocus("FileTable", "outsideHandler called", {
@@ -2050,7 +1796,6 @@ onMounted(() => {
       currentIsActive: isActive.value,
       selectedJobId: jobsStore.selectedJobId
     });
-    
     // Only deactivate if this is not the currently selected job
     // This prevents the file table from becoming inactive when context menus close
     if (props.jobId !== jobsStore.selectedJobId) {
@@ -2062,7 +1807,6 @@ onMounted(() => {
   };
   window.addEventListener("app:clicked-outside-job-content", outsideHandler as EventListener);
 });
-
 onUnmounted(() => {
   if (globalMarqueeBlocker && globalMarqueeBlocker.parentElement) {
     globalMarqueeBlocker.parentElement.removeChild(globalMarqueeBlocker);
@@ -2077,14 +1821,12 @@ onUnmounted(() => {
     globalOutsideClickHandler = null;
   }
   window.removeEventListener("app:clicked-outside-job-content", (() => {}) as EventListener);
-  
   // Clean up force refresh timeout
   if (forceRefreshTimeout) {
     clearTimeout(forceRefreshTimeout);
     forceRefreshTimeout = null;
   }
 });
-
 // Programmatic setter so parents can toggle active state. Log for debugging.
 const setActive = (val: boolean) => {
   try {
@@ -2093,7 +1835,6 @@ const setActive = (val: boolean) => {
       currentIsActive: isActive.value,
       allowActivation: allowActivation.value
     });
-    
     if (!allowActivation.value) {
       // ignore attempts to activate when activatable is false
       logFocus("FileTable", "setActive ignored - activation not allowed");
@@ -2101,13 +1842,11 @@ const setActive = (val: boolean) => {
     }
     const prev = isActive.value;
     isActive.value = !!val;
-    
     logFocus("FileTable", `setActive completed -> ${isActive.value} (was ${prev})`, {
       jobId: props.jobId,
       previousValue: prev,
       newValue: isActive.value
     });
-    
     // log lifecycle/state change
     try {
       // prefer logLifecycle (component state changes)
@@ -2127,11 +1866,9 @@ const setActive = (val: boolean) => {
     // ignore
   }
 };
-
 const handleRefreshFiles = (): void => {
   // Use debounced force refresh for better performance
   debouncedForceRefresh();
-  
   // Force the component to re-render by triggering reactive updates
   nextTick(() => {
     // Ensure the virtual scrolling calculations are updated
@@ -2140,16 +1877,13 @@ const handleRefreshFiles = (): void => {
       const scrollEvent = new Event('scroll', { bubbles: true });
       viewportRef.value.dispatchEvent(scrollEvent);
     }
-    
     // Force focus initialization if needed
     if (sortedFiles.value.length > 0 && focusedRowIndex.value === null) {
       initializeFocus();
     }
-    
     logUI("FileTable", "Refresh files triggered - forcing re-render and recalculations");
   });
 };
-
 // Expose methods to parent components
 defineExpose({
   deselectAll,
@@ -2159,20 +1893,17 @@ defineExpose({
   isClosingContextMenu,
   handleRefreshFiles,
 });
-
 // Watch isActive to add/remove the visual class only when activation allowed
 watch(
   () => isActive.value,
   (val) => {
     const root = fileTableCompRef.value;
     if (!root) return;
-    
     logFocus("FileTable", `isActive watcher triggered: val=${val}, allowActivation=${allowActivation.value}`, {
       jobId: props.jobId,
       hasRoot: !!root,
       currentClasses: root.className
     });
-    
     if (allowActivation.value) {
       if (val) {
         root.classList.add("is-active");
@@ -2188,7 +1919,6 @@ watch(
     }
   }
 );
-
 // Watch drag state to reactivate file table when drag operations end
 watch(
   () => dragDropStore.isInternalDragActive,
@@ -2201,7 +1931,6 @@ watch(
     }
   }
 );
-
 // Watch focus changes for logging
 watch(
   () => focusedRowIndex.value,
@@ -2220,11 +1949,9 @@ watch(
     }
   }
 );
-
 // Handle keyboard navigation
 const handleKeyDown = (event: KeyboardEvent) => {
   if (!isActive.value || sortedFiles.value.length === 0) return;
-
   switch (event.key) {
     case 'ArrowUp':
       event.preventDefault();
@@ -2238,7 +1965,6 @@ const handleKeyDown = (event: KeyboardEvent) => {
           checkboxMode: userPreferencesStore.checkboxMode,
           autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
         });
-        
         // Directory Opus behavior: 
         // - Without Ctrl: deselect all, then select the newly focused row
         // - With Ctrl: only move focus, don't affect selection
@@ -2253,7 +1979,6 @@ const handleKeyDown = (event: KeyboardEvent) => {
             autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
           });
           }
-          
           // Select the newly focused row
           const focusedFile = sortedFiles.value[newIndex];
           if (focusedFile) {
@@ -2298,7 +2023,6 @@ const handleKeyDown = (event: KeyboardEvent) => {
           checkboxMode: userPreferencesStore.checkboxMode,
           autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
         });
-        
         // Directory Opus behavior: 
         // - Without Ctrl: deselect all, then select the newly focused row
         // - With Ctrl: only move focus, don't affect selection
@@ -2313,7 +2037,6 @@ const handleKeyDown = (event: KeyboardEvent) => {
             autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
           });
           }
-          
           // Select the newly focused row
           const focusedFile = sortedFiles.value[newIndex];
           if (focusedFile) {
@@ -2383,14 +2106,11 @@ const handleKeyDown = (event: KeyboardEvent) => {
       // Spacebar: check/uncheck files when auto check is disabled and files are selected
       if (userPreferencesStore.checkboxMode && !userPreferencesStore.autoCheckOnSelect && selectedFiles.value.length > 0) {
         event.preventDefault();
-        
         // Toggle checkbox state for all selected files
         const selectedSet = new Set(selectedFiles.value);
         const checkedSet = new Set(checkedFiles.value);
-        
         // If all selected files are checked, uncheck them; otherwise check them
         const allSelectedAreChecked = selectedFiles.value.every(file => checkedSet.has(file));
-        
         if (allSelectedAreChecked) {
           // Uncheck all selected files
           checkedFiles.value = checkedFiles.value.filter(file => !selectedSet.has(file));
@@ -2427,7 +2147,6 @@ const handleKeyDown = (event: KeyboardEvent) => {
       break;
   }
 };
-
 // Reserve space for the loading backdrop so dialogs/modals don't jump
 // Use the same height as the table would have if loaded
 // This is now handled by loadingBackdropStyle
@@ -2438,5 +2157,4 @@ const handleKeyDown = (event: KeyboardEvent) => {
 //   };
 // });
 </script>
-
 <style scoped src="./file-table-comp/file-table.scoped.css"></style>

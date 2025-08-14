@@ -1,7 +1,5 @@
 // types/pinia.d.ts
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
-
 import "pinia";
 import "pinia-plugin-persistedstate";
 import type {
@@ -11,12 +9,10 @@ import type {
   _ActionsTree,
   StateTree,
 } from "pinia";
-
 type PersistOptions =
   | boolean
   | import("pinia-plugin-persistedstate").PersistedStateOptions
   | Array<import("pinia-plugin-persistedstate").PersistedStateOptions>;
-
 declare module "pinia" {
   export interface DefineStoreOptions<
     _Id extends string, // Prefixed with underscore
@@ -26,7 +22,6 @@ declare module "pinia" {
   > {
     persist?: PersistOptions;
   }
-
   export interface DefineSetupStoreOptions<
     _Id extends string,
     _SS extends StateTree,

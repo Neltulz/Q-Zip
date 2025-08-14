@@ -1,11 +1,9 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   ModalContainer.vue @preserve
 -->
 <!-- components/ModalContainer.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   ModalContainer.vue @preserve
 -->
 <!--
@@ -31,14 +29,11 @@
     </template>
   </div>
 </template>
-
 <script setup lang="ts">
 import { defineAsyncComponent, type Component, watchEffect } from "vue";
 import { useModalsStore } from "@/stores/modalsStore";
 import { logStoreAction } from "@/utils/loggers";
-
 const modalsStore = useModalsStore();
-
 // Watch for changes in the activeModals array and log them.
 // This will confirm if the component is reacting to store updates.
 watchEffect(() => {
@@ -47,7 +42,6 @@ watchEffect(() => {
     modals: JSON.parse(JSON.stringify(modalsStore.activeModals)), // Deep copy for logging
   });
 });
-
 // Manually define async components for modal content. This avoids issues with
 // `import.meta.glob` type definitions not being found in the project's
 // TypeScript configuration.
@@ -56,7 +50,6 @@ const modalContentComponents: Record<string, Component> = {
   ResetConfirmationModalContent: defineAsyncComponent(() => import("@/components/modals/ResetConfirmationModalContent.vue")),
 };
 </script>
-
 <style scoped>
 #modal-container {
   position: absolute;

@@ -1,6 +1,5 @@
 <!-- components/page-components/PageProgress.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   PageProgress.vue @preserve
 -->
 <template>
@@ -12,7 +11,6 @@
       <template #big-text>Progress</template>
       <template #description>Monitoring job execution.</template>
     </PageHeader>
-
     <div class="main-content">
       <div class="progress-page-content">
         <div v-for="job in jobs" :key="job.id">
@@ -22,17 +20,14 @@
         </div>
       </div>
     </div>
-
     <BottomButtons div-id="progress-bottom-buttons">
       <CustomButton data-name="back-to-queue-btn" @click="navStore.setActivePage('JobQueue')">Back to Queue</CustomButton>
     </BottomButtons>
   </div>
 </template>
-
 <script setup lang="ts">
 import { useJobsStore } from "@/stores/jobsStore";
 import { useNavigationStore } from "@/stores/navigationStore";
-
 const jobsStore = useJobsStore();
 const navStore = useNavigationStore();
 const jobs = jobsStore.jobs;

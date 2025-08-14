@@ -1,7 +1,5 @@
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
 // modalsStore.ts
-
 /**
  * @preserve
  * Description:
@@ -26,12 +24,10 @@
  *
  * // The ModalContainer component will automatically render this.
  */
-
 import { defineStore } from "pinia";
 import { ref, readonly, type Ref } from "vue";
 import { logStoreAction, logManagerAction } from "@/utils/loggers";
 import type { ActiveModal, ModalOptions } from "@/types/modal";
-
 export const useModalsStore = defineStore(
   "modals",
   () => {
@@ -39,7 +35,6 @@ export const useModalsStore = defineStore(
     const activeModals: Ref<ActiveModal[]> = ref([]);
     // Store for modal-specific data that can be passed to callbacks
     const modalData: Ref<Map<string, any>> = ref(new Map());
-
     // ACTIONS
     /**
      * Opens a new modal and adds it to the active stack.
@@ -57,7 +52,6 @@ export const useModalsStore = defineStore(
       const id = `modal-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       logStoreAction("modalsStore", `Opening modal: ${component} with ID: ${id}`, { options, props });
       logManagerAction("modalsStore", `Modal opening: ${component} (ID: ${id})`);
-
       activeModals.value.push({
         id,
         component,
@@ -65,10 +59,8 @@ export const useModalsStore = defineStore(
         props: props || {},
         onClose,
       });
-
       logManagerAction("modalsStore", `Modal opened: ${component} (ID: ${id}). Total active modals: ${activeModals.value.length}`);
     }
-
     /**
      * Sets data for a specific modal that will be passed to the callback when the modal closes.
      * @param modalId - The unique ID of the modal.
@@ -78,7 +70,6 @@ export const useModalsStore = defineStore(
       modalData.value.set(modalId, data);
       logManagerAction("modalsStore", `Set modal data for ${modalId}:`, data);
     }
-
     /**
      * Closes a specific modal by its ID and executes its onClose callback.
      * @param id - The unique ID of the modal to close.
@@ -87,25 +78,20 @@ export const useModalsStore = defineStore(
     function closeModal(id: string, action: string): void {
       logStoreAction("modalsStore", `Closing modal ID: ${id} with action: ${action}`);
       logManagerAction("modalsStore", `Modal closing: ID ${id} with action: ${action}`);
-
       const modal = activeModals.value.find((m) => m.id === id);
       const data = modalData.value.get(id);
-
       if (modal?.onClose) {
         logStoreAction("modalsStore", `Executing onClose callback for modal ID: ${id}`);
         logManagerAction("modalsStore", `Executing onClose callback for modal: ${modal.component} (ID: ${id})`);
         modal.onClose(action, data);
       }
-
       // Clean up modal data
       modalData.value.delete(id);
-
       const index = activeModals.value.findIndex((m) => m.id === id);
       if (index > -1) {
         activeModals.value.splice(index, 1);
         logStoreAction("modalsStore", `Removed modal ID: ${id} from active stack.`);
         logManagerAction("modalsStore", `Modal closed: ID ${id}. Remaining active modals: ${activeModals.value.length}`);
-
         // Check for any remaining modal elements in the DOM
         setTimeout(() => {
           const remainingModals = document.querySelectorAll('.modal-wrapper');
@@ -122,7 +108,6 @@ export const useModalsStore = defineStore(
         }, 100);
       }
     }
-
     /**
      * Closes all currently active modals.
      */
@@ -137,7 +122,6 @@ export const useModalsStore = defineStore(
       activeModals.value = [];
       modalData.value.clear();
     }
-
     return {
       activeModals: readonly(activeModals),
       openModal,

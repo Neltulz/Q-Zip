@@ -1,8 +1,6 @@
 /* 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   "components/title-bar-comp/title-bar.scoped.css" --for-- "components/TitleBar.vue" 
 */
-
 #title-bar {
   /* Place the title-bar inside the native decorum toolbar grid. */
   display: flex;
@@ -18,15 +16,12 @@
   z-index: 100;
   pointer-events: none;
 }
-
 #title-bar:deep(.custom-button) {
   z-index: 100;
 }
-
 #title-bar:deep(.custom-button:not(:disabled):not(.disabled)) {
   pointer-events: all;
 }
-
 #title-bar .header-content {
   align-items: center;
   display: grid;
@@ -34,7 +29,6 @@
   justify-content: center;
   width: 100%;
 }
-
 #title-bar .header-content > .dropdown-and-app-title-wrapper {
   align-items: center;
   display: flex;
@@ -46,19 +40,16 @@
   justify-self: start;
   z-index: 100;
 }
-
 #title-bar .header-content > .dropdown-and-app-title-wrapper .app-title-wrapper {
   align-items: baseline;
   column-gap: 0.3em;
   display: flex;
 }
-
 #title-bar .header-content > .dropdown-and-app-title-wrapper .app-title-wrapper .ver-num {
   color: var(--blu-lite);
   font-size: 0.8em;
   font-style: oblique;
 }
-
 #title-bar > .header-content > .center-nav-btns {
   display: flex;
   grid-column: 1 / span all;
@@ -70,20 +61,16 @@
   transition: opacity 500ms ease;
   z-index: 100;
 }
-
 #title-bar > .header-content > .center-nav-btns.disabled {
   opacity: 0.25;
   pointer-events: none;
 }
-
 #title-bar > .header-content > .center-nav-btns .btn-group {
   --btn-line-thickness: 2px;
-
   display: flex;
   padding-inline: 3px;
   position: relative;
 }
-
 #title-bar > .header-content > .center-nav-btns .btn-group:before {
   background-color: var(--bg-clr-liter);
   border-radius: var(--brdr-rad-smalr);
@@ -91,26 +78,22 @@
   inset: 2px;
   position: absolute;
 }
-
 #title-bar > .header-content > .center-nav-btns .btn-group .divider {
   border-inline-start: 1px solid var(--brdr-clr-liter);
   margin-block: 8px;
   transition: opacity 500ms ease;
   z-index: 100;
 }
-
 #title-bar > .header-content > .center-nav-btns .btn-group .custom-button {
   margin-inline: -3px;
   padding-inline: 2em;
 }
-
 #title-bar > .header-content > .center-nav-btns .btn-group .custom-button:hover + .divider,
 #title-bar > .header-content > .center-nav-btns .btn-group .divider:has(+ .custom-button:hover),
 #title-bar > .header-content > .center-nav-btns .btn-group .custom-button.active + .divider,
 #title-bar > .header-content > .center-nav-btns .btn-group .divider:has(+ .custom-button.active) {
   opacity: 0;
 }
-
 /* Zoom indicator sits in the middle column of the native toolbar grid.
    Use logical properties (inset-inline-end) when needed; prefer grid placement. */
 .titlebar-zoom-indicator {
@@ -120,14 +103,12 @@
   inset-inline-end: 0; /* logical equivalent of right: 0 */
   z-index: 100001;
 }
-
 .titlebar-zoom-indicator .zoom-indicator-btn {
   padding-inline: 8px;
   padding-block: 6px;
   font-size: 0.9em;
   pointer-events: auto; /* ensure the button can be clicked even if parent has pointer-events:none */
 }
-
 /* Ensure the drag region element (sometimes provided directly) is placed into
    the first grid cell so it occupies the main title area for dragging. */
 [data-tauri-decorum-tb] > [data-tauri-drag-region],

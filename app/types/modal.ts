@@ -1,7 +1,5 @@
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
 // modal.ts
-
 /**
  * @preserve
  * Description:
@@ -9,7 +7,6 @@
  * the modal system, ensuring type safety for modal options, buttons, and the
  * structure of active modals in the store.
  */
-
 export type BtnTheme =
   | "primary"
   | "danger"
@@ -20,9 +17,7 @@ export type BtnTheme =
   | "dark"
   | "darkr"
   | "default";
-
 export type JustifyContent = "auto" | "start" | "center" | "end" | "stretch";
-
 export interface ModalButton {
   readonly text: string;
   readonly action: string;
@@ -32,7 +27,6 @@ export interface ModalButton {
   readonly isDefault?: boolean;
   readonly justify?: JustifyContent;
 }
-
 export interface ModalOptions {
   readonly icon?: string;
   readonly title: string;
@@ -42,7 +36,6 @@ export interface ModalOptions {
   readonly footerJustifyContent?: string;
   readonly closeOnClickOutside?: boolean;
 }
-
 export interface ActiveModal {
   readonly id: string;
   readonly component: string;

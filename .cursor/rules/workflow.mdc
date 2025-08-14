@@ -1,0 +1,12 @@
+---
+description: "Development workflow and tooling guidelines for the Q-Zip project."
+globs: ["*"]
+alwaysApply: false
+---
+# Development Workflow
+- Always check the existing file structure before creating new files.
+- Follow the established patterns in the codebase.
+- Use the existing store structure (Pinia) for state management.
+- Maintain consistency with existing UI components and styling.
+- Use `pnpm` for all package management commands.
+- Provide PowerShell commands when applicable; do not use CMD.

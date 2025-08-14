@@ -1,21 +1,16 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   InfoTooltipContainer.vue @preserve
 -->
 <!-- components/InfoTooltipContainer.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   InfoTooltipContainer.vue @preserve
 -->
-
 <!--
   InfoTooltipContainer.vue
-
   What it is:
   - A floating tooltip component that teleports to the tooltip container and positions itself
     relative to a target element using @floating-ui/vue.
-
   What it does:
   - Shows either simple text (with optional shortcut parsing like "Copy (Ctrl+C)")
     or a structured notification payload (e.g., source/destination jobs and a
@@ -23,20 +18,17 @@
   - Automatically flips/offsets/shifts to stay in view and renders a styled arrow
     pointing at the target element.
   - Uses a lightweight fade transition and high-contrast, blurred backdrop styling.
-
   Key features:
   - Teleport to tooltip container for better organization
   - Smart positioning (offset, flip, shift, arrow)
   - Simple text mode with shortcut extraction
   - Rich details mode for notification/message details
   - Conditional rendering - only mounts in DOM when visible
-
   Props:
   - visible: boolean — Controls visibility and DOM mounting
   - content: TooltipContent (NotificationMessageDetails | { text: string }) — What to display
   - target: MaybeElement — The reference element for positioning
   - debugForceVisible: boolean — Forces visibility for debugging
-
   Example usage:
   <InfoTooltipContainer
     :visible="isTooltipVisible"
@@ -69,7 +61,6 @@
               <span v-if="parsedContent.shortcut" class="shortcut-key-text">{{ parsedContent.shortcut }}</span>
             </div>
           </template>
-
           <!-- Display structured notification details -->
           <template v-else-if="'filePaths' in content">
             <div v-if="content.sourceJobId" class="info-line"><strong>Source:</strong> Job {{ content.sourceJobId }}</div>
@@ -96,17 +87,14 @@
     </Transition>
   </teleport>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, toRef, watch, nextTick, type PropType } from "vue";
 import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
 import { logUI, logRendering } from "@/utils/loggers";
-
 // Allow a simple text property for more generic tooltips
 type TooltipContent = NotificationMessageDetails | { text: string };
-
 const props = defineProps({
   visible: {
     type: Boolean,
@@ -146,35 +134,25 @@ const props = defineProps({
     default: () => [],
   },
 });
-
 // Define emits for mouse events
 const emit = defineEmits<{
   mouseenter: [event: MouseEvent];
   mouseleave: [event: MouseEvent];
 }>();
-
 const floatingRef = ref<HTMLElement | null>(null);
 const arrowRef = ref(null);
-
-
-
 // Computed property to determine if tooltip should be rendered in DOM
 const shouldRender = computed(() => {
   return props.visible || props.debugForceVisible;
 });
-
-
-
 // Resolve the provided `target` prop to the "best" DOM element to anchor to.
 // If a CustomButton (or its wrapper) is passed, prefer its internal
 // `.visual-style` element when available so tooltips anchor to the visible surface.
 const resolvedTarget = computed(() => {
   const raw = (props as any).target;
   if (!raw) return null;
-
   // Unwrap refs if necessary
   const maybe = raw && (raw.value !== undefined ? raw.value : raw);
-
   // If a component instance exposing `visualStyleRef` was passed, use that
   if (maybe && typeof maybe === "object") {
     // Component proxy exposing a ref
@@ -193,17 +171,14 @@ const resolvedTarget = computed(() => {
       }
     }
   }
-
   // If an Element was passed, prefer its `.visual-style` child when present
   if (maybe instanceof Element) {
     const inner = (maybe as Element).querySelector?.(".visual-style");
     if (inner) return inner as Element;
     return maybe as Element;
   }
-
   return null;
 });
-
 // Transition handlers for smooth enter/leave animations
 const onEnter = (el: Element) => {
   // Ensure the element is properly positioned before showing
@@ -213,21 +188,18 @@ const onEnter = (el: Element) => {
     }
   });
 };
-
 const onLeave = (el: Element) => {
   // Clean up any positioning when leaving
   if (el instanceof HTMLElement) {
     el.style.opacity = '0';
   }
 };
-
 // Debug: when visible, optionally log resolved target and rect to help diagnose placement
 watch(
   () => props.visible,
   (v) => {
     // Disabled logging for InfoTooltip
     // logUI("InfoTooltip", "Visibility changed", { visible: v, interactive: props.interactive });
-    
     if (v) {
       try {
         const el = resolvedTarget.value as Element | null;
@@ -250,7 +222,6 @@ watch(
     }
   }
 );
-
 const { floatingStyles, middlewareData, placement } = useFloating(resolvedTarget, floatingRef, {
   placement: toRef(props, "placement"),
   whileElementsMounted: autoUpdate,
@@ -292,7 +263,6 @@ const { floatingStyles, middlewareData, placement } = useFloating(resolvedTarget
     }),
   ],
 });
-
 const side = computed(() => {
   const currentSide = placement.value.split("-")[0];
   // Disabled logging for InfoTooltip
@@ -301,7 +271,6 @@ const side = computed(() => {
   // }
   return currentSide;
 });
-
 const parsedContent = computed(() => {
   if ("text" in props.content) {
     const match = props.content.text.match(/\s*\(([^)]+)\)$/);
@@ -314,11 +283,9 @@ const parsedContent = computed(() => {
   }
   return null;
 });
-
 const arrowStyle = computed(() => {
   const { x, y } = middlewareData.value.arrow || {};
   const currentSide = side.value;
-  
   // Disabled logging for InfoTooltip
   // if (props.visible || props.debugForceVisible) {
   //   logRendering("InfoTooltip", "Arrow style computed", { 
@@ -328,16 +295,13 @@ const arrowStyle = computed(() => {
   //     placement: placement.value 
   //   });
   // }
-
   const logicalSideMap = {
     top: "inset-block-end",
     right: "inset-inline-start",
     bottom: "inset-block-start",
     left: "inset-inline-end",
   };
-
   const staticSide = logicalSideMap[currentSide as keyof typeof logicalSideMap];
-
   if (!staticSide) {
     // Disabled logging for InfoTooltip
     // if (props.visible || props.debugForceVisible) {
@@ -345,7 +309,6 @@ const arrowStyle = computed(() => {
     // }
     return {};
   }
-
   // Measure arrow element dimensions when available for precise positioning
   const arrowDimensions = (() => {
     try {
@@ -362,47 +325,38 @@ const arrowStyle = computed(() => {
     }
     return { width: 16, height: 9 };
   })();
-
   // Calculate offset to position arrow flush with tooltip edge
   const offsetValue = `-${Math.round(arrowDimensions.height)}px`;
-
   // Apply additional centering adjustments for better alignment
   let adjustedX = x;
   let adjustedY = y;
-
   // For right-side placement, ensure arrow is vertically centered
   if (currentSide === 'right' && y !== undefined) {
     // Center the arrow vertically on the target
     adjustedY = y;
   }
-
   // For bottom placement, ensure arrow is horizontally centered  
   if (currentSide === 'bottom' && x !== undefined) {
     // Center the arrow horizontally on the target
     adjustedX = x;
   }
-
   // Account for tooltip border radius and padding in arrow positioning
   const tooltipBorderRadius = 8; // Should match CSS border-radius
   const tooltipPadding = 10; // Should match CSS padding-inline
-  
   // Adjust arrow position to account for border radius
   if (currentSide === 'right' && adjustedX !== undefined) {
     // For right placement, ensure arrow doesn't get too close to the edge
     adjustedX = Math.max(tooltipPadding, adjustedX);
   }
-  
   if (currentSide === 'bottom' && adjustedY !== undefined) {
     // For bottom placement, ensure arrow doesn't get too close to the edge
     adjustedY = Math.max(tooltipPadding, adjustedY);
   }
-
   const style = {
     insetInlineStart: adjustedX != null ? `${adjustedX}px` : "",
     insetBlockStart: adjustedY != null ? `${adjustedY}px` : "",
     [staticSide]: offsetValue,
   };
-  
   // Disabled logging for InfoTooltip
   // if (props.visible || props.debugForceVisible) {
   //   logRendering("InfoTooltip", "Arrow style result", { 
@@ -416,26 +370,20 @@ const arrowStyle = computed(() => {
   // }
   return style;
 });
-
 const getFileName = (path: string) => {
   return path.split(/[\\/]/).pop() || path;
 };
-
-
 </script>
-
 <style scoped>
 /* Transition animations for smooth enter/leave */
 .tooltip-fade-enter-active,
 .tooltip-fade-leave-active {
   transition: opacity 240ms cubic-bezier(0.2, 0, 0, 1);
 }
-
 .tooltip-fade-enter-from,
 .tooltip-fade-leave-to {
   opacity: 0;
 }
-
 .info-tooltip {
   position: absolute;
   z-index: 10001;
@@ -454,7 +402,6 @@ const getFileName = (path: string) => {
   align-items: center;
   padding-block: 6px;
   padding-inline: 10px;
-
   .tooltip-arrow {
     position: absolute;
     inline-size: 16px;
@@ -463,7 +410,6 @@ const getFileName = (path: string) => {
     transform-origin: center;
     /* Prevent any layout shifts */
     pointer-events: none;
-
     path {
       fill: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
       stroke: var(--brdr-clr-liter);
@@ -471,7 +417,6 @@ const getFileName = (path: string) => {
       /* Ensure the path is centered within the SVG */
       vector-effect: non-scaling-stroke;
     }
-
     &[data-side="bottom"] {
       transform: rotate(180deg);
     }
@@ -482,11 +427,9 @@ const getFileName = (path: string) => {
       transform: rotate(90deg);
     }
   }
-
   .tooltip-content {
     font-size: 1em;
     color: var(--txt-clr-liter);
-
     .tooltip-text-content {
       display: flex;
       align-items: center;
@@ -497,27 +440,22 @@ const getFileName = (path: string) => {
       width: 100%;
       text-align: center;
     }
-
     /* Only center the simple text tooltip mode; keep other structured content left-aligned.
        Use a non-nested selector below to target when the root tooltip also has the
        `simple-tooltip` class (the previous nested selector was not matching). */
-
     .info-line {
       margin-block-end: 4px;
     }
-
     hr {
       border: none;
       border-block-start: 1px solid var(--brdr-clr);
       margin-block: 6px;
       margin-inline: 0;
     }
-
     .file-list-container {
       max-block-size: 200px;
       overflow-y: auto;
     }
-
     .file-list {
       list-style: none;
       padding-inline-start: 12px;
@@ -526,17 +464,14 @@ const getFileName = (path: string) => {
       margin-inline: 0;
       display: grid;
       gap: 2px;
-
       li {
         display: grid;
         grid-template-columns: 1fr auto;
         gap: 8px;
-
         .file-name {
           white-space: normal;
           word-break: break-all;
         }
-
         .reason {
           color: var(--txt-clr-dark);
           font-style: italic;
@@ -546,12 +481,10 @@ const getFileName = (path: string) => {
     }
   }
 }
-
 /* Only when it's visible AND interactive should it get pointer events */
 .info-tooltip.interactive {
   pointer-events: auto;
 }
-
 /* For simple-text tooltips, center the tooltip body itself so the arrow
    and content remain visually centered. Applying justify-content to the
    root `.info-tooltip` element is more reliable than targeting an inner

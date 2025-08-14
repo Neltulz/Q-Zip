@@ -1,8 +1,6 @@
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   FileTableToolbar.vue @preserve
 -->
-
 <template>
   <ToolBar v-if="showToolbar" class="file-table-toolbar" :class="{ 'is-active': isFiletableActive }" @click="handleToolbarClick">
     <template #start>
@@ -36,7 +34,6 @@
           </CustomButton>
         </template>
       </DropdownMenu>
-
       <CustomButton
         button-style-class="trans-btn"
         data-name="refresh-files-btn"
@@ -46,7 +43,6 @@
       >
         Refresh
       </CustomButton>
-
       <CustomButton
         button-style-class="trans-btn"
         data-btn-theme="danger"
@@ -175,7 +171,6 @@
         </template>
       </DropdownMenu>
     </template>
-
     <template #end>
       <DropdownMenu
         button-style-class="trans-btn"
@@ -224,7 +219,6 @@
     </template>
   </ToolBar>
 </template>
-
 <script setup lang="ts">
 import { computed } from "vue";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
@@ -233,14 +227,12 @@ import { open } from "@tauri-apps/plugin-dialog";
 import DropdownMenu from "../DropdownMenu.vue";
 import CustomButton from "../CustomButton.vue";
 import ToolBar from "../ToolBar.vue";
-
 const props = defineProps<{
   jobId: number;
   selectedFiles: string[];
   showToolbar?: boolean;
   isFiletableActive?: boolean;
 }>();
-
 const emit = defineEmits([
   "remove-files",
   "move-files",
@@ -252,15 +244,12 @@ const emit = defineEmits([
   "activate-filetable",
   "refresh-files",
 ]);
-
 const jobsStore = useJobsStore();
 const userPreferencesStore = useUserPreferencesStore();
 const jobs = computed(() => jobsStore.jobs);
-
 // Get preferences from store
 const checkboxMode = computed(() => userPreferencesStore.checkboxMode);
 const autoCheckOnSelect = computed(() => userPreferencesStore.autoCheckOnSelect);
-
 const handleAddFile = async (close: () => void): Promise<void> => {
   close();
   const selected: string[] | null = await open({
@@ -271,7 +260,6 @@ const handleAddFile = async (close: () => void): Promise<void> => {
     emit("add-files", selected);
   }
 };
-
 const handleAddFolder = async (close: () => void): Promise<void> => {
   close();
   const selected: string[] | null = await open({
@@ -282,40 +270,31 @@ const handleAddFolder = async (close: () => void): Promise<void> => {
     emit("add-folders", selected);
   }
 };
-
 const refreshFiles = (): void => {
   emit("refresh-files");
   emit("activate-filetable");
 };
-
 const removeSelectedFiles = (): void => {
   emit("remove-files", props.selectedFiles);
 };
-
 const moveToJob = (targetJobId: number): void => {
   emit("move-files", { targetJobId, files: props.selectedFiles });
 };
-
 const moveToNewJob = (): void => {
   emit("move-to-new-job", props.selectedFiles);
 };
-
 const copyToJob = (targetJobId: number): void => {
   emit("copy-files", { targetJobId, files: props.selectedFiles });
 };
-
 const copyToNewJob = (): void => {
   emit("copy-to-new-job", props.selectedFiles);
 };
-
 const toggleCheckboxMode = (): void => {
   userPreferencesStore.setCheckboxMode(!checkboxMode.value);
 };
-
 const toggleAutoCheckOnSelect = (): void => {
   userPreferencesStore.setAutoCheckOnSelect(!autoCheckOnSelect.value);
 };
-
 const handleToolbarClick = (event: Event): void => {
   // Prevent event bubbling to avoid triggering FileTable's deselect logic
   event.stopPropagation();
@@ -323,7 +302,6 @@ const handleToolbarClick = (event: Event): void => {
   emit("activate-filetable");
 };
 </script>
-
 <style scoped>
 .file-table-toolbar {
   --bg-clr: transparent;
@@ -331,35 +309,28 @@ const handleToolbarClick = (event: Event): void => {
   flex-shrink: 0;
   transition: background-color 0.2s ease;
 }
-
 /* Toolbar highlighting based on FileTable active state */
 .file-table-toolbar:not(.is-active) {
   background-color: var(--toolbar-inactive-bg, hsla(0, 0.00%, 50.20%, 0.10));
 }
-
 .file-table-toolbar.is-active {
   background-color: var(--toolbar-active-bg, hsla(211, 100.00%, 50.00%, 0.10));
 }
-
 /* Dark theme adjustments */
 :global(.dark) .file-table-toolbar:not(.is-active) {
   background-color: var(--toolbar-inactive-bg-dark, hsla(0, 0.00%, 50.20%, 0.15));
 }
-
 :global(.dark) .file-table-toolbar.is-active {
   background-color: var(--toolbar-active-bg-dark, hsla(211, 100.00%, 50.00%, 0.15));
 }
-
 /* Active state styling for checkbox mode and auto check buttons */
 :deep(.trans-btn.is-active) {
   background-color: var(--accent-clr, hsla(211, 100.00%, 50.00%, 0.20));
   color: var(--accent-clr, hsl(211, 100.00%, 50.00%));
 }
-
 :deep(.trans-btn.is-active:hover) {
   background-color: var(--accent-clr, hsla(211, 100.00%, 50.00%, 0.30));
 }
-
 /* Disabled state styling */
 :deep(.trans-btn:disabled) {
   opacity: 0.5;

@@ -16,7 +16,6 @@
   >
     <!-- Checkbox Cell -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   FileTableRow.vue @preserve
 -->
     <div v-if="showCheckboxes" class="item-checkbox">
@@ -35,7 +34,6 @@
     </div>
     <!-- Name Cell -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   FileTableRow.vue @preserve
 -->
     <div class="item-name">
@@ -66,7 +64,6 @@
     </div>
     <!-- Other Cells -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   FileTableRow.vue @preserve
 -->
     <div class="item-size">
@@ -125,13 +122,11 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { computed } from "vue";
 import type { FileItem } from "@/types/types";
 import CustomButton from "@/components/CustomButton.vue";
 import FileTableContextMenu from "./FileTableContextMenu.vue";
-
 const props = defineProps<{
   file: FileItem;
   jobId: number;
@@ -154,7 +149,6 @@ const props = defineProps<{
   rowIndex: number;
   isFileTableActive: boolean;
 }>();
-
 const emit = defineEmits<{
   'toggle-file-selection': [path: string];
   'click-row': [event: MouseEvent, path: string];
@@ -171,13 +165,11 @@ const emit = defineEmits<{
   'context-menu-closed': [];
   'dropdown-opened': [];
 }>();
-
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return "0.00";
   const mb = bytes / (1024 * 1024);
   return mb.toFixed(2);
 };
-
 // Memoized formatters to avoid constructing on every render
 const MODIFIED_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
@@ -186,87 +178,67 @@ const MODIFIED_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "numeric",
 });
-
 const CREATION_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
   month: "numeric",
   day: "numeric",
 });
-
 const formatModifiedDate = (timestamp: number): string => MODIFIED_DATE_FORMATTER.format(new Date(timestamp));
 const formatCreationDate = (timestamp: number): string => CREATION_DATE_FORMATTER.format(new Date(timestamp));
-
 // Check if this row is focused
 const isFocused = computed(() => props.focusedRowIndex === props.rowIndex);
-
 const normalizeTimestamp = (timestamp: number, range: { min: number; max: number }): number => {
   if (range.max === range.min) return 50; // If all items have the same date, show a half-bar
   // Invert the scale: older dates (smaller timestamps) should have a larger bar
   return 100 - ((timestamp - range.min) / (range.max - range.min)) * 100;
 };
-
 const toggleFileSelection = (path: string) => {
   emit('toggle-file-selection', path);
 };
-
 const clickRowByPath = (event: MouseEvent, path: string) => {
   emit('click-row', event, path);
 };
-
 const handleContextMenu = (file: FileItem, event: MouseEvent) => {
   // Check if the right-click target is the .item-name-content
   const target = event.target as Element;
   const isNameContent = target.closest('.item-name-content');
-  
   emit('context-menu', file, event, isNameContent !== null);
 };
-
 const handleContextMenuClosed = () => {
   emit('context-menu-closed');
 };
-
 const handleDropdownOpened = () => {
   console.log('FileTableRow: handleDropdownOpened called');
   emit('dropdown-opened');
 };
-
 const handleDragStart = (event: DragEvent, path: string) => {
   emit('drag-start', event, path);
 };
-
 const handleDragEnd = () => {
   emit('drag-end');
 };
-
 const removeFile = (path: string) => {
   emit('remove-file', path);
 };
-
 const handleContextMenuMoveFiles = (payload: { targetJobId: number; rightClickedPath: string }) => {
   emit('move-files', payload);
 };
-
 const moveFileToNewJob = (paths: string[]) => {
   emit('move-to-new-job', paths);
 };
-
 const handleContextMenuCopyFiles = (payload: { targetJobId: number; rightClickedPath: string }) => {
   emit('copy-files', payload);
 };
-
 const copyFileToNewJob = (paths: string[]) => {
   emit('copy-to-new-job', paths);
 };
-
 const handleSelectionChanged = (paths: string[]) => {
   emit('selection-changed', paths);
 };
-
 const setFileMenuRef = (file: FileItem, el: any) => {
   emit('set-file-menu-ref', file, el);
 };
 </script>
-
 <style scoped>
 /* Table Row Styles */
 .table-row {
@@ -277,63 +249,51 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   box-sizing: border-box;
   align-items: stretch;
   scroll-snap-align: start; /* Designate rows as snap points */
-
   &.is-folder {
     color: var(--blu-lite);
   }
-
   &:not(.is-folder).selected {
     background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.35);
     color: white;
   }
-
   &.is-folder.selected {
     background-color: hsla(var(--blu-hue), var(--blu-sat), var(--blu-lite-lum), 0.35);
     color: white;
   }
-
   /* Focus indicator - 1px border around the focused row */
   &.is-focused {
     outline: 1px solid var(--blu-lite);
     outline-offset: -1px;
   }
-
   /* Hide focus ring when table is inactive */
   &.table-inactive.is-focused {
     outline: none;
   }
-
   /* Dim selected row backgrounds when table is inactive */
   &.table-inactive.selected {
     opacity: 0.6;
   }
-
   &.table-inactive.is-folder.selected {
     opacity: 0.6;
   }
-
   /* Hover state - dimmer than selection */
   &:hover:not(.selected) {
     background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.15);
   }
-
   &.is-folder:hover:not(.selected) {
     background-color: hsla(var(--blu-hue), var(--blu-sat), var(--blu-lite-lum), 0.15);
   }
 }
-
 /* Preview selection state (visual only during marquee drag) */
 .table-row.preview-selected {
   background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.25);
   color: white;
 }
-
 /* Preview selection for folder rows: use a distinct blue tint during marquee preview */
 .table-row.is-folder.preview-selected {
   background-color: rgba(54, 115, 170, 0.25); /* bluish preview for folders */
   color: white;
 }
-
 /* Common Cell Styles */
 .table-row > div {
   padding-inline: 8px;
@@ -345,14 +305,12 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   /* Allow flex items to shrink below their content so text-overflow works */
   min-width: 0;
 }
-
 /* Ensure text within cell content stays vertically centered */
 .table-row > div .cell-text {
   display: block;
   height: 100%;
   line-height: 35px; /* Match row height for vertical centering */
 }
-
 /* Universal Text Truncation */
 .cell-text {
   overflow: hidden;
@@ -361,7 +319,6 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   display: block; /* Ensure block-level for proper text overflow */
   width: 100%; /* Take full width of container */
 }
-
 /* Ensure cell text elements are properly configured for text overflow */
 .table-row > div .cell-text {
   display: block; /* Change from flex to block for proper text overflow */
@@ -373,7 +330,6 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   white-space: nowrap;
   line-height: 35px; /* Match row height for vertical centering */
 }
-
 /* Individual Column Widths using CSS Variables */
 .item-checkbox {
   inline-size: var(--col-width-checkbox);
@@ -382,7 +338,6 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   padding-inline: 4px;
   cursor: default; /* Checkbox header is not sortable */
 }
-
 .item-name {
   inline-size: var(--col-width-name);
   min-inline-size: 150px;
@@ -393,19 +348,16 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   justify-content: flex-start; /* keep header text and sort indicator together */
   overflow: hidden;
 }
-
 .item-size {
   inline-size: var(--col-width-size);
   flex-shrink: 0;
   justify-content: flex-end;
 }
-
 .item-ext {
   inline-size: var(--col-width-ext);
   flex-shrink: 0;
   justify-content: flex-start;
 }
-
 .item-modified,
 .item-created {
   flex-shrink: 0;
@@ -416,7 +368,6 @@ const setFileMenuRef = (file: FileItem, el: any) => {
 .item-created {
   inline-size: var(--col-width-created);
 }
-
 .item-files,
 .item-folders,
 .item-files-total,
@@ -424,7 +375,6 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   flex-shrink: 0;
   justify-content: flex-end;
 }
-
 .item-files {
   inline-size: var(--col-width-files);
 }
@@ -437,13 +387,11 @@ const setFileMenuRef = (file: FileItem, el: any) => {
 .item-folders-total {
   inline-size: var(--col-width-folders-total);
 }
-
 .item-parent-path {
   inline-size: var(--col-width-parent-path);
   flex-shrink: 0;
   min-inline-size: 150px;
 }
-
 /* IMPORTANT: Do NOT add width: 100% or flex: 1 to .item-name-content
  * This element should only be as wide as its content (icon + text) to ensure
  * marquee drag selection works correctly. The selection box should only
@@ -460,12 +408,10 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   overflow: hidden;
   white-space: nowrap;
   min-width: 0;
-
   & > .iconify {
     flex-shrink: 0;
     min-width: 1em;
   }
-
   & > .cell-text {
     flex: 1;
     overflow: hidden;
@@ -475,14 +421,12 @@ const setFileMenuRef = (file: FileItem, el: any) => {
     display: block;
   }
 }
-
 /* Color folder icon yellow for rows that are folders */
 .table-row.is-folder .item-name-content > .iconify {
   color: var(--warning-clr, #f5c542);
   /* Ensure SVG inherits currentColor */
   fill: currentColor;
 }
-
 /* Data Bar Styles */
 .size-bar,
 .date-bar {
@@ -501,12 +445,10 @@ const setFileMenuRef = (file: FileItem, el: any) => {
 .date-bar {
   background-color: var(--warning-clr);
 }
-
 /* Folder rows: use a distinct color for date bars (modified/created) */
 .table-row.is-folder .date-bar {
   background-color: var(--folder-date-clr, #b355c9); /* magenta/purple fallback */
 }
-
 /* Wrapper span for data bar text is now .cell-text */
 .item-size .cell-text,
 .item-modified .cell-text,

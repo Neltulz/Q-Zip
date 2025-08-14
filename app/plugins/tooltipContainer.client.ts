@@ -1,7 +1,5 @@
 // app/plugins/tooltipContainer.client.ts
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
-
 export default defineNuxtPlugin(() => {
   // Create the tooltip container element immediately when the plugin loads
   // This ensures it exists before any components try to teleport to it

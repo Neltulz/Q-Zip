@@ -1,11 +1,9 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   NotificationDisplay.vue @preserve
 -->
 <!-- components/NotificationDisplay.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   NotificationDisplay.vue @preserve
 -->
 <template>
@@ -21,7 +19,6 @@
     <div class="popover__indicator-container">
       <div ref="indicatorRef" class="popover__indicator"></div>
     </div>
-
     <CustomButton
       button-style-class="trans-btn"
       class="close-button"
@@ -45,9 +42,7 @@
         />
       </div>
     </div>
-
     <div class="popover__triangle" :style="triangleTransformStyle"></div>
-
     <InfoTooltip
       :visible="tooltip.visible && !!tooltip.content"
       :content="tooltip.content || { text: '' }"
@@ -60,7 +55,6 @@
     />
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, type PropType, nextTick, type StyleValue, reactive } from "vue";
 import { useUiStore, type Notification, type NotificationType, type NotificationMessageDetails } from "@/stores/uiStore";
@@ -68,17 +62,14 @@ import { useScrollContainer } from "@/composables/useScrollContainer";
 import CustomButton from "./CustomButton.vue";
 import InfoTooltip from "./InfoTooltipContainer.vue";
 import { logUI, logNotification } from "@/utils/loggers";
-
 const props = defineProps({
   notification: {
     type: Object as PropType<Notification>,
     required: true,
   },
 });
-
 const uiStore = useUiStore();
 const { scrollContainer } = useScrollContainer();
-
 const popoverRef = ref<HTMLElement | null>(null);
 const indicatorRef = ref<HTMLElement | null>(null);
 const isVisible = ref(false);
@@ -88,7 +79,6 @@ const scrollTop = ref(0);
 let isUpdateThrottled = false;
 let remainingScaleX = 1;
 let hideTooltipTimeout: number | null = null;
-
 const tooltip = reactive<{
   visible: boolean;
   content: NotificationMessageDetails | null;
@@ -98,28 +88,22 @@ const tooltip = reactive<{
   content: null,
   targetElement: null,
 });
-
 // Track hover state for both notification and tooltip
 const isHovering = reactive({
   notification: false,
   tooltip: false,
 });
-
 // Computed to check if user is hovering over either element
 const isUserHovering = computed(() => isHovering.notification || isHovering.tooltip);
-
 // --- FEAT: Improved tooltip hover logic ---
 const handleIconMouseEnter = (details: NotificationMessageDetails, event: MouseEvent) => {
   logUI("NotificationDisplay", "Icon mouse enter", { details, target: event.target });
-  
   if (hideTooltipTimeout) {
     logUI("NotificationDisplay", "Clearing existing hide timeout");
     clearTimeout(hideTooltipTimeout);
   }
-  
   pauseTimeout(); // Pause main notification timer
   logUI("NotificationDisplay", "Paused notification timeout");
-
   // Only update content and target if they've changed to avoid re-renders
   if (tooltip.content !== details) {
     logUI("NotificationDisplay", "Updating tooltip content", { oldContent: tooltip.content, newContent: details });
@@ -129,29 +113,23 @@ const handleIconMouseEnter = (details: NotificationMessageDetails, event: MouseE
     logUI("NotificationDisplay", "Updating tooltip target", { oldTarget: tooltip.targetElement, newTarget: event.target });
     tooltip.targetElement = event.target as HTMLElement;
   }
-
   tooltip.visible = true;
   logUI("NotificationDisplay", "Tooltip made visible", { visible: tooltip.visible, content: tooltip.content });
 };
-
 const handleIconMouseLeave = () => {
   logUI("NotificationDisplay", "Icon mouse leave - scheduling tooltip hide");
   // Give user time to move from icon to tooltip
   scheduleTooltipHide();
 };
-
 const scheduleTooltipHide = () => {
   logUI("NotificationDisplay", "Scheduling tooltip hide", { currentTimeout: hideTooltipTimeout });
-  
   if (hideTooltipTimeout) {
     logUI("NotificationDisplay", "Clearing existing hide timeout");
     clearTimeout(hideTooltipTimeout);
   }
-  
   hideTooltipTimeout = window.setTimeout(() => {
     logUI("NotificationDisplay", "Hide timeout fired - hiding tooltip");
     tooltip.visible = false;
-    
     // Only resume timeout if user is not hovering over either element
     if (!isUserHovering.value) {
       logUI("NotificationDisplay", "Tooltip hidden, user not hovering - resuming notification timeout");
@@ -160,42 +138,33 @@ const scheduleTooltipHide = () => {
       logUI("NotificationDisplay", "Tooltip hidden, but user still hovering over notification - keeping timeout paused");
     }
   }, 300); // Increased delay to give more time to move to tooltip
-  
   logUI("NotificationDisplay", "Hide timeout scheduled", { timeoutId: hideTooltipTimeout });
 };
-
 const handleTooltipMouseEnter = () => {
   logUI("NotificationDisplay", "Tooltip mouse enter - canceling hide timeout");
-  
   if (hideTooltipTimeout) {
     logUI("NotificationDisplay", "Clearing hide timeout");
     clearTimeout(hideTooltipTimeout);
   }
-  
   isHovering.tooltip = true;
   logUI("NotificationDisplay", "User entered tooltip - pausing timeout");
   pauseTimeout(); // Ensure timeout is paused when entering tooltip
 };
-
 const handleTooltipMouseLeave = () => {
   logUI("NotificationDisplay", "Tooltip mouse leave - scheduling hide");
   isHovering.tooltip = false;
-  
   // Schedule tooltip hide
   scheduleTooltipHide();
-  
   // Don't resume timeout here - let the hide timeout handle it
   // This allows moving from tooltip to notification without resuming
   logUI("NotificationDisplay", "User left tooltip - keeping timeout paused until hide");
 };
 // --- End of tooltip hover logic ---
-
 const closeNotification = () => {
   // Disabled logging for notifications
   // logNotification("NotificationDisplay", "Closing notification", { id: props.notification.id });
   uiStore.removeNotification(props.notification.id);
 };
-
 const getIconForType = (type: NotificationType): string => {
   switch (type) {
     case "success":
@@ -208,7 +177,6 @@ const getIconForType = (type: NotificationType): string => {
       return "mdi:information-outline";
   }
 };
-
 const popoverMetrics = computed(() => {
   if (!popoverRef.value || !scrollContainer.value || !props.notification.position) return null;
   return {
@@ -218,7 +186,6 @@ const popoverMetrics = computed(() => {
     containerRect: scrollContainer.value.getBoundingClientRect(),
   };
 });
-
 const popoverPositionStyle = computed((): StyleValue => {
   const metrics = popoverMetrics.value;
   if (!metrics) return { visibility: "hidden" as const };
@@ -239,7 +206,6 @@ const popoverPositionStyle = computed((): StyleValue => {
     maxWidth: `${containerRect.width}px`,
   };
 });
-
 const triangleTransformStyle = computed((): StyleValue => {
   const metrics = popoverMetrics.value;
   const style = popoverPositionStyle.value;
@@ -288,7 +254,6 @@ const triangleTransformStyle = computed((): StyleValue => {
     transform: `translateX(-50%) skewX(${skewAngle}deg)`,
   };
 });
-
 watch(
   () => [popoverMetrics.value, popoverPositionStyle.value, triangleTransformStyle.value],
   ([metrics, style, triangleStyle]) => {
@@ -322,7 +287,6 @@ watch(
   },
   { deep: true, flush: "post" }
 );
-
 const startTimeout = () => {
   const durationInMs = props.notification.duration ?? 5000;
   if (indicatorRef.value) {
@@ -340,7 +304,6 @@ const startTimeout = () => {
     indicator.style.transform = "scaleX(0)";
   }
 };
-
 const pauseTimeout = () => {
   logUI("NotificationDisplay", "Pausing notification timeout");
   if (indicatorRef.value) {
@@ -353,7 +316,6 @@ const pauseTimeout = () => {
     logUI("NotificationDisplay", "Timeout paused", { remainingScaleX });
   }
 };
-
 const resumeTimeout = () => {
   logUI("NotificationDisplay", "Resuming notification timeout");
   const durationInMs = props.notification.duration ?? 5000;
@@ -366,7 +328,6 @@ const resumeTimeout = () => {
     logUI("NotificationDisplay", "Timeout resumed", { remainingDuration });
   }
 };
-
 const handleScroll = () => {
   if (isUpdateThrottled) return;
   isUpdateThrottled = true;
@@ -378,24 +339,19 @@ const handleScroll = () => {
     isUpdateThrottled = false;
   });
 };
-
 const handlePopoverMouseEnter = () => {
   logUI("NotificationDisplay", "Popover mouse enter");
   isHovering.notification = true;
-  
   // Always pause timeout when entering notification
   logUI("NotificationDisplay", "User entered notification - pausing timeout");
   pauseTimeout();
 };
-
 const handlePopoverMouseLeave = () => {
   logUI("NotificationDisplay", "Popover mouse leave", { 
     tooltipVisible: tooltip.visible,
     isHoveringTooltip: isHovering.tooltip 
   });
-  
   isHovering.notification = false;
-  
   // Only resume timeout if user is not hovering over either element
   if (!isUserHovering.value) {
     logUI("NotificationDisplay", "User left both elements - resuming timeout");
@@ -404,7 +360,6 @@ const handlePopoverMouseLeave = () => {
     logUI("NotificationDisplay", "User still hovering over tooltip - keeping timeout paused");
   }
 };
-
 onMounted(() => {
   if (scrollContainer.value) {
     scrollLeft.value = scrollContainer.value.scrollLeft;
@@ -416,7 +371,6 @@ onMounted(() => {
     startTimeout();
   });
 });
-
 onUnmounted(() => {
   if (scrollContainer.value) {
     scrollContainer.value.removeEventListener("scroll", handleScroll);
@@ -430,13 +384,11 @@ onUnmounted(() => {
   isHovering.notification = false;
   isHovering.tooltip = false;
 });
-
 watch(scrollContainer, (newContainer, oldContainer) => {
   if (oldContainer) oldContainer.removeEventListener("scroll", handleScroll);
   if (newContainer) newContainer.addEventListener("scroll", handleScroll, { passive: true });
 });
 </script>
-
 <style scoped>
 .popover {
   position: absolute;
@@ -455,19 +407,16 @@ watch(scrollContainer, (newContainer, oldContainer) => {
   pointer-events: none;
   box-sizing: border-box;
 }
-
 .popover.is-visible {
   opacity: 1;
   transform: scale(1);
   pointer-events: auto;
 }
-
 .popover.is-visible.is-clipped {
   opacity: 0;
   transform: scale(0.95);
   pointer-events: none;
 }
-
 .popover__triangle {
   position: absolute;
   top: 100%;
@@ -478,7 +427,6 @@ watch(scrollContainer, (newContainer, oldContainer) => {
   border-top: 6px solid var(--bg-clr-liter);
   transition: transform 0.6s ease-in-out;
 }
-
 .popover h1 {
   display: block;
   margin: 0 0 4px 0;
@@ -488,7 +436,6 @@ watch(scrollContainer, (newContainer, oldContainer) => {
   text-wrap: balance;
   text-align: left;
 }
-
 .popover__indicator-container {
   position: absolute;
   top: 0;
@@ -498,7 +445,6 @@ watch(scrollContainer, (newContainer, oldContainer) => {
   border-radius: 8px 8px 0 0;
   overflow: hidden;
 }
-
 .popover__indicator {
   position: absolute;
   top: 0;
@@ -509,37 +455,31 @@ watch(scrollContainer, (newContainer, oldContainer) => {
   transform-origin: left center;
   background-color: hsl(0deg 0% 70%);
 }
-
 .popover__content {
   margin-top: 3px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-
 .message-line {
   display: flex;
   align-items: center;
   gap: 8px;
   text-align: left;
 }
-
 .message-line p {
   margin: 0;
   flex-grow: 1;
 }
-
 .message-line .icon {
   flex-shrink: 0;
 }
-
 .close-button {
   position: absolute;
   top: 4px;
   right: 4px;
   --btn-bg-hvr-clr: var(--bg-clr-lite);
 }
-
 .info-icon {
   color: var(--txt-clr-dark);
   cursor: help;
@@ -550,7 +490,6 @@ watch(scrollContainer, (newContainer, oldContainer) => {
 .info-icon:hover {
   opacity: 1;
 }
-
 .text-success {
   color: hsla(var(--success-hue, 145), var(--success-sat, 63%), 45%, 1);
 }
@@ -563,7 +502,6 @@ watch(scrollContainer, (newContainer, oldContainer) => {
 .text-info {
   color: hsla(var(--blu-hue, 204), var(--blu-sat, 100%), 50%, 1);
 }
-
 .icon-success {
   color: hsla(var(--success-hue, 145), var(--success-sat, 63%), 45%, 1);
 }

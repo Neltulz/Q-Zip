@@ -1,8 +1,6 @@
 /* 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   components/job-area-comp/job-area.scoped.css 
 */
-
 /*
   Description:
   Styles for the JobArea component, including the main layout,
@@ -10,7 +8,6 @@
   CSS nesting and grid areas for layout management. Includes an active
   state to show a visual selection border.
 */
-
 /* Updated pulse-glow animation to pulse from 0.5 to 1 opacity */
 @keyframes pulse-glow {
   0%,
@@ -21,7 +18,6 @@
     box-shadow: 0 0 15px 2px hsla(210, 100%, 70%, 0.5);
   }
 }
-
 /* --- Root Container --- */
 .job-area {
   display: grid;
@@ -29,15 +25,12 @@
   grid-template-rows: 1fr;
   overflow: hidden;
   position: relative;
-
   /* Make all direct children occupy the same grid cell */
   & > * {
     grid-column: 1 / -1;
     grid-row: 1 / -1;
   }
-
   /* REMOVED: Selection box styles are now in FileTable.vue's CSS */
-
   /* --- Standard Job View --- */
   .job {
     display: grid;
@@ -48,14 +41,12 @@
     height: 100%;
     overflow: hidden;
     z-index: 1;
-
     .job-header {
       border-block-end: 1px solid var(--brdr-clr);
       flex-shrink: 0;
       grid-area: header;
       padding: 10px;
     }
-
     .job-content {
       display: flex;
       flex-direction: column;
@@ -64,7 +55,6 @@
       overflow: hidden;
     }
   }
-
   /* --- External Drag Overlay --- */
   .external-drag-overlay {
     backdrop-filter: blur(10px);
@@ -79,14 +69,12 @@
     position: absolute;
     transition: opacity 0.2s ease-in-out;
     z-index: 100;
-
     /* Light theme adjustment for overlay */
     @container style(--theme: light) {
       & {
         background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) + 3.6%), 0.8);
       }
     }
-
     /* --- Drop Zones within Overlay --- */
     .external-drop-zone {
       align-items: center;
@@ -98,7 +86,6 @@
       padding: 2cqw;
       position: relative;
       transition: opacity 0.2s ease-in-out;
-
       .drop-zone-visual {
         align-items: center;
         background-color: hsla(var(--bg-hue), var(--bg-sat), var(--bg-lum), 0.1);
@@ -112,7 +99,6 @@
         transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease-in-out,
           background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
       }
-
       .drop-zone-content {
         align-items: center;
         display: flex;
@@ -123,7 +109,6 @@
         justify-content: center;
         transition: color 0.2s ease-in-out;
       }
-
       /* --- Drop Zone Interaction Logic --- */
       /* 1. Universal hover/active state for ALL zones: scale up, add glow, and change to light blue. */
       &:hover .drop-zone-visual,
@@ -133,39 +118,32 @@
         border-color: hsla(210, 100%, 75%, 0.8);
         transform: scale(1);
       }
-
       /* Make text brighter on hover/active */
       &:hover .drop-zone-content,
       &.drop-target-active .drop-zone-content {
         color: hsl(0, 0%, 100%);
       }
-
       /* --- Drop Zone Layout & Theming --- */
       &.new-job,
       &.separate-jobs {
         flex-basis: 25%;
       }
-
       &.current-job {
         flex-basis: 50%;
       }
     }
-
     /* 2. When the overlay has a hovered OR active drop zone, affect the OTHER zones. */
     &:has(.external-drop-zone:hover) .external-drop-zone:not(:hover),
     &:has(.external-drop-zone.drop-target-active) .external-drop-zone:not(.drop-target-active) {
       opacity: 0.5;
-
       .drop-zone-visual {
         transform: scale(0.95);
       }
     }
-
     /* --- Error State --- */
     &.has-error {
       border: 2px dashed hsla(0, 70%, 60%, 0.8);
     }
-
     .drop-error-message {
       align-items: center;
       background-color: hsla(0, 70%, 30%, 0.5);
@@ -185,13 +163,11 @@
     }
   }
 }
-
 /* --- Vue Transition --- */
 .job-fade-enter-active,
 .job-fade-leave-active {
   transition: opacity 0.15s ease-in-out;
 }
-
 .job-fade-enter-from,
 .job-fade-leave-to {
   opacity: 0;

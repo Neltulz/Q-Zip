@@ -1,11 +1,9 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   JobArea.vue @preserve
 -->
 <!-- components/JobArea.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   JobArea.vue @preserve
 -->
 <template>
@@ -33,7 +31,6 @@
         <!-- Other context menu items -->
       </template>
     </DropdownMenu>
-
     <transition name="job-fade">
       <div v-if="activeJob" :key="activeJob.id" ref="jobRef" class="job">
         <div class="job-header">
@@ -76,7 +73,6 @@
     </transition>
   </div>
 </template>
-
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, nextTick, watch } from "vue";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
@@ -90,24 +86,19 @@ import type { FileItem } from "@/types/types";
 import LoadingAnim from "@/components/LoadingAnim.vue";
 import { logLoading, logRendering, logUI, logFocus, logGlobalEvent, logStoreAction } from "@/utils/loggers";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-
 type FileOperationPayload = {
   targetJobId: number;
   files: string[];
 };
-
 type ContextMenuFileOperationPayload = {
   targetJobId: number;
   rightClickedPath: string;
 };
-
 type LoadingState = "idle" | "adding" | "removing" | "transferring";
-
 const jobsStore = useJobsStore();
 const modalsStore = useModalsStore();
 const clipboardStore = useClipboardStore();
 const uiStore = useUiStore();
-
 const fileTableRef = ref<InstanceType<typeof FileTable> | null>(null);
 const jobAreaRef = ref<HTMLElement | null>(null);
 const jobContentRef = ref<HTMLElement | null>(null);
@@ -123,7 +114,6 @@ const progressInfo = ref({
   message: ""
 });
 let operationCancelled = false;
-
 const loadingMessage = computed(() => {
   switch (loadingState.value) {
     case "adding":
@@ -136,13 +126,11 @@ const loadingMessage = computed(() => {
       return "";
   }
 });
-
 const activeJob = computed(() => {
   const job = jobsStore.jobs.find((job: Job) => job.id === jobsStore.selectedJobId);
   logRendering("JobArea", `activeJob computed: job ${jobsStore.selectedJobId} has ${job?.files.length || 0} files`);
   return job;
 });
-
 // When the selected job changes (e.g., user clicks a job tab), ensure the
 // FileTable for the active job is marked as active so it receives keyboard
 // focus and styling (`is-active` class).
@@ -156,7 +144,6 @@ watch(
     }
   }
 );
-
 // Watch for changes in the active job's files to ensure FileTable updates
 watch(
   () => activeJob.value?.files,
@@ -165,14 +152,12 @@ watch(
   },
   { deep: true }
 );
-
 // Restore file table focus when context menu closes
 const restoreFileTableFocus = () => {
   logFocus("JobArea", "restoreFileTableFocus called", {
     hasFileTableRef: !!fileTableRef.value,
     activeJobId: activeJob.value?.id
   });
-  
   if (fileTableRef.value) {
     nextTick(() => {
       logFocus("JobArea", "restoreFileTableFocus: calling setActive(true) in nextTick");
@@ -182,7 +167,6 @@ const restoreFileTableFocus = () => {
     logFocus("JobArea", "restoreFileTableFocus: fileTableRef is null");
   }
 };
-
 // If the FileTable component wasn't mounted at the time the selectedJobId
 // watcher ran, activating it would be missed. Watch the fileTableRef and if
 // it becomes available while this JobArea is the active job, mark it active.
@@ -198,7 +182,6 @@ watch(
   },
   { immediate: true }
 );
-
 // Listen for app-level selected-job events so we can deactivate the previous
 // FileTable before the new one becomes active. This complements the watcher
 // above which activates the new table.
@@ -216,7 +199,6 @@ const selectedJobHandler = (ev: Event) => {
         logGlobalEvent("JobArea", "selectedJobHandler", { oldId, newId, activeJobId: activeJob.value?.id });
       }
     }
-
     // If this component was the previously selected job, deactivate its table
     if (activeJob.value && oldId !== null && activeJob.value.id === oldId) {
       // log and deactivate
@@ -225,7 +207,6 @@ const selectedJobHandler = (ev: Event) => {
       }
       fileTableRef.value?.setActive(false);
     }
-
     // If this component is the newly selected job and the table exists, activate it
     if (activeJob.value && activeJob.value.id === newId && fileTableRef.value) {
       if (DEBUG && debugConfig.logUIEvents) {
@@ -237,7 +218,6 @@ const selectedJobHandler = (ev: Event) => {
     // ignore
   }
 };
-
 onMounted(() => {
   window.addEventListener("app:selected-job-changed", selectedJobHandler as EventListener);
   window.addEventListener("app:ensure-activate-filetable", (ev: Event) => {
@@ -255,11 +235,9 @@ onMounted(() => {
     }
   });
 });
-
 onUnmounted(() => {
   window.removeEventListener("app:selected-job-changed", selectedJobHandler as EventListener);
 });
-
 const cancelOperation = () => {
   const cancelRequestTime = performance.now();
   const cancelRequestISO = new Date().toISOString();
@@ -269,26 +247,21 @@ const cancelOperation = () => {
     clearTimeout(operationTimer.value);
     operationTimer.value = null;
   }
-  
   // Cancel the ongoing file processing operation in the jobs store
   jobsStore.cancelCurrentOperation();
-  
   showLoading.value = false;
 };
-
 const onAnimationFinished = () => {
   logLoading("JobArea", "Animation finished event received.");
   if (!showLoading.value) {
     loadingState.value = "idle";
   }
 };
-
 const handleNevermind = () => {
   logLoading("JobArea", "Nevermind event received from LoadingAnim.");
   // This event is used to close dropdowns in the LoadingAnim component
   // The dropdown will be closed automatically by the dropdown manager
 };
-
 const handlePause = (isPaused: boolean) => {
   logLoading("JobArea", `Pause event received from LoadingAnim. Paused: ${isPaused}`);
   if (isPaused) {
@@ -301,7 +274,6 @@ const handlePause = (isPaused: boolean) => {
     jobsStore.resumeCurrentOperation();
   }
 };
-
 const handleOperation = async (
   state: LoadingState,
   items: string[],
@@ -309,7 +281,6 @@ const handleOperation = async (
 ): Promise<void> => {
   operationCancelled = false;
   loadingState.value = state;
-  
   // Set up progress tracking
   const progressCallback = (current: number, total: number, message: string) => {
     progressInfo.value = {
@@ -318,11 +289,8 @@ const handleOperation = async (
       message: message
     };
   };
-  
   jobsStore.setProgressCallback(progressCallback);
-
   let loadingTimer: NodeJS.Timeout | null = null;
-
   const operationPromise = new Promise<void>((resolve) => {
     const performAction = async () => {
       try {
@@ -339,12 +307,9 @@ const handleOperation = async (
         resolve();
       }
     };
-
     performAction();
   });
-
   let shouldShowLoading = false;
-
   if (items.length >= 100) {
     shouldShowLoading = true;
   } else {
@@ -356,23 +321,17 @@ const handleOperation = async (
       shouldShowLoading = true;
     }
   }
-
   if (shouldShowLoading && !operationCancelled) {
     showLoading.value = true;
   }
-
   await operationPromise;
-
   if (loadingTimer) {
     clearTimeout(loadingTimer);
   }
-
   // Clear progress callback
   jobsStore.setProgressCallback(null);
-
   if (operationCancelled) {
     logLoading("JobArea", "Operation was cancelled. Bypassing final state change.");
-    
     // Check if operation was cancelled and show notification for file processing operations
     if (state === "adding") {
       logLoading("JobArea", "Checking for cancelled paths after file processing cancellation...");
@@ -386,41 +345,32 @@ const handleOperation = async (
         }
       });
     }
-    
     return;
   }
-
   logRendering("JobArea", "Operation complete. UI update is about to begin.");
   showLoading.value = false;
-
   nextTick(() => {
     requestAnimationFrame(() => {
       logUI("JobArea", "UI should now be interactive after DOM patch and repaint.");
     });
   });
 };
-
 const showJobContextMenu = (event: MouseEvent) => {
   if ((event.target as Element).closest('.file-row[data-has-context-menu="true"]')) {
     return;
   }
-  
   // Clear file selection when right-clicking in empty area (standard file manager behavior)
   if (fileTableRef.value) {
     fileTableRef.value.deselectAll();
   }
-  
   jobContextMenuRef.value?.openDropdown({ x: event.clientX, y: event.clientY });
 };
-
 const handleKeyDown = (event: KeyboardEvent) => {
   if (!activeJob.value || !fileTableRef.value) return;
-
   const isShortcutKey = (event.ctrlKey || event.metaKey) && ["a", "c", "x", "v"].includes(event.key);
   if (isShortcutKey || event.key === "Delete") {
     event.preventDefault();
   }
-
   if ((event.ctrlKey || event.metaKey) && event.key === "a") {
     fileTableRef.value.toggleAll();
   } else if (event.key === "Delete") {
@@ -445,36 +395,29 @@ const handleKeyDown = (event: KeyboardEvent) => {
     handlePaste();
   }
 };
-
 onMounted(() => {
   window.addEventListener("keydown", handleKeyDown);
 });
-
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
 });
-
 const handlePaste = () => {
   if (clipboardStore.hasClipboardItems() && activeJob.value) {
     const filesToPaste = clipboardStore.clipboard;
     const sourceJobId = clipboardStore.sourceJobId;
     const isCutOperation = clipboardStore.isCut;
     const targetJobId = activeJob.value.id;
-
     openOperationConfirmModal(isCutOperation ? "move" : "copy", filesToPaste, targetJobId, sourceJobId);
   }
 };
-
 const handleSelectionChange = (newSelection: string[]) => {
   selectedFilePaths.value = newSelection;
 };
-
 const getPathsForAction = (payload: string | string[]): string[] => {
   if (Array.isArray(payload)) return payload;
   const isRightClickedInSelection: boolean = selectedFilePaths.value.includes(payload);
   return isRightClickedInSelection && selectedFilePaths.value.length > 0 ? selectedFilePaths.value : [payload];
 };
-
 const getFileItemsFromPaths = (paths: string[], sourceJobId: number | null): FileItem[] => {
   if (sourceJobId === null) return [];
   const sourceJob = jobsStore.jobs.find((j) => j.id === sourceJobId);
@@ -482,7 +425,6 @@ const getFileItemsFromPaths = (paths: string[], sourceJobId: number | null): Fil
   const pathSet = new Set(paths);
   return sourceJob.files.filter((file) => pathSet.has(file.path));
 };
-
 const getFileNamesFromPaths = (paths: string[], sourceJobId: number | null): string[] => {
   if (sourceJobId === null) return [];
   const sourceJob = jobsStore.jobs.find((j) => j.id === sourceJobId);
@@ -490,7 +432,6 @@ const getFileNamesFromPaths = (paths: string[], sourceJobId: number | null): str
   const allFiles = sourceJob.files;
   return paths.map((path: string) => allFiles.find((file) => file.path === path)?.name).filter(Boolean) as string[];
 };
-
 const confirmRemoveFiles = (paths: string | string[]) => {
   const pathsToRemove: string[] = getPathsForAction(paths);
   const itemsToProcess: FileItem[] = getFileItemsFromPaths(pathsToRemove, activeJob.value?.id ?? null);
@@ -523,7 +464,6 @@ const confirmRemoveFiles = (paths: string | string[]) => {
     });
   });
 };
-
 const openOperationConfirmModal = (
   operation: "move" | "copy",
   files: FileItem[],
@@ -552,11 +492,9 @@ const openOperationConfirmModal = (
       });
     }
   }
-  
   const targetJob = jobsStore.jobs.find((j) => j.id === targetJobId);
   let itemsToProcess: FileItem[] = [];
   let itemsToSkip: FileItem[] = [];
-
   if (targetJob) {
     const targetFilePaths = new Set(targetJob.files.map((f) => f.path));
     for (const file of files) {
@@ -569,10 +507,8 @@ const openOperationConfirmModal = (
   } else {
     itemsToProcess.push(...files);
   }
-
   const opString = operation === "move" ? "Move" : "Copy";
   const targetName = targetJobId === "new-job" ? "a new job" : `Job ${targetJobId}`;
-  
   // Add logging for the targetName construction
   try {
     const { logStoreAction } = require("@/utils/loggers");
@@ -607,7 +543,6 @@ const openOperationConfirmModal = (
     footerJustifyContent: "center",
     closeOnClickOutside: true,
   };
-
   modalsStore.openModal(
     "ResetConfirmationModalContent",
     modalOptions,
@@ -636,10 +571,8 @@ const openOperationConfirmModal = (
     }
   );
 };
-
 const confirmMoveFiles = (payload: FileOperationPayload | ContextMenuFileOperationPayload): void => {
   const { targetJobId } = payload;
-  
   // Add logging to debug the issue
   try {
     const { logStoreAction } = require("@/utils/loggers");
@@ -659,7 +592,6 @@ const confirmMoveFiles = (payload: FileOperationPayload | ContextMenuFileOperati
       });
     }
   }
-  
   let pathsToMove = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath || "");
   // If only one path was passed but the user currently has a multi-selection that includes
   // that path, prefer the full selection (defensive against races where selection wasn't
@@ -670,7 +602,6 @@ const confirmMoveFiles = (payload: FileOperationPayload | ContextMenuFileOperati
   const fileItems = getFileItemsFromPaths(pathsToMove, activeJob.value?.id ?? null);
   openOperationConfirmModal("move", fileItems, targetJobId, activeJob.value?.id ?? null);
 };
-
 const confirmMoveToNewJob = (paths: string | string[]): void => {
   let pathsToMove = getPathsForAction(paths);
   if (pathsToMove.length === 1 && selectedFilePaths.value.length > 1 && pathsToMove[0] && selectedFilePaths.value.includes(pathsToMove[0])) {
@@ -679,10 +610,8 @@ const confirmMoveToNewJob = (paths: string | string[]): void => {
   const fileItems = getFileItemsFromPaths(pathsToMove, activeJob.value?.id ?? null);
   openOperationConfirmModal("move", fileItems, "new-job", activeJob.value?.id ?? null);
 };
-
 const confirmCopyFiles = (payload: FileOperationPayload | ContextMenuFileOperationPayload): void => {
   const { targetJobId } = payload;
-  
   // Add logging to debug the issue
   try {
     const { logStoreAction } = require("@/utils/loggers");
@@ -702,7 +631,6 @@ const confirmCopyFiles = (payload: FileOperationPayload | ContextMenuFileOperati
       });
     }
   }
-  
   let pathsToCopy = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath || "");
   if (pathsToCopy.length === 1 && selectedFilePaths.value.length > 1 && pathsToCopy[0] && selectedFilePaths.value.includes(pathsToCopy[0])) {
     pathsToCopy = [...selectedFilePaths.value];
@@ -710,7 +638,6 @@ const confirmCopyFiles = (payload: FileOperationPayload | ContextMenuFileOperati
   const fileItems = getFileItemsFromPaths(pathsToCopy, activeJob.value?.id ?? null);
   openOperationConfirmModal("copy", fileItems, targetJobId, activeJob.value?.id ?? null);
 };
-
 const confirmCopyToNewJob = (paths: string | string[]): void => {
   let pathsToCopy = getPathsForAction(paths);
   if (pathsToCopy.length === 1 && selectedFilePaths.value.length > 1 && pathsToCopy[0] && selectedFilePaths.value.includes(pathsToCopy[0])) {
@@ -719,10 +646,8 @@ const confirmCopyToNewJob = (paths: string | string[]): void => {
   const fileItems = getFileItemsFromPaths(pathsToCopy, activeJob.value?.id ?? null);
   openOperationConfirmModal("copy", fileItems, "new-job", activeJob.value?.id ?? null);
 };
-
 const showCancellationNotification = (cancelledPaths: string[]): void => {
   logUI("JobArea", `showCancellationNotification called with ${cancelledPaths.length} cancelled paths`);
-  
   // Create notification for cancelled operation using the regular notification system
   const notification = {
     title: "Operation Cancelled",
@@ -745,22 +670,17 @@ const showCancellationNotification = (cancelledPaths: string[]): void => {
     targetId: activeJob.value?.id || 0,
     duration: 5000 // 5 seconds
   };
-  
   logUI("JobArea", `Adding regular notification for cancellation`);
-  
   // Use the regular notification system instead of job-specific positioning
   uiStore.addNotification(notification);
 };
-
 const addItemsToJob = async (paths: string[]): Promise<void> => {
   const operationStartTime = performance.now();
   const operationStartISO = new Date().toISOString();
   logUI("JobArea", `addItemsToJob called with ${paths.length} paths at ${operationStartISO}:`, paths);
-  
   if (activeJob.value) {
     const initialFileCount = activeJob.value.files.length;
     logUI("JobArea", `Initial file count for job ${activeJob.value.id}: ${initialFileCount}`);
-    
     await handleOperation("adding", paths, async () => {
       const processingStartTime = performance.now();
       logLoading("JobArea", `Starting file processing for ${paths.length} paths at ${new Date().toISOString()}...`);
@@ -770,7 +690,6 @@ const addItemsToJob = async (paths: string[]): Promise<void> => {
       logLoading("JobArea", `File processing completed in ${processingDuration.toFixed(2)}ms. Added ${addedCount} files.`);
       return addedCount;
     });
-    
     // Check if files were actually added (only for successful operations)
     nextTick(() => {
       const finalFileCount = activeJob.value?.files.length || 0;
@@ -781,7 +700,6 @@ const addItemsToJob = async (paths: string[]): Promise<void> => {
     logUI("JobArea", "No active job available for adding files");
   }
 };
-
 const handleRefreshFiles = () => {
   logUI("JobArea", "handleRefreshFiles called. Refreshing file table.");
   // Force a re-render by triggering a reactive update
@@ -804,7 +722,6 @@ const handleRefreshFiles = () => {
   });
 };
 </script>
-
 <style scoped>
 .job-content {
   position: relative; /* Needed for the loading overlay */
@@ -813,5 +730,4 @@ const handleRefreshFiles = () => {
   flex-direction: column;
 }
 </style>
-
 <style scoped src="./job-area-comp/job-area.scoped.css"></style>

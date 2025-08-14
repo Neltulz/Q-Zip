@@ -1,18 +1,6 @@
 <!-- eslint-disable vue/no-v-html @preserve -->
-<!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
-  BaseModal.vue @preserve
--->
 <!-- eslint-disable vue/html-self-closing @preserve -->
-<!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
-  BaseModal.vue @preserve
--->
 <!-- components/BaseModal.vue @preserve -->
-<!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
-  BaseModal.vue @preserve
--->
 <template>
   <teleport to="body">
     <div
@@ -49,7 +37,6 @@
               />
             </div>
           </div>
-
           <div class="modal-body">
             <OverlayScrollbarsComponent
               class="modal-body-scrollbar"
@@ -73,7 +60,6 @@
               <!-- --- FIX END --- -->
             </OverlayScrollbarsComponent>
           </div>
-
           <div
             v-if="props.options.buttons && props.options.buttons.length > 0"
             class="modal-footer"
@@ -102,7 +88,6 @@
     </div>
   </teleport>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted, computed, watchEffect, watch } from "vue";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
@@ -111,14 +96,12 @@ import { useModalsStore } from "@/stores/modalsStore";
 import { logLifecycle, logManagerAction } from "@/utils/loggers";
 import type { ModalOptions as OriginalModalOptions } from "@/types/modal";
 import CustomButton from "./CustomButton.vue";
-
 // Locally extend the global modal options type for component-specific props
 interface ModalOptions extends OriginalModalOptions {
   closeOnClickOutside?: boolean;
   closeOnEscape?: boolean;
   showCloseButton?: boolean;
 }
-
 // Correctly define props without destructuring to preserve reactivity
 const props = defineProps<{
   options?: ModalOptions;
@@ -126,16 +109,13 @@ const props = defineProps<{
   modalDataName?: string;
   isActive: boolean; // New prop passed by ModalContainer
 }>();
-
 const themeStore = useThemeStore();
 const modalsStore = useModalsStore();
-
 const dialog = ref<HTMLDialogElement | null>(null);
 const isMounted = ref(false);
 const isVisible = ref(false);
 const animationState = ref("");
 const closeDelay = 300;
-
 // This computed property now explicitly returns a `readonly string[]`,
 // which resolves the TypeScript error in the template.
 const descriptionContent = computed((): readonly string[] => {
@@ -148,19 +128,15 @@ const descriptionContent = computed((): readonly string[] => {
   }
   return desc; // At this point, desc must be `readonly string[]`
 });
-
 // Use watchEffect to safely manage the event listener's lifecycle
 watchEffect((onInvalidate) => {
   // Only add the listener if the modal is active and has options
   if (props.isActive && props.options) {
     logManagerAction("BaseModal", `Modal ${props.modalId} is now active`);
-
     // Create a stable copy of the options to satisfy TypeScript's control flow analysis
     const stableOptions = { ...props.options };
-
     const handleKeydown = (event: KeyboardEvent) => {
       if (!props.isActive) return; // Re-check in case modal was closed
-
       if (event.key === "Escape" && (stableOptions.closeOnEscape ?? true)) {
         handleClose("cancel");
       } else if (event.key === "Enter") {
@@ -174,37 +150,29 @@ watchEffect((onInvalidate) => {
         }
       }
     };
-
     window.addEventListener("keydown", handleKeydown);
-
     // The onInvalidate callback automatically cleans up the listener
     onInvalidate(() => {
       window.removeEventListener("keydown", handleKeydown);
     });
   }
 });
-
 onMounted(() => {
   logLifecycle("BaseModal", `Modal ${props.modalId} mounted`);
   isMounted.value = true;
   isVisible.value = true;
-
   setTimeout(() => {
     animationState.value = "modal-is-entering";
   }, 50);
 });
-
 // Watch for visibility changes
 watchEffect(() => {
   logManagerAction("BaseModal", `Modal ${props.modalId} visibility changed: isVisible=${isVisible.value}, isMounted=${isMounted.value}, animationState=${animationState.value}`);
 });
-
 const handleClose = (action: string): void => {
   if (animationState.value === "modal-is-leaving") return;
-
   logManagerAction("BaseModal", `handleClose called for modal ${props.modalId} with action: ${action}`);
   animationState.value = "modal-is-leaving";
-
   setTimeout(() => {
     logManagerAction("BaseModal", `Setting modal ${props.modalId} to invisible after close delay`);
     isVisible.value = false;
@@ -212,9 +180,7 @@ const handleClose = (action: string): void => {
     modalsStore.closeModal(props.modalId, action);
   }, closeDelay);
 };
-
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
-
 const getDefaultButtonIcon = (action: string): string => {
   switch (action) {
     case "proceed":
@@ -226,7 +192,6 @@ const getDefaultButtonIcon = (action: string): string => {
   }
 };
 </script>
-
 <style scoped>
 .modal-wrapper {
   align-items: center;
@@ -239,11 +204,9 @@ const getDefaultButtonIcon = (action: string): string => {
   position: fixed;
   z-index: 99999;
 }
-
 .modal-wrapper:not(.modal-open) {
   display: none;
 }
-
 .modal-backdrop {
   backdrop-filter: blur(0px);
   background-color: hsla(0, 0%, 0%, 0.5);
@@ -253,21 +216,17 @@ const getDefaultButtonIcon = (action: string): string => {
   transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
   z-index: 1;
 }
-
 .modal-wrapper.modal-is-entering .modal-backdrop {
   backdrop-filter: blur(4px);
   opacity: 1;
 }
-
 .modal-wrapper.modal-is-leaving .modal-backdrop {
   backdrop-filter: blur(0px);
   opacity: 0;
 }
-
 .modal-dialog::backdrop {
   display: none;
 }
-
 .modal-dialog {
   --modal-max-width: 75vw;
   --modal-bg: var(--bg-clr-liter);
@@ -278,7 +237,6 @@ const getDefaultButtonIcon = (action: string): string => {
   --modal-body-pad-blok: calc(var(--pad-blok) * 2);
   --modal-footer-pad-in: calc(var(--pad-in) * 2);
   --modal-footer-pad-blok: calc(var(--pad-blok) * 2);
-
   align-self: center;
   background-color: transparent;
   border: none;
@@ -298,15 +256,12 @@ const getDefaultButtonIcon = (action: string): string => {
   width: auto;
   z-index: 2;
 }
-
 .modal-wrapper.modal-is-entering .modal-dialog {
   animation: modal-enter-3d 300ms ease-out forwards;
 }
-
 .modal-wrapper.modal-is-leaving .modal-dialog {
   animation: modal-leave-3d 300ms ease-in forwards;
 }
-
 .modal-content {
   background-color: var(--modal-bg);
   border: 1px solid var(--modal-brdr);
@@ -322,7 +277,6 @@ const getDefaultButtonIcon = (action: string): string => {
   overflow: hidden;
   pointer-events: auto;
 }
-
 .modal-header {
   align-items: center;
   display: flex;
@@ -334,7 +288,6 @@ const getDefaultButtonIcon = (action: string): string => {
   padding-inline: var(--modal-header-pad-in);
   width: 100%;
 }
-
 .modal-header .start-section {
   align-items: center;
   display: flex;
@@ -342,69 +295,58 @@ const getDefaultButtonIcon = (action: string): string => {
   max-width: 100%;
   overflow: hidden;
 }
-
 .modal-header .start-section .iconify {
   min-width: 16px;
 }
-
 .modal-header .end-section {
   align-items: center;
   display: flex;
   gap: 8px;
 }
-
 .modal-header .title {
   flex-grow: 1;
   font-size: 1.5rem;
   font-weight: 600;
   min-width: 0;
 }
-
 .modal-body {
   grid-area: modal-body;
   line-height: 1.5;
   max-width: var(--modal-max-width);
   overflow: hidden;
 }
-
 .modal-body .modal-body-scrollbar {
   height: 100%;
   padding-block-end: calc(var(--modal-body-pad-blok) * 2);
   padding-block-start: var(--modal-body-pad-blok);
   padding-inline: var(--modal-body-pad-in);
 }
-
 .modal-body :deep(p) {
   margin-block-end: 1em;
   max-width: 100%;
   width: var(--ideal-char-reading-count);
 }
-
 .modal-body :deep(p:last-child) {
   margin-block-end: 0;
 }
-
 .modal-body:deep(.two-column-grid) {
   display: grid;
   gap: 24px;
   grid-template-columns: 1fr 1fr;
   width: 100%;
 }
-
 .modal-body:deep(.column) {
   align-items: stretch;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-
 .modal-body:deep(.column > h3) {
   border-block-end: 1px solid var(--brdr-clr);
   margin-block-end: 8px;
   padding-block-end: 8px;
   text-align: center;
 }
-
 .modal-footer {
   background-color: var(--bg-clr-lite);
   display: flex;
@@ -416,7 +358,6 @@ const getDefaultButtonIcon = (action: string): string => {
   padding-inline: var(--modal-footer-pad-in);
   width: 100%;
 }
-
 .modal-footer:deep(.custom-button) {
   --visual-style-inset: 0px;
   flex-grow: 1;
@@ -425,13 +366,11 @@ const getDefaultButtonIcon = (action: string): string => {
   max-width: min(30ch, 100%);
   min-width: 20ch;
 }
-
 @media (width < 1024px) {
   .modal-dialog {
     --modal-max-width: 90vw;
   }
 }
-
 @keyframes modal-enter-3d {
   from {
     opacity: 0;
@@ -442,7 +381,6 @@ const getDefaultButtonIcon = (action: string): string => {
     transform: perspective(1000px) scale(1) rotateX(0deg);
   }
 }
-
 @keyframes modal-leave-3d {
   from {
     opacity: 1;

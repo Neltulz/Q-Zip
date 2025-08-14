@@ -1,0 +1,16 @@
+---
+description: "Core context for the Q-Zip project, including its technology stack and general structure."
+globs: ["*"]
+alwaysApply: true
+---
+# Project Overview for Q-Zip
+
+Q-Zip is a Tauri-based desktop application for file compression and archiving, built with a Nuxt.js/Vue.js frontend and a Rust backend.
+
+### Technology Stack Versions
+- **Nuxt**: ^4.0.1
+- **Vue**: ^3.5.15
+- **Tauri**: 2.7.0
+- **Rust**: 1.77.2
+- **Package Manager**: pnpm@10.13.1
+- **IDE**: Cursor v1.4.3 (based on VS Code v1.99.3)

@@ -1,6 +1,5 @@
 <!-- components/ToolBar.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   ToolBar.vue @preserve
 -->
 <template>
@@ -13,18 +12,15 @@
     </div>
   </div>
 </template>
-
 <style scoped>
 .toolbar {
   --bg-clr: var(--bg-clr-lite);
-
   display: flex;
   justify-content: space-between;
   gap: 6px;
   padding-inline: var(--pad-in);
   padding-block: var(--pad-blok);
   background-color: var(--bg-clr);
-
   .start-buttons,
   .end-buttons {
     display: flex;

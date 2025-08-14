@@ -1,6 +1,5 @@
 <!-- components/LockButton.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   LockButton.vue @preserve
 -->
 <template>
@@ -12,14 +11,12 @@
     @click="$emit('click')"
   />
 </template>
-
 <script setup lang="ts">
 defineProps<{
   isLocked: boolean;
 }>();
 defineEmits(["click"]);
 </script>
-
 <style scoped>
 button {
   background: transparent;

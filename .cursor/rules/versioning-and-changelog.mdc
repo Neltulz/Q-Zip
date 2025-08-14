@@ -1,0 +1,12 @@
+---
+description: "Rules for managing the project's changelog and versioning."
+globs: ["CHANGELOG.md"]
+alwaysApply: true
+---
+# Changelog & Versioning Rules
+- **Occasionally ask me if I'd like to increment the patch number** If I say yes, then increment the patch number in `src-tauri/Cargo.toml`, `app/components/TitleBar.vue`, and `src-tauri/tauri.conf.json`.
+- **Changelog Limit:** When adding a new version that would exceed 20 entries, remove the oldest version entry.  Please count the number of entries.
+- **Format:** Use consistent markdown formatting with version numbers, dates, and categorized changes.
+- **Date Format:** Use ISO 8601 standard with Zulu time (e.g., `2025-08-14T14:00:00Z`).
+- **Time Conversion:** Convert local time to UTC/Zulu time (CST = UTC-6, CDT = UTC-5).
+- **Be Careful not to Delete the most recent changelog** If possible, try integrating your changes into the most recent changelog.  Only create a new Timestamped entry if we're doing a version increment.

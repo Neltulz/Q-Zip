@@ -1,35 +1,27 @@
 /* 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   assets/css/styles.css @preserve 
 */
 @import "tailwindcss";
 @import "@nuxt/ui";
-
 :root {
   --theme: light;
   color-scheme: light;
-
   @media (prefers-color-scheme: dark) {
     --theme: dark;
     color-scheme: dark;
   }
 }
-
 body {
   --ideal-char-reading-count: 65ch;
-
   --pad-blok: 6px;
   --pad-in: 10px;
-
   --brdr-rad: 8px;
   --brdr-rad-big: 10px;
   --brdr-rad-bigr: 12px;
   --brdr-rad-smal: 6px;
   --brdr-rad-smalr: 4px;
-
   --min-tch-tgt: 34px;
   --disabled-opacity: 0.25;
-
   --bg-lum: 91%;
   --bg-hue: 0;
   --bg-sat: 0%;
@@ -59,7 +51,6 @@ body {
     calc(var(--bg-lum) - 9%),
     var(--bg-alph)
   );
-
   --txt-lum: 35%;
   --txt-hue: 0;
   --txt-sat: 0%;
@@ -89,7 +80,6 @@ body {
     calc(var(--txt-lum) - 20%),
     var(--txt-alph)
   );
-
   --brdr-lum: 82%;
   --brdr-hue: 0;
   --brdr-sat: 0%;
@@ -124,7 +114,6 @@ body {
     calc(var(--brdr-lum) - 20%),
     var(--brdr-alph)
   );
-
   --blu-lite-lum: 40%;
   --blu-hue: 204;
   --blu-sat: 100%;
@@ -136,7 +125,6 @@ body {
     var(--blu-alph)
   );
   --blu-lite-trans: hsla(var(--blu-hue), var(--blu-sat), var(--blu-lite-lum), 0);
-
   --success-lum: 40%;
   --success-hue: 145;
   --success-sat: 63%;
@@ -147,7 +135,6 @@ body {
     var(--success-lum),
     var(--success-alph)
   );
-
   /* --- FIX START --- */
   --warning-lum: 50%;
   --warning-hue: 45;
@@ -160,7 +147,6 @@ body {
     var(--warning-alph)
   );
   /* --- FIX END --- */
-
   --danger-lum: 55%;
   --danger-hue: 0;
   --danger-sat: 65%;
@@ -171,7 +157,6 @@ body {
     var(--danger-lum),
     var(--danger-alph)
   );
-
   @container style(--theme: dark) {
     --bg-lum: 9%;
     --bg-clr-dark: hsla(
@@ -198,7 +183,6 @@ body {
       calc(var(--bg-lum) * 2),
       var(--bg-alph)
     );
-
     --txt-lum: 65%;
     --txt-clr-dark: hsla(
       var(--txt-hue),
@@ -224,7 +208,6 @@ body {
       calc(var(--txt-lum) * 1.3),
       var(--txt-alph)
     );
-
     --brdr-lum: 18%;
     --brdr-clr-dark: hsla(
       var(--brdr-hue),
@@ -252,12 +235,10 @@ body {
     );
   }
 }
-
 * {
   box-sizing: border-box;
   min-height: 0;
 }
-
 html {
   height: 100vh;
   max-height: 100vh;
@@ -265,7 +246,6 @@ html {
   font-size: 14px;
   interpolate-size: allow-keywords;
 }
-
 body {
   background-color: var(--bg-clr);
   color: var(--txt-clr);
@@ -285,20 +265,17 @@ body {
   max-height: 100vh;
   overflow: hidden;
 }
-
 /* Apply app zoom via CSS variable set by `useZoom` composable. */
 :root {
   --base-font-size: 14px;
   --zoom: 1; /* single canonical zoom variable */
 }
-
 /* Apply font-size scaling when zoom mode is 'font' and apply app-wide zoom using
    the browser `zoom` property which is layout-friendly in Chromium. */
 html {
   font-size: var(--base-font-size);
   zoom: var(--zoom);
 }
-
 article,
 blockquote,
 cite,
@@ -318,42 +295,34 @@ input:is(
   ) {
   user-select: text;
 }
-
 a {
   color: hsl(227, 58%, 65%);
 }
-
 .selectable {
   user-select: text;
 }
-
 /* New reusable class for shortcut text */
 .shortcut-key-text {
   color: var(--blu-lite);
   font-weight: 500;
 }
-
 :disabled {
   cursor: default;
   opacity: var(--disabled-opacity);
   pointer-events: none;
 }
-
 #__nuxt {
   height: 100vh;
   max-height: 100vh;
   overflow: hidden;
 }
-
 [data-is-shown="false"] {
   display: none;
 }
-
 [data-is-animating="false"] {
   opacity: 0;
   pointer-events: none;
 }
-
 .page {
   display: grid;
   gap: var(--pad-in);
@@ -361,14 +330,12 @@ a {
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr auto;
   height: 100%;
-
   .bottom-buttons {
     grid-area: bottom-buttons;
     margin-inline: auto;
     max-width: 2000px;
     width: 100%;
   }
-
   .main-content {
     display: grid;
     grid-template-columns: 1fr;
@@ -377,9 +344,7 @@ a {
     width: 100%;
   }
 }
-
 /* Removed :focus-visible global rules per user preference (focus rings disabled) */
-
 a,
 .button,
 button,
@@ -411,13 +376,11 @@ input:is(
   touch-action: manipulation;
   transition: all 100ms ease;
 }
-
 textarea {
   min-height: calc(2lh + (var(--pad-blok) * 2));
   padding: var(--pad-blok);
   resize: vertical;
 }
-
 a,
 button,
 .button,
@@ -435,7 +398,6 @@ input:is(
   ) {
   cursor: pointer;
 }
-
 textarea,
 input:is(
     [type="text"],
@@ -448,7 +410,6 @@ input:is(
   ) {
   cursor: text;
 }
-
 select,
 input:not([type="checkbox"]),
 textarea {
@@ -458,11 +419,9 @@ textarea {
   min-width: 80px;
   padding: 4px;
 }
-
 select {
   appearance: none;
   position: relative;
-
   &:after {
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6l-6-6z'/%3E%3C/svg%3E");
     content: "";
@@ -475,13 +434,11 @@ select {
     z-index: 100;
   }
 }
-
 label:has(input[type="checkbox"]) {
   column-gap: var(--pad-in);
   display: grid;
   grid-template-columns: auto 1fr;
 }
-
 fieldset {
   border: 1px solid var(--brdr-clr-liter);
   border-radius: 8px;
@@ -489,25 +446,21 @@ fieldset {
   padding: var(--pad-in);
   row-gap: var(--pad-in);
   transition: all 250ms ease;
-
   legend {
     border-radius: var(--brdr-rad);
     color: var(--txt-clr-darkr);
     font-weight: 500;
     padding-inline: var(--pad-in);
   }
-
   .fieldset-content {
     display: grid;
     row-gap: var(--pad-in);
   }
 }
-
 .browse-lock-and-input-wrapper {
   display: grid;
   grid-template-columns: 1fr auto;
   min-width: 80px;
-
   .browse-btn {
     background: transparent;
     border: 1px solid var(--brdr-clr-liter);
@@ -515,7 +468,6 @@ fieldset {
     border-start-start-radius: 0;
     box-shadow: none;
   }
-
   input,
   textarea,
   select {
@@ -524,28 +476,23 @@ fieldset {
     margin-inline-end: -1px;
   }
 }
-
 @media (width < 1024px) {
   :root {
     --min-tch-tgt: 28px;
     --pad-blok: 4px;
     --pad-in: 8px;
   }
-
   .page {
     gap: 0;
-
     .main-content {
       gap: 0;
     }
-
     .bottom-buttons {
       padding-block: var(--pad-blok);
       padding-inline: var(--pad-in);
     }
   }
 }
-
 /* Utility: global "no selection" mode
    - Add the `no-select` class to the <body> element (e.g. <body class="no-select">)
      to disable text selection across the app.

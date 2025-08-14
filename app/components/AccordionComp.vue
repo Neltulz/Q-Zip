@@ -1,17 +1,14 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   AccordionComp.vue @preserve
 -->
 <!-- components/AccordionComp.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   AccordionComp.vue @preserve
 -->
 <!--
  * Accordion Component
   A customizable accordion component for displaying collapsible sections.
-
  * Props:
   - categories: Array of strings representing the section names.
   - icons: Object mapping category names to icon names (e.g., { general: 'mdi:cog' }).
@@ -21,7 +18,6 @@
   - columns: Optional number of columns to distribute the accordion items (default: 1).
   - minColumnWidth: Optional minimum width for each column (default: '300px').
   - buttonNames: Optional object mapping category names to data-name values for CustomButton.
-
  * Usage:
   <AccordionComp
     :categories="['general', 'advanced']"
@@ -41,7 +37,6 @@
     </template>
   </AccordionComp>
 -->
-
 <template>
   <div ref="accordionRef" class="accordion" :class="{ 'initial-render': isInitialRender }" data-component-name="AccordionComp">
     <div
@@ -74,10 +69,8 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, onUnmounted, nextTick } from "vue";
-
 const props = defineProps<{
   categories: string[];
   icons: Record<string, string>;
@@ -88,28 +81,23 @@ const props = defineProps<{
   minColumnWidth?: string;
   buttonNames?: Record<string, string>;
 }>();
-
 const emit = defineEmits<{
   (e: "toggle-clicked" | "transition-end"): void;
 }>();
-
 const maxColumns = computed((): number => props.columns || 1);
 const minColumnWidth = computed((): string => props.minColumnWidth || "300px");
-
 // Initialize openSections based on defaultExpanded before initial render
 const openSections = ref<string[]>(props.defaultExpanded ? [...props.categories] : []);
 const accordionRef = ref<HTMLElement | null>(null);
 const accordionWrapperRef = ref<HTMLElement | null>(null);
 const currentColumns = ref<number>(1);
 const isInitialRender = ref<boolean>(true);
-
 const effectiveColumns = computed((): number => {
   const totalItems: number = props.categories.length;
   const maxCols: number = currentColumns.value;
   if (totalItems === 0 || maxCols <= 0) return 0;
   return Math.min(maxCols, totalItems);
 });
-
 const calculateOptimalColumns = (): number => {
   if (!accordionRef.value) return 1;
   const containerWidth: number = accordionRef.value.offsetWidth;
@@ -126,7 +114,6 @@ const calculateOptimalColumns = (): number => {
   }
   return optimalCols;
 };
-
 const throttle = <T extends (...args: unknown[]) => void>(func: T, limit: number): ((...args: Parameters<T>) => void) => {
   let inThrottle: boolean;
   return (...args: Parameters<T>) => {
@@ -137,7 +124,6 @@ const throttle = <T extends (...args: unknown[]) => void>(func: T, limit: number
     }
   };
 };
-
 const debounce = <T extends (...args: unknown[]) => void>(func: T, delay: number): ((...args: Parameters<T>) => void) => {
   let timer: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
@@ -145,22 +131,17 @@ const debounce = <T extends (...args: unknown[]) => void>(func: T, delay: number
     timer = setTimeout(() => func(...args), delay);
   };
 };
-
 const throttledResize = throttle(() => {
   currentColumns.value = calculateOptimalColumns();
 }, 250);
-
 const debouncedResize = debounce(() => {
   currentColumns.value = calculateOptimalColumns();
 }, 500);
-
 const handleResize = (): void => {
   throttledResize();
   debouncedResize();
 };
-
 let resizeObserver: ResizeObserver | null = null;
-
 onMounted(() => {
   currentColumns.value = calculateOptimalColumns();
   resizeObserver = new ResizeObserver(handleResize);
@@ -171,13 +152,11 @@ onMounted(() => {
     isInitialRender.value = false;
   });
 });
-
 onUnmounted(() => {
   if (resizeObserver) {
     resizeObserver.disconnect();
   }
 });
-
 const toggleSection = (category: string): void => {
   if (openSections.value.includes(category)) {
     openSections.value = openSections.value.filter((c) => c !== category);
@@ -198,7 +177,6 @@ const toggleSection = (category: string): void => {
     );
   }
 };
-
 const columnsData = computed((): string[][] => {
   const cols: number = effectiveColumns.value;
   if (cols === 0) return [];
@@ -215,17 +193,14 @@ const columnsData = computed((): string[][] => {
   }
   return result;
 });
-
 watch([maxColumns, minColumnWidth], () => {
   currentColumns.value = calculateOptimalColumns();
 });
 </script>
-
 <style scoped>
 .accordion {
   container-name: accordion;
   container-type: inline-size;
-
   &.initial-render {
     .accordion-item {
       .category-content {
@@ -233,25 +208,20 @@ watch([maxColumns, minColumnWidth], () => {
       }
     }
   }
-
   .accordion-wrapper {
     display: grid;
     gap: var(--pad-blok);
   }
 }
-
 .accordion-column {
   display: flex;
   flex-direction: column;
   row-gap: var(--pad-blok);
-
   .accordion-item {
     display: grid;
     grid-template-rows: auto 1fr;
-
     .category-header {
       justify-content: flex-start;
-
       .button-content {
         .text {
           font-size: 1.25em;
@@ -259,22 +229,18 @@ watch([maxColumns, minColumnWidth], () => {
           color: var(--txt-clr-liter);
         }
       }
-
       &:deep(.last-icon) {
         margin-inline-start: auto;
       }
-
       &.is-open {
         &:deep(.custom-button .last-icon) {
           transform: rotate(180deg);
         }
-
         + .category-content {
           height: auto;
           visibility: visible;
         }
       }
-
       &:deep(.visual-style) {
         border-block-end: 1px solid var(--brdr-clr-liter);
         border-block-start: 0;
@@ -283,20 +249,17 @@ watch([maxColumns, minColumnWidth], () => {
         border-radius: 0;
       }
     }
-
     .category-content {
       height: 0;
       overflow: clip;
       padding-inline: var(--pad-in);
       transition: height 500ms ease, visibility 500ms ease;
       visibility: hidden;
-
       .category-content-inner {
         padding-block: var(--pad-in);
       }
     }
   }
-
   > .accordion-item {
     &:last-child {
       .category-header {

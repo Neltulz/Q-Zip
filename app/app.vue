@@ -1,6 +1,5 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   app.vue @preserve 
 -->
 <template>
@@ -20,7 +19,6 @@
     </Transition>
   </div>
 </template>
-
 <script setup lang="ts">
 import { onBeforeMount, onMounted, onUnmounted } from "vue";
 import { useLayoutStore } from "@/stores/layoutStore";
@@ -32,15 +30,12 @@ import NotificationContainer from "@/components/NotificationContainer.vue";
 import { provideScrollContainer } from "@/composables/useScrollContainer";
 import { zoomIn, zoomOut, resetZoom, setFileTableZoomFactor, getFileTableZoomFactor, getZoomFactor, setZoomFactor } from "@/composables/useZoom";
 import { enableSelectionLock, disableSelectionLock } from "@/composables/useSelectionLock";
-
 provideScrollContainer();
-
 const layoutStore = useLayoutStore();
 const userPreferencesStore = useUserPreferencesStore();
 const jobsStore = useJobsStore();
 const dragDropStore = useDragDropStore();
 const uiStore = useUiStore();
-
 const handleGlobalKeyDown = (event: KeyboardEvent): void => {
   if (event.key === "Escape") {
     // Universal escape handler for any active drag operation
@@ -49,7 +44,6 @@ const handleGlobalKeyDown = (event: KeyboardEvent): void => {
     }
   }
 };
-
 onBeforeMount((): void => {
   if (userPreferencesStore.skipWelcomeScreen) {
     layoutStore.showDefaultLayout();
@@ -59,7 +53,6 @@ onBeforeMount((): void => {
     }
   }
 });
-
 onMounted(() => {
   uiStore.notifications = [];
   // Disable text selection globally by default (except form controls)
@@ -118,7 +111,6 @@ onMounted(() => {
     }
   };
   window.addEventListener("mousemove", mouseMoveTracker, { passive: true });
-
   // Broadcast a custom event when the user clicks outside any job-content so
   // components (like FileTable) can become inactive.
   const outsideClickHandler = (ev: MouseEvent) => {
@@ -133,64 +125,52 @@ onMounted(() => {
     }
   };
   window.addEventListener("click", outsideClickHandler, { passive: true });
-
   // Ctrl + wheel to zoom (global). We'll route zoom to the file-table when the
   // mouse cursor is over the job-content area (tracked by mouseMoveTracker).
   const wheelHandler = (e: WheelEvent) => {
     if (!(e.ctrlKey || e.metaKey)) return;
     e.preventDefault();
-
     // Determine delta: positive deltaY means wheel DOWN (zoom out), negative means UP (zoom in)
     const delta = e.deltaY;
     const increment = delta < 0 ? 1 : -1;
-
     if (lastIsInFileTable) {
       const current = getFileTableZoomFactor();
       setFileTableZoomFactor(current + increment * 0.05);
       return;
     }
-
     // otherwise global zoom
     if (delta < 0) zoomIn();
     else zoomOut();
   };
-
   window.addEventListener("wheel", wheelHandler, { passive: false });
-
   // Ensure we remove the handlers we registered inside this onMounted when the component unmounts
   onUnmounted(() => {
     window.removeEventListener("keydown", zoomKeyHandler);
     window.removeEventListener("wheel", wheelHandler);
     window.removeEventListener("mousemove", mouseMoveTracker);
   });
-
   window.addEventListener("keydown", handleGlobalKeyDown);
 });
-
 onUnmounted(() => {
   // Clean up selection lock when app unmounts
   disableSelectionLock();
   window.removeEventListener("keydown", handleGlobalKeyDown);
 });
 </script>
-
 <style scoped>
 .app-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
 }
-
 .layout-fade-enter-active,
 .layout-fade-leave-active {
   transition: opacity 250ms ease;
 }
-
 .layout-fade-enter-from,
 .layout-fade-leave-to {
   opacity: 0;
 }
-
 .layout-wrapper {
   flex-grow: 1;
   padding-block-start: var(--title-bar-height);

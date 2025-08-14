@@ -1,6 +1,5 @@
 // stores/dragDropStore.ts
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 /**
  * @preserve
  * Description:
@@ -16,11 +15,9 @@
  * const dragDropStore = useDragDropStore();
  * dragDropStore.startInternalDrag(...);
  */
-
 import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";
 import { logStoreAction } from "@/utils/loggers";
-
 export const useDragDropStore = defineStore(
   "dragDrop",
   () => {
@@ -30,13 +27,11 @@ export const useDragDropStore = defineStore(
     const internalDragOperation: Ref<"move" | "copy" | null> = ref(null);
     const internalDragSourceJobId: Ref<number | null> = ref(null);
     const dropOccurred: Ref<boolean> = ref(false);
-
     // --- ACTIONS ---
     function setDropOccurred(value: boolean): void {
       logStoreAction("dragDropStore", `Setting dropOccurred to: ${value}`);
       dropOccurred.value = value;
     }
-
     function startInternalDrag(files: string[], operation: "move" | "copy" | null = null, sourceJobId: number): void {
       logStoreAction("dragDropStore", `Starting internal drag: ${files.length} files, operation: ${operation}, sourceJob: ${sourceJobId}`);
       isInternalDragActive.value = true;
@@ -45,7 +40,6 @@ export const useDragDropStore = defineStore(
       internalDragSourceJobId.value = sourceJobId;
       dropOccurred.value = false;
     }
-
     function endInternalDrag(): void {
       logStoreAction("dragDropStore", "Ending internal drag.");
       isInternalDragActive.value = false;
@@ -54,7 +48,6 @@ export const useDragDropStore = defineStore(
       internalDragSourceJobId.value = null;
       dropOccurred.value = false;
     }
-
     return {
       isInternalDragActive,
       internalDraggedFiles,

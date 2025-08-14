@@ -1,14 +1,10 @@
 // composables/dropdownManager.ts
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
-
 // A Vue composable that manages multiple dropdown menus by tracking their open states,
 // handling global click events to close dropdowns when clicking outside, and supporting
 // nested dropdowns by closing only unrelated dropdowns when a new one is opened.
-
 import { ref, watch, onBeforeUnmount, watchEffect } from "vue";
 import { logManagerAction, logGlobalEvent, logWarning, logFocus } from "@/utils/loggers";
-
 // Define the structure of a dropdown object
 export interface Dropdown {
   id: symbol;
@@ -17,20 +13,16 @@ export interface Dropdown {
   close: () => void;
   isSubmenu: boolean;
 }
-
 // Reactive array to track open dropdowns
 const openDropdowns = ref<Dropdown[]>([]);
 let submenuCloseTimer: number | null = null;
-
 // Flag to ensure the global listener is added only once
 let isListenerAdded: boolean = false;
-
 // Overlay element that blocks hover/clicks under dropdowns while a dropdown is open
 let overlayEl: HTMLElement | null = null;
 // Health check timer id for overlay (periodically ensure overlay visibility matches openDropdowns)
 let overlayHealthCheckTimer: number | null = null;
 let overlayUpdateTimer: number | null = null;
-
 const ensureOverlay = () => {
   if (overlayEl) return overlayEl;
   overlayEl = document.createElement("div");
@@ -59,7 +51,6 @@ const ensureOverlay = () => {
   logManagerAction("dropdownManager", "Created dropdown overlay element (conditional)");
   return overlayEl;
 };
-
 const showOverlay = () => {
   logManagerAction("dropdownManager", "showOverlay called");
   try {
@@ -72,7 +63,6 @@ const showOverlay = () => {
         // Allow conflict-resolution-dropdown to work within modals
         return dropdownName === 'conflict-resolution-dropdown';
       });
-
       if (!isModalCompatibleDropdown) {
         logManagerAction("dropdownManager", "Modal is open, not showing dropdown overlay");
         return;
@@ -80,7 +70,6 @@ const showOverlay = () => {
         logManagerAction("dropdownManager", "Modal is open, but allowing modal-compatible dropdown overlay");
       }
     }
-
     const el = ensureOverlay();
     // Add to DOM only when needed
     if (!document.body.contains(el)) {
@@ -92,7 +81,6 @@ const showOverlay = () => {
       logManagerAction("dropdownManager", "Overlay already visible, skipping show");
       return;
     }
-
     // Make it visible with a smooth fade and enable pointer capture
     // Use RAF to ensure style changes are applied after insertion.
     requestAnimationFrame(() => {
@@ -106,7 +94,6 @@ const showOverlay = () => {
     logManagerAction("dropdownManager", `Error in showOverlay: ${e}`);
   }
 };
-
 const hideOverlay = () => {
   // Avoid noisy repeated hide calls by only acting when overlay is visible
   try {
@@ -119,14 +106,12 @@ const hideOverlay = () => {
       return;
     }
     logManagerAction("dropdownManager", "hideOverlay called");
-
     // Fade out and disable pointer capture
     overlayEl.style.pointerEvents = "none";
     overlayEl.style.opacity = "0";
     overlayEl.style.background = "hsla(0, 0%, 0%, 0)";
     overlayEl.setAttribute("data-overlay-visible", "false");
     logManagerAction("dropdownManager", "Overlay hidden (visibility toggled off)");
-
     // Remove from DOM after fade animation completes
     setTimeout(() => {
       if (overlayEl && overlayEl.parentElement && overlayEl.getAttribute("data-overlay-visible") === "false") {
@@ -139,7 +124,6 @@ const hideOverlay = () => {
     logManagerAction("dropdownManager", `Error in hideOverlay: ${e}`);
   }
 };
-
 // Cancels any pending submenu closure timer.
 const cancelSubmenuClosure = (): void => {
   if (submenuCloseTimer) {
@@ -148,7 +132,6 @@ const cancelSubmenuClosure = (): void => {
     submenuCloseTimer = null;
   }
 };
-
 /**
  * Closes all open dropdowns.
  * @param reason - A string describing why the dropdowns are being closed.
@@ -158,7 +141,6 @@ const closeAllDropdowns = (reason?: string): void => {
     openDropdownsCount: openDropdowns.value.length,
     dropdownNames: openDropdowns.value.map(d => d.dropdownContent?.getAttribute('data-belongs-to') || 'unknown')
   });
-
   // Start hiding the overlay immediately so it can fade out concurrently
   // with dropdown close animations.
   try {
@@ -166,27 +148,28 @@ const closeAllDropdowns = (reason?: string): void => {
   } catch (e) {
     /* ignore */
   }
-
   if (openDropdowns.value.length > 0) {
     const reasonMsg = reason ? `Reason: ${reason}` : "No reason specified.";
     logManagerAction("dropdownManager", `Closing all dropdowns explicitly. ${reasonMsg}`);
-
     // Check if any of the dropdowns being closed are drag action dropdowns
     const hasDragActionDropdown = openDropdowns.value.some((dropdown) => {
       const dropdownName = dropdown.dropdownContent?.getAttribute('data-belongs-to');
       return dropdownName && (dropdownName.startsWith('drag-action-job-') || dropdownName === 'drag-action-new-job');
     });
-
     if (hasDragActionDropdown) {
       logManagerAction("dropdownManager", "Found drag action dropdown in open dropdowns list");
     }
-
-    openDropdowns.value.forEach((dropdown) => {
+    // Store the dropdowns to close before clearing the array
+    const dropdownsToClose = [...openDropdowns.value];
+    // Clear the array immediately to prevent the debounced watcher from showing the overlay again
+    openDropdowns.value = [];
+    logManagerAction("dropdownManager", "Cleared openDropdowns array to prevent race condition");
+    // Now close each dropdown
+    dropdownsToClose.forEach((dropdown) => {
       const dropdownName = dropdown.dropdownContent?.getAttribute('data-belongs-to') || 'unknown';
       logManagerAction("dropdownManager", `Closing dropdown: ${dropdownName}`);
       dropdown.close();
     });
-
     // If we closed a drag action dropdown, also end the drag operation
     if (hasDragActionDropdown) {
       try {
@@ -207,28 +190,22 @@ const closeAllDropdowns = (reason?: string): void => {
   }
   // ALWAYS cancel any pending submenu closure timer when closing all dropdowns.
   cancelSubmenuClosure();
-
   logFocus("dropdownManager", "closeAllDropdowns completed");
 };
-
 // Handle global clicks to close dropdowns if the click is outside any dropdown content
 const handleGlobalClickOutside = (event: MouseEvent): void => {
   // Ignore right-clicks, as they are used to open context menus.
   if (event.button !== 0) {
     return;
   }
-
   logGlobalEvent("dropdownManager", "Global click detected. Target:", event.target);
-
   const target = event.target as HTMLElement;
-
   // If the click is inside a modal, don't close the dropdowns.
   // Check both modal-dialog and modal-wrapper to handle backdrop clicks properly
   if (target.closest(".modal-dialog") || target.closest(".modal-wrapper")) {
     logGlobalEvent("dropdownManager", "Click is inside a modal. No action taken.");
     return;
   }
-
   // Check if the click was inside the content of any open dropdown OR on its controlling button.
   const closestDropdownContent = target.closest('.dropdown-content') as HTMLElement | null;
   const isClickInsideSomethingManaged: boolean = openDropdowns.value.some((dropdown) => {
@@ -239,10 +216,8 @@ const handleGlobalClickOutside = (event: MouseEvent): void => {
     }
     return inContent || onButton;
   });
-
   // If the click is on a file row, let JobArea handle it.
   const isClickOnFileRow = target.closest(".file-row");
-
   if (isClickInsideSomethingManaged) {
     logGlobalEvent("dropdownManager", "Click is inside a managed dropdown/button. No action taken.");
     // Do nothing, the click is handled by the dropdown itself.
@@ -254,7 +229,6 @@ const handleGlobalClickOutside = (event: MouseEvent): void => {
     closeAllDropdowns("Global click outside");
   }
 };
-
 // Handle Escape key press to close all dropdowns
 const handleEscapeKey = (event: KeyboardEvent): void => {
   if (event.key === "Escape") {
@@ -270,7 +244,6 @@ const handleEscapeKey = (event: KeyboardEvent): void => {
     }
   }
 };
-
 // Set up the global click listener to handle clicks outside dropdowns
 const setupGlobalListener = (): void => {
   if (!isListenerAdded) {
@@ -279,12 +252,10 @@ const setupGlobalListener = (): void => {
     isListenerAdded = true;
   }
 };
-
 // Export the composable function for use in components
 export function useDropdownManager() {
   // Ensure the global listener is set up
   setupGlobalListener();
-
   // Watch for modal state changes and hide overlay when modals open
   watchEffect(() => {
     const modalOpen = !!document.querySelector(".modal-wrapper.modal-open");
@@ -293,7 +264,6 @@ export function useDropdownManager() {
         logManagerAction("dropdownManager", "Modal opened, hiding dropdown overlay");
         hideOverlay();
       }
-
       // Also close all dropdowns when a modal opens, EXCEPT modal-compatible dropdowns
       if (openDropdowns.value.length > 0) {
         // Check if there are any modal-compatible dropdowns that should remain open
@@ -302,13 +272,11 @@ export function useDropdownManager() {
           // Allow conflict-resolution-dropdown to remain open within modals
           return dropdownName === 'conflict-resolution-dropdown';
         });
-
         const dropdownsToClose = openDropdowns.value.filter(dropdown => {
           const dropdownName = dropdown.dropdownContent?.getAttribute('data-belongs-to');
           // Close all dropdowns except conflict-resolution-dropdown
           return dropdownName !== 'conflict-resolution-dropdown';
         });
-
         if (dropdownsToClose.length > 0) {
           logManagerAction("dropdownManager", `Modal opened, closing ${dropdownsToClose.length} non-modal-compatible dropdowns`);
           dropdownsToClose.forEach(dropdown => {
@@ -317,14 +285,12 @@ export function useDropdownManager() {
             dropdown.close();
           });
         }
-
         if (modalCompatibleDropdowns.length > 0) {
           logManagerAction("dropdownManager", `Modal opened, keeping ${modalCompatibleDropdowns.length} modal-compatible dropdowns open`);
         }
       }
     }
   });
-
   // Watch openDropdowns to show/hide the overlay element when any dropdowns are open
   // Use a debounced watcher to coalesce rapid register/unregister calls (submenus often
   // register/unregister quickly when hovering). This prevents races that left the overlay
@@ -351,7 +317,6 @@ export function useDropdownManager() {
     },
     { deep: true }
   );
-
   // Start a health-check timer to ensure overlay isn't left visible when no dropdowns are open.
   // Runs every 5s and will hide the overlay if there are no open dropdowns.
   if (overlayHealthCheckTimer == null) {
@@ -366,7 +331,6 @@ export function useDropdownManager() {
       }
     }, 5000);
   }
-
   // Clean up overlay when module is unloaded (unlikely) or before unmount
   onBeforeUnmount(() => {
     hideOverlay();
@@ -402,7 +366,6 @@ export function useDropdownManager() {
       openDropdowns.value = openDropdowns.value.filter((d) => d.id !== id);
       if (openDropdowns.value.length < initialLength) {
         logManagerAction("dropdownManager", `Unregistered dropdown. Total open: ${openDropdowns.value.length}`);
-
         // If this was the last dropdown, immediately hide the overlay
         // This prevents the backdrop from staying visible when all dropdowns are closed
         if (openDropdowns.value.length === 0) {
@@ -414,20 +377,20 @@ export function useDropdownManager() {
           }
         }
         // Defer overlay visibility updates to the centralized watcher for other cases.
+      } else if (initialLength === 0) {
+        // Handle case where dropdown tries to unregister after array was already cleared
+        logManagerAction("dropdownManager", "Dropdown tried to unregister after array was already cleared");
       }
     },
     // Function to close all dropdowns except the current one and its ancestors
     closeUnrelatedDropdowns: (currentDropdown: Dropdown): void => {
       const ancestorIds = new Set<symbol>();
       let currentButton: HTMLElement | null = currentDropdown.button;
-
       // Traverse up the DOM to find ancestor dropdowns
       while (currentButton) {
         const parentContent: HTMLElement | null = currentButton.closest<HTMLElement>(".dropdown-content");
         if (!parentContent) break;
-
         const parentDropdown: Dropdown | undefined = openDropdowns.value.find((d) => d.dropdownContent === parentContent);
-
         if (parentDropdown) {
           ancestorIds.add(parentDropdown.id);
           // Continue search from the parent's button
@@ -437,7 +400,6 @@ export function useDropdownManager() {
           break;
         }
       }
-
       openDropdowns.value.forEach((dropdown) => {
         if (dropdown.id !== currentDropdown.id && !ancestorIds.has(dropdown.id)) {
           dropdown.close();
@@ -448,7 +410,6 @@ export function useDropdownManager() {
     closeDescendantsOf: (parentId: symbol): void => {
       const parentDropdown = openDropdowns.value.find((d) => d.id === parentId);
       if (!parentDropdown) return;
-
       const isDescendant = (candidate: Dropdown): boolean => {
         let currentButton: HTMLElement | null = candidate.button;
         while (currentButton) {
@@ -464,7 +425,6 @@ export function useDropdownManager() {
         }
         return false;
       };
-
       openDropdowns.value.forEach((dropdown) => {
         if (dropdown.id !== parentDropdown.id && isDescendant(dropdown)) {
           dropdown.close();

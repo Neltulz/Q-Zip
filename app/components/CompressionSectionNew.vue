@@ -1,14 +1,11 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   CompressionSectionNew.vue @preserve
 -->
 <!-- components/CompressionSectionNew.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   CompressionSectionNew.vue @preserve
 -->
-
 <template>
   <section id="compression-section" data-component-name="CompressionSectionNew">
     <div class="tabs">
@@ -355,7 +352,6 @@
     </OverlayScrollbarsComponent>
   </section>
 </template>
-
 <script setup lang="ts">
 import { computed, ref, watch, type ComponentPublicInstance } from "vue";
 import { useJobsStore, type Job, type CompressionSettings } from "@/stores/jobsStore";
@@ -369,23 +365,18 @@ import encryptConfigJson from "@/assets/config/encryptSettingsConfig.json";
 import { useDropdownManager } from "@/composables/dropdownManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logInteraction } from "@/utils/loggers";
-
 // --- START: TYPE DEFINITIONS ---
 // These types ensure that the data from JSON config files matches the props
 // expected by child components, resolving TypeScript errors.
-
 type InputType = "select" | "input" | "text-area" | "custom" | "checkbox";
-
 interface FieldOption {
   value: string | number;
   text: string;
 }
-
 interface FieldDependency {
   field: string;
   value: string | boolean;
 }
-
 interface FieldConfig {
   id: string;
   type: InputType;
@@ -395,16 +386,13 @@ interface FieldConfig {
   "data-field-name": string;
   dependsOn?: FieldDependency;
 }
-
 interface SettingsCategory {
   title: string;
   fields: FieldConfig[];
 }
-
 interface SettingsConfig {
   [key: string]: SettingsCategory;
 }
-
 interface CompressConfigData extends SettingsConfig {
   compress: {
     title: string;
@@ -423,23 +411,19 @@ interface CompressConfigData extends SettingsConfig {
     defaultExtensions: { [key: string]: string };
   };
 }
-
 // --- END: TYPE DEFINITIONS ---
-
 interface ExtendedInstance extends ComponentPublicInstance {
   osInstance: () => {
     elements: () => { content: HTMLElement };
     update: () => void;
   };
 }
-
 // Cast imported JSON to the defined types
 // MODIFIED: Added explicit type assertions to ensure the nested properties exist
 const generalConfig = generalConfigJson as { general: SettingsCategory };
 const advancedConfig = advancedConfigJson as { advanced: SettingsCategory };
 const compressConfig = compressConfigJson as CompressConfigData;
 const encryptConfig = encryptConfigJson as { encrypt: SettingsCategory };
-
 const jobsStore = useJobsStore();
 const themeStore = useThemeStore();
 const dropdownManager = useDropdownManager();
@@ -449,13 +433,11 @@ const lockStates = ref<Record<string, boolean>>({});
 const selectedJob = computed(() => jobsStore.jobs.find((job: Job) => job.id === jobsStore.selectedJobId));
 const globalSettings = computed(() => jobsStore.globalSettings);
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
-
 // MODIFIED: Computed properties to safely access fields from config JSONs
 const generalFields = computed(() => generalConfig.general.fields || []);
 const advancedFields = computed(() => advancedConfig.advanced.fields || []);
 const compressFields = computed(() => compressConfig.compress.fields || []);
 const encryptFields = computed(() => encryptConfig.encrypt.fields || []);
-
 const categories: string[] = ["general", "compression", "advanced", "encryption"];
 const globalButtonNames: Record<string, string> = {
   general: "global-general-btn",
@@ -475,7 +457,6 @@ const categoryIcons: Record<string, string> = {
   advanced: "mdi:brain",
   encryption: "mdi:lock",
 };
-
 watch(
   selectedJob,
   (newJob) => {
@@ -486,9 +467,7 @@ watch(
         ...advancedFields.value, // MODIFIED: Use computed properties
         ...encryptFields.value, // MODIFIED: Use computed properties
       ];
-
       const lockableFields = allFields.filter((f) => f.type === "select" || f.id === "parameters");
-
       lockStates.value = Object.fromEntries(
         lockableFields.map((field) => [field.id, newJob.settings[field.id as keyof CompressionSettings] === undefined])
       );
@@ -498,14 +477,12 @@ watch(
   },
   { immediate: true }
 );
-
 const handleScroll = (): void => {
   dropdownManager.closeAllDropdowns();
   if (DEBUG && debugConfig.logUIEvents) {
     logInteraction("CompressionSectionNew", "Scroll detected, closing all dropdowns.");
   }
 };
-
 const getActualDefaultValue = (key: string): string | number | boolean | undefined => {
   const allFields: FieldConfig[] = [
     ...generalFields.value, // MODIFIED: Use computed properties
@@ -523,7 +500,6 @@ const getActualDefaultValue = (key: string): string | number | boolean | undefin
     return field.default;
   }
 };
-
 const getFormattedGlobalValue = (key: string): string => {
   const allFields: FieldConfig[] = [
     ...generalFields.value, // MODIFIED: Use computed properties
@@ -542,7 +518,6 @@ const getFormattedGlobalValue = (key: string): string => {
     return `Use Global: ${valueStr === "" ? "None" : valueStr}`;
   }
 };
-
 const getOptions = (fieldId: string, context: "global" | "job"): { value: string | number; text: string }[] => {
   const format: string =
     context === "global"
@@ -552,7 +527,6 @@ const getOptions = (fieldId: string, context: "global" | "job"): { value: string
     context === "global"
       ? globalSettings.value.compressionMethod
       : selectedJob.value?.settings.compressionMethod ?? globalSettings.value.compressionMethod;
-
   switch (fieldId) {
     case "compressionLevel":
       return (
@@ -603,12 +577,10 @@ const getOptions = (fieldId: string, context: "global" | "job"): { value: string
       return [];
   }
 };
-
 const handleGlobalUnsetOrClear = (fieldId: string): void => {
   const defaultValue = getActualDefaultValue(fieldId);
   jobsStore.updateGlobalSettings({ [fieldId]: defaultValue });
 };
-
 const handleJobUnsetOrClear = (fieldId: string): void => {
   if (selectedJob.value) {
     const defaultValue = getActualDefaultValue(fieldId);
@@ -617,18 +589,15 @@ const handleJobUnsetOrClear = (fieldId: string): void => {
     });
   }
 };
-
 const handleResetToGlobal = (fieldId: string): void => {
   if (selectedJob.value) {
     jobsStore.updateJobSettings(selectedJob.value.id, { [fieldId]: undefined });
   }
 };
-
 const toggleLock = (key: string): void => {
   if (activeTab.value !== "job" || !selectedJob.value) return;
   const isLocked = lockStates.value[key];
   const jobSettings = selectedJob.value.settings as Record<string, unknown>;
-
   if (isLocked) {
     jobSettings[key] = globalSettings.value[key as keyof CompressionSettings];
     lockStates.value[key] = false;
@@ -637,7 +606,6 @@ const toggleLock = (key: string): void => {
     lockStates.value[key] = true;
   }
 };
-
 const browseOutputFolder = async (context: "global" | "job"): Promise<void> => {
   try {
     const selected: string | null = await open({
@@ -651,18 +619,15 @@ const browseOutputFolder = async (context: "global" | "job"): Promise<void> => {
     console.error("Error selecting output folder:", error);
   }
 };
-
 const getDisplayValue = (key: string, context: "global" | "job"): string | number | boolean => {
   const typedKey = key as keyof CompressionSettings;
   let value;
-
   if (context === "job" && selectedJob.value) {
     value =
       selectedJob.value.settings[typedKey] !== undefined ? selectedJob.value.settings[typedKey] : globalSettings.value[typedKey];
   } else {
     value = globalSettings.value[typedKey];
   }
-
   if (key === "useInputLocationsForOutput") {
     return value === true ? "use_input" : "use_specified";
   } else if (key === "createMultipleArchives") {
@@ -670,7 +635,6 @@ const getDisplayValue = (key: string, context: "global" | "job"): string | numbe
   }
   return value;
 };
-
 const updateSetting = (key: string, value: string | number | boolean, context: "global" | "job"): void => {
   if (context === "job" && lockStates.value[key]) return;
   const typedKey = key as keyof CompressionSettings;
@@ -690,7 +654,6 @@ const updateSetting = (key: string, value: string | number | boolean, context: "
     });
   }
 };
-
 const evaluateDependency = (dependsOn: FieldDependency | undefined, context: "global" | "job"): boolean => {
   if (!dependsOn) return true;
   const fieldValue =
@@ -700,7 +663,6 @@ const evaluateDependency = (dependsOn: FieldDependency | undefined, context: "gl
         globalSettings.value[dependsOn.field as keyof CompressionSettings];
   return fieldValue === dependsOn.value;
 };
-
 // MODIFIED: Helper functions to simplify template logic and improve type safety
 const getJobFieldDisabledState = (fieldId: string): boolean => {
   if (fieldId === "outputFolder") {
@@ -712,26 +674,21 @@ const getJobFieldDisabledState = (fieldId: string): boolean => {
   }
   return lockStates.value[fieldId] ?? false;
 };
-
 const getJobFieldInputType = (fieldId: string, defaultType: InputType): InputType => {
   return lockStates.value[fieldId] ?? false ? "input" : defaultType;
 };
-
 const getJobFieldLockedState = (fieldId: string): boolean => {
   return lockStates.value[fieldId] ?? false;
 };
-
 const getJobFieldModelValue = (fieldId: string): string | number | boolean => {
   return lockStates.value[fieldId] ?? false ? getFormattedGlobalValue(fieldId) : getDisplayValue(fieldId, "job");
 };
-
 const getJobFieldOptions = (fieldId: string, fieldType: InputType, defaultOptions: FieldOption[] | undefined): FieldOption[] => {
   if (fieldType === "select" && !(lockStates.value[fieldId] ?? false)) {
     return defaultOptions ?? getOptions(fieldId, "job");
   }
   return [];
 };
-
 const handleTransitionEnd = (): void => {
   if (scrollbarRef.value?.osInstance) {
     const osInstance = scrollbarRef.value.osInstance();
@@ -749,7 +706,6 @@ const handleTransitionEnd = (): void => {
   }
 };
 </script>
-
 <style scoped>
 @import "./compression-section-comp/compression-section.scoped.css";
 </style>

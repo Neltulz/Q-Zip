@@ -1,11 +1,9 @@
 <!-- layouts/welcome.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   welcome.vue @preserve
 -->
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   welcome.vue @preserve
 -->
 <!--
@@ -23,7 +21,6 @@
   <div class="welcome-layout">
     <div class="content-wrapper">
       <h1 class="welcome-heading">Welcome</h1>
-
       <div class="actions-wrapper">
         <CustomButton
           btn-theme="primary"
@@ -49,7 +46,6 @@
           Restore Previous Session
         </CustomButton>
       </div>
-
       <!-- "Remember My Choice" checkbox, disabled when there's no session to restore -->
       <div class="remember-choice-wrapper">
         <input
@@ -63,19 +59,16 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { computed } from "vue";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useJobsStore, defaultGlobalSettings } from "@/stores/jobsStore";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { useUserPreferencesStore } from "@/stores/userPreferencesStore";
-
 const layoutStore = useLayoutStore();
 const jobsStore = useJobsStore();
 const navStore = useNavigationStore();
 const userPreferencesStore = useUserPreferencesStore();
-
 /**
  * Determines if a previous session exists.
  */
@@ -84,10 +77,8 @@ const hasPreviousSession = computed((): boolean => {
   // FIX: Use optional chaining `?.` to safely access `files` on a potentially undefined job.
   const singleJobHasFiles: boolean = jobsStore.jobs.length === 1 && (jobsStore.jobs[0]?.files.length ?? 0) > 0;
   const globalSettingsChanged: boolean = JSON.stringify(jobsStore.globalSettings) !== JSON.stringify(defaultGlobalSettings);
-
   return hasMultipleJobs || singleJobHasFiles || globalSettingsChanged;
 });
-
 /**
  * Handles the "Start Fresh" action.
  */
@@ -95,7 +86,6 @@ const handleStartFresh = (): void => {
   jobsStore.resetJobs();
   jobsStore.resetGlobalSettings();
   navStore.setActivePage("JobSetup");
-
   if (userPreferencesStore.rememberChoicePreference && hasPreviousSession.value) {
     userPreferencesStore.setSkipWelcomeScreen(true);
     userPreferencesStore.setStartFreshDefault(true);
@@ -104,7 +94,6 @@ const handleStartFresh = (): void => {
   }
   layoutStore.showDefaultLayout();
 };
-
 /**
  * Handles the "Restore Previous Session" action.
  */
@@ -118,7 +107,6 @@ const handleRestoreSession = (): void => {
   layoutStore.showDefaultLayout();
 };
 </script>
-
 <style scoped>
 .welcome-layout {
   align-items: center;
@@ -129,34 +117,29 @@ const handleRestoreSession = (): void => {
   justify-content: center;
   width: 100vw;
 }
-
 .content-wrapper {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   text-align: center;
 }
-
 .welcome-heading {
   color: var(--txt-clr-liter);
   font-size: 3rem;
   font-weight: 600;
 }
-
 .actions-wrapper {
   align-items: stretch;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
-
 .action-button {
   font-size: 1.125rem;
   gap: 1em;
   padding-block: 1em;
   padding-inline: 2em;
 }
-
 .remember-choice-wrapper {
   align-items: center;
   color: var(--txt-clr-lite);
@@ -165,19 +148,16 @@ const handleRestoreSession = (): void => {
   justify-content: center;
   margin-block-start: 1rem;
 }
-
 .remember-choice-wrapper:has(input:disabled) {
   pointer-events: none;
   opacity: 0.6;
 }
-
 .remember-choice-wrapper > #remember-choice {
   accent-color: var(--primary-clr);
   align-items: center;
   height: 1rem;
   width: 1rem;
 }
-
 .remember-choice-wrapper > label[for="remember-choice"] {
   align-items: center;
   display: flex;

@@ -1,7 +1,5 @@
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
 // layoutStore.ts
-
 /**
  * @preserve
  * Description: This Pinia store manages the active layout for the application.
@@ -16,15 +14,12 @@
  */
 import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";
-
 export type LayoutName = "welcome" | "default";
-
 export const useLayoutStore = defineStore(
   "layout",
   () => {
     // State
     const currentLayout: Ref<LayoutName> = ref("welcome");
-
     // Actions
     /**
      * Switches the current layout to the default application view.
@@ -32,14 +27,12 @@ export const useLayoutStore = defineStore(
     function showDefaultLayout(): void {
       currentLayout.value = "default";
     }
-
     /**
      * Switches the current layout to the welcome screen.
      */
     function showWelcomeLayout(): void {
       currentLayout.value = "welcome";
     }
-
     return {
       currentLayout,
       showDefaultLayout,

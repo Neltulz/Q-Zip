@@ -1,24 +1,19 @@
 /* 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   assets/css/overlay-scrollbar.css 
 */
-
 .os-theme-light {
   --os-handle-bg: hsla(0, 0%, 100%, 0.15);
   --os-handle-bg-hover: hsla(0, 0%, 100%, 0.35);
   --os-handle-bg-active: hsla(0, 0%, 100%, 0.5);
 }
-
 .os-theme-dark {
   --os-handle-bg: hsla(0, 0%, 0%, 0.15);
   --os-handle-bg-hover: hsla(0, 0%, 0%, 0.35);
   --os-handle-bg-active: hsla(0, 0%, 0%, 0.5);
 }
-
 [data-overlayscrollbars-contents] {
   padding-inline: var(--pad-in);
 }
-
 .os-scrollbar {
   --os-size: 8px;
   --os-handle-perpendicular-size-hover: 150%;

@@ -1,6 +1,4 @@
 // nuxt.config.ts
-// 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 // Description: Nuxt.js configuration file.
 // This configuration now explicitly disables Nuxt's default page routing system
 // by setting `pages: false`, as page rendering is handled customly within `layouts/default.vue`.

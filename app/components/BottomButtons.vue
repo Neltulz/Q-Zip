@@ -1,6 +1,5 @@
 <!-- components/BottomButtons.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   BottomButtons.vue @preserve
 -->
 <template>
@@ -8,7 +7,6 @@
     <slot />
   </div>
 </template>
-
 <script lang="ts" setup>
 defineProps({
   divId: {
@@ -17,14 +15,12 @@ defineProps({
   },
 });
 </script>
-
 <style scoped>
 .bottom-buttons {
   display: grid;
   align-items: center;
   justify-content: end;
   grid-auto-flow: column;
-
   &:deep(.custom-button) {
     font-size: 1em;
   }

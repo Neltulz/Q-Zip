@@ -1,7 +1,6 @@
 <template>
   <!-- FileTableContextMenu: Right-click context menu for file/folder actions -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   FileTableContextMenu.vue @preserve
 -->
   <div v-if="props.showRowActions" class="row-actions" @click.stop>
@@ -213,7 +212,6 @@
     </DropdownMenu>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, nextTick } from "vue";
 import type { FileItem } from "@/types/types";
@@ -221,14 +219,12 @@ import DropdownMenu from "../DropdownMenu.vue";
 import CustomButton from "../CustomButton.vue";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
-
 const props = defineProps<{
   file: FileItem;
   jobId: number;
   showRowActions?: boolean;
   selectedFiles: string[];
 }>();
-
 const emit = defineEmits([
   "remove-files",
   "move-files",
@@ -239,25 +235,19 @@ const emit = defineEmits([
   "context-menu-closed",
   "dropdown-opened",
 ]);
-
 const jobsStore = useJobsStore();
 const clipboardStore = useClipboardStore();
-
 const fileMenuRefs = ref(new Map<string, InstanceType<typeof DropdownMenu>>());
-
 const jobs = computed(() => jobsStore.jobs);
-
 const setFileMenuRef = (file: FileItem, el: any) => {
   if (el) {
     fileMenuRefs.value.set(file.path, el);
   }
 };
-
 const handleDropdownOpened = () => {
   console.log('FileTableContextMenu: handleDropdownOpened called');
   emit('dropdown-opened');
 };
-
 const showFileContextMenu = (file: FileItem, event: MouseEvent) => {
   if (!props.selectedFiles.includes(file.path)) {
     emit("selection-changed", [file.path]);
@@ -265,7 +255,6 @@ const showFileContextMenu = (file: FileItem, event: MouseEvent) => {
   const menuRef = fileMenuRefs.value.get(file.path);
   menuRef?.openDropdown({ x: event.clientX, y: event.clientY });
 };
-
 const performCopyFor = (pathOrPaths: string | string[]) => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
@@ -277,7 +266,6 @@ const performCopyFor = (pathOrPaths: string | string[]) => {
     .filter(Boolean) as FileItem[];
   clipboardStore.copy(filesToCopy, props.jobId);
 };
-
 const performCutFor = (pathOrPaths: string | string[]) => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
@@ -289,18 +277,15 @@ const performCutFor = (pathOrPaths: string | string[]) => {
     .filter(Boolean) as FileItem[];
   clipboardStore.cut(filesToCut, props.jobId);
 };
-
 const removeFile = (path: string): void => {
   emit("remove-files", path);
 };
-
 const moveFileFromContext = (targetJobId: number, pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
     : props.selectedFiles.includes(pathOrPaths) && props.selectedFiles.length > 0
     ? props.selectedFiles
     : [pathOrPaths];
-  
   // Add logging to debug the issue
   try {
     const { logStoreAction } = require("@/utils/loggers");
@@ -319,10 +304,8 @@ const moveFileFromContext = (targetJobId: number, pathOrPaths: string | string[]
       paths 
     });
   }
-  
   emit("move-files", { targetJobId, rightClickedPath: pathOrPaths });
 };
-
 const moveFileToNewJobFromContext = (pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
@@ -331,14 +314,12 @@ const moveFileToNewJobFromContext = (pathOrPaths: string | string[]): void => {
     : [pathOrPaths];
   emit("move-to-new-job", paths);
 };
-
 const copyFileFromContext = (targetJobId: number, pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
     : props.selectedFiles.includes(pathOrPaths) && props.selectedFiles.length > 0
     ? props.selectedFiles
     : [pathOrPaths];
-  
   // Add logging to debug the issue
   try {
     const { logStoreAction } = require("@/utils/loggers");
@@ -357,10 +338,8 @@ const copyFileFromContext = (targetJobId: number, pathOrPaths: string | string[]
       paths 
     });
   }
-  
   emit("copy-files", { targetJobId, rightClickedPath: pathOrPaths });
 };
-
 const copyFileToNewJobFromContext = (pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
@@ -369,14 +348,12 @@ const copyFileToNewJobFromContext = (pathOrPaths: string | string[]): void => {
     : [pathOrPaths];
   emit("copy-to-new-job", paths);
 };
-
 defineExpose({
   showFileContextMenu,
   setFileMenuRef,
   fileMenuRefs,
 });
 </script>
-
 <style>
 /* Row Actions Styles */
 .row-actions {
@@ -386,19 +363,16 @@ defineExpose({
   transition: opacity 150ms ease-in-out;
   flex-shrink: 0;
 }
-
 /* Show row actions on hover when not dragging */
 .file-table-comp:not(.is-dragging) .table-row:hover .row-actions,
 .file-table-comp .row-actions:has(.dropdown-menu.active) {
   opacity: 1;
 }
-
 /* Hide row actions during marquee dragging */
 .file-table-comp.is-marquee-dragging .row-actions {
   opacity: 0;
   pointer-events: none;
 }
-
 /* Disable dropdown open button inside row-actions while marquee active (safe-guard) */
 .file-table-comp.is-marquee-dragging .row-actions .trans-btn,
 .file-table-comp.is-marquee-dragging .row-actions .minimal-trans-btn {

@@ -1,17 +1,14 @@
 <!-- #region top-comments -->
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   DropdownMenu.vue @preserve
 -->
 <!-- components/DropdownMenu.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   DropdownMenu.vue @preserve
 -->
 <!--
   Description:
-
   A reusable dropdown menu component that can be triggered by a
   button click or programmatically (e.g., for a context menu).
   It supports nested submenus, dynamic positioning to stay
@@ -20,7 +17,6 @@
   optional slots for non-scrolling content at the top and bottom.
 -->
 <!-- #endregion -->
-
 <!-- #region template -->
 <template>
   <div
@@ -49,7 +45,6 @@
         <slot name="button-content" />
       </CustomButton>
     </template>
-
     <teleport to="body">
       <template v-if="hasSlotContent">
         <Transition
@@ -91,7 +86,6 @@
   </div>
 </template>
 <!-- #endregion -->
-
 <!-- #region script -->
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref, useSlots, watch, type CSSProperties, type PropType, type Ref } from "vue";
@@ -100,7 +94,6 @@ import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logInteraction, logTrace, logWarning, logManagerAction } from "@/utils/loggers";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
-
 type Placement =
   | "top-start"
   | "top-end"
@@ -111,9 +104,7 @@ type Placement =
   | "right-start"
   | "right-end"
   | "right-center";
-
 type BtnTheme = "default" | "lite" | "liter" | "dark" | "darkr" | "primary" | "danger" | "warning" | "info";
-
 const props = defineProps({
   btnTheme: {
     type: String as PropType<BtnTheme>,
@@ -160,39 +151,31 @@ const props = defineProps({
     default: "bottom-start",
   },
 });
-
 const emit = defineEmits<{
   'dropdown-opened': [];
 }>();
-
 const themeStore = useThemeStore();
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
-
 const customButtonStyles = computed(() => {
   const classes = new Set(props.buttonStyleClass ? props.buttonStyleClass.split(" ") : []);
   classes.add("options-btn");
   return Array.from(classes).filter(Boolean).join(" ");
 });
-
 // Smart icon logic: use vertical ellipsis if no content, downward caret if there's content
 const smartLastIconName = computed(() => {
   // If lastIconName is explicitly set, use it
   if (props.lastIconName !== "mdi:chevron-down") {
     return props.lastIconName;
   }
-  
   // Check if there's button content
   const hasButtonContent = slots["button-content"] && slots["button-content"]();
   const buttonContentText = hasButtonContent ? 
     (Array.isArray(hasButtonContent) ? hasButtonContent.map(vnode => vnode.children).join('') : hasButtonContent.children) : '';
-  
   // If there's text content, use downward caret, otherwise use vertical ellipsis
   return buttonContentText && buttonContentText.trim() ? "mdi:chevron-down" : "mdi:dots-vertical";
 });
-
 const slots = useSlots();
 const hasSlotContent: boolean = !!slots.default || !!slots["content-top"] || !!slots["content-bottom"];
-
 const isOpen: Ref<boolean> = ref(false);
 const isContentLoaded: Ref<boolean> = ref(false);
 const dropdownContent: Ref<HTMLElement | null> = ref(null);
@@ -200,9 +183,7 @@ const triggerButtonRef = ref<any | null>(null);
 const dropdownId: symbol = Symbol("dropdown");
 const openTimeoutId: Ref<number | null> = ref(null);
 const dropdownMenuRef = ref<HTMLDivElement | null>(null);
-
 const isOpenedByClick: Ref<boolean> = ref(false);
-
 // Transition handlers for smooth enter/leave animations
 const onDropdownEnter = (el: Element) => {
   // Ensure the element is properly positioned before showing
@@ -212,40 +193,33 @@ const onDropdownEnter = (el: Element) => {
     }
   });
 };
-
 const onDropdownLeave = (el: Element) => {
   // Clean up any positioning when leaving
   if (el instanceof HTMLElement) {
     el.style.opacity = '0';
   }
 };
-
 const actualPlacement: Ref<Placement> = ref(props.placement);
 const dropdownTop: Ref<string> = ref("-9999px");
 const dropdownLeft: Ref<string> = ref("-9999px");
 const contextMenuCoords = ref<{ x: number; y: number } | null>(null);
 const contextMenuAnchorEl = ref<HTMLElement | null>(null);
-
 const dropdownContentStyle = computed(
   (): CSSProperties => ({
     top: dropdownTop.value,
     left: dropdownLeft.value,
   })
 );
-
 const transitionClass = computed((): string => {
   const [direction] = actualPlacement.value.split("-");
   return `placement-${direction}`;
 });
-
 const adjustDropdownPosition = async (): Promise<void> => {
   await nextTick();
   const dropdownEl = dropdownContent.value;
   if (!dropdownEl) return;
-
   let anchorRect: DOMRect;
   const isContextMenu = contextMenuCoords.value !== null;
-
   if (isContextMenu) {
     const { x, y } = contextMenuCoords.value!;
     anchorRect = new DOMRect(x, y, 0, 0);
@@ -262,21 +236,17 @@ const adjustDropdownPosition = async (): Promise<void> => {
     if (!buttonEl || !anchorEl) return;
     anchorRect = anchorEl.getBoundingClientRect();
   }
-
   const dropdownRect = dropdownEl.getBoundingClientRect();
   const viewHeight = window.innerHeight;
   const viewWidth = window.innerWidth;
   const margin = 8;
   const gap = 2;
-
   if (DEBUG && debugConfig.logDropdownEvents) {
     logTrace("DropdownMenu", `Adjusting position for "${props.dropdownDataName}"`);
   }
-
   // Default placement: for submenus prefer opening to the right
   const defaultPlacement = props.isSubmenu && !isContextMenu ? "right-start" : props.placement;
   let [primary, secondary] = (isContextMenu ? "bottom-start" : defaultPlacement).split("-") as [string, string];
-
   if (primary === "bottom" && anchorRect.bottom + dropdownRect.height + margin > viewHeight) {
     primary = "top";
   } else if (primary === "top" && anchorRect.top - dropdownRect.height - margin < 0) {
@@ -286,7 +256,6 @@ const adjustDropdownPosition = async (): Promise<void> => {
   } else if (primary === "left" && anchorRect.left - dropdownRect.width - margin < 0) {
     primary = "right";
   }
-
   if (primary === "top" || primary === "bottom") {
     if (secondary === "start" && anchorRect.left + dropdownRect.width + margin > viewWidth) {
       secondary = "end";
@@ -300,15 +269,12 @@ const adjustDropdownPosition = async (): Promise<void> => {
       secondary = "start";
     }
   }
-
   const newPlacement = `${primary}-${secondary}` as Placement;
   actualPlacement.value = newPlacement;
-
   let top = 0;
   let left = 0;
   const { top: anchorTop, bottom: anchorBottom, left: anchorLeft, right: anchorRight } = anchorRect;
   const { width: ddWidth, height: ddHeight } = dropdownRect;
-
   switch (newPlacement) {
     case "top-start":
       top = anchorTop - ddHeight - gap;
@@ -348,7 +314,6 @@ const adjustDropdownPosition = async (): Promise<void> => {
       left = anchorLeft;
       break;
   }
-
   // Clamp the calculated position to ensure the dropdown stays within the viewport.
   if (left + ddWidth + margin > viewWidth) {
     left = viewWidth - ddWidth - margin;
@@ -356,18 +321,15 @@ const adjustDropdownPosition = async (): Promise<void> => {
   if (left < margin) {
     left = margin;
   }
-
   if (top + ddHeight + margin > viewHeight) {
     top = viewHeight - ddHeight - margin;
   }
   if (top < margin) {
     top = margin;
   }
-
   dropdownTop.value = `${top}px`;
   dropdownLeft.value = `${left}px`;
 };
-
 const {
   openDropdowns,
   registerDropdown,
@@ -378,41 +340,31 @@ const {
   closeDescendantsOf,
   closeAllDropdowns,
 } = useDropdownManager();
-
 const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElement }): Promise<void> => {
   // Consider this a context menu call only when explicit coords are provided and no anchorEl
   const isContextMenuCall = !!(opts && (opts.x !== undefined || opts.y !== undefined) && !opts.anchorEl);
-
   if (isOpen.value && !isContextMenuCall) {
     return;
   }
-
   if (isOpen.value) {
     isOpen.value = false;
     await nextTick();
   }
-
   if (isContextMenuCall) {
     closeAllDropdowns("Opening new context menu");
     await nextTick();
   }
-
   isOpenedByClick.value = !isContextMenuCall;
-
   // With Vue transitions, we can immediately open the dropdown
   // The transition will handle the fade-in animation
-
   if (debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Opening "${props.dropdownDataName}"`);
   isOpen.value = true;
   isContentLoaded.value = false;
   contextMenuCoords.value = opts && opts.x !== undefined && opts.y !== undefined && !opts.anchorEl ? { x: opts.x!, y: opts.y! } : null;
   contextMenuAnchorEl.value = opts?.anchorEl ?? null;
-  
   // Emit dropdown-opened event
   emit('dropdown-opened');
-
   await nextTick();
-
   // Prefer finding trigger inside this component's root; fallback to global search.
   // Use attribute-value equality checks (avoid CSS selector escaping issues with backslashes)
   const computedDataName = `options-btn-for-${props.dropdownDataName}`;
@@ -421,7 +373,6 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
     const candidates = Array.from(dropdownMenuRef.value.querySelectorAll('[data-name]')) as HTMLElement[];
     localButton = candidates.find((el) => el.getAttribute('data-name') === computedDataName) || null;
   }
-
   let buttonEl: HTMLElement | null = null;
   if (props.hideTrigger) {
     buttonEl = dropdownMenuRef.value;
@@ -432,7 +383,6 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
       buttonEl = globalCandidates.find((el) => el.getAttribute('data-name') === computedDataName) || null;
     }
   }
-
   // Log lookup results for debugging
   logInteraction("DropdownMenu", `openDropdown lookup for ${props.dropdownDataName}`, {
     dropdownDataName: props.dropdownDataName,
@@ -440,7 +390,6 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
     hasLocalButton: !!localButton,
     foundButton: !!buttonEl,
   });
-
   if (!buttonEl) {
     // Log useful diagnostic info: list data-name attributes that may match
     const allNames = Array.from(document.querySelectorAll('[data-name]'))
@@ -452,7 +401,6 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
     if (DEBUG && debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Total data-name elements: ${allNames.length}`);
     // As a last resort: if a click-anchored open was requested, allow fallback to click coords handled below
   }
-
   const dropdown: Dropdown = {
     id: dropdownId,
     dropdownContent: dropdownContent.value,
@@ -461,11 +409,9 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
     isSubmenu: props.isSubmenu,
   };
   registerDropdown(dropdown);
-
   if (!isContextMenuCall) {
     closeUnrelatedDropdowns(dropdown);
   }
-
   requestAnimationFrame(() => {
     requestAnimationFrame(async () => {
       await adjustDropdownPosition();
@@ -474,23 +420,17 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
     });
   });
 };
-
 const closeDropdown = (): void => {
   if (!isOpen.value) return;
-  
   const dropdownName = props.dropdownDataName;
   const isDragActionDropdown = dropdownName.startsWith('drag-action-job-') || dropdownName === 'drag-action-new-job';
-  
   logManagerAction("DropdownMenu", `closeDropdown called for: ${dropdownName} (isDragAction: ${isDragActionDropdown})`);
-  
   if (debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Closing "${props.dropdownDataName}"`);
-
   // Cancel any pending open timeouts for submenus
   if (openTimeoutId.value) {
     clearTimeout(openTimeoutId.value);
     openTimeoutId.value = null;
   }
-
   // Ensure any descendant submenus begin closing immediately so they fade out
   // when the parent dropdown is closed (covers clicks on parent trigger).
   try {
@@ -498,28 +438,22 @@ const closeDropdown = (): void => {
   } catch (e) {
     /* ignore */
   }
-
   // Start fade-out by removing the content-ready class which transitions opacity -> 0
   isContentLoaded.value = false;
   contextMenuCoords.value = null;
   isOpenedByClick.value = false;
-
   // With Vue transitions, we can immediately set isOpen to false
   // The transition will handle the fade-out animation
   isOpen.value = false;
-  
   logManagerAction("DropdownMenu", `closeDropdown completed for: ${dropdownName}`);
 };
-
 const handleButtonClick = async (event?: MouseEvent): Promise<void> => {
   if (props.disabled || !hasSlotContent) return;
-
   cancelSubmenuClosure();
   if (openTimeoutId.value) {
     clearTimeout(openTimeoutId.value);
     openTimeoutId.value = null;
   }
-
   if (isOpen.value) {
     if (props.isSubmenu) {
       return;
@@ -535,10 +469,8 @@ const handleButtonClick = async (event?: MouseEvent): Promise<void> => {
     }
   }
 };
-
 const handleMouseEnter = (event?: MouseEvent): void => {
   cancelSubmenuClosure();
-
   if (props.isSubmenu) {
     if (openTimeoutId.value) clearTimeout(openTimeoutId.value);
     const anchorEl = (event?.currentTarget as HTMLElement) || undefined;
@@ -547,7 +479,6 @@ const handleMouseEnter = (event?: MouseEvent): void => {
     }, 500);
     return;
   }
-
   if (isOpen.value) {
     // If the dropdown is already open and this is a parent trigger (not a submenu),
     // schedule submenus to close after a delay so they fade out naturally when
@@ -557,47 +488,38 @@ const handleMouseEnter = (event?: MouseEvent): void => {
     }
     return;
   }
-
   const thisDropdownEl = dropdownMenuRef.value;
   if (!thisDropdownEl) return;
-
   const openSiblingExists = openDropdowns.value.some((openDropdown) => {
     if (openDropdown.isSubmenu) return false;
-
     const openDropdownRootEl = openDropdown.button.closest(".dropdown-menu");
     if (!openDropdownRootEl || openDropdownRootEl === thisDropdownEl) {
       return false;
     }
-
     return (
       thisDropdownEl.parentElement === openDropdownRootEl.parentElement &&
       (thisDropdownEl.previousElementSibling === openDropdownRootEl || thisDropdownEl.nextElementSibling === openDropdownRootEl)
     );
   });
-
   if (openSiblingExists) {
     const anchorEl = (event?.currentTarget as HTMLElement) || undefined;
     openDropdown({ anchorEl });
   }
 };
-
 const handleMouseLeave = (): void => {
   if (props.isSubmenu) {
     if (openTimeoutId.value) clearTimeout(openTimeoutId.value);
     scheduleSubmenuClosure();
   }
 };
-
 const handleContentMouseEnter = (): void => {
   cancelSubmenuClosure();
 };
-
 const handleContentMouseLeave = (): void => {
   if (props.isSubmenu) {
     scheduleSubmenuClosure();
   }
 };
-
 watch(isOpen, (newIsOpen: boolean): void => {
   if (debugConfig.logDropdownEvents)
     logInteraction("DropdownMenu", `Visibility changed for "${props.dropdownDataName}" to ${newIsOpen}`);
@@ -609,13 +531,11 @@ watch(isOpen, (newIsOpen: boolean): void => {
     unregisterDropdown(dropdownId);
   }
 });
-
 onUnmounted((): void => {
   window.removeEventListener("resize", adjustDropdownPosition);
   if (openTimeoutId.value) clearTimeout(openTimeoutId.value);
   if (isOpen.value) unregisterDropdown(dropdownId);
 });
-
 const getTriggerVisualStyle = (): HTMLElement | null => {
   try {
     const exposed = triggerButtonRef.value as any;
@@ -626,25 +546,20 @@ const getTriggerVisualStyle = (): HTMLElement | null => {
     return null;
   }
 };
-
 defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle });
 </script>
 <!-- #endregion -->
-
 <!-- #region style scoped -->
 <style scoped>
 .dropdown-menu {
   display: flex;
   position: relative;
-
   &.active {
     z-index: 1000;
   }
-
   &:empty {
     display: none;
   }
-
   .custom-button {
     min-height: var(--min-tch-tgt);
     min-width: var(--min-tch-tgt);
@@ -652,28 +567,23 @@ defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle });
 }
 </style>
 <!-- #endregion -->
-
 <!-- #region style -->
 <style>
 /* These styles must be global because the dropdown content is teleported to `body`. */
-
 /* Transition animations for smooth enter/leave */
 .dropdown-fade-enter-active,
 .dropdown-fade-leave-active {
   transition: opacity 180ms ease-in-out;
 }
-
 .dropdown-fade-enter-from,
 .dropdown-fade-leave-to {
   opacity: 0;
 }
-
 .dropdown-content {
   --dropdown-pad: 2px;
   --dropdown-border-width: 1px;
   position: fixed;
   z-index: 100001;
-
   backdrop-filter: blur(10px);
   background: hsla(0, 0%, calc(var(--bg-lum) * 2), 0.75);
   border: var(--dropdown-border-width) solid var(--brdr-clr-liter);
@@ -690,7 +600,6 @@ defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle });
   padding: var(--dropdown-pad);
   pointer-events: none; /* Initially non-interactive */
 }
-
 /* --- FIX START --- */
 /* Use a descendant selector (space) instead of a direct child selector (>)
    to ensure the style applies to <hr> elements inside slots.
@@ -704,35 +613,29 @@ defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle });
   margin-block: 2px;
 }
 /* --- FIX END --- */
-
 .dropdown-content hr:first-child,
 .dropdown-content hr:last-child {
   display: none;
 }
-
 .dropdown-content > .custom-button > .visual-style,
 .dropdown-content > .dropdown-menu > .custom-button > .visual-style {
   box-shadow: none;
 }
-
 .dropdown-content > .custom-button.can-become-active,
 .dropdown-content > .dropdown-menu > .custom-button.can-become-active {
   --line-orientation: vertical;
   --line-position: start;
 }
-
 .dropdown-content.content-ready {
   opacity: 1;
   pointer-events: all;
 }
-
 /* Ensure CustomButton visual-style has no drop shadow inside dropdowns (teleported content) */
 .dropdown-content .custom-button > .visual-style,
 .dropdown-content .dropdown-menu .custom-button > .visual-style {
   box-shadow: none !important;
   border: none !important;
 }
-
 /* Improve contrast for dropdown buttons: muted by default, brighter on hover/active.
    Avoid overriding the explicit themed button styles (primary/danger/warning/info).
    Only apply these generic dropdown backgrounds to buttons that are NOT one of those themes. */
@@ -744,20 +647,17 @@ defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle });
   transition: opacity 120ms ease, background-color 120ms ease;
   opacity: 0.75; /* slightly more visible by default */
 }
-
 /* Hover only applies when NOT active so active overrides hover.
    Exclude themed buttons so their own hover backgrounds remain intact. */
 .dropdown-content .custom-button:not(.active):not([data-btn-theme="primary"]):not([data-btn-theme="danger"]):not([data-btn-theme="warning"]):not([data-btn-theme="info"]):hover > .visual-style {
   opacity: 0.95;
   background-color: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) + 8%), 0.14);
 }
-
 /* Active state must always win and be brightest */
 .dropdown-content .custom-button[data-btn-theme="default"].active > .visual-style {
   opacity: 1 !important;
   background-color: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) + 12%), 0.22) !important;
 }
-
 /* Submenu triggers: slightly muted by default but fully bright when active */
 .dropdown-content [data-name$="-submenu"] > .visual-style {
   opacity: 0.7;
@@ -768,7 +668,6 @@ defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle });
   /* slightly toned-down highlight for submenu active state */
   background-color: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) + 10%), 0.18) !important;
 }
-
 /* Hide floating InfoTooltip when the options button that would trigger it
    is active (i.e., its dropdown was opened by click). This uses the
    relational `:has()` selector to detect an active trigger inside the

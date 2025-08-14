@@ -1,8 +1,6 @@
 /* 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   "components/custom-button-comp/custom-button.scoped.css" --for-- "components/CustomButton.vue" 
 */
-
 .custom-button {
   /* Base Styles */
   align-items: center;
@@ -23,12 +21,10 @@
   text-decoration: none;
   transition: all var(--btn-trans-dur-end) ease;
   z-index: 0;
-
   /* Remove padding for icon-only buttons */
   &:has(> .button-content:empty) {
     padding: 0;
   }
-
   /* States */
   &:disabled,
   &.disabled {
@@ -39,7 +35,6 @@
   &:hover {
     cursor: pointer;
   }
-
   /* Child Elements */
   > .visual-style {
     border: 1px solid transparent; /* Default to flat */
@@ -48,7 +43,6 @@
     inset: var(--visual-style-inset);
     position: absolute;
     transition: all var(--btn-trans-dur-end) ease;
-
     &::after {
       backdrop-filter: brightness(1.5);
       border-radius: inherit;
@@ -62,16 +56,13 @@
       z-index: 1000;
     }
   }
-
   > .button-content,
   > .icon-placeholder,
   > .shortcut-text { /* Include new shortcut-text */
     z-index: 1; /* Ensure content is above visual-style */
   }
 }
-
 /* --- Justification and Layout --- */
-
 /* 1. Set the overall alignment of the grid items within the button */
 .custom-button {
   /* Default alignment for 'auto' (no-icon case), icon-only buttons, and 'center' */
@@ -89,9 +80,7 @@
   /* 'stretch' always stretches. 'auto' stretches ONLY if icons AND content are present. */
   justify-content: stretch;
 }
-
 /* 2. Define grid column templates based on justification mode */
-
 /* For compact modes, grid cells are sized to their content.
    This applies to 'start', 'center', 'end', and the 'auto' no-icon case. */
 /* FIX: Use direct child selector `>` to prevent matching nested icons. */
@@ -144,8 +133,6 @@
   ):has(> .button-content:not(:empty) + .shortcut-text + .icon-placeholder) { /* New: content + shortcut + last icon */
   grid-template-columns: auto auto auto;
 }
-
-
 /* Stretchy modes for `justify="stretch"` or `justify="auto"` when icons are present. */
 /* FIX: Use direct child selector `>` in all `:has()` checks to ensure only direct children of the grid are considered. */
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .button-content:not(:empty)):not(:has(> .first-icon)):not(:has(> .last-icon)):not(:has(> .shortcut-text)) {
@@ -164,7 +151,6 @@
   /* All three parts: first icon, content, and last icon */
   grid-template-columns: auto 1fr auto;
 }
-
 /* New grid definitions for shortcut text */
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .button-content:not(:empty)):has(> .shortcut-text):not(:has(> .first-icon)):not(:has(> .last-icon)) {
   /* Content + shortcut */
@@ -182,8 +168,6 @@
   /* All four parts: first icon, content, shortcut, last icon */
   grid-template-columns: auto 1fr auto auto;
 }
-
-
 /* 3. Justify the text within the .button-content cell */
 .button-content {
   align-items: center;
@@ -192,13 +176,11 @@
   justify-content: center; /* Default for compact modes */
   min-width: max-content;
 }
-
 /* In stretchy modes, left-align the text */
 /* FIX: Use direct child selector `>` to prevent matching nested icons. */
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)) .button-content {
   justify-content: start;
 }
-
 /* New: Styles for shortcut text */
 .shortcut-text {
   color: var(--txt-clr); /* Softer color */
@@ -208,9 +190,7 @@
   white-space: nowrap;
   margin-inline-start: auto; /* Push to the right */
 }
-
 /* --- THEME SELECTORS --- */
-
 /* Default Theme */
 .custom-button[data-btn-theme="default"] {
   color: var(--btn-txt-clr);
@@ -230,7 +210,6 @@
 .custom-button[data-btn-theme="default"].active > .visual-style {
   background-color: var(--btn-bg-activ-clr);
 }
-
 /* Lite Theme */
 .custom-button[data-btn-theme="lite"] {
   color: var(--btn-txt-clr-lite);
@@ -250,7 +229,6 @@
 .custom-button[data-btn-theme="lite"].active > .visual-style {
   background-color: var(--btn-bg-activ-clr-lite);
 }
-
 /* Liter Theme */
 .custom-button[data-btn-theme="liter"] {
   color: var(--btn-txt-clr-liter);
@@ -270,7 +248,6 @@
 .custom-button[data-btn-theme="liter"].active > .visual-style {
   background-color: var(--btn-bg-activ-clr-liter);
 }
-
 /* Dark Theme */
 .custom-button[data-btn-theme="dark"] {
   color: var(--btn-txt-clr-dark);
@@ -290,7 +267,6 @@
 .custom-button[data-btn-theme="dark"].active > .visual-style {
   background-color: var(--btn-bg-activ-clr-dark);
 }
-
 /* Darkr Theme */
 .custom-button[data-btn-theme="darkr"] {
   color: var(--btn-txt-clr-darkr);
@@ -310,7 +286,6 @@
 .custom-button[data-btn-theme="darkr"].active > .visual-style {
   background-color: var(--btn-bg-activ-clr-darkr);
 }
-
 /* Primary Theme */
 .custom-button[data-btn-theme="primary"] {
   color: var(--success-clr);
@@ -340,7 +315,6 @@
   background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-activ), 0.25);
   border-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-activ), 0.4);
 }
-
 /* Danger Theme */
 .custom-button[data-btn-theme="danger"] {
   color: var(--danger-clr);
@@ -370,7 +344,6 @@
   background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-activ), 0.25);
   border-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-activ), 0.4);
 }
-
 /* Warning Theme */
 .custom-button[data-btn-theme="warning"] {
   color: var(--warning-clr);
@@ -400,7 +373,6 @@
   background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-activ), 0.25);
   border-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-activ), 0.4);
 }
-
 /* Info Theme */
 .custom-button[data-btn-theme="info"] {
   color: var(--info-clr);
@@ -430,24 +402,19 @@
   background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-activ), 0.25);
   border-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-activ), 0.4);
 }
-
 /* --- OTHER STYLE CLASSES --- */
-
 /* Flashing effect */
 .custom-button.flashing > .visual-style::after {
   opacity: 1;
 }
-
 /* CSS-only flash for click/keyboard activation (no JS required) */
 /* Trigger a short pulse when the button is activated via mouse or keyboard. */
 /* Removed :active rule - now using JavaScript-controlled flash */
-
 /* New flash effect controlled by JavaScript */
 .custom-button > .visual-style::after {
   opacity: var(--flash-active, 0);
   transition: opacity 100ms ease-out;
 }
-
 @keyframes flash-pulse {
   0% {
     opacity: 1;
@@ -458,19 +425,15 @@
     transform: scale(1);
   }
 }
-
 /* Move focus outline onto the visual-style element so it matches the visual inset */
 .custom-button::-moz-focus-inner {
   border: 0; /* remove Firefox inner focus outline */
 }
-
 /* Explicitly remove any UA/broswer focus visuals on the button itself so we only
    show the focus ring on the .visual-style element. Use !important to override
    strong UA rules. */
 /* Removed focus-visible/ focus rules — global focus rings disabled per user preference */
-
 /* Removed visual-style focus ring rules per user preference */
-
 /* For checkbox-like buttons (role="checkbox"), move the focus ring to surround
    the icon itself instead of the full visual-style area. This prevents a large
    rectangle around minimal checkbox buttons and keeps the ring tightly
@@ -482,10 +445,8 @@
   align-items: center;
   justify-content: center;
 }
-
 /* Suppress the visual-style ring for checkbox buttons */
 /* Removed checkbox-specific focus ring rules per user preference */
-
 /* Bordered variant */
 .custom-button.bordered-btn > .visual-style {
   border-color: var(--btn-brdr-clr);
@@ -496,7 +457,6 @@
 .custom-button.bordered-btn.active > .visual-style {
   border-color: var(--btn-brdr-activ-clr);
 }
-
 .custom-button[data-btn-theme="lite"].bordered-btn > .visual-style {
   border-color: var(--btn-brdr-clr-lite);
 }
@@ -506,7 +466,6 @@
 .custom-button[data-btn-theme="lite"].bordered-btn.active > .visual-style {
   border-color: var(--btn-brdr-activ-clr-lite);
 }
-
 .custom-button[data-btn-theme="liter"].bordered-btn > .visual-style {
   border-color: var(--btn-brdr-clr-liter);
 }
@@ -516,7 +475,6 @@
 .custom-button[data-btn-theme="liter"].bordered-btn.active > .visual-style {
   border-color: var(--btn-brdr-activ-clr-liter);
 }
-
 .custom-button[data-btn-theme="dark"].bordered-btn > .visual-style {
   border-color: var(--btn-brdr-clr-dark);
 }
@@ -526,7 +484,6 @@
 .custom-button[data-btn-theme="dark"].bordered-btn.active > .visual-style {
   border-color: var(--btn-brdr-activ-clr-dark);
 }
-
 .custom-button[data-btn-theme="darkr"].bordered-btn > .visual-style {
   border-color: var(--btn-brdr-clr-darkr);
 }
@@ -536,7 +493,6 @@
 .custom-button[data-btn-theme="darkr"].bordered-btn.active > .visual-style {
   border-color: var(--btn-brdr-activ-clr-darkr);
 }
-
 /* Minimal Transparent variant */
 .custom-button.minimal-trans-btn {
   padding: 0;
@@ -551,13 +507,11 @@
   border: 0;
   box-shadow: none;
 }
-
 /* Active State Indicator Line */
 .custom-button.can-become-active {
   --line-inset-start: 40%;
   --line-inset-end: 40%;
 }
-
 /* The line is now a pseudo-element of the .visual-style */
 .custom-button.can-become-active .visual-style::before {
   background-color: var(--blu-lite);
@@ -570,7 +524,6 @@
   transition: all var(--btn-trans-dur-end) ease;
   z-index: 100;
 }
-
 /* Horizontal Line (Block Direction) */
 .custom-button.can-become-active[class*="active-line-block"] .visual-style::before {
   block-size: var(--btn-line-thickness);
@@ -579,12 +532,10 @@
   inset-inline-end: var(--line-inset-end);
   inset-inline-start: var(--line-inset-start);
 }
-
 .custom-button.can-become-active.active-line-block-end .visual-style::before {
   inset-block-end: 0; /* Override: bottom */
   inset-block-start: auto;
 }
-
 /* Vertical Line (Inline Direction) */
 .custom-button.can-become-active[class*="active-line-inline"] .visual-style::before {
   block-size: auto; /* Span full height */
@@ -594,34 +545,28 @@
   inset-inline-end: auto;
   inset-inline-start: 0; /* Default: left */
 }
-
 .custom-button.can-become-active.active-line-inline-end .visual-style::before {
   inset-inline-end: 0; /* Override: right */
   inset-inline-start: auto;
 }
-
 /* Active state triggers changes on the parent button */
 .custom-button.can-become-active.active {
   --line-inset-start: 15%; /* Adjust for vertical/horizontal padding */
   --line-inset-end: 15%;
 }
-
 /* Active state makes the pseudo-element visible */
 .custom-button.can-become-active.active .visual-style:before {
   opacity: 1;
 }
-
 /* Content & Icon styles */
 .button-content:empty {
   display: none;
 }
-
 .icon-placeholder {
   align-items: center;
   display: flex;
   justify-content: center;
 }
-
 .custom-button .first-icon,
 .custom-button .last-icon {
   color: var(--txt-clr-lite);
@@ -632,22 +577,14 @@
 .custom-button[data-btn-theme="info"] .first-icon {
   color: inherit;
 }
-
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]) .last-icon {
   margin-inline-start: auto;
 }
-
-
 /* --- TRANSPARENT BUTTON OVERRIDES --- */
-
 /* By default, make the visual style for all transparent buttons completely invisible, unless they are active. */
 .custom-button.trans-btn:not(:hover):not(.active) > .visual-style {
   opacity: 0;
 }
-
-
-
-
 .dropdown-content {
   > [data-overlayscrollbars="host"] > [data-overlayscrollbars-contents] {
     > .dropdown-menu > .custom-button.options-btn,
@@ -657,4 +594,3 @@
     }
   }
 }
-

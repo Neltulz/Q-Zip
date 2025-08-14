@@ -1,7 +1,6 @@
 <!-- #region top-comments -->
 <!-- eslint-disable vue/html-self-closing @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   CustomButton.vue @preserve
 -->
 <!-- components/CustomButton.vue @preserve -->
@@ -12,7 +11,6 @@
   positioning of other elements like tooltips.
 -->
 <!-- #endregion -->
-
 <!-- #region template -->
 <template>
   <button
@@ -46,17 +44,14 @@
   </button>
 </template>
 <!-- #endregion -->
-
 <!-- #region script -->
 <script setup lang="ts">
 import { computed, onMounted, ref, useAttrs } from "vue";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-
 const attrs = useAttrs();
 const buttonRef = ref<HTMLElement | null>(null);
 const visualStyleRef = ref<HTMLElement | null>(null); // Ref for the visual style div
 const isPressed = ref(false); // Track if button is being pressed
-
 const props = withDefaults(
   defineProps<{
     btnTheme?: "default" | "lite" | "liter" | "dark" | "darkr" | "primary" | "danger" | "warning" | "info";
@@ -80,25 +75,20 @@ const props = withDefaults(
     shortcutText: "",
   }
 );
-
 // Mouse event handlers for flash control
 const handleMouseDown = () => {
   isPressed.value = true;
 };
-
 const handleMouseUp = () => {
   isPressed.value = false;
 };
-
 const handleMouseLeave = () => {
   isPressed.value = false;
 };
-
 // Computed style to control flash state
 const buttonStyle = computed(() => ({
   '--flash-active': isPressed.value ? '1' : '0'
 }));
-
 const firstIconPlaceholderStyle = computed(() => {
   const size = props.firstIconSize ?? 20;
   const sizePx = typeof size === "number" ? `${size}px` : size;
@@ -107,7 +97,6 @@ const firstIconPlaceholderStyle = computed(() => {
     height: sizePx,
   };
 });
-
 const lastIconPlaceholderStyle = computed(() => {
   const size = props.lastIconSize ?? 20;
   const sizePx = typeof size === "number" ? `${size}px` : size;
@@ -116,7 +105,6 @@ const lastIconPlaceholderStyle = computed(() => {
     height: sizePx,
   };
 });
-
 const buttonClasses = computed(() => {
   const classes: string[] = ["custom-button"];
   if (props.buttonStyleClass) {
@@ -129,17 +117,14 @@ const buttonClasses = computed(() => {
   }
   return classes.filter(Boolean).join(" ");
 });
-
 const otherAttrs = computed(() => {
   const { class: _, ...rest } = attrs;
   return rest;
 });
-
 defineExpose({
   buttonRef,
   visualStyleRef, // Expose the new ref
 });
-
 onMounted((): void => {
   if (DEBUG && debugConfig.logComponentMounts) {
     const element: HTMLElement | null = buttonRef.value;
@@ -151,14 +136,11 @@ onMounted((): void => {
 });
 </script>
 <!-- #endregion -->
-
 <!-- #region styles -->
-
 <!-- Global button styles -->
 <style>
 @import "./custom-button-comp/custom-button.global.css";
 </style>
-
 <!-- Scoped component styles -->
 <style scoped>
 @import "./custom-button-comp/custom-button.scoped.css";

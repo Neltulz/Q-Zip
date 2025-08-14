@@ -1,8 +1,4 @@
 <!-- components/AddFilesAndFolders.vue @preserve (formerly DropZone.vue) -->
-<!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
-  AddFilesAndFolders.vue @preserve
--->
 <template>
   <div class="add-files-wrapper" :data-job-id="jobId" data-component-name="AddFilesAndFolders">
     <div class="add-files-content">
@@ -39,18 +35,14 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { open } from "@tauri-apps/plugin-dialog";
-
 defineProps<{
   jobId: number;
 }>();
-
 const emit = defineEmits<{
   (e: "add-files" | "add-folders", paths: string[]): void;
 }>();
-
 const handleAddFile = async (close: () => void): Promise<void> => {
   close();
   const selected: string[] | null = await open({
@@ -61,7 +53,6 @@ const handleAddFile = async (close: () => void): Promise<void> => {
     emit("add-files", selected);
   }
 };
-
 const handleAddFolder = async (close: () => void): Promise<void> => {
   close();
   const selected: string[] | null = await open({
@@ -73,7 +64,6 @@ const handleAddFolder = async (close: () => void): Promise<void> => {
   }
 };
 </script>
-
 <style scoped>
 .add-files-wrapper {
   container-type: size;
@@ -89,7 +79,6 @@ const handleAddFolder = async (close: () => void): Promise<void> => {
   left: 0;
   right: 0;
 }
-
 .add-files-content {
   display: flex;
   align-items: center;
@@ -98,13 +87,11 @@ const handleAddFolder = async (close: () => void): Promise<void> => {
   padding-block: 1rem;
   flex-direction: column;
 }
-
 .prompt-message {
   font-size: 1.25rem;
   color: var(--fg-clr-mute);
   text-align: center;
 }
-
 @container addfiles-wrapper (height < 90px) {
   .add-files-content {
     flex-direction: row;

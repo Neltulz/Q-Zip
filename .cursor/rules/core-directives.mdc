@@ -1,0 +1,12 @@
+---
+description: "Core directives and unbreakable rules for the Q-Zip project that must be followed under all circumstances."
+globs: ["*"]
+alwaysApply: true
+---
+# Core Directives & Unbreakable Rules
+- **Update Changelog:** The changelog must always be updated (and created if it doesn't exist) using Markdown.
+
+## When Making Changes
+- Check existing similar components for patterns.
+- Use HSL/HSLA colors exclusively.
+- Maintain TypeScript type safety - Avoid using `any` type, prefer proper type definitions and generics.

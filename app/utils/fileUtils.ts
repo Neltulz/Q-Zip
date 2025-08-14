@@ -1,6 +1,5 @@
 // utils/fileUtils.ts
 // 
-// IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file. @preserve
 /** @preserve
  * File Utilities
  *
@@ -10,28 +9,22 @@
  * timestamps, and folder contents.
  */
 // @preserve
-
 import { stat, readDir } from "@tauri-apps/plugin-fs";
 import { basename, dirname, join } from "@tauri-apps/api/path";
 import type { FileItem } from "@/types/types";
-
 // Global cancellation and pause flags - will be set by the jobsStore
 let isCancelled = false;
 let isPaused = false;
 let progressCallback: ((current: number, total: number, message: string) => void) | null = null;
-
 export function setCancellationFlag(cancelled: boolean): void {
   isCancelled = cancelled;
 }
-
 export function setPauseFlag(paused: boolean): void {
   isPaused = paused;
 }
-
 export function setProgressCallback(callback: ((current: number, total: number, message: string) => void) | null): void {
   progressCallback = callback;
 }
-
 /**
  * Recursively scans a directory to get detailed content information.
  * @param path The path of the directory to scan.
@@ -49,42 +42,32 @@ async function getDirectoryContents(path: string, depth: number = 0): Promise<{
   let recursiveFiles = 0;
   let recursiveFolders = 0;
   let recursiveSize = 0;
-
   try {
     const entries = await readDir(path);
-
     // Check for cancellation and pause more frequently at deeper levels
     const checkInterval = Math.max(1, Math.floor(entries.length / 10));
-
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
-
       // Check for cancellation and pause more frequently for large directories
       if (i % checkInterval === 0 || depth > 2) {
         if (isCancelled) {
           throw new Error("Operation cancelled");
         }
-
         // Check for pause and wait if paused
         while (isPaused && !isCancelled) {
           await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before checking again
         }
       }
-
       // Skip entries without a name, which can happen in some edge cases.
       if (!entry.name) continue;
-
       const entryPath = await join(path, entry.name);
-
       if (entry.isDirectory) {
         topLevelFolders++;
         recursiveFolders++;
-
         // Update progress for folder scanning
         if (progressCallback) {
           progressCallback(i + 1, entries.length, `Scanning folder: ${entry.name}`);
         }
-
         // Recursively get contents of the subdirectory.
         const subDirContents = await getDirectoryContents(entryPath, depth + 1);
         recursiveFiles += subDirContents.filesTotal;
@@ -93,12 +76,10 @@ async function getDirectoryContents(path: string, depth: number = 0): Promise<{
       } else {
         topLevelFiles++;
         recursiveFiles++;
-
         // Update progress for file scanning
         if (progressCallback) {
           progressCallback(i + 1, entries.length, `Scanning file: ${entry.name}`);
         }
-
         // For files, get their stats to add to the total size.
         const fileStat = await stat(entryPath);
         recursiveSize += fileStat.size;
@@ -111,7 +92,6 @@ async function getDirectoryContents(path: string, depth: number = 0): Promise<{
     // Log errors but allow the function to return what it has gathered so far.
     console.error(`[fileUtils] Could not read directory ${path}:`, error);
   }
-
   return {
     files: topLevelFiles,
     folders: topLevelFolders,
@@ -120,7 +100,6 @@ async function getDirectoryContents(path: string, depth: number = 0): Promise<{
     totalSize: recursiveSize,
   };
 }
-
 /**
  * Retrieves detailed information for a given file or directory path.
  * For directories, it recursively calculates the total size and content count.
@@ -133,11 +112,9 @@ export async function getFileDetails(path: string): Promise<FileItem | null> {
     if (isCancelled) {
       throw new Error("Operation cancelled");
     }
-
     const metadata = await stat(path);
     const name = await basename(path);
     const parentPath = await dirname(path);
-
     // Base details common to both files and folders.
     // Timestamps are converted to UNIX format (milliseconds).
     const baseFileItem = {
@@ -147,13 +124,11 @@ export async function getFileDetails(path: string): Promise<FileItem | null> {
       modified: metadata.mtime?.getTime(),
       created: metadata.birthtime?.getTime(),
     };
-
     if (metadata.isDirectory) {
       // Update progress for directory processing
       if (progressCallback) {
         progressCallback(0, 1, `Processing folder: ${name}`);
       }
-
       // If it's a directory, get its recursive contents.
       const contents = await getDirectoryContents(path);
       return {
@@ -170,7 +145,6 @@ export async function getFileDetails(path: string): Promise<FileItem | null> {
       if (progressCallback) {
         progressCallback(1, 1, `Processing file: ${name}`);
       }
-
       // If it's a file, return its direct details.
       return {
         ...baseFileItem,

@@ -1,6 +1,5 @@
 <!-- components/page-components/PageJobQueue.vue @preserve -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   PageJobQueue.vue @preserve
 -->
 <template>
@@ -12,7 +11,6 @@
       <template #big-text>Job Queue</template>
       <template #description>Review your configured jobs before processing.</template>
     </PageHeader>
-
     <div class="main-content">
       <div v-for="job in jobs" :key="job.id">
         <h2>Job {{ job.id }}</h2>
@@ -24,7 +22,6 @@
         <p>Password: {{ job.settings.password || "None" }}</p>
       </div>
     </div>
-
     <BottomButtons div-id="job-queue-bottom-buttons">
       <CustomButton data-name="back-btn" @click="navStore.setActivePage('JobSetup')">Back</CustomButton>
       <CustomButton data-name="begin-btn" @click="navStore.setActivePage('Progress')">
@@ -33,11 +30,9 @@
     </BottomButtons>
   </div>
 </template>
-
 <script setup lang="ts">
 import { useJobsStore } from "@/stores/jobsStore";
 import { useNavigationStore } from "@/stores/navigationStore";
-
 const jobsStore = useJobsStore();
 const navStore = useNavigationStore();
 const jobs = jobsStore.jobs;

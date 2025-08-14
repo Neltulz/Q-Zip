@@ -1,0 +1,12 @@
+---
+description: "Rules for file and folder organization in the Q-Zip project."
+globs: ["**/*"]
+alwaysApply: false
+---
+# File Organization
+- Keep component-specific styles in separate `.scoped.css` files.
+- Use descriptive folder names (e.g., `file-table-comp/`, `job-area-comp/`).
+- Store configuration files in `assets/config/`.
+- Use composables for shared logic in `composables/`.
+- Use the Nuxt.js directory structure (no `src` folder).
+- For Nuxt plugins, import from `"nuxt/app"`, not `"#app"`.

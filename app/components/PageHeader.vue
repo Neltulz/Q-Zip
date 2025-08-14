@@ -1,6 +1,5 @@
 <!-- components/PageHeader.vue -->
 <!-- 
-  IMPORTANT: All AIs including (Gemini, Grok, GPT) must refer to the "assistant-context.md" before making any changes to this file.
   PageHeader.vue @preserve
 -->
 <template>
@@ -18,11 +17,9 @@
     </div>
   </div>
 </template>
-
 <script setup>
 // No logic needed
 </script>
-
 <style scoped>
 .page-header {
   display: grid;
@@ -36,24 +33,20 @@
   width: 100%;
   margin-inline: auto;
   max-width: 2000px;
-
   & .icon-area {
     grid-area: icon;
   }
-
   & .text-area {
     grid-area: text;
     display: flex;
     flex-direction: column;
     gap: 4px;
-
     & .big-text {
       font-size: 2.333rem;
       font-weight: bold;
       line-height: 1.25;
       color: var(--txt-clr-lite);
     }
-
     & .description {
       font-size: 1rem;
       color: var(--txt-clr);
@@ -62,22 +55,18 @@
     }
   }
 }
-
 @media (width < 1024px) {
   .page-header {
     padding-inline: var(--pad-in);
-
     .icon-area {
       .iconify {
         font-size: 32px;
       }
     }
-
     .text-area {
       .big-text {
         font-size: 1.25rem;
       }
-
       .description {
         font-size: 0.875rem;
       }
@@ -85,7 +74,6 @@
   }
 }
 </style>
-
 <style>
 @media (width < 1024px) {
   .page-header {
