@@ -93,6 +93,7 @@
     :style="Object.assign({}, columnStyles, fileTableRootStyle)"
     data-component-name="FileTable"
     @click="handleRootClick"
+    @contextmenu="handleRootContextMenu"
   >
     <!-- Full-screen transparent blocker to prevent interaction with outside UI while marquee drag is active -->
     <div v-if="isMarqueeActive" class="marquee-blocker" aria-hidden="true"></div>
@@ -177,6 +178,7 @@
                 :min-max-folder-created="minMaxFolderCreated"
                 :focused-row-index="focusedRowIndex"
                 :row-index="sortedFiles.findIndex(f => f.path === file.path)"
+                :is-file-table-active="isActive"
                 @toggle-file-selection="toggleFileSelection"
                 @click-row="clickRowByPath"
                 @context-menu="handleContextMenu"
@@ -189,7 +191,8 @@
                 @copy-to-new-job="copyFileToNewJob"
                 @selection-changed="(paths) => selectedFiles = paths"
                 @set-file-menu-ref="setFileMenuRef"
-                @context-menu-closed="emit('file-table-context-menu-closed')"
+                @context-menu-closed="handleContextMenuClosed"
+                @dropdown-opened="handleDropdownOpened"
               />
             </template>
           </div>
@@ -281,6 +284,7 @@ const emit = defineEmits([
   "add-folders",
   "cancel-load",
   "file-table-context-menu-closed", // New event
+  "dropdown-opened",
 ]);
 
 const themeStore = useThemeStore();
@@ -300,6 +304,7 @@ const sortDirection = ref<"asc" | "desc">("asc");
 const isActive = ref(false);
 const isScrolling = ref(false);
 const isMarqueeActive = ref(false);
+const wasMarqueeActive = ref(false); // Track if marquee was recently active
 const marqueeIsAdditive = ref(false);
 const marqueeAnchorX = ref(0);
 const marqueeAnchorY = ref(0);
@@ -463,6 +468,7 @@ const localSelectionBox = ref<HTMLElement | null>(null);
 const localMarqueeRect = reactive({ x: 0, y: 0, width: 0, height: 0 });
 const localPreviewSet = new Set<string>();
 const skipRootClick = ref(false);
+const isClosingContextMenu = ref(false);
 const DRAG_THRESHOLD = 6;
 const isPossibleMarquee = ref(false);
 
@@ -710,7 +716,13 @@ const stopAutoScroll = () => {
 
 const handleMarqueeMouseUp = () => {
   skipRootClick.value = true;
-  setTimeout(() => (skipRootClick.value = false), 100);
+  wasMarqueeActive.value = true;
+  // Extend the protection time to prevent outside click handler from firing
+  // during marquee selection completion
+  setTimeout(() => {
+    skipRootClick.value = false;
+    wasMarqueeActive.value = false;
+  }, 300);
   isMarqueeActive.value = false;
   const finalPaths = computeSelectionByRectLocal(
     marqueeIsAdditive.value,
@@ -1166,6 +1178,15 @@ const handleRootClick = (event: MouseEvent) => {
   deselectAll();
 };
 
+const handleRootContextMenu = (event: MouseEvent) => {
+  // Make the file table active when right-clicking anywhere in it
+  isActive.value = true;
+  logFocus("FileTable", "Root context menu - activating file table", {
+    jobId: props.jobId,
+    target: (event.target as HTMLElement)?.className
+  });
+};
+
 const toggleAll = (): void => {
   if (!props.isSelectable) return;
   if (allSelected.value) {
@@ -1420,6 +1441,14 @@ const setFileMenuRef = (file: FileItem, el: any) => {
 const handleContextMenu = (file: FileItem, event: MouseEvent, preserveSelection: boolean) => {
   if (!isSelectableEnabled.value) return;
   
+  // Make the file table active when right-clicking on any file
+  isActive.value = true;
+  logFocus("FileTable", "Context menu - activating file table", {
+    jobId: props.jobId,
+    filePath: file.path,
+    preserveSelection
+  });
+  
   // If not preserving selection (i.e., right-clicked outside .item-name-content), deselect all
   if (!preserveSelection) {
     selectedFiles.value = [];
@@ -1454,6 +1483,28 @@ const handleContextMenu = (file: FileItem, event: MouseEvent, preserveSelection:
       }
     });
   }
+};
+
+const handleContextMenuClosed = () => {
+  // Set flag to prevent outside click handler from deactivating file table
+  isClosingContextMenu.value = true;
+  nextTick(() => {
+    // Reset flag after a short delay
+    setTimeout(() => {
+      isClosingContextMenu.value = false;
+    }, 100);
+  });
+  emit('file-table-context-menu-closed');
+};
+
+const handleDropdownOpened = () => {
+  console.log('FileTable: handleDropdownOpened called');
+  logFocus("FileTable", "Dropdown opened, activating file table", { jobId: props.jobId });
+  isActive.value = true;
+  // Add a small delay to ensure activation persists through the dropdown opening
+  nextTick(() => {
+    isActive.value = true;
+  });
 };
 
 // --- LOGGING ---
@@ -1537,6 +1588,8 @@ watch(scrollComponentRef, (newRef) => {
 let globalMarqueeBlocker: HTMLElement | null = null;
 // Reference to the global click handler so it can be removed on unmount
 let globalClickHandler: ((e: MouseEvent) => void) | null = null;
+let globalOutsideClickHandler: ((e: MouseEvent) => void) | null = null;
+
 onMounted(() => {
   logLifecycle("FileTable", "Component has been mounted.");
 
@@ -1639,6 +1692,7 @@ onMounted(() => {
   } catch (err) {
     // ignore if DOM unavailable
   }
+  
   // install a global click handler to deselect when clicking empty space inside .job-content
   // store handler reference so it can be removed on unmount
   globalClickHandler = (event: MouseEvent) => {
@@ -1661,6 +1715,40 @@ onMounted(() => {
   };
 
   window.addEventListener("click", globalClickHandler);
+  
+  // Add global outside click handler to deactivate file table when clicking outside
+  globalOutsideClickHandler = (event: MouseEvent) => {
+    if (skipRootClick.value || isMarqueeActive.value || wasMarqueeActive.value || isClosingContextMenu.value) return;
+    
+    const target = event.target as HTMLElement;
+    const fileTableElement = fileTableCompRef.value;
+    
+    // Check if click is outside the file table component
+    if (fileTableElement && !fileTableElement.contains(target)) {
+      // Don't deactivate if clicking on toolbar or other file table related elements
+      const isFileTableRelated = target.closest(".file-table-toolbar") || 
+                                target.closest(".file-table-comp") ||
+                                target.closest(".job-content") ||
+                                target.closest(".dropdown-menu");
+      
+      // Additional protection: if the click target is the body or html element
+      // and we recently had marquee activity, don't deactivate
+      if ((target.tagName === 'BODY' || target.tagName === 'HTML') && skipRootClick.value) {
+        return;
+      }
+      
+      if (!isFileTableRelated) {
+        logFocus("FileTable", "Outside click detected, deactivating file table", {
+          jobId: props.jobId,
+          target: target.className
+        });
+        setActive(false);
+      }
+    }
+  };
+  
+  window.addEventListener("click", globalOutsideClickHandler);
+  
   // Listen for app-level outside clicks to deactivate job-content
   const outsideHandler = () => {
     logFocus("FileTable", "outsideHandler called", {
@@ -1689,6 +1777,10 @@ onUnmounted(() => {
   if (globalClickHandler) {
     window.removeEventListener("click", globalClickHandler);
     globalClickHandler = null;
+  }
+  if (globalOutsideClickHandler) {
+    window.removeEventListener("click", globalOutsideClickHandler);
+    globalOutsideClickHandler = null;
   }
   window.removeEventListener("app:clicked-outside-job-content", (() => {}) as EventListener);
 });
@@ -1740,6 +1832,7 @@ defineExpose({
   toggleAll,
   selectedFiles,
   setActive,
+  isClosingContextMenu,
 });
 
 // Watch isActive to add/remove the visual class only when activation allowed

@@ -793,7 +793,17 @@ const openOperationConfirmModal = (
         });
       }
       // Drag operation was already ended in handleDragAction, so no need to call it again
-      // Note: No FileTable to reactivate in JobSelectorArea
+      
+      // Reactivate the file table after modal closes
+      const currentJobId = jobsStore.selectedJobId;
+      if (currentJobId !== null) {
+        logManagerAction("JobSelectorArea", `Reactivating file table for job ${currentJobId} after modal closes`);
+        try {
+          window.dispatchEvent(new CustomEvent("app:ensure-activate-filetable", { detail: currentJobId }));
+        } catch (e) {
+          logManagerAction("JobSelectorArea", `Error dispatching ensure-activate-filetable event: ${e}`);
+        }
+      }
     }
   );
 };

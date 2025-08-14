@@ -160,6 +160,10 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits<{
+  'dropdown-opened': [];
+}>();
+
 const themeStore = useThemeStore();
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
 
@@ -382,6 +386,9 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
   isContentLoaded.value = false;
   contextMenuCoords.value = opts && opts.x !== undefined && opts.y !== undefined && !opts.anchorEl ? { x: opts.x!, y: opts.y! } : null;
   contextMenuAnchorEl.value = opts?.anchorEl ?? null;
+  
+  // Emit dropdown-opened event
+  emit('dropdown-opened');
 
   await nextTick();
 

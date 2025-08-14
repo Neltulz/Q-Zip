@@ -7,6 +7,7 @@
       'is-cut': cutFiles.includes(file.path) && jobId === cutSourceJobId,
       'is-folder': file.type === 'Folder',
       'is-focused': isFocused,
+      'table-inactive': !isFileTableActive,
     }"
     :data-path="file.path"
     data-has-context-menu="true"
@@ -58,8 +59,9 @@
         @move-to-new-job="moveFileToNewJob"
         @copy-files="handleContextMenuCopyFiles"
         @copy-to-new-job="copyFileToNewJob"
-        @selection-changed="(paths) => selectedFiles = paths"
+        @selection-changed="handleSelectionChanged"
         @context-menu-closed="handleContextMenuClosed"
+        @dropdown-opened="handleDropdownOpened"
       />
     </div>
     <!-- Other Cells -->
@@ -150,6 +152,7 @@ const props = defineProps<{
   minMaxFolderCreated: { min: number; max: number };
   focusedRowIndex: number | null;
   rowIndex: number;
+  isFileTableActive: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -166,6 +169,7 @@ const emit = defineEmits<{
   'selection-changed': [paths: string[]];
   'set-file-menu-ref': [file: FileItem, el: any];
   'context-menu-closed': [];
+  'dropdown-opened': [];
 }>();
 
 const formatBytes = (bytes: number): string => {
@@ -221,6 +225,11 @@ const handleContextMenuClosed = () => {
   emit('context-menu-closed');
 };
 
+const handleDropdownOpened = () => {
+  console.log('FileTableRow: handleDropdownOpened called');
+  emit('dropdown-opened');
+};
+
 const handleDragStart = (event: DragEvent, path: string) => {
   emit('drag-start', event, path);
 };
@@ -247,6 +256,10 @@ const handleContextMenuCopyFiles = (payload: { targetJobId: number; rightClicked
 
 const copyFileToNewJob = (paths: string[]) => {
   emit('copy-to-new-job', paths);
+};
+
+const handleSelectionChanged = (paths: string[]) => {
+  emit('selection-changed', paths);
 };
 
 const setFileMenuRef = (file: FileItem, el: any) => {
@@ -283,6 +296,20 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   &.is-focused {
     outline: 1px solid var(--blu-lite);
     outline-offset: -1px;
+  }
+
+  /* Hide focus ring when table is inactive */
+  &.table-inactive.is-focused {
+    outline: none;
+  }
+
+  /* Dim selected row backgrounds when table is inactive */
+  &.table-inactive.selected {
+    opacity: 0.6;
+  }
+
+  &.table-inactive.is-folder.selected {
+    opacity: 0.6;
   }
 
   /* Hover state - dimmer than selection */

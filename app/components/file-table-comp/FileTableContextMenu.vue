@@ -13,6 +13,7 @@
       :last-icon-name="'mdi:dots-horizontal'"
       :last-icon-size="20"
       placement="bottom-start"
+      @dropdown-opened="handleDropdownOpened"
     >
       <template #default="{ close: closeMain }">
         <CustomButton
@@ -199,7 +200,10 @@
           @click="
             () => {
               closeMain();
-              emit('context-menu-closed');
+              // Add a small delay to ensure the dropdown closes before restoring focus
+              nextTick(() => {
+                emit('context-menu-closed');
+              });
             }
           "
         >
@@ -211,7 +215,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, nextTick } from "vue";
 import type { FileItem } from "@/types/types";
 import DropdownMenu from "../DropdownMenu.vue";
 import CustomButton from "../CustomButton.vue";
@@ -233,6 +237,7 @@ const emit = defineEmits([
   "copy-to-new-job",
   "selection-changed",
   "context-menu-closed",
+  "dropdown-opened",
 ]);
 
 const jobsStore = useJobsStore();
@@ -246,6 +251,11 @@ const setFileMenuRef = (file: FileItem, el: any) => {
   if (el) {
     fileMenuRefs.value.set(file.path, el);
   }
+};
+
+const handleDropdownOpened = () => {
+  console.log('FileTableContextMenu: handleDropdownOpened called');
+  emit('dropdown-opened');
 };
 
 const showFileContextMenu = (file: FileItem, event: MouseEvent) => {

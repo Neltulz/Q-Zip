@@ -1,5 +1,46 @@
 # Q-Zip Changelog
 
+## [0.1.8] - 2024-12-19 19:00:00 UTC
+
+### Fixed
+- **Modal Post-Operation Activation**: Fixed file table becoming inactive after confirming/canceling modals from drag-and-drop operations
+  - Added file table reactivation after modal closes in drag-and-drop confirmation modals
+  - Enhanced modal callback in `JobSelectorArea.vue` to dispatch `app:ensure-activate-filetable` event
+  - Improved logging to track file table reactivation events
+  - Fixed issue where file table would remain inactive after completing drag-and-drop file operations
+
+### Technical Details
+- **Event System**: Utilized existing `app:ensure-activate-filetable` event system for consistent activation
+- **Modal Callbacks**: Enhanced modal callback to reactivate file table after operation completion
+- **Logging Enhancement**: Added detailed logging for file table reactivation events
+- **Version Bump**: Incremented patch version from 0.1.7 to 0.1.8 in:
+  - `src-tauri/Cargo.toml`
+  - `app/components/TitleBar.vue`
+  - `src-tauri/tauri.conf.json`
+
+---
+
+## [0.1.7] - 2024-12-19 18:30:00 UTC
+
+### Fixed
+- **Context Menu Activation**: Fixed file table not becoming active when right-clicking on .item-name-content elements
+  - Enhanced `handleContextMenu` function to ensure immediate activation with persistence
+  - Added `nextTick` delay to prevent activation from being overridden by other handlers
+  - Improved `handleRootContextMenu` function with similar activation persistence
+  - Added enhanced logging to track context menu activation events
+  - Fixed timing issues that could cause activation to be lost during context menu opening
+
+### Technical Details
+- **Event Handling**: Modified context menu handlers to use immediate activation with persistence
+- **Timing Fixes**: Added `nextTick` calls to ensure activation persists through context menu operations
+- **Logging Enhancement**: Added target element class information to focus logging for better debugging
+- **Version Bump**: Incremented patch version from 0.1.6 to 0.1.7 in:
+  - `src-tauri/Cargo.toml`
+  - `app/components/TitleBar.vue`
+  - `src-tauri/tauri.conf.json`
+
+---
+
 ## [0.1.6] - 2024-12-19 17:15:00 UTC
 
 ### Fixed
