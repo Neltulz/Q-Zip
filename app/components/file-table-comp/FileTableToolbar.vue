@@ -165,12 +165,60 @@
         </template>
       </DropdownMenu>
     </template>
+
+    <template #end>
+      <DropdownMenu
+        button-style-class="trans-btn"
+        dropdown-data-name="file-table-settings-dropdown"
+        first-icon-name="mdi:cog"
+        :first-icon-size="20"
+        last-icon-name="mdi:chevron-down"
+        :last-icon-size="20"
+        placement="bottom-end"
+      >
+        <template #button-content> Settings </template>
+        <template #default="{ close }">
+          <CustomButton
+            button-style-class="trans-btn"
+            :class="{ 'is-active': checkboxMode }"
+            data-name="checkbox-mode-btn"
+            :first-icon-name="checkboxMode ? 'mdi:checkbox-marked' : 'mdi:checkbox-blank-outline'"
+            :first-icon-size="20"
+            @click="
+              () => {
+                toggleCheckboxMode();
+                close();
+              }
+            "
+          >
+            Checkbox Mode
+          </CustomButton>
+          <CustomButton
+            button-style-class="trans-btn"
+            :class="{ 'is-active': autoCheckOnSelect }"
+            data-name="auto-check-on-select-btn"
+            :disabled="!checkboxMode"
+            :first-icon-name="autoCheckOnSelect ? 'mdi:checkbox-marked' : 'mdi:checkbox-blank-outline'"
+            :first-icon-size="20"
+            @click="
+              () => {
+                toggleAutoCheckOnSelect();
+                close();
+              }
+            "
+          >
+            Auto check on select
+          </CustomButton>
+        </template>
+      </DropdownMenu>
+    </template>
   </ToolBar>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
+import { useUserPreferencesStore } from "@/stores/userPreferencesStore";
 import { open } from "@tauri-apps/plugin-dialog";
 import DropdownMenu from "../DropdownMenu.vue";
 import CustomButton from "../CustomButton.vue";
@@ -195,7 +243,12 @@ const emit = defineEmits([
 ]);
 
 const jobsStore = useJobsStore();
+const userPreferencesStore = useUserPreferencesStore();
 const jobs = computed(() => jobsStore.jobs);
+
+// Get preferences from store
+const checkboxMode = computed(() => userPreferencesStore.checkboxMode);
+const autoCheckOnSelect = computed(() => userPreferencesStore.autoCheckOnSelect);
 
 const handleAddFile = async (close: () => void): Promise<void> => {
   close();
@@ -239,6 +292,14 @@ const copyToNewJob = (): void => {
   emit("copy-to-new-job", props.selectedFiles);
 };
 
+const toggleCheckboxMode = (): void => {
+  userPreferencesStore.setCheckboxMode(!checkboxMode.value);
+};
+
+const toggleAutoCheckOnSelect = (): void => {
+  userPreferencesStore.setAutoCheckOnSelect(!autoCheckOnSelect.value);
+};
+
 const handleToolbarClick = (event: Event): void => {
   // Prevent event bubbling to avoid triggering FileTable's deselect logic
   event.stopPropagation();
@@ -271,5 +332,21 @@ const handleToolbarClick = (event: Event): void => {
 
 :global(.dark) .file-table-toolbar.is-active {
   background-color: var(--toolbar-active-bg-dark, hsla(211, 100.00%, 50.00%, 0.15));
+}
+
+/* Active state styling for checkbox mode and auto check buttons */
+:deep(.trans-btn.is-active) {
+  background-color: var(--accent-clr, hsla(211, 100.00%, 50.00%, 0.20));
+  color: var(--accent-clr, hsl(211, 100.00%, 50.00%));
+}
+
+:deep(.trans-btn.is-active:hover) {
+  background-color: var(--accent-clr, hsla(211, 100.00%, 50.00%, 0.30));
+}
+
+/* Disabled state styling */
+:deep(.trans-btn:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

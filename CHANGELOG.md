@@ -4,7 +4,29 @@
 
 ## Recent Changes
 
-## [0.1.8] - 2024-12-19 19:00:00 UTC
+## [0.1.9] - 2025-08-14T14:00:00Z
+
+### Fixed
+- **Checkbox Mode Selection Behavior**: Fixed marquee selection behavior in checkbox mode with auto-check disabled
+  - Fixed marquee selection only selecting files without checking them when "auto check on select" is disabled
+  - Fixed marquee selection immediately deselecting all files on mousedown when starting a new selection
+  - Fixed header checkbox toggling checked state instead of selection state in checkbox mode
+  - Fixed deselection behavior to only clear selected files, not checked files, in checkbox mode
+  - Fixed spacebar functionality to toggle checked state of selected files when auto-check is disabled
+
+### Technical Details
+- **Marquee Selection**: Modified marquee selection logic to respect "auto check on select" setting
+- **Header Checkbox**: Updated `toggleAll` function to properly handle checkbox mode vs normal mode
+- **Deselection Logic**: Enhanced `deselectAll` and marquee mousedown handlers to preserve checked files in checkbox mode
+- **Spacebar Support**: Added spacebar functionality to toggle checked state for selected files
+- **Version Bump**: Incremented patch version from 0.1.8 to 0.1.9 in:
+  - `src-tauri/Cargo.toml`
+  - `app/components/TitleBar.vue`
+  - `src-tauri/tauri.conf.json`
+
+---
+
+## [0.1.8] - 2025-08-14T13:00:00Z
 
 ### Fixed
 - **Modal Post-Operation Activation**: Fixed file table becoming inactive after confirming/canceling modals from drag-and-drop operations
@@ -24,7 +46,7 @@
 
 ---
 
-## [0.1.7] - 2024-12-19 18:30:00 UTC
+## [0.1.7] - 2025-08-14T12:30:00Z
 
 ### Fixed
 - **Context Menu Activation**: Fixed file table not becoming active when right-clicking on .item-name-content elements
@@ -45,7 +67,7 @@
 
 ---
 
-## [0.1.6] - 2024-12-19 17:15:00 UTC
+## [0.1.6] - 2025-08-14T11:15:00Z
 
 ### Fixed
 - **Context Menu Focus Management**: Fixed file table losing active status after context menu interactions
@@ -66,7 +88,7 @@
 
 ---
 
-## [0.1.5] - 2024-12-19 16:47:00 UTC
+## [0.1.5] - 2025-08-14T10:47:00Z
 
 ### Added
 - **Focus Indicator System**: Implemented comprehensive focus management for the file table
@@ -95,7 +117,7 @@
 
 ---
 
-## [0.1.4] - 2024-12-19
+## [0.1.4] - 2025-08-14T09:00:00Z
 
 ### Fixed
 - **TypeScript Errors**: Fixed multiple TypeScript compilation errors across the codebase
@@ -129,5 +151,5 @@
 
 ---
 
-## [0.1.3] - Previous Version
+## [0.1.3] - 2025-08-14T08:00:00Z
 - Initial release and previous changes

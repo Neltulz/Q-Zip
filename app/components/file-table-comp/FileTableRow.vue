@@ -24,13 +24,13 @@
         button-style-class="minimal-trans-btn"
         :data-name="`select-file-${file.path}`"
         role="checkbox"
-        :aria-checked="selectedFiles.includes(file.path) ? 'true' : 'false'"
+        :aria-checked="checkedFiles.includes(file.path) ? 'true' : 'false'"
         @click.stop="toggleFileSelection(file.path)"
       >
-        <Icon
-          :name="selectedFiles.includes(file.path) ? 'mdi:checkbox-marked' : 'mdi:checkbox-blank-outline'"
-          size="16"
-        />
+                  <Icon
+            :name="checkedFiles.includes(file.path) ? 'mdi:checkbox-marked' : 'mdi:checkbox-blank-outline'"
+            size="16"
+          />
       </CustomButton>
     </div>
     <!-- Name Cell -->
@@ -131,12 +131,12 @@ import { computed } from "vue";
 import type { FileItem } from "@/types/types";
 import CustomButton from "@/components/CustomButton.vue";
 import FileTableContextMenu from "./FileTableContextMenu.vue";
-import { Icon } from "#components";
 
 const props = defineProps<{
   file: FileItem;
   jobId: number;
   selectedFiles: string[];
+  checkedFiles: string[];
   cutFiles: string[];
   cutSourceJobId: number | null;
   showCheckboxes: boolean;

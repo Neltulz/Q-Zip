@@ -20,6 +20,8 @@ Q-Zip is a Tauri-based desktop application for file compression and archiving, b
   - **Changelog Limit:** Keep only the most recent 20 versions in the changelog
   - **Archive Old Versions:** When adding a new version that would exceed 20 entries, remove the oldest version entry
   - **Format:** Use consistent markdown formatting with version numbers, dates, and categorized changes
+  - **Date Format:** Use ISO 8601 standard with Zulu time (e.g., `2025-08-14T14:00:00Z`)
+  - **Time Conversion:** Convert local time to UTC/Zulu time (CST = UTC-6, CDT = UTC-5)
 
 ## When Making Changes
 1. **ALWAYS increment the version number** - Increment the third number (patch version) in:

@@ -107,21 +107,21 @@
     </div>
     <div class="file-table-visual-select" />
     <LoadingAnim :visible="props.isLoading" @cancel="$emit('cancel-load')"> Adding files, please wait... </LoadingAnim>
-    <FileTableToolbar
-      v-if="shouldShowToolbar"
-      :job-id="props.jobId"
-      :selected-files="selectedFiles"
-      :show-toolbar="shouldShowToolbar"
-      :is-filetable-active="isActive"
-      @remove-files="removeSelectedFiles"
-      @move-files="moveToJob"
-      @move-to-new-job="moveToNewJob"
-      @copy-files="copyToJob"
-      @copy-to-new-job="copyToNewJob"
-      @add-files="handleAddFile"
-      @add-folders="handleAddFolder"
-      @activate-filetable="setActive(true)"
-    />
+         <FileTableToolbar
+       v-if="shouldShowToolbar"
+       :job-id="props.jobId"
+       :selected-files="actionItems"
+       :show-toolbar="shouldShowToolbar"
+       :is-filetable-active="isActive"
+       @remove-files="removeSelectedFiles"
+       @move-files="moveToJob"
+       @move-to-new-job="moveToNewJob"
+       @copy-files="copyToJob"
+       @copy-to-new-job="copyToNewJob"
+       @add-files="handleAddFile"
+       @add-folders="handleAddFolder"
+       @activate-filetable="setActive(true)"
+     />
 
     <OverlayScrollbarsComponent
       ref="scrollComponentRef"
@@ -163,6 +163,7 @@
                 :file="file"
                 :job-id="props.jobId"
                 :selected-files="selectedFiles"
+                :checked-files="checkedFiles"
                 :cut-files="cutFiles"
                 :cut-source-job-id="cutSourceJobId"
                 :show-checkboxes="shouldShowCheckboxes"
@@ -208,6 +209,7 @@ import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
 import { useUiStore } from "@/stores/uiStore";
+import { useUserPreferencesStore } from "@/stores/userPreferencesStore";
 import type { FileItem } from "@/types/types";
 import FileTableHeader from "./file-table-comp/FileTableHeader.vue";
 import FileTableToolbar from "./file-table-comp/FileTableToolbar.vue";
@@ -292,6 +294,7 @@ const jobsStore = useJobsStore();
 const dragDropStore = useDragDropStore();
 
 const uiStore = useUiStore();
+const userPreferencesStore = useUserPreferencesStore();
 
 const scrollComponentRef = ref<InstanceType<typeof OverlayScrollbarsComponent> | null>(null);
 const viewportRef = ref<HTMLElement | null>(null);
@@ -299,6 +302,7 @@ const fileTableCompRef = ref<HTMLElement | null>(null);
 const fileMenuRefs = ref(new Map<string, any>());
 // --- REACTIVE STATE ---
 const selectedFiles = ref<string[]>([]);
+const checkedFiles = ref<string[]>([]); // Separate array for checkbox state
 const sortKey = ref<keyof FileItem>("name");
 const sortDirection = ref<"asc" | "desc">("asc");
 const isActive = ref(false);
@@ -520,12 +524,15 @@ const handleComponentMouseDown = (event: MouseEvent) => {
   const ctrlPressed = event.ctrlKey || event.metaKey;
   const shiftPressed = event.shiftKey;
 
-  if (!clickedOnName && !clickedOnCheckbox) {
-    if (!ctrlPressed) {
-      if (selectedFiles.value.length > 0) {
-        selectedFiles.value = [];
-      }
+  // For marquee selection, immediately deselect all files when starting a new selection
+  // (unless Ctrl is pressed for additive selection)
+  if (!ctrlPressed) {
+    // Clear selected files for visual feedback
+    if (selectedFiles.value.length > 0) {
+      selectedFiles.value = [];
     }
+    // In checkbox mode, don't clear checked files - only deselect for visual feedback
+    // Checked files should remain checked until explicitly unchecked by the user
   }
 
   event.preventDefault();
@@ -732,19 +739,39 @@ const handleMarqueeMouseUp = () => {
     localMarqueeRect.height
   );
   if (finalPaths.length > 0) {
-    if (marqueeIsInvert.value) {
-      const currentSet = new Set(selectedFiles.value);
-      for (const p of finalPaths) {
-        if (currentSet.has(p)) currentSet.delete(p);
-        else currentSet.add(p);
-      }
-      selectedFiles.value = Array.from(currentSet);
-    } else if (marqueeIsAdditive.value) {
-      const selectionSet = new Set([...selectedFiles.value, ...finalPaths]);
-      selectedFiles.value = Array.from(selectionSet);
-    } else {
-      selectedFiles.value = finalPaths;
-    }
+         if (marqueeIsInvert.value) {
+       // For invert selection, always work with selected files for consistency
+       const currentSet = new Set(selectedFiles.value);
+       for (const p of finalPaths) {
+         if (currentSet.has(p)) currentSet.delete(p);
+         else currentSet.add(p);
+       }
+       selectedFiles.value = Array.from(currentSet);
+       // Only update checked files if auto-check is enabled
+       if (userPreferencesStore.checkboxMode && userPreferencesStore.autoCheckOnSelect) {
+         checkedFiles.value = Array.from(currentSet);
+       }
+     } else if (marqueeIsAdditive.value) {
+       // For additive selection, always work with selected files for consistency
+       const selectionSet = new Set([...selectedFiles.value, ...finalPaths]);
+       selectedFiles.value = Array.from(selectionSet);
+       // Only update checked files if auto-check is enabled
+       if (userPreferencesStore.checkboxMode && userPreferencesStore.autoCheckOnSelect) {
+         checkedFiles.value = Array.from(selectionSet);
+       }
+     } else {
+       // Normal marquee selection (not additive)
+       if (userPreferencesStore.checkboxMode) {
+         // In checkbox mode, only update checked files if auto-check is enabled
+         if (userPreferencesStore.autoCheckOnSelect) {
+           checkedFiles.value = finalPaths;
+         }
+         // Always update selected files for visual feedback
+         selectedFiles.value = finalPaths;
+       } else {
+         selectedFiles.value = finalPaths;
+       }
+     }
   }
   clearPreviewDOM();
   marqueePreviewSelection.value = [];
@@ -931,13 +958,30 @@ const loadingBackdropStyle = createMemoizedComputed(() => {
 
 // --- MEMOIZED SELECTION STATE ---
 const allSelected = createMemoizedComputed(() => {
-  return props.files.length > 0 && selectedFiles.value.length === props.files.length;
-}, [() => props.files.length, () => selectedFiles.value.length]);
+  // In checkbox mode, check if all files are checked
+  // In normal mode, check if all files are selected
+  if (userPreferencesStore.checkboxMode) {
+    return props.files.length > 0 && checkedFiles.value.length === props.files.length;
+  } else {
+    return props.files.length > 0 && selectedFiles.value.length === props.files.length;
+  }
+}, [() => props.files.length, () => selectedFiles.value.length, () => checkedFiles.value.length, () => userPreferencesStore.checkboxMode]);
 
 // --- OPTIMIZED TEMPLATE CONDITIONALS ---
 // Pre-compute conditional states to reduce template complexity
 const shouldShowToolbar = computed(() => props.showToolbar);
-const shouldShowCheckboxes = computed(() => props.showCheckboxes);
+
+// Computed property that returns the appropriate array for actions based on checkbox mode
+const actionItems = computed(() => {
+  // In checkbox mode, use checked files for actions
+  // In normal mode, use selected files for actions
+  if (userPreferencesStore.checkboxMode) {
+    return checkedFiles.value;
+  } else {
+    return selectedFiles.value;
+  }
+});
+const shouldShowCheckboxes = computed(() => props.showCheckboxes && userPreferencesStore.checkboxMode);
 const shouldShowRowActions = computed(() => props.showRowActions);
 const isSelectableEnabled = computed(() => props.isSelectable);
 const isItemDragEnabled = computed(() => props.itemDragEnabled);
@@ -1093,12 +1137,39 @@ const toggleFileSelection = (path: string) => {
   if (!props.isSelectable) return;
   isActive.value = true;
   const selectedIndex = selectedFiles.value.indexOf(path);
+  const checkedIndex = checkedFiles.value.indexOf(path);
+  const fileIndex = sortedFiles.value.findIndex((f) => f.path === path);
+  const fileName = sortedFiles.value[fileIndex]?.name;
+  
   if (selectedIndex > -1) {
     selectedFiles.value.splice(selectedIndex, 1);
+    logFocus("FileTable", `Toggle selection: Deselected file`, {
+      jobId: props.jobId,
+      fileName,
+      filePath: path,
+      newSelectionCount: selectedFiles.value.length,
+      checkboxMode: userPreferencesStore.checkboxMode,
+      autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+    });
   } else {
     selectedFiles.value.push(path);
+    logFocus("FileTable", `Toggle selection: Selected file`, {
+      jobId: props.jobId,
+      fileName,
+      filePath: path,
+      newSelectionCount: selectedFiles.value.length,
+      checkboxMode: userPreferencesStore.checkboxMode,
+      autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+    });
   }
-  const fileIndex = sortedFiles.value.findIndex((f) => f.path === path);
+  
+  // Toggle checkbox state
+  if (checkedIndex > -1) {
+    checkedFiles.value.splice(checkedIndex, 1);
+  } else {
+    checkedFiles.value.push(path);
+  }
+  
   if (fileIndex !== -1) {
     lastClickedIndex.value = fileIndex;
   }
@@ -1125,7 +1196,19 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
   if (clickedIndex === -1) return;
 
   // Set focus to the clicked row
+  const previousFocusIndex = focusedRowIndex.value;
   focusedRowIndex.value = clickedIndex;
+  
+  logFocus("FileTable", `Row clicked: Focus moved to row ${clickedIndex}`, {
+    jobId: props.jobId,
+    fileName: sortedFiles.value[clickedIndex]?.name,
+    filePath: sortedFiles.value[clickedIndex]?.path,
+    previousFocusIndex,
+    clickedOnName,
+    clickedOnCheckbox,
+    checkboxMode: userPreferencesStore.checkboxMode,
+    autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+  });
 
   const isCtrlPressed = event.ctrlKey || event.metaKey;
 
@@ -1142,10 +1225,45 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
     } else {
       selectedFiles.value = rangePaths;
     }
+    
+    // Auto check on select: if checkbox mode is enabled and auto check is enabled, 
+    // automatically check the checkboxes for the range
+    if (userPreferencesStore.checkboxMode && userPreferencesStore.autoCheckOnSelect) {
+      // Add files to checkedFiles array to mark checkboxes as checked
+      const checkedSet = new Set(checkedFiles.value);
+      rangePaths.forEach((p) => checkedSet.add(p));
+      checkedFiles.value = Array.from(checkedSet);
+      
+      logFocus("FileTable", "Auto check on select: Range automatically checked", {
+        jobId: props.jobId,
+        rangeSize: rangePaths.length,
+        startIndex: start,
+        endIndex: end,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
+    }
   } else if (isCtrlPressed) {
     toggleFileSelection(path);
   } else {
     selectedFiles.value = [path];
+    
+    // Auto check on select: if checkbox mode is enabled and auto check is enabled, 
+    // automatically check the checkbox when selecting a row
+    if (userPreferencesStore.checkboxMode && userPreferencesStore.autoCheckOnSelect) {
+      // Add file to checkedFiles array to mark checkbox as checked
+      if (!checkedFiles.value.includes(path)) {
+        checkedFiles.value.push(path);
+      }
+      
+      logFocus("FileTable", "Auto check on select: File automatically checked", {
+        jobId: props.jobId,
+        fileName: sortedFiles.value[clickedIndex]?.name,
+        filePath: path,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
+    }
   }
   lastClickedIndex.value = clickedIndex;
   isActive.value = true;
@@ -1189,19 +1307,71 @@ const handleRootContextMenu = (event: MouseEvent) => {
 
 const toggleAll = (): void => {
   if (!props.isSelectable) return;
-  if (allSelected.value) {
-    selectedFiles.value = [];
+  
+  if (userPreferencesStore.checkboxMode) {
+    // In checkbox mode, toggle the checked state of all files
+    if (allSelected.value) {
+      const previousCheckedCount = checkedFiles.value.length;
+      checkedFiles.value = [];
+      logFocus("FileTable", "Toggle all: Unchecked all files", {
+        jobId: props.jobId,
+        previousCheckedCount,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
+    } else {
+      checkedFiles.value = props.files.map((file) => file.path);
+      logFocus("FileTable", "Toggle all: Checked all files", {
+        jobId: props.jobId,
+        fileCount: props.files.length,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
+    }
   } else {
-    selectedFiles.value = props.files.map((file) => file.path);
+    // In normal mode, toggle the selected state of all files
+    if (allSelected.value) {
+      const previousSelectionCount = selectedFiles.value.length;
+      selectedFiles.value = [];
+      logFocus("FileTable", "Toggle all: Deselected all files", {
+        jobId: props.jobId,
+        previousSelectionCount,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
+    } else {
+      selectedFiles.value = props.files.map((file) => file.path);
+      logFocus("FileTable", "Toggle all: Selected all files", {
+        jobId: props.jobId,
+        fileCount: props.files.length,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
+    }
   }
   lastClickedIndex.value = null;
 };
 
 const deselectAll = () => {
   if (!props.isSelectable) return;
+  const previousSelectionCount = selectedFiles.value.length;
+  const previousCheckedCount = checkedFiles.value.length;
   selectedFiles.value = [];
+  // In checkbox mode, don't clear checked files - only deselect for visual feedback
+  // Checked files should remain checked until explicitly unchecked by the user
+  if (!userPreferencesStore.checkboxMode) {
+    checkedFiles.value = [];
+  }
   lastClickedIndex.value = null;
   // Keep focus on the last focused row even when deselecting
+  
+  logFocus("FileTable", `Deselect all: Cleared all selections${!userPreferencesStore.checkboxMode ? ' and checkboxes' : ''}`, {
+    jobId: props.jobId,
+    previousSelectionCount,
+    previousCheckedCount,
+    checkboxMode: userPreferencesStore.checkboxMode,
+    autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+  });
 };
 
 // Initialize focus on the last selected row or first row
@@ -1214,12 +1384,26 @@ const initializeFocus = () => {
     const selectedIndex = sortedFiles.value.findIndex(f => f.path === firstSelectedPath);
     if (selectedIndex !== -1) {
       focusedRowIndex.value = selectedIndex;
+      logFocus("FileTable", `Initialize focus: Focused on first selected file at row ${selectedIndex}`, {
+        jobId: props.jobId,
+        fileName: sortedFiles.value[selectedIndex]?.name,
+        filePath: sortedFiles.value[selectedIndex]?.path,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
       return;
     }
   }
   
   // If no selected files or selected file not found, focus on first row
   focusedRowIndex.value = 0;
+  logFocus("FileTable", `Initialize focus: Focused on first row (no selection)`, {
+    jobId: props.jobId,
+    fileName: sortedFiles.value[0]?.name,
+    filePath: sortedFiles.value[0]?.path,
+    checkboxMode: userPreferencesStore.checkboxMode,
+    autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+  });
 };
 
 const handleDragStart = (event: DragEvent, path: string) => {
@@ -1229,10 +1413,14 @@ const handleDragStart = (event: DragEvent, path: string) => {
   }
   let pathsToDrag: string[];
 
-  if (selectedFiles.value.includes(path)) {
-    pathsToDrag = [...selectedFiles.value];
+  if (actionItems.value.includes(path)) {
+    pathsToDrag = [...actionItems.value];
   } else {
-    selectedFiles.value = [path];
+    // In checkbox mode, we don't want to automatically select/check the file
+    // In normal mode, we can select it
+    if (!userPreferencesStore.checkboxMode) {
+      selectedFiles.value = [path];
+    }
     pathsToDrag = [path];
   }
 
@@ -1352,23 +1540,23 @@ const stopDragScroll = () => {
 
 // --- MISSING FUNCTIONS THAT WERE ACCIDENTALLY REMOVED ---
 const removeSelectedFiles = (): void => {
-  emit("remove-files", selectedFiles.value);
+  emit("remove-files", actionItems.value);
 };
 
 const moveToJob = (targetJobId: number): void => {
-  emit("move-files", { targetJobId, files: selectedFiles.value });
+  emit("move-files", { targetJobId, files: actionItems.value });
 };
 
 const moveToNewJob = (): void => {
-  emit("move-to-new-job", selectedFiles.value);
+  emit("move-to-new-job", actionItems.value);
 };
 
 const copyToJob = (targetJobId: number): void => {
-  emit("copy-files", { targetJobId, files: selectedFiles.value });
+  emit("copy-files", { targetJobId, files: actionItems.value });
 };
 
 const copyToNewJob = (): void => {
-  emit("copy-to-new-job", selectedFiles.value);
+  emit("copy-to-new-job", actionItems.value);
 };
 
 const handleAddFile = async (files: string[]): Promise<void> => {
@@ -1387,8 +1575,8 @@ const removeFile = (path: string): void => {
 const moveFile = (targetJobId: number, pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
-    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
-    ? selectedFiles.value
+    : actionItems.value.includes(pathOrPaths) && actionItems.value.length > 0
+    ? actionItems.value
     : [pathOrPaths];
   emit("move-files", { targetJobId, files: paths });
 };
@@ -1396,8 +1584,8 @@ const moveFile = (targetJobId: number, pathOrPaths: string | string[]): void => 
 const moveFileToNewJob = (pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
-    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
-    ? selectedFiles.value
+    : actionItems.value.includes(pathOrPaths) && actionItems.value.length > 0
+    ? actionItems.value
     : [pathOrPaths];
   // Emit array so parent can use selection if appropriate
   emit("move-to-new-job", paths);
@@ -1406,8 +1594,8 @@ const moveFileToNewJob = (pathOrPaths: string | string[]): void => {
 const copyFile = (targetJobId: number, pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
-    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
-    ? selectedFiles.value
+    : actionItems.value.includes(pathOrPaths) && actionItems.value.length > 0
+    ? actionItems.value
     : [pathOrPaths];
   emit("copy-files", { targetJobId, files: paths });
 };
@@ -1415,8 +1603,8 @@ const copyFile = (targetJobId: number, pathOrPaths: string | string[]): void => 
 const copyFileToNewJob = (pathOrPaths: string | string[]): void => {
   const paths = Array.isArray(pathOrPaths)
     ? pathOrPaths
-    : selectedFiles.value.includes(pathOrPaths) && selectedFiles.value.length > 0
-    ? selectedFiles.value
+    : actionItems.value.includes(pathOrPaths) && actionItems.value.length > 0
+    ? actionItems.value
     : [pathOrPaths];
   // Emit array so parent can use selection if appropriate
   emit("copy-to-new-job", paths);
@@ -1454,14 +1642,18 @@ const handleContextMenu = (file: FileItem, event: MouseEvent, preserveSelection:
     selectedFiles.value = [];
     lastClickedIndex.value = null;
   } else {
-    // Only select the file if right-clicking on .item-name-content AND it's not already selected
-    if (!selectedFiles.value.includes(file.path)) {
-      selectedFiles.value = [file.path];
-      const fileIndex = sortedFiles.value.findIndex((f) => f.path === file.path);
-      if (fileIndex !== -1) {
-        lastClickedIndex.value = fileIndex;
-      }
-    }
+         // Only select the file if right-clicking on .item-name-content AND it's not already selected
+     if (!actionItems.value.includes(file.path)) {
+       // In checkbox mode, we don't want to automatically select/check the file
+       // In normal mode, we can select it
+       if (!userPreferencesStore.checkboxMode) {
+         selectedFiles.value = [file.path];
+       }
+       const fileIndex = sortedFiles.value.findIndex((f) => f.path === file.path);
+       if (fileIndex !== -1) {
+         lastClickedIndex.value = fileIndex;
+       }
+     }
   }
   
   // Context menu is handled by the FileTableRow component
@@ -1877,6 +2069,25 @@ watch(
   }
 );
 
+// Watch focus changes for logging
+watch(
+  () => focusedRowIndex.value,
+  (newFocusIndex, oldFocusIndex) => {
+    if (newFocusIndex !== oldFocusIndex) {
+      const focusedFile = newFocusIndex !== null ? sortedFiles.value[newFocusIndex] : null;
+      logFocus("FileTable", `Focus changed: ${oldFocusIndex} -> ${newFocusIndex}`, {
+        jobId: props.jobId,
+        fileName: focusedFile?.name,
+        filePath: focusedFile?.path,
+        oldFocusIndex,
+        newFocusIndex,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
+    }
+  }
+);
+
 // Handle keyboard navigation
 const handleKeyDown = (event: KeyboardEvent) => {
   if (!isActive.value || sortedFiles.value.length === 0) return;
@@ -1885,21 +2096,124 @@ const handleKeyDown = (event: KeyboardEvent) => {
     case 'ArrowUp':
       event.preventDefault();
       if (focusedRowIndex.value !== null && focusedRowIndex.value > 0) {
-        focusedRowIndex.value--;
+        const newIndex = focusedRowIndex.value - 1;
+        focusedRowIndex.value = newIndex;
+        logFocus("FileTable", `Arrow Up: Focus moved to row ${newIndex}`, {
+          jobId: props.jobId,
+          fileName: sortedFiles.value[newIndex]?.name,
+          filePath: sortedFiles.value[newIndex]?.path,
+          checkboxMode: userPreferencesStore.checkboxMode,
+          autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+        });
+        
+        // Directory Opus behavior: 
+        // - Without Ctrl: deselect all, then select the newly focused row
+        // - With Ctrl: only move focus, don't affect selection
+        if (!event.ctrlKey && !event.metaKey) {
+          // Deselect all files
+          if (selectedFiles.value.length > 0) {
+            selectedFiles.value = [];
+                      logFocus("FileTable", "Arrow Up: Deselected all files", {
+            jobId: props.jobId,
+            previousSelectionCount: selectedFiles.value.length,
+            checkboxMode: userPreferencesStore.checkboxMode,
+            autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+          });
+          }
+          
+          // Select the newly focused row
+          const focusedFile = sortedFiles.value[newIndex];
+          if (focusedFile) {
+            selectedFiles.value = [focusedFile.path];
+            logFocus("FileTable", "Arrow Up: Selected newly focused row", {
+              jobId: props.jobId,
+              fileName: focusedFile.name,
+              filePath: focusedFile.path,
+              checkboxMode: userPreferencesStore.checkboxMode,
+              autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+            });
+          }
+        } else {
+          // Ctrl/Cmd + Arrow: only move focus, don't affect selection
+          logFocus("FileTable", "Ctrl+Arrow Up: Only moved focus, selection unchanged", {
+            jobId: props.jobId,
+            fileName: sortedFiles.value[newIndex]?.name,
+            filePath: sortedFiles.value[newIndex]?.path,
+            checkboxMode: userPreferencesStore.checkboxMode,
+            autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+          });
+        }
       } else if (focusedRowIndex.value === null) {
         focusedRowIndex.value = sortedFiles.value.length - 1;
+        logFocus("FileTable", `Arrow Up: Focus moved to last row ${focusedRowIndex.value}`, {
+          jobId: props.jobId,
+          fileName: sortedFiles.value[focusedRowIndex.value]?.name,
+          checkboxMode: userPreferencesStore.checkboxMode,
+          autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+        });
       }
       break;
     case 'ArrowDown':
       event.preventDefault();
       if (focusedRowIndex.value !== null && focusedRowIndex.value < sortedFiles.value.length - 1) {
-        focusedRowIndex.value++;
+        const newIndex = focusedRowIndex.value + 1;
+        focusedRowIndex.value = newIndex;
+        logFocus("FileTable", `Arrow Down: Focus moved to row ${newIndex}`, {
+          jobId: props.jobId,
+          fileName: sortedFiles.value[newIndex]?.name,
+          filePath: sortedFiles.value[newIndex]?.path,
+          checkboxMode: userPreferencesStore.checkboxMode,
+          autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+        });
+        
+        // Directory Opus behavior: 
+        // - Without Ctrl: deselect all, then select the newly focused row
+        // - With Ctrl: only move focus, don't affect selection
+        if (!event.ctrlKey && !event.metaKey) {
+          // Deselect all files
+          if (selectedFiles.value.length > 0) {
+            selectedFiles.value = [];
+                      logFocus("FileTable", "Arrow Down: Deselected all files", {
+            jobId: props.jobId,
+            previousSelectionCount: selectedFiles.value.length,
+            checkboxMode: userPreferencesStore.checkboxMode,
+            autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+          });
+          }
+          
+          // Select the newly focused row
+          const focusedFile = sortedFiles.value[newIndex];
+          if (focusedFile) {
+            selectedFiles.value = [focusedFile.path];
+            logFocus("FileTable", "Arrow Down: Selected newly focused row", {
+              jobId: props.jobId,
+              fileName: focusedFile.name,
+              filePath: focusedFile.path,
+              checkboxMode: userPreferencesStore.checkboxMode,
+              autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+            });
+          }
+        } else {
+          // Ctrl/Cmd + Arrow: only move focus, don't affect selection
+          logFocus("FileTable", "Ctrl+Arrow Down: Only moved focus, selection unchanged", {
+            jobId: props.jobId,
+            fileName: sortedFiles.value[newIndex]?.name,
+            filePath: sortedFiles.value[newIndex]?.path,
+            checkboxMode: userPreferencesStore.checkboxMode,
+            autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+          });
+        }
       } else if (focusedRowIndex.value === null) {
         focusedRowIndex.value = 0;
+        logFocus("FileTable", `Arrow Down: Focus moved to first row ${focusedRowIndex.value}`, {
+          jobId: props.jobId,
+          fileName: sortedFiles.value[focusedRowIndex.value]?.name,
+          checkboxMode: userPreferencesStore.checkboxMode,
+          autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+        });
       }
       break;
     case 'Enter':
-    case ' ':
       event.preventDefault();
       if (focusedRowIndex.value !== null) {
         const focusedFile = sortedFiles.value[focusedRowIndex.value];
@@ -1909,12 +2223,73 @@ const handleKeyDown = (event: KeyboardEvent) => {
             // Shift+Enter: add to selection
             if (!selectedFiles.value.includes(focusedPath)) {
               selectedFiles.value.push(focusedPath);
+              logFocus("FileTable", `Shift+Enter: Added file to selection`, {
+                jobId: props.jobId,
+                fileName: focusedFile.name,
+                filePath: focusedPath,
+                newSelectionCount: selectedFiles.value.length,
+                checkboxMode: userPreferencesStore.checkboxMode,
+                autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+              });
             }
           } else {
             // Enter: select only this file
             selectedFiles.value = [focusedPath];
+            logFocus("FileTable", `Enter: Selected single file`, {
+              jobId: props.jobId,
+              fileName: focusedFile.name,
+              filePath: focusedPath,
+              checkboxMode: userPreferencesStore.checkboxMode,
+              autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+            });
           }
         }
+      }
+      break;
+    case ' ':
+      // Spacebar: check/uncheck files when auto check is disabled and files are selected
+      if (userPreferencesStore.checkboxMode && !userPreferencesStore.autoCheckOnSelect && selectedFiles.value.length > 0) {
+        event.preventDefault();
+        
+        // Toggle checkbox state for all selected files
+        const selectedSet = new Set(selectedFiles.value);
+        const checkedSet = new Set(checkedFiles.value);
+        
+        // If all selected files are checked, uncheck them; otherwise check them
+        const allSelectedAreChecked = selectedFiles.value.every(file => checkedSet.has(file));
+        
+        if (allSelectedAreChecked) {
+          // Uncheck all selected files
+          checkedFiles.value = checkedFiles.value.filter(file => !selectedSet.has(file));
+          logFocus("FileTable", "Spacebar: Unchecked all selected files", {
+            jobId: props.jobId,
+            selectedCount: selectedFiles.value.length,
+            checkboxMode: userPreferencesStore.checkboxMode,
+            autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+          });
+        } else {
+          // Check all selected files
+          selectedFiles.value.forEach(file => {
+            if (!checkedSet.has(file)) {
+              checkedFiles.value.push(file);
+            }
+          });
+          logFocus("FileTable", "Spacebar: Checked all selected files", {
+            jobId: props.jobId,
+            selectedCount: selectedFiles.value.length,
+            checkboxMode: userPreferencesStore.checkboxMode,
+            autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+          });
+        }
+      } else {
+        // Spacebar: no action when auto check is enabled or no files selected
+        logFocus("FileTable", "Spacebar pressed: No action", {
+          jobId: props.jobId,
+          focusedRowIndex: focusedRowIndex.value,
+          checkboxMode: userPreferencesStore.checkboxMode,
+          autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect,
+          selectedCount: selectedFiles.value.length
+        });
       }
       break;
   }
