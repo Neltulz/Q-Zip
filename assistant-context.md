@@ -18,6 +18,14 @@ Q-Zip is a Tauri-based desktop application for file compression and archiving, b
 - **Skip Unchanged Files:** Do not include files that were not modified
 - **Update Changelog:** Update the changelog (create one if it doesn't exist) using markdown inside a CSS file
 
+## When Making Changes
+1. **ALWAYS increment the version number** - Increment the third number (patch version) in both `src-tauri/Cargo.toml` and `app/components/TitleBar.vue` and `tauri.conf.json`
+2. Check existing similar components for patterns
+3. Follow the established file organization
+4. Use HSL/HSLA colors exclusively
+5. Maintain TypeScript type safety - Avoid using `any` type, prefer proper type definitions and generics
+6. Test changes in the context of the full application
+
 ## Code Style Guidelines
 
 ### CSS/SCSS
@@ -77,10 +85,3 @@ Q-Zip is a Tauri-based desktop application for file compression and archiving, b
 - **Persistence**: State persistence MUST be handled exclusively by `pinia-plugin-persistedstate` via the `persist: true` option
 - **Prohibited Libraries**: Do NOT use `@vueuse/core`'s `useStorage` or any other library for store persistence. Using multiple persistence mechanisms within the project has been identified as the root cause of critical type-safety errors
 
-## When Making Changes
-1. **ALWAYS increment the version number** - Increment the third number (patch version) in both `src-tauri/Cargo.toml` and `app/components/TitleBar.vue` and `tauri.conf.json`
-2. Check existing similar components for patterns
-3. Follow the established file organization
-4. Use HSL/HSLA colors exclusively
-5. Maintain TypeScript type safety - Avoid using `any` type, prefer proper type definitions and generics
-6. Test changes in the context of the full application
