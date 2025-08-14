@@ -4,6 +4,16 @@
 
 ## Recent Changes
 
+## [0.1.11] - 2025-01-27T14:00:00Z
+
+### Changed
+- **Version Update**: Incremented patch version from 0.1.10 to 0.1.11
+  - Updated version in `src-tauri/Cargo.toml`
+  - Updated version display in `app/components/TitleBar.vue`
+  - Updated version in `src-tauri/tauri.conf.json` (both version field and window title)
+
+---
+
 ## [0.1.10] - 2025-08-14T15:00:00Z
 
 ### Fixed
@@ -171,5 +181,4 @@
 
 ---
 
-## [0.1.3] - 2025-08-14T08:00:00Z
-- Initial release and previous changes
+

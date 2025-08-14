@@ -121,6 +121,7 @@
        @add-files="handleAddFile"
        @add-folders="handleAddFolder"
        @activate-filetable="setActive(true)"
+       @refresh-files="handleRefreshFiles"
      />
 
     <OverlayScrollbarsComponent
@@ -243,6 +244,39 @@ const createMemoizedComputed = <T>(fn: () => T, deps: (() => any)[]) => {
   });
 };
 
+// Force refresh utility for memoized computations
+const forceRefresh = ref(0);
+let forceRefreshTimeout: NodeJS.Timeout | null = null;
+
+const createRefreshableMemoizedComputed = <T>(fn: () => T, deps: (() => any)[]) => {
+  let lastDeps: any[] = [];
+  let lastResult: T | null = null;
+  
+  return computed(() => {
+    // Include forceRefresh in dependencies to allow manual refresh
+    const currentDeps = [...deps.map(dep => dep()), forceRefresh.value];
+    const depsChanged = currentDeps.some((dep, index) => dep !== lastDeps[index]);
+    
+    if (depsChanged || lastResult === null) {
+      lastDeps = currentDeps;
+      lastResult = fn();
+    }
+    
+    return lastResult!;
+  });
+};
+
+// Debounced force refresh function
+const debouncedForceRefresh = () => {
+  if (forceRefreshTimeout) {
+    clearTimeout(forceRefreshTimeout);
+  }
+  forceRefreshTimeout = setTimeout(() => {
+    forceRefresh.value++;
+    forceRefreshTimeout = null;
+  }, 50); // 50ms debounce
+};
+
 // --- LAZY LOADING FOR CONTEXT MENUS ---
 // Note: Context menus are handled by FileTableRow components, so lazy loading is not needed here
 // Keeping the structure for potential future use
@@ -287,6 +321,7 @@ const emit = defineEmits([
   "cancel-load",
   "file-table-context-menu-closed", // New event
   "dropdown-opened",
+  "refresh-files",
 ]);
 
 const themeStore = useThemeStore();
@@ -328,7 +363,7 @@ const jobs = computed(() => jobsStore.jobs);
 
 // --- MEMOIZED SORTING OPERATIONS ---
 // Memoized sorting function with dependency tracking
-const sortedFiles = createMemoizedComputed(() => {
+const sortedFiles = createRefreshableMemoizedComputed(() => {
   const filesCopy = [...props.files];
   const folders = filesCopy.filter((item) => item.type === "Folder");
   const files = filesCopy.filter((item) => item.type !== "Folder");
@@ -424,26 +459,26 @@ const minMaxFolderCreated = createMemoizedComputed(() =>
 , [() => folderTimestamps.value]);
 
 // --- MEMOIZED VIRTUAL SCROLLING CALCULATIONS ---
-const totalHeight = createMemoizedComputed(() => {
+const totalHeight = createRefreshableMemoizedComputed(() => {
   const height = sortedFiles.value.length * ROW_HEIGHT;
   logRendering("FileTable", `Total height calculated: ${sortedFiles.value.length} files * ${ROW_HEIGHT}px = ${height}px`);
   return height;
 }, [() => sortedFiles.value.length]);
 
-const startIndex = createMemoizedComputed(() => {
+const startIndex = createRefreshableMemoizedComputed(() => {
   return Math.max(0, Math.floor(scrollTop.value / ROW_HEIGHT) - BUFFER_ROWS);
 }, [() => scrollTop.value]);
 
-const endIndex = createMemoizedComputed(() => {
+const endIndex = createRefreshableMemoizedComputed(() => {
   const wrapperHeight = viewportRef.value?.clientHeight || 0;
   return Math.min(sortedFiles.value.length, Math.ceil((scrollTop.value + wrapperHeight) / ROW_HEIGHT) + BUFFER_ROWS);
 }, [() => scrollTop.value, () => viewportRef.value?.clientHeight, () => sortedFiles.value.length]);
 
-const contentOffsetY = createMemoizedComputed(() => 
+const contentOffsetY = createRefreshableMemoizedComputed(() => 
   startIndex.value * ROW_HEIGHT
 , [() => startIndex.value]);
 
-const visibleFiles = createMemoizedComputed(() => {
+const visibleFiles = createRefreshableMemoizedComputed(() => {
   const files = sortedFiles.value.slice(startIndex.value, endIndex.value);
   logRendering("FileTable", `Visible files calculated: ${files.length} files (${startIndex.value} to ${endIndex.value}) out of ${sortedFiles.value.length} total`);
   return files;
@@ -1722,11 +1757,50 @@ watch(visibleFiles, (newVisibleFiles) => {
 watch(() => props.files, (newFiles, oldFiles) => {
   logRendering("FileTable", `Files prop changed: ${oldFiles?.length || 0} -> ${newFiles?.length || 0} files`);
   
+  // Only force refresh if the number of files changed significantly or if it's a small change
+  const fileCountDiff = Math.abs((newFiles?.length || 0) - (oldFiles?.length || 0));
+  const shouldForceRefresh = fileCountDiff > 10 || fileCountDiff === 0 || (newFiles?.length || 0) < 50;
+  
+  if (shouldForceRefresh) {
+    // Use debounced force refresh for better performance during batch operations
+    debouncedForceRefresh();
+  }
+  
   // Initialize focus when files change (e.g., on refresh)
   if (newFiles.length > 0 && focusedRowIndex.value === null) {
-    initializeFocus();
+    nextTick(() => {
+      initializeFocus();
+    });
+  }
+  
+  // Ensure virtual scrolling updates when files are added/removed
+  // Use a debounced approach to avoid excessive updates during batch operations
+  if (fileCountDiff > 0) {
+    nextTick(() => {
+      if (viewportRef.value) {
+        // Trigger a scroll event to recalculate visible files
+        const scrollEvent = new Event('scroll', { bubbles: true });
+        viewportRef.value.dispatchEvent(scrollEvent);
+      }
+    });
   }
 }, { deep: true });
+
+// Watch for force refresh changes to ensure virtual scrolling updates
+// This is now handled by the debounced approach, so we can remove this watch
+// watch(() => forceRefresh.value, (newValue, oldValue) => {
+//   if (newValue !== oldValue) {
+//     logRendering("FileTable", `Force refresh triggered: ${oldValue} -> ${newValue}`);
+//     // Force recalculation of virtual scrolling
+//     nextTick(() => {
+//       if (viewportRef.value) {
+//         // Trigger a scroll event to recalculate visible files
+//         const scrollEvent = new Event('scroll', { bubbles: true });
+//         viewportRef.value.dispatchEvent(scrollEvent);
+//       }
+//     });
+//   }
+// });
 
 // Emit selection changes so parent components (e.g., JobArea) stay in sync
 watch(selectedFiles, (newSelection) => {
@@ -1783,6 +1857,15 @@ watch(scrollComponentRef, (newRef) => {
         if (contentEl) {
           contentEl.style.setProperty("-webkit-overflow-scrolling", "auto");
         }
+        
+        // Force recalculation of virtual scrolling when viewport is set up
+        nextTick(() => {
+          if (viewportEl) {
+            // Trigger a scroll event to recalculate visible files
+            const scrollEvent = new Event('scroll', { bubbles: true });
+            viewportEl.dispatchEvent(scrollEvent);
+          }
+        });
       } catch (err) {
         // ignore
       }
@@ -1989,6 +2072,12 @@ onUnmounted(() => {
     globalOutsideClickHandler = null;
   }
   window.removeEventListener("app:clicked-outside-job-content", (() => {}) as EventListener);
+  
+  // Clean up force refresh timeout
+  if (forceRefreshTimeout) {
+    clearTimeout(forceRefreshTimeout);
+    forceRefreshTimeout = null;
+  }
 });
 
 // Programmatic setter so parents can toggle active state. Log for debugging.
@@ -2033,12 +2122,36 @@ const setActive = (val: boolean) => {
   }
 };
 
+const handleRefreshFiles = (): void => {
+  // Use debounced force refresh for better performance
+  debouncedForceRefresh();
+  
+  // Force the component to re-render by triggering reactive updates
+  nextTick(() => {
+    // Ensure the virtual scrolling calculations are updated
+    if (viewportRef.value) {
+      // Trigger a scroll event to recalculate visible files
+      const scrollEvent = new Event('scroll', { bubbles: true });
+      viewportRef.value.dispatchEvent(scrollEvent);
+    }
+    
+    // Force focus initialization if needed
+    if (sortedFiles.value.length > 0 && focusedRowIndex.value === null) {
+      initializeFocus();
+    }
+    
+    logUI("FileTable", "Refresh files triggered - forcing re-render and recalculations");
+  });
+};
+
+// Expose methods to parent components
 defineExpose({
   deselectAll,
   toggleAll,
   selectedFiles,
   setActive,
   isClosingContextMenu,
+  handleRefreshFiles,
 });
 
 // Watch isActive to add/remove the visual class only when activation allowed

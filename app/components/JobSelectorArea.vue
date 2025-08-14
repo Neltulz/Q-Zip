@@ -414,9 +414,22 @@ watch(
   (notification: any) => {
     if (notification) {
       const { targetId } = notification;
+      console.log(`[JobSelectorArea] Pending notification received for targetId: ${targetId}`, {
+        notification,
+        jobButtonRefs: Array.from(jobButtonRefs.value.keys()),
+        hasButtonRef: jobButtonRefs.value.has(targetId)
+      });
+      
       nextTick(() => {
         const buttonRef = jobButtonRefs.value.get(targetId);
         const buttonEl = buttonRef?.buttonRef;
+        console.log(`[JobSelectorArea] Button reference lookup:`, {
+          targetId,
+          buttonRef: !!buttonRef,
+          buttonEl: !!buttonEl,
+          buttonRefs: Array.from(jobButtonRefs.value.keys())
+        });
+        
         if (buttonEl) {
           buttonEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
 
@@ -431,11 +444,14 @@ watch(
               left: rect.left - scrollContainerRect.left + scrollEl.scrollLeft,
               width: rect.width,
             };
+            console.log(`[JobSelectorArea] Adding notification with position:`, position);
             uiStore.addNotification({ ...notification, position });
           } else {
+            console.log(`[JobSelectorArea] Adding notification without position (no rect or scrollEl)`);
             uiStore.addNotification(notification);
           }
         } else {
+          console.log(`[JobSelectorArea] Adding notification without position (no buttonEl)`);
           uiStore.addNotification(notification);
         }
         uiStore.clearPendingNotification();
@@ -467,6 +483,9 @@ onUnmounted(() => {
 const setJobButtonRef = (jobId: number | "new-job", el: Element | ComponentPublicInstance | null) => {
   if (el) {
     jobButtonRefs.value.set(jobId, el as InstanceType<typeof CustomButton>);
+    console.log(`[JobSelectorArea] Set job button ref for jobId: ${jobId}`, {
+      jobButtonRefs: Array.from(jobButtonRefs.value.keys())
+    });
   }
 };
 

@@ -40,7 +40,14 @@
           <h2>Job {{ activeJob.id }}</h2>
         </div>
         <div ref="jobContentRef" class="job-content" @contextmenu.prevent.stop="showJobContextMenu">
-          <LoadingAnim :visible="showLoading" @cancel="cancelOperation" @animation-finished="onAnimationFinished">
+          <LoadingAnim 
+            :visible="showLoading" 
+            :current-item="progressInfo.currentItem"
+            :total-items="progressInfo.totalItems"
+            :progress-message="progressInfo.message"
+            @cancel="cancelOperation" 
+            @animation-finished="onAnimationFinished"
+          >
             {{ loadingMessage }}
           </LoadingAnim>
           <FileTable
@@ -60,6 +67,7 @@
             @add-files="addItemsToJob"
             @add-folders="addItemsToJob"
             @file-table-context-menu-closed="restoreFileTableFocus"
+            @refresh-files="handleRefreshFiles"
           />
         </div>
       </div>
@@ -106,16 +114,21 @@ const selectedFilePaths = ref<string[]>([]);
 const operationTimer = ref<NodeJS.Timeout | null>(null);
 const loadingState = ref<LoadingState>("idle");
 const showLoading = ref(false);
+const progressInfo = ref({
+  currentItem: 0,
+  totalItems: 0,
+  message: ""
+});
 let operationCancelled = false;
 
 const loadingMessage = computed(() => {
   switch (loadingState.value) {
     case "adding":
-      return "Adding files, please wait...";
+      return "Adding items, please wait...";
     case "removing":
-      return "Removing Files, please wait...";
+      return "Removing items, please wait...";
     case "transferring":
-      return "Transferring files...";
+      return "Transferring items...";
     default:
       return "";
   }
@@ -242,12 +255,18 @@ onUnmounted(() => {
 });
 
 const cancelOperation = () => {
-  logLoading("JobArea", "Cancel button clicked. Clearing operation timer.");
+  const cancelRequestTime = performance.now();
+  const cancelRequestISO = new Date().toISOString();
+  logLoading("JobArea", `Cancel button clicked at ${cancelRequestISO}. Clearing operation timer.`);
   operationCancelled = true;
   if (operationTimer.value) {
     clearTimeout(operationTimer.value);
     operationTimer.value = null;
   }
+  
+  // Cancel the ongoing file processing operation in the jobs store
+  jobsStore.cancelCurrentOperation();
+  
   showLoading.value = false;
 };
 
@@ -260,26 +279,43 @@ const onAnimationFinished = () => {
 
 const handleOperation = async (
   state: LoadingState,
-  items: any[],
-  action: () => Promise<any> | void,
-  operationType?: "copy" | "move"
-) => {
+  items: string[],
+  action: () => Promise<any>
+): Promise<void> => {
   operationCancelled = false;
   loadingState.value = state;
+  
+  // Set up progress tracking
+  const progressCallback = (current: number, total: number, message: string) => {
+    progressInfo.value = {
+      currentItem: current,
+      totalItems: total,
+      message: message
+    };
+  };
+  
+  jobsStore.setProgressCallback(progressCallback);
 
   let loadingTimer: NodeJS.Timeout | null = null;
 
-  const operationPromise = new Promise<void>(async (resolve) => {
-    // Temporarily disabled debug delay
-    // if (operationType === "copy") {
-    //   logLoading("JobArea", "Applying 5-second debug delay for copy operation.");
-    //   await new Promise((res) => setTimeout(res, 5000));
-    // }
+  const operationPromise = new Promise<void>((resolve) => {
+    const performAction = async () => {
+      try {
+        if (!operationCancelled) {
+          await action();
+        }
+        resolve();
+      } catch (error) {
+        if (error instanceof Error && error.message === "Operation cancelled") {
+          logLoading("JobArea", "Operation was cancelled during execution");
+        } else {
+          console.error("Operation failed:", error);
+        }
+        resolve();
+      }
+    };
 
-    if (!operationCancelled) {
-      await action();
-    }
-    resolve();
+    performAction();
   });
 
   let shouldShowLoading = false;
@@ -288,7 +324,7 @@ const handleOperation = async (
     shouldShowLoading = true;
   } else {
     const timeoutPromise = new Promise((resolve) => {
-      loadingTimer = setTimeout(() => resolve("timeout"), 2000);
+      loadingTimer = setTimeout(() => resolve("timeout"), 2000); // 2 seconds timeout
     });
     const result = await Promise.race([operationPromise, timeoutPromise]);
     if (result === "timeout") {
@@ -306,8 +342,26 @@ const handleOperation = async (
     clearTimeout(loadingTimer);
   }
 
+  // Clear progress callback
+  jobsStore.setProgressCallback(null);
+
   if (operationCancelled) {
     logLoading("JobArea", "Operation was cancelled. Bypassing final state change.");
+    
+    // Check if operation was cancelled and show notification for file processing operations
+    if (state === "adding") {
+      logLoading("JobArea", "Checking for cancelled paths after file processing cancellation...");
+      nextTick(() => {
+        const cancelledPaths = jobsStore.getCancelledPaths();
+        logLoading("JobArea", `Found ${cancelledPaths.length} cancelled paths after cancellation`);
+        if (cancelledPaths.length > 0) {
+          logLoading("JobArea", "Showing cancellation notification...");
+          showCancellationNotification(cancelledPaths);
+          jobsStore.clearCancelledPaths(); // Clear the cancelled paths after showing notification
+        }
+      });
+    }
+    
     return;
   }
 
@@ -433,7 +487,7 @@ const confirmRemoveFiles = (paths: string | string[]) => {
     showSkipColumn: false
   }, (action: string) => {
     if (action === "proceed" && activeJob.value) {
-      handleOperation("removing", pathsToRemove, () => {
+      handleOperation("removing", pathsToRemove, async () => {
         jobsStore.removeFilesFromJob(activeJob.value!.id, pathsToRemove);
         fileTableRef.value?.deselectAll();
       });
@@ -537,14 +591,13 @@ const openOperationConfirmModal = (
       if (action === "proceed") {
         handleOperation(
           "transferring",
-          files,
-                  () => {
-          uiStore.handleFileOperation(operation, files, targetJobId, { 
-            sourceJobId, 
-            conflictResolution: conflictResolution || (operation === 'move' ? 'replace' : 'skip')
-          });
-        },
-          operation
+          files.map(f => f.path),
+          async () => {
+            uiStore.handleFileOperation(operation, files, targetJobId, { 
+              sourceJobId, 
+              conflictResolution: conflictResolution || (operation === 'move' ? 'replace' : 'skip')
+            });
+          }
         );
       }
       // Reactivate FileTable after modal closes
@@ -576,7 +629,7 @@ const confirmMoveFiles = (payload: FileOperationPayload | ContextMenuFileOperati
     });
   }
   
-  let pathsToMove = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath);
+  let pathsToMove = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath || "");
   // If only one path was passed but the user currently has a multi-selection that includes
   // that path, prefer the full selection (defensive against races where selection wasn't
   // propagated in time).
@@ -617,7 +670,7 @@ const confirmCopyFiles = (payload: FileOperationPayload | ContextMenuFileOperati
     });
   }
   
-  let pathsToCopy = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath);
+  let pathsToCopy = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath || "");
   if (pathsToCopy.length === 1 && selectedFilePaths.value.length > 1 && selectedFilePaths.value.includes(pathsToCopy[0])) {
     pathsToCopy = [...selectedFilePaths.value];
   }
@@ -634,26 +687,88 @@ const confirmCopyToNewJob = (paths: string | string[]): void => {
   openOperationConfirmModal("copy", fileItems, "new-job", activeJob.value?.id ?? null);
 };
 
+const showCancellationNotification = (cancelledPaths: string[]): void => {
+  logUI("JobArea", `showCancellationNotification called with ${cancelledPaths.length} cancelled paths`);
+  
+  // Create notification for cancelled operation using the regular notification system
+  const notification = {
+    title: "Operation Cancelled",
+    messages: [
+      {
+        text: `File processing was cancelled. ${cancelledPaths.length} item${cancelledPaths.length > 1 ? 's' : ''} were not added.`,
+        type: "warning" as const,
+        details: {
+          sourceJobId: null,
+          destinationJobId: activeJob.value?.id || 0,
+          filePaths: cancelledPaths,
+          reasons: cancelledPaths.reduce((acc, path) => {
+            acc[path] = "Processing cancelled by user";
+            return acc;
+          }, {} as Record<string, string>)
+        }
+      }
+    ],
+    glowType: "warning" as const,
+    targetId: activeJob.value?.id || 0,
+    duration: 5000 // 5 seconds
+  };
+  
+  logUI("JobArea", `Adding regular notification for cancellation`);
+  
+  // Use the regular notification system instead of job-specific positioning
+  uiStore.addNotification(notification);
+};
+
 const addItemsToJob = async (paths: string[]): Promise<void> => {
-  logUI("JobArea", `addItemsToJob called with ${paths.length} paths:`, paths);
+  const operationStartTime = performance.now();
+  const operationStartISO = new Date().toISOString();
+  logUI("JobArea", `addItemsToJob called with ${paths.length} paths at ${operationStartISO}:`, paths);
+  
   if (activeJob.value) {
     const initialFileCount = activeJob.value.files.length;
     logUI("JobArea", `Initial file count for job ${activeJob.value.id}: ${initialFileCount}`);
     
     await handleOperation("adding", paths, async () => {
+      const processingStartTime = performance.now();
+      logLoading("JobArea", `Starting file processing for ${paths.length} paths at ${new Date().toISOString()}...`);
       const addedCount = await jobsStore.addFilesToJob(activeJob.value!.id, paths);
-      logUI("JobArea", `addFilesToJob completed, added ${addedCount} files`);
+      const processingEndTime = performance.now();
+      const processingDuration = processingEndTime - processingStartTime;
+      logLoading("JobArea", `File processing completed in ${processingDuration.toFixed(2)}ms. Added ${addedCount} files.`);
       return addedCount;
     });
     
-    // Check if files were actually added
+    // Check if files were actually added (only for successful operations)
     nextTick(() => {
       const finalFileCount = activeJob.value?.files.length || 0;
-      logUI("JobArea", `Final file count for job ${activeJob.value?.id}: ${finalFileCount} (was ${initialFileCount})`);
+      const totalOperationTime = performance.now() - operationStartTime;
+      logUI("JobArea", `Final file count for job ${activeJob.value?.id}: ${finalFileCount} (was ${initialFileCount}). Total operation time: ${totalOperationTime.toFixed(2)}ms`);
     });
   } else {
     logUI("JobArea", "No active job available for adding files");
   }
+};
+
+const handleRefreshFiles = () => {
+  logUI("JobArea", "handleRefreshFiles called. Refreshing file table.");
+  // Force a re-render by triggering a reactive update
+  // The files should already be updated in the store, so we just need to ensure
+  // the component re-renders with the new data
+  nextTick(() => {
+    if (fileTableRef.value) {
+      try {
+        // Call the FileTable's refresh method directly to force recalculation
+        fileTableRef.value.handleRefreshFiles();
+        // Also ensure the FileTable is active
+        fileTableRef.value.setActive(true);
+        logUI("JobArea", "FileTable refresh completed successfully");
+      } catch (error) {
+        logUI("JobArea", "Error refreshing FileTable", error);
+      }
+    } else {
+      logUI("JobArea", "FileTable ref is null, cannot refresh");
+    }
+  });
 };
 </script>
 

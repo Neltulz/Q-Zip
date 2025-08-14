@@ -253,6 +253,14 @@ export const useUiStore = defineStore(
         isRemoving: false,
       };
 
+      console.log(`[uiStore] addNotification called:`, {
+        id,
+        title: newNotification.title,
+        messagesCount: newNotification.messages.length,
+        currentNotificationsCount: notifications.value.length,
+        queueLength: notificationQueue.value.length
+      });
+
       // If no notifications are currently displayed, show this one immediately
       if (notifications.value.length === 0) {
         // Add a small delay for the initial notification to ensure smooth fade-in
@@ -261,10 +269,20 @@ export const useUiStore = defineStore(
             removeNotification(id);
           }, duration);
           notifications.value.push(newNotification);
+          console.log(`[uiStore] Added notification to display:`, {
+            id,
+            title: newNotification.title,
+            notificationsCount: notifications.value.length
+          });
         }, 100); // Small delay for smooth initial fade-in
       } else {
         // Otherwise, add to queue
         notificationQueue.value.push(newNotification);
+        console.log(`[uiStore] Added notification to queue:`, {
+          id,
+          title: newNotification.title,
+          queueLength: notificationQueue.value.length
+        });
       }
     }
 

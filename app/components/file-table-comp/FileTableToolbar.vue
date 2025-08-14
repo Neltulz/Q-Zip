@@ -39,6 +39,16 @@
 
       <CustomButton
         button-style-class="trans-btn"
+        data-name="refresh-files-btn"
+        first-icon-name="mdi:refresh"
+        :first-icon-size="20"
+        @click.stop="refreshFiles"
+      >
+        Refresh
+      </CustomButton>
+
+      <CustomButton
+        button-style-class="trans-btn"
         data-btn-theme="danger"
         data-name="remove-selected-files-btn"
         :disabled="selectedFiles.length === 0"
@@ -240,6 +250,7 @@ const emit = defineEmits([
   "add-files",
   "add-folders",
   "activate-filetable",
+  "refresh-files",
 ]);
 
 const jobsStore = useJobsStore();
@@ -270,6 +281,11 @@ const handleAddFolder = async (close: () => void): Promise<void> => {
   if (selected) {
     emit("add-folders", selected);
   }
+};
+
+const refreshFiles = (): void => {
+  emit("refresh-files");
+  emit("activate-filetable");
 };
 
 const removeSelectedFiles = (): void => {

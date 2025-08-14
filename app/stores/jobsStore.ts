@@ -11,19 +11,12 @@
 
 import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";
-import { getFileDetails } from "@/utils/fileUtils";
+import { getFileDetails, setCancellationFlag, setProgressCallback as setFileUtilsProgressCallback } from "@/utils/fileUtils";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logStoreAction } from "@/utils/loggers";
+import type { FileItem } from "@/types/types";
 
 // Type definitions are now exported to be available across the application.
-export interface FileItem {
-  path: string;
-  name: string;
-  type: string;
-  size: number;
-  parentPath: string;
-}
-
 export interface CompressionSettings {
   // General
   useInputLocationsForOutput: boolean;
@@ -99,6 +92,13 @@ export const useJobsStore = defineStore(
     });
     const selectedJobId: Ref<number | null> = ref(null);
 
+    // Cancellation support
+    let currentOperationCancelled = false;
+    let currentOperationJobId: number | null = null;
+    let cancelledPaths: string[] = [];
+    let cancelStartTime: number | null = null;
+    let progressCallback: ((current: number, total: number, message: string) => void) | null = null;
+
     // Actions
     function initialize(): void {
       if (jobs.value.length === 0) {
@@ -130,45 +130,128 @@ export const useJobsStore = defineStore(
       return newId;
     }
 
+    function cancelCurrentOperation(): void {
+      if (currentOperationJobId !== null) {
+        cancelStartTime = performance.now();
+        currentOperationCancelled = true;
+        setCancellationFlag(true); // Set the flag in fileUtils
+        logStoreAction("jobsStore", `Cancelling current operation for job ${currentOperationJobId} at ${new Date().toISOString()}`);
+      }
+    }
+
+    function setProgressCallbackInternal(callback: ((current: number, total: number, message: string) => void) | null): void {
+      progressCallback = callback;
+      setFileUtilsProgressCallback(callback); // Set the callback in fileUtils
+    }
+
+    function getCancelledPaths(): string[] {
+      return [...cancelledPaths];
+    }
+
+    function clearCancelledPaths(): void {
+      cancelledPaths = [];
+    }
+
     async function addFilesToJob(jobId: number, paths: string[]): Promise<number> {
       const job = jobs.value.find((j) => j.id === jobId);
       if (!job) return 0;
 
+      // Set up cancellation tracking for this operation
+      currentOperationCancelled = false;
+      currentOperationJobId = jobId;
+      cancelledPaths = []; // Reset cancelled paths for this operation
+      setCancellationFlag(false); // Reset the flag in fileUtils
+
       const startTime = performance.now();
-      logStoreAction("jobsStore", `Starting to process ${paths.length} files for job ${jobId}...`);
+      const operationStartTime = new Date().toISOString();
+      logStoreAction("jobsStore", `Starting to process ${paths.length} items for job ${jobId} at ${operationStartTime}...`);
 
       const existingFilePaths = new Set(job.files.map((file) => file.path));
       const newPaths = paths.filter(path => !existingFilePaths.has(path));
 
       if (newPaths.length === 0) {
-        logStoreAction("jobsStore", "No new files to add, all paths already exist in the job.");
+        logStoreAction("jobsStore", "No new items to add, all paths already exist in job");
         return 0;
       }
 
-      const fileDetailPromises = newPaths.map(path => getFileDetails(path));
-      const fileDetailsResults = await Promise.all(fileDetailPromises);
+      let addedCount = 0;
+      const processedPaths: string[] = [];
+      const newFileDetails: FileItem[] = []; // Collect all file details before updating
 
-      const validFilesToAdd = fileDetailsResults.filter((details): details is FileItem => details !== null);
+      // Process items one by one with frequent cancellation checks
+      for (let i = 0; i < newPaths.length; i++) {
+        const path = newPaths[i];
+        if (!path) continue; // Skip undefined paths
 
-      if (validFilesToAdd.length > 0) {
-        const beforeCount = job.files.length;
-        // Use spread operator to ensure reactivity by creating a new array reference
-        job.files = [...job.files, ...validFilesToAdd];
-        const afterCount = job.files.length;
-        logStoreAction("jobsStore", `Added ${validFilesToAdd.length} new files to job ${jobId}. File count: ${beforeCount} -> ${afterCount}`);
-      } else {
-        logStoreAction("jobsStore", `No valid files to add to job ${jobId}.`);
+        // Check for cancellation more frequently for better responsiveness
+        if (i % 5 === 0 || i === newPaths.length - 1) {
+          if (currentOperationCancelled) {
+            const cancelTime = performance.now();
+            const timeSinceStart = cancelTime - startTime;
+            const cancelDelay = cancelTime - (cancelStartTime || startTime);
+            logStoreAction("jobsStore", `Item processing cancelled for job ${jobId} after ${timeSinceStart.toFixed(2)}ms. Cancellation delay: ${cancelDelay.toFixed(2)}ms. Processed ${processedPaths.length}/${newPaths.length} items. Cancelled paths: ${newPaths.length - processedPaths.length}`);
+
+            // Add remaining paths to cancelled paths
+            cancelledPaths = newPaths.slice(i);
+            return processedPaths.length;
+          }
+        }
+
+        try {
+          // Update progress for the current item
+          if (progressCallback) {
+            progressCallback(i + 1, newPaths.length, `Processing: ${path.split('\\').pop() || path.split('/').pop() || path}`);
+          }
+
+          // Get actual file details using the fileUtils function
+          const fileDetails = await getFileDetails(path);
+
+          // Check for cancellation after getting file details
+          if (currentOperationCancelled) {
+            const cancelTime = performance.now();
+            const timeSinceStart = cancelTime - startTime;
+            logStoreAction("jobsStore", `Item processing cancelled for job ${jobId} after ${timeSinceStart.toFixed(2)}ms. Processed ${processedPaths.length}/${newPaths.length} items. Cancelled paths: ${newPaths.length - processedPaths.length}`);
+
+            // Add remaining paths to cancelled paths
+            cancelledPaths = newPaths.slice(i);
+            return processedPaths.length;
+          }
+
+          if (fileDetails) {
+            newFileDetails.push(fileDetails); // Collect instead of pushing immediately
+            processedPaths.push(path);
+            addedCount++;
+
+            // Log progress every 10 items (more frequent for folder scanning)
+            if (addedCount % 10 === 0) {
+              const currentTime = performance.now();
+              const elapsed = currentTime - startTime;
+              const rate = addedCount / (elapsed / 1000);
+              logStoreAction("jobsStore", `Progress: ${addedCount}/${newPaths.length} items processed in ${elapsed.toFixed(2)}ms (${rate.toFixed(2)} items/sec)`);
+            }
+          } else {
+            logStoreAction("jobsStore", `Could not get details for item ${path}, skipping`);
+          }
+        } catch (error) {
+          if (error instanceof Error && error.message === "Operation cancelled") {
+            // Re-throw cancellation errors to be handled by the caller
+            throw error;
+          }
+          logStoreAction("jobsStore", `Error processing item ${path}: ${error}`);
+        }
+      }
+
+      // Batch update: add all collected file details at once
+      if (newFileDetails.length > 0) {
+        job.files.push(...newFileDetails);
       }
 
       const endTime = performance.now();
-      const duration = endTime - startTime;
+      const totalTime = endTime - startTime;
+      const rate = addedCount / (totalTime / 1000);
+      logStoreAction("jobsStore", `Completed processing ${addedCount} items for job ${jobId} in ${totalTime.toFixed(2)}ms (${rate.toFixed(2)} items/sec)`);
 
-      logStoreAction("jobsStore", `File processing for ${paths.length} paths took ${duration.toFixed(2)} ms.`);
-      if (DEBUG) {
-        console.log(`[jobsStore] File processing for ${paths.length} paths took ${duration.toFixed(2)} ms.`);
-      }
-
-      return validFilesToAdd.length;
+      return addedCount;
     }
 
     function addClipboardFilesToJob(jobId: number, files: FileItem[]): void {
@@ -367,6 +450,10 @@ export const useJobsStore = defineStore(
       copyFilesToJob,
       moveJob,
       createJobsFromPaths,
+      cancelCurrentOperation,
+      getCancelledPaths,
+      clearCancelledPaths,
+      setProgressCallback: setProgressCallbackInternal,
     };
   },
   {
