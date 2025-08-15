@@ -26,10 +26,11 @@
             last-icon-name="mdi:menu"
             :last-icon-size="24"
             placement="bottom-start"
+            :show-cancel-button="true"
             @mouseenter="showMainMenuTooltip"
             @mouseleave="hideMainMenuTooltip"
           >
-            <template #default>
+            <template #default="{ close }">
               <DropdownMenu
                 :is-submenu="true"
                 btn-theme="liter"
@@ -159,7 +160,7 @@
             :target="mainMenuTooltipTarget"
             placement="bottom-start"
           />
-          <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.13</span></span>
+          <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.14</span></span>
         </div>
           <div class="center-nav-btns" :class="{ disabled: isWelcomeLayout }">
           <CustomButton

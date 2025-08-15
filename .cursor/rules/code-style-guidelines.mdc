@@ -1,6 +1,6 @@
 ---
-description: "Coding style guidelines for CSS/SCSS and Vue.js components."
-globs: ["**/*.vue", "**/*.css", "**/*.scss"]
+description: "Coding style guidelines for CSS and Vue.js components."
+globs: ["**/*.vue", "**/*.css"
 alwaysApply: false
 ---
 # Code Style Guidelines

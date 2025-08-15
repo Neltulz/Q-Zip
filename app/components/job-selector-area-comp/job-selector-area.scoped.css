@@ -260,6 +260,15 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-options > button.close-job-btn > .visual-style::before) {
   display: none !important;
 }
+/* Hide blue line on any nested dropdown buttons inside job selector */
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu > button > .visual-style::before) {
+  display: none !important;
+}
+/* Hide blue line on any nested buttons inside job selector options */
+.job-selector-list > :deep(button.job-selector > .button-content .job-sel-options > * > button > .visual-style::before) {
+  display: none !important;
+}
+/* Show remove job button on hover */
 .job-selector-list > :deep(button.job-selector:hover > .button-content .job-sel-options .dropdown-menu > button.options-btn),
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu.active > button.options-btn) {
   opacity: 1;
@@ -307,8 +316,64 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   white-space: nowrap;
 }
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu > button.options-btn) {
-  opacity: 0;
+  opacity: 0.5;
 }
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu .custom-button .visual-style) {
   --btn-bg-hvr-clr: var(--btn-bg-hvr-clr-liter);
+}
+
+/* Remove Job Confirmation Dropdown Styles */
+.remove-job-confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px;
+  min-width: 200px;
+}
+
+.confirmation-text {
+  font-size: 14px;
+  color: var(--txt-clr-liter);
+  text-align: center;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.confirmation-text .info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  padding: 2px;
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+  margin-left: 4px;
+}
+
+.confirmation-text .info-icon:hover {
+  background-color: var(--btn-bg-hvr-clr-liter);
+}
+
+/* Specific styling for the remove job warning tooltip - using maxWidth prop instead */
+
+.confirmation-text .info-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  padding: 2px;
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+.confirmation-text .info-icon-wrapper:hover {
+  background-color: var(--btn-bg-hvr-clr-liter);
+}
+
+.confirmation-buttons {
+  display: flex;
+  flex-direction: column;
 }

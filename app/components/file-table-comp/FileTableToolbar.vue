@@ -4,36 +4,37 @@
 <template>
   <ToolBar v-if="showToolbar" class="file-table-toolbar" :class="{ 'is-active': isFiletableActive }" @click="handleToolbarClick">
     <template #start>
-      <DropdownMenu
-        button-style-class="trans-btn"
-        dropdown-data-name="add-files-and-folders-dropdown"
-        first-icon-name="mdi:add"
-        :first-icon-size="20"
-        last-icon-name="mdi:chevron-down"
-        :last-icon-size="20"
-      >
-        <template #button-content> Add... </template>
-        <template #default="{ close }">
-          <CustomButton
-            button-style-class="trans-btn"
-            first-icon-name="mdi:file-outline"
-            :first-icon-size="20"
-            data-name="add-files-btn"
-            @click="handleAddFile(close)"
-          >
-            Add File
-          </CustomButton>
-          <CustomButton
-            button-style-class="trans-btn"
-            first-icon-name="mdi:folder"
-            :first-icon-size="20"
-            data-name="add-folders-btn"
-            @click="handleAddFolder(close)"
-          >
-            Add Folder
-          </CustomButton>
-        </template>
-      </DropdownMenu>
+             <DropdownMenu
+         button-style-class="trans-btn"
+         dropdown-data-name="add-files-and-folders-dropdown"
+         first-icon-name="mdi:add"
+         :first-icon-size="20"
+         last-icon-name="mdi:chevron-down"
+         :last-icon-size="20"
+         :show-cancel-button="true"
+       >
+         <template #button-content> Add... </template>
+         <template #default="{ close }">
+           <CustomButton
+             button-style-class="trans-btn"
+             first-icon-name="mdi:file-outline"
+             :first-icon-size="20"
+             data-name="add-files-btn"
+             @click="handleAddFile(close)"
+           >
+             Add File
+           </CustomButton>
+           <CustomButton
+             button-style-class="trans-btn"
+             first-icon-name="mdi:folder"
+             :first-icon-size="20"
+             data-name="add-folders-btn"
+             @click="handleAddFolder(close)"
+           >
+             Add Folder
+           </CustomButton>
+         </template>
+       </DropdownMenu>
       <CustomButton
         button-style-class="trans-btn"
         data-name="refresh-files-btn"
@@ -54,168 +55,149 @@
       >
         Remove Selected
       </CustomButton>
-      <DropdownMenu
-        button-style-class="trans-btn"
-        dropdown-data-name="copy-to-job-dropdown"
-        :disabled="selectedFiles.length === 0"
-        first-icon-name="mdi:content-copy"
-        :first-icon-size="20"
-        last-icon-name="mdi:chevron-down"
-        :last-icon-size="20"
-        placement="bottom-start"
-      >
-        <template #button-content> Copy to </template>
-        <template #default="{ close }">
-          <CustomButton
-            v-for="job in jobs.filter((j: Job) => j.id !== jobId)"
-            :key="job.id"
-            button-style-class="trans-btn"
-            :data-name="`copy-to-job-${job.id}-btn`"
-            first-icon-name="mdi:briefcase"
-            :first-icon-size="20"
-            @click="
-              () => {
-                copyToJob(job.id);
-                close();
-              }
-            "
-          >
-            Job {{ job.id }}
-          </CustomButton>
-        </template>
-        <template #content-bottom="{ close }">
-          <hr v-if="jobs.filter((j) => j.id !== jobId).length > 0" />
-          <CustomButton
-            button-style-class="trans-btn"
-            data-name="copy-to-new-job-btn"
-            first-icon-name="mdi:plus"
-            :first-icon-size="20"
-            @click="
-              () => {
-                copyToNewJob();
-                close();
-              }
-            "
-          >
-            New Job
-          </CustomButton>
-          <hr />
-          <CustomButton
-            button-style-class="trans-btn btn-lite"
-            data-name="cancel-copy-to-btn"
-            first-icon-name="mdi:cancel"
-            :first-icon-size="20"
-            shortcut-text="Esc"
-            @click="close()"
-          >
-            Cancel
-          </CustomButton>
-        </template>
-      </DropdownMenu>
-      <DropdownMenu
-        button-style-class="trans-btn"
-        dropdown-data-name="move-to-job-dropdown"
-        :disabled="selectedFiles.length === 0"
-        first-icon-name="mdi:arrow-right"
-        :first-icon-size="20"
-        last-icon-name="mdi:chevron-down"
-        :last-icon-size="20"
-        placement="bottom-start"
-      >
-        <template #button-content> Move to </template>
-        <template #default="{ close }">
-          <CustomButton
-            v-for="job in jobs.filter((j: Job) => j.id !== jobId)"
-            :key="job.id"
-            button-style-class="trans-btn"
-            :data-name="`move-to-job-${job.id}-btn`"
-            first-icon-name="mdi:briefcase"
-            :first-icon-size="20"
-            @click="
-              () => {
-                moveToJob(job.id);
-                close();
-              }
-            "
-          >
-            Job {{ job.id }}
-          </CustomButton>
-        </template>
-        <template #content-bottom="{ close }">
-          <hr v-if="jobs.filter((j) => j.id !== jobId).length > 0" />
-          <CustomButton
-            button-style-class="trans-btn"
-            data-name="move-to-new-job-btn"
-            first-icon-name="mdi:plus"
-            :first-icon-size="20"
-            @click="
-              () => {
-                moveToNewJob();
-                close();
-              }
-            "
-          >
-            New Job
-          </CustomButton>
-          <hr />
-          <CustomButton
-            button-style-class="trans-btn btn-lite"
-            data-name="cancel-move-to-btn"
-            first-icon-name="mdi:cancel"
-            :first-icon-size="20"
-            shortcut-text="Esc"
-            @click="close()"
-          >
-            Cancel
-          </CustomButton>
-        </template>
-      </DropdownMenu>
+             <DropdownMenu
+         button-style-class="trans-btn"
+         dropdown-data-name="copy-to-job-dropdown"
+         :disabled="selectedFiles.length === 0"
+         first-icon-name="mdi:content-copy"
+         :first-icon-size="20"
+         last-icon-name="mdi:chevron-down"
+         :last-icon-size="20"
+         placement="bottom-start"
+         :show-cancel-button="true"
+       >
+         <template #button-content> Copy to </template>
+         <template #default="{ close }">
+           <CustomButton
+             v-for="job in jobs.filter((j: Job) => j.id !== jobId)"
+             :key="job.id"
+             button-style-class="trans-btn"
+             :data-name="`copy-to-job-${job.id}-btn`"
+             first-icon-name="mdi:briefcase"
+             :first-icon-size="20"
+             @click="
+               () => {
+                 copyToJob(job.id);
+                 close();
+               }
+             "
+           >
+             Job {{ job.id }}
+           </CustomButton>
+         </template>
+         <template #content-bottom="{ close }">
+           <hr v-if="jobs.filter((j) => j.id !== jobId).length > 0" />
+           <CustomButton
+             button-style-class="trans-btn"
+             data-name="copy-to-new-job-btn"
+             first-icon-name="mdi:plus"
+             :first-icon-size="20"
+             @click="
+               () => {
+                 copyToNewJob();
+                 close();
+               }
+             "
+           >
+             New Job
+           </CustomButton>
+         </template>
+       </DropdownMenu>
+             <DropdownMenu
+         button-style-class="trans-btn"
+         dropdown-data-name="move-to-job-dropdown"
+         :disabled="selectedFiles.length === 0"
+         first-icon-name="mdi:arrow-right"
+         :first-icon-size="20"
+         last-icon-name="mdi:chevron-down"
+         :last-icon-size="20"
+         placement="bottom-start"
+         :show-cancel-button="true"
+       >
+         <template #button-content> Move to </template>
+         <template #default="{ close }">
+           <CustomButton
+             v-for="job in jobs.filter((j: Job) => j.id !== jobId)"
+             :key="job.id"
+             button-style-class="trans-btn"
+             :data-name="`move-to-job-${job.id}-btn`"
+             first-icon-name="mdi:briefcase"
+             :first-icon-size="20"
+             @click="
+               () => {
+                 moveToJob(job.id);
+                 close();
+               }
+             "
+           >
+             Job {{ job.id }}
+           </CustomButton>
+         </template>
+         <template #content-bottom="{ close }">
+           <hr v-if="jobs.filter((j) => j.id !== jobId).length > 0" />
+           <CustomButton
+             button-style-class="trans-btn"
+             data-name="move-to-new-job-btn"
+             first-icon-name="mdi:plus"
+             :first-icon-size="20"
+             @click="
+               () => {
+                 moveToNewJob();
+                 close();
+               }
+             "
+           >
+             New Job
+           </CustomButton>
+         </template>
+       </DropdownMenu>
     </template>
     <template #end>
-      <DropdownMenu
-        button-style-class="trans-btn"
-        dropdown-data-name="file-table-settings-dropdown"
-        first-icon-name="mdi:cog"
-        :first-icon-size="20"
-        last-icon-name="mdi:chevron-down"
-        :last-icon-size="20"
-        placement="bottom-end"
-      >
-        <template #button-content> Settings </template>
-        <template #default="{ close }">
-          <CustomButton
-            button-style-class="trans-btn"
-            :class="{ 'is-active': checkboxMode }"
-            data-name="checkbox-mode-btn"
-            :first-icon-name="checkboxMode ? 'mdi:checkbox-marked' : 'mdi:checkbox-blank-outline'"
-            :first-icon-size="20"
-            @click="
-              () => {
-                toggleCheckboxMode();
-                close();
-              }
-            "
-          >
-            Checkbox Mode
-          </CustomButton>
-          <CustomButton
-            button-style-class="trans-btn"
-            :class="{ 'is-active': autoCheckOnSelect }"
-            data-name="auto-check-on-select-btn"
-            :disabled="!checkboxMode"
-            :first-icon-name="autoCheckOnSelect ? 'mdi:checkbox-marked' : 'mdi:checkbox-blank-outline'"
-            :first-icon-size="20"
-            @click="
-              () => {
-                toggleAutoCheckOnSelect();
-                close();
-              }
-            "
-          >
-            Auto check on select
-          </CustomButton>
-        </template>
-      </DropdownMenu>
+             <DropdownMenu
+         button-style-class="trans-btn"
+         dropdown-data-name="file-table-settings-dropdown"
+         first-icon-name="mdi:cog"
+         :first-icon-size="20"
+         last-icon-name="mdi:chevron-down"
+         :last-icon-size="20"
+         placement="bottom-end"
+         :show-cancel-button="true"
+       >
+         <template #button-content> Settings </template>
+         <template #default="{ close }">
+           <CustomButton
+             button-style-class="trans-btn"
+             :class="{ 'is-active': checkboxMode }"
+             data-name="checkbox-mode-btn"
+             :first-icon-name="checkboxMode ? 'mdi:checkbox-marked' : 'mdi:checkbox-blank-outline'"
+             :first-icon-size="20"
+             @click="
+               () => {
+                 toggleCheckboxMode();
+                 close();
+               }
+             "
+           >
+             Checkbox Mode
+           </CustomButton>
+           <CustomButton
+             button-style-class="trans-btn"
+             :class="{ 'is-active': autoCheckOnSelect }"
+             data-name="auto-check-on-select-btn"
+             :disabled="!checkboxMode"
+             :first-icon-name="autoCheckOnSelect ? 'mdi:checkbox-marked' : 'mdi:checkbox-blank-outline'"
+             :first-icon-size="20"
+             @click="
+               () => {
+                 toggleAutoCheckOnSelect();
+                 close();
+               }
+             "
+           >
+             Auto check on select
+           </CustomButton>
+         </template>
+       </DropdownMenu>
     </template>
   </ToolBar>
 </template>

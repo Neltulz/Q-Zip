@@ -4,9 +4,58 @@
 
 ## Recent Changes
 
+## [0.1.14] - 2025-01-27T19:00:00Z
+
+### Added
+- **Dropdown Cancel Button Feature**: Added `showCancelButton` prop to DropdownMenu component for consistent Cancel button functionality
+  - Added `showCancelButton` and `cancelButtonText` props to DropdownMenu component
+  - Implemented automatic Cancel button rendering with "Esc" keyboard shortcut
+  - Added conditional rendering for Cancel button below dropdown content with proper styling
+  - Enhanced dropdown reusability and consistency across the application
+
+- **Enhanced Dropdown Management**: Improved dropdown unregistration and backdrop handling
+  - Added fallback unregistration mechanism to ensure dropdowns are properly unregistered
+  - Enhanced logging for dropdown manager operations to track unregistration issues
+  - Added detailed logging for `closeDescendantsOf` function to debug submenu behavior
+  - Improved backdrop visibility management to prevent race conditions
+
+### Fixed
+- **Submenu Cancel Button Backdrop Issue**: Fixed backdrop fading back in after clicking Cancel on submenus
+  - Fixed race condition where submenu unregistration was not happening properly
+  - Added fallback unregistration timeout to ensure submenus are properly cleaned up
+  - Prevented backdrop from reappearing when submenus are closed via Cancel button
+  - Resolved timing issue between parent and child dropdown closure
+
+- **TypeScript Errors**: Fixed multiple TypeScript errors in DropdownMenu component
+  - Fixed incorrect argument count for `handleMouseLeave` function call
+  - Fixed type assertion for `vnode.children` property access
+  - Fixed argument mismatches for `logWarning` and `logInteraction` function calls
+  - Added null check for `buttonEl` before creating dropdown object
+
+### Technical Details
+- **Component Props**: Added `showCancelButton` and `cancelButtonText` props to DropdownMenu component
+- **Template Structure**: Updated dropdown template to include conditional Cancel button rendering
+- **Styling**: Added proper styling for Cancel button with divider line and consistent appearance
+- **Fallback Mechanism**: Implemented setTimeout-based fallback for dropdown unregistration
+- **Logging Enhancement**: Added comprehensive logging for dropdown manager operations
+- **Type Safety**: Fixed all TypeScript errors in DropdownMenu component for better type safety
+
+---
+
 ## [0.1.13] - 2025-01-27T17:00:00Z
 
 ### Added
+- **Job Removal Keyboard Shortcuts**: Added Shift+Delete keyboard shortcut for removing the currently selected job
+  - Added shortcut text display to "Remove Job" button in job context menu
+  - Implemented global keyboard event handling for job removal operations
+  - Enhanced user experience with quick job removal without mouse interaction
+
+- **Job Removal Confirmation Dropdowns**: Replaced "X" close buttons with confirmation dropdown menus
+  - Added confirmation pattern similar to LoadingAnim component for safer job removal
+  - Implemented dropdown menus with "Yes, remove it" and "Nevermind" options
+  - Enhanced visual consistency with other confirmation dialogs in the application
+  - Added proper ref management for dropdown menu components
+
 - **Dropdown Debug Logging**: Enabled comprehensive debug logging for DropdownMenu component to troubleshoot backdrop closing issues
   - Enabled master DEBUG flag to activate all logging systems
   - Enabled `logDropdownEvents` for dropdown-specific event tracking
@@ -24,6 +73,10 @@
   - Resolved timing issue between dropdown closure and overlay visibility management
 
 ### Technical Details
+- **Keyboard Shortcuts**: Added Shift+Delete shortcut for job removal with proper event handling
+- **Confirmation UI**: Implemented dropdown-based confirmation pattern for job removal operations
+- **Component Ref Management**: Added proper ref tracking for remove job dropdown menus
+- **CSS Styling**: Added styles for remove job confirmation dropdowns to match application design
 - **Debug Configuration**: Updated `debugConfig.ts` to enable targeted logging for dropdown troubleshooting
 - **Logging System**: Activated comprehensive logging for dropdown manager, button interactions, and UI events
 - **Troubleshooting**: Enabled logging to identify backdrop closing malfunctions related to submenu behavior

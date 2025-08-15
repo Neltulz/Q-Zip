@@ -303,8 +303,13 @@ export function useDropdownManager() {
         try {
           logManagerAction("dropdownManager", `Debounced watcher fired. Open dropdowns: ${openDropdowns.value.length}`);
           if (openDropdowns.value && openDropdowns.value.length > 0) {
-            logManagerAction("dropdownManager", "Debounced watcher: showing overlay");
-            showOverlay();
+            // Only show overlay if it's not already visible to prevent unnecessary fade-in/out
+            if (!overlayEl || overlayEl.getAttribute("data-overlay-visible") !== "true") {
+              logManagerAction("dropdownManager", "Debounced watcher: showing overlay");
+              showOverlay();
+            } else {
+              logManagerAction("dropdownManager", "Debounced watcher: overlay already visible, skipping show");
+            }
           } else {
             logManagerAction("dropdownManager", "Debounced watcher: hiding overlay");
             hideOverlay();
@@ -363,9 +368,20 @@ export function useDropdownManager() {
     // Function to unregister a dropdown when it closes
     unregisterDropdown: (id: symbol): void => {
       const initialLength = openDropdowns.value.length;
+      const dropdownToRemove = openDropdowns.value.find((d) => d.id === id);
+      const dropdownName = dropdownToRemove?.dropdownContent?.getAttribute('data-belongs-to') || 'unknown';
+
       openDropdowns.value = openDropdowns.value.filter((d) => d.id !== id);
       if (openDropdowns.value.length < initialLength) {
+        logManagerAction("dropdownManager", `Unregistering dropdown: ${dropdownName}`);
         logManagerAction("dropdownManager", `Unregistered dropdown. Total open: ${openDropdowns.value.length}`);
+
+        // Log remaining dropdowns for debugging
+        if (openDropdowns.value.length > 0) {
+          const remainingNames = openDropdowns.value.map(d => d.dropdownContent?.getAttribute('data-belongs-to') || 'unknown').join(', ');
+          logManagerAction("dropdownManager", `Remaining dropdowns: ${remainingNames}`);
+        }
+
         // If this was the last dropdown, immediately hide the overlay
         // This prevents the backdrop from staying visible when all dropdowns are closed
         if (openDropdowns.value.length === 0) {
@@ -380,6 +396,8 @@ export function useDropdownManager() {
       } else if (initialLength === 0) {
         // Handle case where dropdown tries to unregister after array was already cleared
         logManagerAction("dropdownManager", "Dropdown tried to unregister after array was already cleared");
+      } else {
+        logWarning("dropdownManager", `Attempted to unregister dropdown with id ${id.toString()}, but it was not found`);
       }
     },
     // Function to close all dropdowns except the current one and its ancestors
@@ -410,6 +428,9 @@ export function useDropdownManager() {
     closeDescendantsOf: (parentId: symbol): void => {
       const parentDropdown = openDropdowns.value.find((d) => d.id === parentId);
       if (!parentDropdown) return;
+      const parentName = parentDropdown.dropdownContent?.getAttribute('data-belongs-to') || 'unknown';
+      logManagerAction("dropdownManager", `closeDescendantsOf called for: ${parentName}`);
+
       const isDescendant = (candidate: Dropdown): boolean => {
         let currentButton: HTMLElement | null = candidate.button;
         while (currentButton) {
@@ -425,10 +446,20 @@ export function useDropdownManager() {
         }
         return false;
       };
-      openDropdowns.value.forEach((dropdown) => {
+
+      const descendantsToClose = openDropdowns.value.filter((dropdown) => {
         if (dropdown.id !== parentDropdown.id && isDescendant(dropdown)) {
-          dropdown.close();
+          const descendantName = dropdown.dropdownContent?.getAttribute('data-belongs-to') || 'unknown';
+          logManagerAction("dropdownManager", `Found descendant to close: ${descendantName}`);
+          return true;
         }
+        return false;
+      });
+
+      descendantsToClose.forEach((dropdown) => {
+        const descendantName = dropdown.dropdownContent?.getAttribute('data-belongs-to') || 'unknown';
+        logManagerAction("dropdownManager", `Closing descendant: ${descendantName}`);
+        dropdown.close();
       });
     },
     // Schedules the closure of any open submenus after a delay.

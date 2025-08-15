@@ -40,7 +40,7 @@
         :last-icon-size="props.lastIconSize"
         @click.stop="(e: MouseEvent) => handleButtonClick(e)"
         @mouseenter="(e: MouseEvent) => handleMouseEnter(e)"
-        @mouseleave="(e: MouseEvent) => handleMouseLeave(e)"
+        @mouseleave="handleMouseLeave"
       >
         <slot name="button-content" />
       </CustomButton>
@@ -79,6 +79,19 @@
             <slot :close="closeDropdown" />
           </OverlayScrollbarsComponent>
           <slot name="content-bottom" :close="closeDropdown" />
+          <template v-if="props.showCancelButton">
+            <hr />
+            <CustomButton
+              button-style-class="trans-btn btn-lite"
+              data-name="dropdown-cancel-btn"
+              first-icon-name="mdi:close"
+              :first-icon-size="20"
+              shortcut-text="Esc"
+              @click="closeDropdown"
+            >
+              {{ props.cancelButtonText }}
+            </CustomButton>
+          </template>
         </div>
         </Transition>
       </template>
@@ -94,11 +107,13 @@ import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logInteraction, logTrace, logWarning, logManagerAction } from "@/utils/loggers";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
+import CustomButton from "./CustomButton.vue";
 type Placement =
   | "top-start"
   | "top-end"
   | "bottom-start"
   | "bottom-end"
+  | "bottom-center"
   | "left-start"
   | "left-end"
   | "right-start"
@@ -150,6 +165,14 @@ const props = defineProps({
     type: String as PropType<Placement>,
     default: "bottom-start",
   },
+  showCancelButton: {
+    type: Boolean,
+    default: false,
+  },
+  cancelButtonText: {
+    type: String,
+    default: "Cancel",
+  },
 });
 const emit = defineEmits<{
   'dropdown-opened': [];
@@ -170,7 +193,7 @@ const smartLastIconName = computed(() => {
   // Check if there's button content
   const hasButtonContent = slots["button-content"] && slots["button-content"]();
   const buttonContentText = hasButtonContent ? 
-    (Array.isArray(hasButtonContent) ? hasButtonContent.map(vnode => vnode.children).join('') : hasButtonContent.children) : '';
+    (Array.isArray(hasButtonContent) ? hasButtonContent.map(vnode => (vnode as any).children).join('') : (hasButtonContent as any).children) : '';
   // If there's text content, use downward caret, otherwise use vertical ellipsis
   return buttonContentText && buttonContentText.trim() ? "mdi:chevron-down" : "mdi:dots-vertical";
 });
@@ -308,6 +331,10 @@ const adjustDropdownPosition = async (): Promise<void> => {
       top = anchorTop + (anchorBottom - anchorTop) / 2 - ddHeight / 2;
       left = anchorRight + gap;
       break;
+    case "bottom-center":
+      top = anchorBottom + gap;
+      left = anchorLeft + (anchorRight - anchorLeft) / 2 - ddWidth / 2;
+      break;
     case "bottom-start":
     default:
       top = anchorBottom + gap;
@@ -384,23 +411,23 @@ const openDropdown = async (opts?: { x?: number; y?: number; anchorEl?: HTMLElem
     }
   }
   // Log lookup results for debugging
-  logInteraction("DropdownMenu", `openDropdown lookup for ${props.dropdownDataName}`, {
-    dropdownDataName: props.dropdownDataName,
-    computedDataName,
-    hasLocalButton: !!localButton,
-    foundButton: !!buttonEl,
-  });
+  logInteraction("DropdownMenu", `openDropdown lookup for ${props.dropdownDataName} - computedDataName: ${computedDataName}, hasLocalButton: ${!!localButton}, foundButton: ${!!buttonEl}`);
   if (!buttonEl) {
     // Log useful diagnostic info: list data-name attributes that may match
     const allNames = Array.from(document.querySelectorAll('[data-name]'))
       .map((el) => el.getAttribute('data-name'))
       .filter(Boolean) as string[];
     const candidates = allNames.filter((n) => n.includes('file-actions')).slice(0, 50);
-    logWarning("DropdownMenu", `Could not find button element for ${props.dropdownDataName}`, { computedDataName, dropdownMenuRef, candidatesCount: candidates.length });
-    logInteraction("DropdownMenu", `Dropdown candidates for 'file-actions' (first 50):`, { candidates });
+    logWarning("DropdownMenu", `Could not find button element for ${props.dropdownDataName}. computedDataName: ${computedDataName}, candidatesCount: ${candidates.length}`);
+    logInteraction("DropdownMenu", `Dropdown candidates for 'file-actions' (first 50): ${candidates.join(', ')}`);
     if (DEBUG && debugConfig.logDropdownEvents) logInteraction("DropdownMenu", `Total data-name elements: ${allNames.length}`);
     // As a last resort: if a click-anchored open was requested, allow fallback to click coords handled below
   }
+  if (!buttonEl) {
+    logWarning("DropdownMenu", `Cannot create dropdown without button element for ${props.dropdownDataName}`);
+    return;
+  }
+  
   const dropdown: Dropdown = {
     id: dropdownId,
     dropdownContent: dropdownContent.value,
@@ -433,10 +460,13 @@ const closeDropdown = (): void => {
   }
   // Ensure any descendant submenus begin closing immediately so they fade out
   // when the parent dropdown is closed (covers clicks on parent trigger).
-  try {
-    closeDescendantsOf(dropdownId);
-  } catch (e) {
-    /* ignore */
+  // Only close descendants if this is not a submenu (to avoid race conditions)
+  if (!props.isSubmenu) {
+    try {
+      closeDescendantsOf(dropdownId);
+    } catch (e) {
+      /* ignore */
+    }
   }
   // Start fade-out by removing the content-ready class which transitions opacity -> 0
   isContentLoaded.value = false;
@@ -445,6 +475,16 @@ const closeDropdown = (): void => {
   // With Vue transitions, we can immediately set isOpen to false
   // The transition will handle the fade-out animation
   isOpen.value = false;
+  
+  // Ensure unregistration happens even if the watcher doesn't fire
+  // This is a fallback for cases where the watcher might not trigger properly
+  setTimeout(() => {
+    if (isOpen.value === false) {
+      logManagerAction("DropdownMenu", `Fallback unregistration for: ${dropdownName}`);
+      unregisterDropdown(dropdownId);
+    }
+  }, 0);
+  
   logManagerAction("DropdownMenu", `closeDropdown completed for: ${dropdownName}`);
 };
 const handleButtonClick = async (event?: MouseEvent): Promise<void> => {
@@ -528,6 +568,7 @@ watch(isOpen, (newIsOpen: boolean): void => {
     window.addEventListener("resize", adjustDropdownPosition);
   } else {
     window.removeEventListener("resize", adjustDropdownPosition);
+    logManagerAction("DropdownMenu", `About to unregister dropdown: ${props.dropdownDataName}`);
     unregisterDropdown(dropdownId);
   }
 });
@@ -668,14 +709,6 @@ defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle });
   /* slightly toned-down highlight for submenu active state */
   background-color: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) + 10%), 0.18) !important;
 }
-/* Hide floating InfoTooltip when the options button that would trigger it
-   is active (i.e., its dropdown was opened by click). This uses the
-   relational `:has()` selector to detect an active trigger inside the
-   `.dropdown-menu` root. */
-body:has(.dropdown-menu > .custom-button.active) .info-tooltip {
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transition: opacity 150ms ease-in-out;
-}
+/* Removed the rule that was hiding InfoTooltip when dropdown is active */
 </style>
 <!-- #endregion -->

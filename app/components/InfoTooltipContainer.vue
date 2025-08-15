@@ -37,7 +37,7 @@
   />
 -->
 <template>
-  <teleport to="#tooltip-container">
+  <teleport to="body">
     <Transition
       name="tooltip-fade"
       appear
@@ -48,7 +48,7 @@
         v-if="shouldRender"
         ref="floatingRef"
         class="info-tooltip"
-        :class="{ interactive: interactive, 'simple-tooltip': !!parsedContent }"
+        :class="{ interactive: interactive, 'simple-tooltip': !!parsedContent, [props.class]: props.class }"
         :style="floatingStyles"
         @mouseenter="(event) => emit('mouseenter', event)"
         @mouseleave="(event) => emit('mouseleave', event)"
@@ -56,7 +56,7 @@
         <div class="tooltip-content">
           <!-- Display simple text content -->
           <template v-if="parsedContent">
-            <div class="info-line tooltip-text-content">
+            <div class="info-line tooltip-text-content" :style="maxWidth ? { maxWidth } : {}">
               <span>{{ parsedContent.mainText }}</span>
               <span v-if="parsedContent.shortcut" class="shortcut-key-text">{{ parsedContent.shortcut }}</span>
             </div>
@@ -132,6 +132,14 @@ const props = defineProps({
   fallbackPlacements: {
     type: Array as PropType<("top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end")[]>,
     default: () => [],
+  },
+  maxWidth: {
+    type: String,
+    default: null,
+  },
+  class: {
+    type: String,
+    default: "",
   },
 });
 // Define emits for mouse events
@@ -386,7 +394,7 @@ const getFileName = (path: string) => {
 }
 .info-tooltip {
   position: absolute;
-  z-index: 10001;
+  z-index: 999999;
   background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
   backdrop-filter: blur(10px);
   border: 1px solid var(--brdr-clr-liter);
@@ -397,7 +405,7 @@ const getFileName = (path: string) => {
   max-inline-size: 500px;
   /* Default: don't capture pointer events so tooltips don't block underlying controls */
   pointer-events: none;
-  white-space: nowrap;
+  white-space: normal;
   display: flex;
   align-items: center;
   padding-block: 6px;
@@ -439,6 +447,8 @@ const getFileName = (path: string) => {
       inset-block-start: 1px;
       width: 100%;
       text-align: center;
+      white-space: normal;
+      word-wrap: break-word;
     }
     /* Only center the simple text tooltip mode; keep other structured content left-aligned.
        Use a non-nested selector below to target when the root tooltip also has the

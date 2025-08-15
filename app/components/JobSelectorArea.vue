@@ -57,21 +57,66 @@
               <span class="job-sel-title">Job {{ job.id }}</span>
               <span class="job-sel-num-files">{{ job.files.length }} Items</span>
             </span>
-            <div class="job-sel-options">
-              <CustomButton
-                button-style-class="trans-btn close-job-btn"
-                data-name="close-job-btn"
-                first-icon-name="mdi:close"
-                :first-icon-size="18"
-                @click.stop.prevent="removeJob(job.id)"
-              />
-            </div>
+                         <div class="job-sel-options">
+                               <DropdownMenu
+                  :ref="(el) => setRemoveJobMenuRef(job.id, el)"
+                  button-style-class="trans-btn close-job-btn"
+                  :dropdown-data-name="`remove-job-${job.id}-dropdown`"
+                  last-icon-name="mdi:close"
+                  :last-icon-size="18"
+                  placement="bottom-center"
+                  :show-cancel-button="true"
+                  @click.stop.prevent
+                  @mouseenter="handleRemoveJobButtonMouseEnter(job.id)"
+                  @mouseleave="handleRemoveJobButtonMouseLeave"
+                >
+                 <template #default="{ close }">
+                   <div class="remove-job-confirmation">
+                     <div class="confirmation-text">
+                       Remove Job #{{ job.id }}?
+                                              <Icon
+                          name="mdi:information-outline"
+                          class="info-icon"
+                          size="20"
+                          @mouseenter="handleInfoIconMouseEnter($event)"
+                          @mouseleave="handleInfoIconMouseLeave"
+                        />
+                     </div>
+                     <div class="confirmation-buttons">
+                                                                     <CustomButton
+                          button-style-class="trans-btn btn-lite"
+                          :data-name="'confirm-remove-job-' + job.id + '-btn'"
+                          first-icon-name="mdi:check"
+                          :first-icon-size="18"
+                          btn-theme="danger"
+                          shortcut-text="Shift+Del"
+                          @mouseup="
+                            () => {
+                              removeJob(job.id);
+                              close();
+                            }
+                          "
+                        >
+                          Remove Job
+                        </CustomButton>
+                     </div>
+                   </div>
+                 </template>
+                              </DropdownMenu>
+               <InfoTooltip
+                 :visible="tooltipManager.activeTooltipId.value === 'remove-job-' + job.id"
+                 :content="{ text: 'Remove Job (Shift+Del)' }"
+                 :target="removeJobDropdownRefs.get(job.id)?.$el?.querySelector('.visual-style')"
+                 placement="bottom"
+               />
+             </div>
           </CustomButton>
           <!-- Context Menu for each job tab -->
           <DropdownMenu
             :ref="(el) => setContextMenuRef(job.id, el)"
             :dropdown-data-name="'job-' + job.id + '-context-menu'"
             :hide-trigger="true"
+            :show-cancel-button="true"
           >
             <template #default="{ close }">
               <CustomButton
@@ -104,22 +149,23 @@
               >
                 Move Right
               </CustomButton>
-              <hr v-if="jobsList.length > 1" />
-              <CustomButton
-                button-style-class="trans-btn btn-lite"
-                :data-name="'remove-job-' + job.id + '-btn'"
-                first-icon-name="mdi:trash"
-                :first-icon-size="20"
-                btn-theme="danger"
-                @mouseup="
-                  () => {
-                    removeJob(job.id);
-                    close();
-                  }
-                "
-              >
-                Remove Job
-              </CustomButton>
+                             <hr v-if="jobsList.length > 1" />
+               <CustomButton
+                 button-style-class="trans-btn btn-lite"
+                 :data-name="'remove-job-' + job.id + '-btn'"
+                 first-icon-name="mdi:trash"
+                 :first-icon-size="20"
+                 btn-theme="danger"
+                 shortcut-text="Shift+Del"
+                 @mouseup="
+                   () => {
+                     removeJob(job.id);
+                     close();
+                   }
+                 "
+               >
+                 Remove Job
+               </CustomButton>
             </template>
           </DropdownMenu>
           <!-- Dropdown for drag-and-drop actions -->
@@ -127,6 +173,7 @@
             :ref="(el) => setDragActionMenuRef(job.id, el)"
             :dropdown-data-name="`drag-action-job-${job.id}`"
             :hide-trigger="true"
+            :show-cancel-button="true"
           >
             <template #default="{ close }">
               <CustomButton
@@ -157,28 +204,9 @@
               >
                 Move Here
               </CustomButton>
-              <hr />
-              <CustomButton
-                button-style-class="trans-btn btn-lite"
-                data-name="drag-action-cancel-btn"
-                first-icon-name="mdi:cancel"
-                :first-icon-size="20"
-                @click="
-                  () => {
-                    closeAllDropdowns('Cancel button clicked');
-                  }
-                "
-              >
-                Cancel
-              </CustomButton>
             </template>
           </DropdownMenu>
-          <InfoTooltip
-            :visible="tooltipManager.activeTooltipId.value === 'job-' + job.id"
-            :content="{ text: 'Right click for more options' }"
-            :target="jobButtonRefs.get(job.id)?.visualStyleRef"
-            placement="bottom"
-          />
+          
         </template>
       </div>
     </OverlayScrollbarsComponent>
@@ -208,6 +236,7 @@
           :ref="(el) => setDragActionMenuRef('new-job', el)"
           dropdown-data-name="drag-action-new-job"
           :hide-trigger="true"
+          :show-cancel-button="true"
         >
           <template #default="{ close }">
             <CustomButton
@@ -238,21 +267,6 @@
             >
               Move to New Job
             </CustomButton>
-            <hr />
-            <CustomButton
-              button-style-class="trans-btn btn-lite"
-              data-name="drag-action-cancel-btn"
-              first-icon-name="mdi:cancel"
-              :first-icon-size="20"
-              @click="
-                () => {
-                  dragDropStore.endInternalDrag();
-                  close();
-                }
-              "
-            >
-              Cancel
-            </CustomButton>
           </template>
         </DropdownMenu>
         <InfoTooltip
@@ -264,55 +278,56 @@
         />
       </div>
       <div class="job-selector-btns-end">
-        <DropdownMenu
-          ref="extraOptionsDropdownRef"
-          aria-label="Job Selector Options"
-          button-class="remove-all-jobs-btn"
-          button-style-class="trans-btn"
-          :dropdown-data-name="'extra-job-selector-options-dropdown'"
-          :last-icon-size="24"
-          placement="bottom-end"
-          @mouseenter="handleExtraOptionsMouseEnter()"
-          @mouseleave="handleExtraOptionsMouseLeave()"
-          @click="tooltipManager.hideTooltip()"
-        >
-          <template #default="{ close }">
-            <CustomButton
-              button-style-class="trans-btn btn-lite"
-              :data-name="'toggle-orientation-btn'"
-              :first-icon-name="
-                uiStore.jobSelectorOrientation === 'horizontal' ? 'mdi:view-day-outline' : 'mdi:view-week-outline'
-              "
-              :first-icon-size="20"
-              @mouseup="
-                () => {
-                  uiStore.toggleJobSelectorOrientation();
-                  close();
-                }
-              "
-            >
-              Switch to
-              {{ uiStore.jobSelectorOrientation === "horizontal" ? "Vertical" : "Horizontal" }}
-              Layout
-            </CustomButton>
-            <hr />
-            <CustomButton
-              button-style-class="trans-btn btn-lite"
-              data-name="remova-all-jobs-btn"
-              first-icon-name="mdi:trash"
-              :first-icon-size="20"
-              btn-theme="danger"
-              @mouseup="
-                () => {
-                  close();
-                  confirmRemoveAllJobs();
-                }
-              "
-            >
-              Remove All Jobs
-            </CustomButton>
-          </template>
-        </DropdownMenu>
+                 <DropdownMenu
+           ref="extraOptionsDropdownRef"
+           aria-label="Job Selector Options"
+           button-class="remove-all-jobs-btn"
+           button-style-class="trans-btn"
+           :dropdown-data-name="'extra-job-selector-options-dropdown'"
+           :last-icon-size="24"
+           placement="bottom-end"
+           :show-cancel-button="true"
+           @mouseenter="handleExtraOptionsMouseEnter()"
+           @mouseleave="handleExtraOptionsMouseLeave()"
+           @click="tooltipManager.hideTooltip()"
+         >
+           <template #default="{ close }">
+             <CustomButton
+               button-style-class="trans-btn btn-lite"
+               :data-name="'toggle-orientation-btn'"
+               :first-icon-name="
+                 uiStore.jobSelectorOrientation === 'horizontal' ? 'mdi:view-day-outline' : 'mdi:view-week-outline'
+               "
+               :first-icon-size="20"
+               @mouseup="
+                 () => {
+                   uiStore.toggleJobSelectorOrientation();
+                   close();
+                 }
+               "
+             >
+               Switch to
+               {{ uiStore.jobSelectorOrientation === "horizontal" ? "Vertical" : "Horizontal" }}
+               Layout
+             </CustomButton>
+             <hr />
+             <CustomButton
+               button-style-class="trans-btn btn-lite"
+               data-name="remova-all-jobs-btn"
+               first-icon-name="mdi:trash"
+               :first-icon-size="20"
+               btn-theme="danger"
+               @mouseup="
+                 () => {
+                   close();
+                   confirmRemoveAllJobs();
+                 }
+               "
+             >
+               Remove All Jobs
+             </CustomButton>
+           </template>
+         </DropdownMenu>
         <InfoTooltip
           :visible="tooltipManager.activeTooltipId.value === 'job-selector-options'"
           :content="{ text: 'Job Selector Options' }"
@@ -321,10 +336,21 @@
         />
       </div>
     </div>
+    <!-- Global InfoTooltip for remove job confirmation -->
+    <Teleport to="body">
+      <InfoTooltip
+        :visible="tooltip.visible && !!tooltip.content"
+        :content="tooltip.content || { text: '' }"
+        :target="tooltip.targetElement"
+        placement="right"
+        class="remove-job-warning-tooltip"
+        max-width="35ch"
+      />
+    </Teleport>
   </nav>
 </template>
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance, onBeforeUpdate } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance, onBeforeUpdate, reactive } from "vue";
 import { useJobsStore } from "@/stores/jobsStore";
 import type { FileItem } from "@/types/types";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
@@ -360,17 +386,31 @@ const scrollComponentRef = ref<InstanceType<typeof OverlayScrollbarsComponent> |
 const jobButtonRefs = ref(new Map<number | "new-job", InstanceType<typeof CustomButton>>());
 const jobContextMenuRefs = ref(new Map<number, InstanceType<typeof DropdownMenu>>());
 const dragActionDropdownRefs = ref(new Map<number | "new-job", InstanceType<typeof DropdownMenu>>());
+const removeJobDropdownRefs = ref(new Map<number, InstanceType<typeof DropdownMenu>>());
 const extraOptionsDropdownRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
 const pendingDropFilePaths = ref<string[]>([]);
 const pendingDropSourceJobId = ref<number | null>(null);
 const jobNotificationStates = ref<Map<number | "new-job", NotificationType>>(new Map());
 const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
+
+// Tooltip state for remove job confirmation
+const tooltip = reactive<{
+  visible: boolean;
+  content: { text: string } | null;
+  targetElement: HTMLElement | null;
+}>({
+  visible: false,
+  content: null,
+  targetElement: null,
+});
+
 const extraOptionsTarget = computed(() => {
   const el = extraOptionsDropdownRef.value as any;
   if (!el) return null;
   // Try common exposed refs, fall back to querying DOM inside the component
   return el.buttonRef ?? el.$el?.querySelector?.('.visual-style') ?? null;
 });
+
 watch(
   () => uiStore.notifications,
   (notifications: Notification[], oldNotifications: Notification[]) => {
@@ -458,6 +498,7 @@ watch(
   },
   { immediate: true }
 );
+
 onUnmounted(() => {
   setScrollContainer(null);
   window.removeEventListener("keydown", handleKeyDown);
@@ -481,15 +522,26 @@ const setDragActionMenuRef = (jobId: number | "new-job", el: Element | Component
     dragActionDropdownRefs.value.set(jobId, el as InstanceType<typeof DropdownMenu>);
   }
 };
+const setRemoveJobMenuRef = (jobId: number, el: Element | ComponentPublicInstance | null) => {
+  if (el) {
+    removeJobDropdownRefs.value.set(jobId, el as InstanceType<typeof DropdownMenu>);
+  }
+};
 onBeforeUpdate(() => {
   jobButtonRefs.value.clear();
   jobContextMenuRefs.value.clear();
   dragActionDropdownRefs.value.clear();
+  removeJobDropdownRefs.value.clear();
 });
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.ctrlKey && event.key.toLowerCase() === "t") {
     event.preventDefault();
     addJob();
+  }
+  // Add Shift+Delete shortcut for removing the currently selected job
+  if (event.shiftKey && event.key === "Delete" && jobsStore.selectedJobId !== null) {
+    event.preventDefault();
+    removeJob(jobsStore.selectedJobId);
   }
 };
 onMounted(() => {
@@ -559,26 +611,7 @@ const addJob = (): void => {
   jobsStore.selectJob(newJobId);
 };
 const removeJob = (jobId: number): void => {
-  const modalOptions: ModalOptions = {
-    icon: "mdi:alert-outline",
-    title: "Confirm Remove Job",
-    description: [
-      `Are you sure you want to permanently remove <strong>Job ${jobId}</strong>?`,
-      "All files and any job-specific settings (like compression or encryption) will be lost.",
-    ],
-    buttons: [
-      { action: "proceed", text: "Remove Job", theme: "danger", styleClass: "bordered-btn", icon: "mdi:trash-can-outline" },
-      { action: "cancel", text: "Cancel", styleClass: "bordered-btn" },
-    ],
-    footerJustifyContent: "center",
-    closeOnClickOutside: true,
-  };
-  modalsStore.openModal("ResetConfirmationModalContent", modalOptions, { showProcessColumn: false }, (action) => {
-    if (action === "proceed") {
-      jobsStore.removeJobs([jobId], jobsStore.selectedJobId);
-    }
-    // Note: No FileTable to reactivate in JobSelectorArea
-  });
+  jobsStore.removeJobs([jobId], jobsStore.selectedJobId);
 };
 const confirmRemoveAllJobs = (): void => {
   const modalOptions: ModalOptions = {
@@ -785,10 +818,30 @@ const handleExtraOptionsMouseEnter = (): void => {
 const handleExtraOptionsMouseLeave = (): void => {
   tooltipManager.hideTooltip();
 };
+
+const handleRemoveJobButtonMouseEnter = (jobId: number): void => {
+  tooltipManager.showTooltip('remove-job-' + jobId);
+};
+
+const handleRemoveJobButtonMouseLeave = (): void => {
+  tooltipManager.hideTooltip();
+};
 const reorderJob = (index: number, direction: "left" | "right"): void => {
   const fromIndex = index;
   const toIndex = direction === "left" ? index - 1 : index + 1;
   jobsStore.moveJob(fromIndex, toIndex);
+};
+
+// Tooltip handlers for remove job confirmation
+const handleInfoIconMouseEnter = (event: MouseEvent) => {
+  const targetElement = event.target as HTMLElement;
+  tooltip.targetElement = targetElement;
+  tooltip.content = { text: 'All files and any job-specific settings (like compression or encryption) will be lost.' };
+  tooltip.visible = true;
+};
+
+const handleInfoIconMouseLeave = () => {
+  tooltip.visible = false;
 };
 </script>
 <style scoped>

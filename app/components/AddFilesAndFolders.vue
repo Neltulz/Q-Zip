@@ -9,6 +9,7 @@
         last-icon-name="mdi:chevron-down"
         :last-icon-size="20"
         dropdown-data-name="add-files-and-folders-dropdown"
+        :show-cancel-button="true"
       >
         <template #button-content> Add...</template>
         <template #default="{ close }">

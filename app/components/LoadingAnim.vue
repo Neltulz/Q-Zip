@@ -55,6 +55,8 @@
               dropdown-data-name="cancel-dropdown"
               first-icon-name="mdi:cancel"
               placement="right-center"
+              :show-cancel-button="true"
+              cancel-button-text="Nevermind"
             >
               <template #button-content>
                 Cancel
@@ -71,14 +73,6 @@
                       @click="handleConfirmCancel"
                     >
                       Yes, please cancel
-                    </CustomButton>
-                    <CustomButton
-                      button-style-class="default"
-                      data-name="nevermind-btn"
-                      first-icon-name="mdi:close"
-                      @click="handleNevermind"
-                    >
-                      Nevermind
                     </CustomButton>
                   </div>
                 </div>
@@ -164,14 +158,7 @@ const handleConfirmCancel = () => {
     cancelDropdownRef.value.closeDropdown();
   }
 };
-const handleNevermind = () => {
-  logLoading("LoadingAnim", "Nevermind button clicked.");
-  emit("nevermind");
-  // Close the dropdown properly
-  if (cancelDropdownRef.value) {
-    cancelDropdownRef.value.closeDropdown();
-  }
-};
+
 </script>
 <style scoped>
 .loading-overlay {
