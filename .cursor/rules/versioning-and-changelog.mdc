@@ -11,7 +11,6 @@ This workflow is designed to support rapid iteration without triggering a full T
 
 - **Track Changes:** All changes made during development MUST be recorded in `CHANGELOG.draft.md`.
 - **Changelog Format:** Use consistent markdown formatting with categorized changes. Do NOT include a version number or date in this draft file.
-- **Frontend Versioning:** For visual feedback during development, you MAY manually update the version string in `app/components/TitleBar.vue` to a temporary value (e.g., `v0.1.15-dev`). This change will hot-reload and will not trigger a full Rust rebuild.
 - **Do NOT Increment:** The patch number in `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json` MUST remain static during this phase.
 
 ## For a New Release

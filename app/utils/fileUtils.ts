@@ -45,7 +45,7 @@ async function getDirectoryContents(path: string, depth: number = 0): Promise<{
   try {
     const entries = await readDir(path);
     // Check for cancellation and pause more frequently at deeper levels
-    const checkInterval = Math.max(1, Math.floor(entries.length / 10));
+    const checkInterval = 1; // Check every item for responsiveness
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       // Check for cancellation and pause more frequently for large directories

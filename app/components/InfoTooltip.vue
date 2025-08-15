@@ -272,7 +272,7 @@ const side = computed(() => {
   return currentSide;
 });
 const parsedContent = computed(() => {
-  if ("text" in props.content) {
+  if (props.content && "text" in props.content) {
     const match = props.content.text.match(/\s*\(([^)]+)\)$/);
     if (match) {
       const mainText = props.content.text.replace(match[0], "").trim();

@@ -179,26 +179,24 @@ export const useJobsStore = defineStore(
         const path = newPaths[i];
         if (!path) continue; // Skip undefined paths
         // Check for cancellation and pause more frequently for better responsiveness
-        if (i % 5 === 0 || i === newPaths.length - 1) {
-          if (currentOperationCancelled) {
-            const cancelTime = performance.now();
-            const timeSinceStart = cancelTime - startTime;
-            const cancelDelay = cancelTime - (cancelStartTime || startTime);
-            logStoreAction("jobsStore", `Item processing cancelled for job ${jobId} after ${timeSinceStart.toFixed(2)}ms. Cancellation delay: ${cancelDelay.toFixed(2)}ms. Processed ${processedPaths.length}/${newPaths.length} items. Cancelled paths: ${newPaths.length - processedPaths.length}`);
-            // Add remaining paths to cancelled paths
-            cancelledPaths = newPaths.slice(i);
-            // Reset operation state when cancelled
-            currentOperationCancelled = false;
-            currentOperationJobId = null;
-            isOperationPaused = false;
-            setCancellationFlag(false);
-            setPauseFlag(false);
-            return processedPaths.length;
-          }
-          // Check for pause and wait if paused
-          while (isOperationPaused && !currentOperationCancelled) {
-            await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before checking again
-          }
+        if (currentOperationCancelled) {
+          const cancelTime = performance.now();
+          const timeSinceStart = cancelTime - startTime;
+          const cancelDelay = cancelTime - (cancelStartTime || startTime);
+          logStoreAction("jobsStore", `Item processing cancelled for job ${jobId} after ${timeSinceStart.toFixed(2)}ms. Cancellation delay: ${cancelDelay.toFixed(2)}ms. Processed ${processedPaths.length}/${newPaths.length} items. Cancelled paths: ${newPaths.length - processedPaths.length}`);
+          // Add remaining paths to cancelled paths
+          cancelledPaths = newPaths.slice(i);
+          // Reset operation state when cancelled
+          currentOperationCancelled = false;
+          currentOperationJobId = null;
+          isOperationPaused = false;
+          setCancellationFlag(false);
+          setPauseFlag(false);
+          return processedPaths.length;
+        }
+        // Check for pause and wait if paused
+        while (isOperationPaused && !currentOperationCancelled) {
+          await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before checking again
         }
         try {
           // Update progress for the current item

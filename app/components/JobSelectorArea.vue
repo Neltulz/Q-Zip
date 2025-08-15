@@ -118,7 +118,9 @@
                         first-icon-name="mdi:trash"
                         :first-icon-size="16"
                         btn-theme="danger"
-                        shortcut-text="Shift+Del"
+                        tooltip-text="Remove Job"
+                        tooltip-shortcut="Shift+Del"
+                        tooltip-placement="top"
                         justify="end"
                         @mouseup="
                           () => {

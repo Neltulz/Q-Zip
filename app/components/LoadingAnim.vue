@@ -12,7 +12,7 @@
             Website: https://tobiasahlin.com/spinkit/
             X Profile: https://x.com/tobiasahlin
            -->
-          <div class="sk-circle">
+          <div v-if="!isPaused" class="sk-circle">
             <div class="sk-circle1 sk-child"></div>
             <div class="sk-circle2 sk-child"></div>
             <div class="sk-circle3 sk-child"></div>
@@ -25,6 +25,9 @@
             <div class="sk-circle10 sk-child"></div>
             <div class="sk-circle11 sk-child"></div>
             <div class="sk-circle12 sk-child"></div>
+          </div>
+          <div v-else class="pause-icon-container">
+            <Icon name="mdi:pause-circle" size="60" />
           </div>
           <!-- Progress information -->
           <div v-if="showProgress" class="progress-info">
@@ -253,6 +256,15 @@ const handleConfirmCancel = () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.pause-icon-container {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--accent-clr, hsl(0, 0%, 100%));
 }
 /* SpinKit animation styles */
 .sk-circle {

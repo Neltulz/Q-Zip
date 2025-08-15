@@ -13,45 +13,55 @@
 <!-- #endregion -->
 <!-- #region template -->
 <template>
-  <button
-    ref="buttonRef"
-    :class="buttonClasses"
-    :data-btn-theme="props.btnTheme"
-    :data-justify="props.justify"
-    :data-name="props.dataName"
-    :style="buttonStyle"
-    v-bind="otherAttrs"
-    data-component-name="CustomButton"
-    @contextmenu.prevent
-    @mousedown="handleMouseDown"
-    @mouseup="handleMouseUp"
-    @mouseleave="handleMouseLeave"
-  >
-    <div ref="visualStyleRef" class="visual-style" />
-    <div v-if="props.firstIconName" class="icon-placeholder first-icon" :style="firstIconPlaceholderStyle">
-      <Icon :name="props.firstIconName" :size="String(props.firstIconSize ?? 20)" />
-    </div>
-    <div class="button-content">
-      <slot />
-    </div>
-    <!-- New slot for keyboard shortcut text -->
-    <div v-if="props.shortcutText" class="shortcut-text">
-      {{ props.shortcutText }}
-    </div>
-    <div v-if="props.lastIconName" class="icon-placeholder last-icon" :style="lastIconPlaceholderStyle">
-      <Icon :name="props.lastIconName" :size="String(props.lastIconSize ?? 20)" />
-    </div>
-  </button>
+  <div class="custom-button-wrapper" @mouseenter="onMouseEnter" @mouseleave="onMouseLeave">
+    <button
+      ref="buttonRef"
+      :class="buttonClasses"
+      :data-btn-theme="props.btnTheme"
+      :data-justify="props.justify"
+      :data-name="props.dataName"
+      :style="buttonStyle"
+      v-bind="otherAttrs"
+      data-component-name="CustomButton"
+      @contextmenu.prevent
+      @mousedown="handleMouseDown"
+      @mouseup="handleMouseUp"
+    >
+      <div ref="visualStyleRef" class="visual-style" />
+      <div v-if="props.firstIconName" class="icon-placeholder first-icon" :style="firstIconPlaceholderStyle">
+        <Icon :name="props.firstIconName" :size="String(props.firstIconSize ?? 20)" />
+      </div>
+      <div class="button-content">
+        <slot />
+      </div>
+      <div v-if="props.lastIconName" class="icon-placeholder last-icon" :style="lastIconPlaceholderStyle">
+        <Icon :name="props.lastIconName" :size="String(props.lastIconSize ?? 20)" />
+      </div>
+    </button>
+    <InfoTooltip
+      v-if="props.tooltipText || $slots['tooltip-content']"
+      :visible="isTooltipVisible"
+      :target="buttonRef"
+      :placement="props.tooltipPlacement"
+      :content="tooltipContent"
+    >
+      <slot name="tooltip-content"></slot>
+    </InfoTooltip>
+  </div>
 </template>
 <!-- #endregion -->
 <!-- #region script -->
 <script setup lang="ts">
 import { computed, onMounted, ref, useAttrs } from "vue";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
+import InfoTooltip from "./InfoTooltip.vue";
+
 const attrs = useAttrs();
 const buttonRef = ref<HTMLElement | null>(null);
 const visualStyleRef = ref<HTMLElement | null>(null); // Ref for the visual style div
 const isPressed = ref(false); // Track if button is being pressed
+const isTooltipVisible = ref(false);
+
 const props = withDefaults(
   defineProps<{
     btnTheme?: "default" | "lite" | "liter" | "dark" | "darkr" | "primary" | "danger" | "warning" | "info";
@@ -62,7 +72,9 @@ const props = withDefaults(
     justify?: "auto" | "start" | "center" | "end" | "stretch";
     lastIconName?: string;
     lastIconSize?: string | number;
-    shortcutText?: string;
+    tooltipText?: string;
+    tooltipShortcut?: string;
+    tooltipPlacement?: "top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end";
   }>(),
   {
     btnTheme: "default",
@@ -72,9 +84,30 @@ const props = withDefaults(
     justify: "auto",
     lastIconName: "",
     lastIconSize: undefined,
-    shortcutText: "",
+    tooltipText: "",
+    tooltipShortcut: "",
+    tooltipPlacement: "top",
   }
 );
+
+const onMouseEnter = () => {
+  if (props.tooltipText || props.tooltipShortcut) {
+    isTooltipVisible.value = true;
+  }
+};
+
+const onMouseLeave = () => {
+  isTooltipVisible.value = false;
+};
+
+const tooltipContent = computed(() => {
+  let text = props.tooltipText;
+  if (props.tooltipShortcut) {
+    text = `${text} (${props.tooltipShortcut})`;
+  }
+  return { text };
+});
+
 // Mouse event handlers for flash control
 const handleMouseDown = () => {
   isPressed.value = true;
@@ -82,9 +115,7 @@ const handleMouseDown = () => {
 const handleMouseUp = () => {
   isPressed.value = false;
 };
-const handleMouseLeave = () => {
-  isPressed.value = false;
-};
+
 // Computed style to control flash state
 const buttonStyle = computed(() => ({
   '--flash-active': isPressed.value ? '1' : '0'
@@ -137,6 +168,11 @@ onMounted((): void => {
 </script>
 <!-- #endregion -->
 <!-- #region styles -->
+<style scoped>
+.custom-button-wrapper {
+  display: contents;
+}
+</style>
 <!-- Global button styles -->
 <style>
 @import "./custom-button-comp/custom-button.global.css";
