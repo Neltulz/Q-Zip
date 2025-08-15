@@ -322,58 +322,110 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   --btn-bg-hvr-clr: var(--btn-bg-hvr-clr-liter);
 }
 
-/* Remove Job Confirmation Dropdown Styles */
+/* Remove Job Confirmation Dropdown Styles - Discord-style */
 .remove-job-confirmation {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 4px;
-  min-width: 200px;
+  min-width: 240px;
+  max-width: 45ch;
+  gap: 16px;
+  padding: 16px;
 }
 
-.confirmation-text {
-  font-size: 14px;
-  color: var(--txt-clr-liter);
-  text-align: center;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.confirmation-text .info-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: help;
-  padding: 2px;
-  border-radius: 2px;
-  transition: background-color 0.2s ease;
-  margin-left: 4px;
-}
-
-.confirmation-text .info-icon:hover {
-  background-color: var(--btn-bg-hvr-clr-liter);
-}
-
-/* Specific styling for the remove job warning tooltip - using maxWidth prop instead */
-
-.confirmation-text .info-icon-wrapper {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: help;
-  padding: 2px;
-  border-radius: 2px;
-  transition: background-color 0.2s ease;
-}
-
-.confirmation-text .info-icon-wrapper:hover {
-  background-color: var(--btn-bg-hvr-clr-liter);
-}
-
-.confirmation-buttons {
+.confirmation-header {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  padding: 0;
+}
+
+.confirmation-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--txt-clr-liter);
+  margin: 0;
+  line-height: 1.2;
+  max-width: 35ch;
+  width: fit-content;
+  display: inline-block;
+}
+
+.confirmation-question {
+  font-size: 14px;
+  color: var(--txt-clr-liter);
+  margin: 0;
+  line-height: 1.4;
+  opacity: 0.9;
+  max-width: 35ch;
+  width: fit-content;
+  display: inline-block;
+}
+
+.job-preview {
+  background-color: hsla(0, 0%, 15%, 0.8);
+  border: 1px solid hsla(0, 0%, 25%, 0.6);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+
+.job-preview-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.job-preview-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: hsla(0, 0%, 20%, 0.8);
+  border-radius: 50%;
+  color: var(--txt-clr-liter);
+  flex-shrink: 0;
+}
+
+.job-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.job-preview-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--txt-clr-liter);
+  line-height: 1.2;
+}
+
+.job-preview-details {
+  font-size: 12px;
+  color: var(--txt-clr-liter);
+  opacity: 0.7;
+  line-height: 1.2;
+}
+
+
+
+.tip-text strong {
+  font-weight: 600;
+  color: var(--txt-clr-liter);
+}
+
+.confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-block: 8px;
+  padding-inline: 16px;
+}
+
+.confirmation-actions .custom-button {
+  width: fit-content;
+  min-width: 80px;
+  flex-shrink: 0;
+  flex-grow: 0;
 }

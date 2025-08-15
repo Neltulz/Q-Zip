@@ -82,7 +82,8 @@
           <template v-if="props.showCancelButton">
             <hr />
             <CustomButton
-              button-style-class="trans-btn btn-lite"
+              :btn-theme="props.cancelButtonTheme"
+              :button-style-class="props.cancelButtonStyleClass || 'trans-btn btn-lite'"
               data-name="dropdown-cancel-btn"
               first-icon-name="mdi:close"
               :first-icon-size="20"
@@ -172,6 +173,14 @@ const props = defineProps({
   cancelButtonText: {
     type: String,
     default: "Cancel",
+  },
+  cancelButtonTheme: {
+    type: String as PropType<BtnTheme>,
+    default: "default",
+  },
+  cancelButtonStyleClass: {
+    type: String,
+    default: "",
   },
 });
 const emit = defineEmits<{

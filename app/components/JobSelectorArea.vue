@@ -65,43 +65,72 @@
                   last-icon-name="mdi:close"
                   :last-icon-size="18"
                   placement="bottom-center"
-                  :show-cancel-button="true"
+                  :show-cancel-button="false"
                   @click.stop.prevent
                   @mouseenter="handleRemoveJobButtonMouseEnter(job.id)"
                   @mouseleave="handleRemoveJobButtonMouseLeave"
                 >
-                 <template #default="{ close }">
-                   <div class="remove-job-confirmation">
-                     <div class="confirmation-text">
-                       Remove Job #{{ job.id }}?
-                                              <Icon
-                          name="mdi:information-outline"
-                          class="info-icon"
-                          size="20"
-                          @mouseenter="handleInfoIconMouseEnter($event)"
-                          @mouseleave="handleInfoIconMouseLeave"
-                        />
-                     </div>
-                     <div class="confirmation-buttons">
-                                                                     <CustomButton
-                          button-style-class="trans-btn btn-lite"
-                          :data-name="'confirm-remove-job-' + job.id + '-btn'"
-                          first-icon-name="mdi:check"
-                          :first-icon-size="18"
-                          btn-theme="danger"
-                          shortcut-text="Shift+Del"
-                          @mouseup="
-                            () => {
-                              removeJob(job.id);
-                              close();
-                            }
-                          "
-                        >
-                          Remove Job
-                        </CustomButton>
-                     </div>
-                   </div>
-                 </template>
+                                   <template #default="{ close }">
+                    <div class="remove-job-confirmation">
+                      <div class="confirmation-header">
+                        <h3 class="confirmation-title">Remove Job</h3>
+                        <p class="confirmation-question">Are you sure you want to remove this job?</p>
+                      </div>
+                      
+                      <div class="job-preview">
+                        <div class="job-preview-content">
+                          <div class="job-preview-icon">
+                            <Icon name="mdi:briefcase" size="16" />
+                          </div>
+                          <div class="job-preview-info">
+                            <div class="job-preview-title">Job {{ job.id }}</div>
+                            <div class="job-preview-details">{{ job.files.length }} Items</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                                             <InfoCard theme="info">
+                         <template #header>Tip</template>
+                         <template #icon>
+                           <Icon name="mdi:lightbulb-outline" size="16" />
+                         </template>
+                         You can hold down <strong>Shift</strong> when clicking <strong>remove job</strong> to bypass this confirmation entirely.
+                       </InfoCard>
+                    </div>
+                  </template>
+                  <template #content-bottom="{ close }">
+                    <hr />
+                    <div class="confirmation-actions">
+                      <CustomButton
+                        button-style-class="bordered-btn"
+                        :data-name="'cancel-remove-job-' + job.id + '-btn'"
+                        first-icon-name="mdi:close"
+                        :first-icon-size="20"
+                        shortcut-text="Esc"
+                        justify="end"
+                        @mouseup="close"
+                      >
+                        Cancel
+                      </CustomButton>
+                      <CustomButton
+                        button-style-class="bordered-btn"
+                        :data-name="'confirm-remove-job-' + job.id + '-btn'"
+                        first-icon-name="mdi:trash"
+                        :first-icon-size="16"
+                        btn-theme="danger"
+                        shortcut-text="Shift+Del"
+                        justify="end"
+                        @mouseup="
+                          () => {
+                            removeJob(job.id);
+                            close();
+                          }
+                        "
+                      >
+                        Remove Job
+                      </CustomButton>
+                    </div>
+                  </template>
                               </DropdownMenu>
                <InfoTooltip
                  :visible="tooltipManager.activeTooltipId.value === 'remove-job-' + job.id"
@@ -336,17 +365,7 @@
         />
       </div>
     </div>
-    <!-- Global InfoTooltip for remove job confirmation -->
-    <Teleport to="body">
-      <InfoTooltip
-        :visible="tooltip.visible && !!tooltip.content"
-        :content="tooltip.content || { text: '' }"
-        :target="tooltip.targetElement"
-        placement="right"
-        class="remove-job-warning-tooltip"
-        max-width="35ch"
-      />
-    </Teleport>
+
   </nav>
 </template>
 <script setup lang="ts">
@@ -363,6 +382,7 @@ import type { ModalOptions } from "@/types/modal";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import CustomButton from "./CustomButton.vue";
 import InfoTooltip from "./InfoTooltipContainer.vue";
+import InfoCard from "./InfoCard.vue";
 import { useScrollContainer } from "@/composables/useScrollContainer";
 import { useTooltipManager } from "@/composables/useTooltipManager";
 import { useDropdownManager } from "@/composables/dropdownManager";
@@ -393,16 +413,7 @@ const pendingDropSourceJobId = ref<number | null>(null);
 const jobNotificationStates = ref<Map<number | "new-job", NotificationType>>(new Map());
 const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
 
-// Tooltip state for remove job confirmation
-const tooltip = reactive<{
-  visible: boolean;
-  content: { text: string } | null;
-  targetElement: HTMLElement | null;
-}>({
-  visible: false,
-  content: null,
-  targetElement: null,
-});
+
 
 const extraOptionsTarget = computed(() => {
   const el = extraOptionsDropdownRef.value as any;
@@ -832,17 +843,7 @@ const reorderJob = (index: number, direction: "left" | "right"): void => {
   jobsStore.moveJob(fromIndex, toIndex);
 };
 
-// Tooltip handlers for remove job confirmation
-const handleInfoIconMouseEnter = (event: MouseEvent) => {
-  const targetElement = event.target as HTMLElement;
-  tooltip.targetElement = targetElement;
-  tooltip.content = { text: 'All files and any job-specific settings (like compression or encryption) will be lost.' };
-  tooltip.visible = true;
-};
 
-const handleInfoIconMouseLeave = () => {
-  tooltip.visible = false;
-};
 </script>
 <style scoped>
 @import "./job-selector-area-comp/job-selector-area.scoped.css";
