@@ -8,5 +8,3 @@ alwaysApply: true
 
 ## When Making Changes
 - Check existing similar components for patterns.
-- Use HSL/HSLA colors exclusively.
-- Maintain TypeScript type safety - Avoid using `any` type, prefer proper type definitions and generics.

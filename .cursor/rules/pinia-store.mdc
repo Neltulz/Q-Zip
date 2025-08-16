@@ -1,7 +1,7 @@
 ---
 description: "Guidelines for creating and managing Pinia stores, including persistence rules."
 globs: ["app/stores/**/*.ts"]
-alwaysApply: false
+alwaysApply: true
 ---
 # Pinia Store Guidelines
 - **Store Unification**: All Pinia stores MUST use a consistent structure to prevent type-inference failures.

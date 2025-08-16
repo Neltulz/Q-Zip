@@ -14,3 +14,4 @@ Q-Zip is a Tauri-based desktop application for file compression and archiving, b
 - **Rust**: 1.77.2
 - **Package Manager**: pnpm@10.13.1
 - **IDE**: Cursor v1.4.3 (based on VS Code v1.99.3)
+- **TypeScript**: ^5.8.3

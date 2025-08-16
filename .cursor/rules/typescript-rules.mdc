@@ -1,10 +1,9 @@
 ---
 description: "Specific TypeScript guidelines to maintain type safety."
 globs: ["**/*.ts"]
-alwaysApply: false
+alwaysApply: true
 ---
 # TypeScript Guidelines
-- Use TypeScript, not JavaScript.
-- Provide explicit types for all new variables and functions.
+- Use TypeScript for new code, prefer explicit types when they add clarity.
 - To prevent `@typescript-eslint/no-unused-vars` errors, all unused function arguments MUST be prefixed with an underscore (e.g., `_event`).
 - Avoid using `any` type, prefer proper type definitions and generics.

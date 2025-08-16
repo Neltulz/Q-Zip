@@ -4,6 +4,36 @@
 
 ## Recent Changes
 
+## [0.1.17] - 2025-01-27T22:00:00Z
+
+### Changed
+- *Development work in progress...*`
+
+### Added
+- *Development work in progress...*
+
+### Fixed
+- **Vue Attribute Inheritance Warning**: Fixed "extraneous non-props attributes" warning by correcting prop name from `keyboard-shortcut` to `keyboardShortcut` in InfoTooltip component usage
+- **TypeScript Errors**: Fixed type errors in InfoTooltip component by properly casting content to NotificationMessageDetails type and adding optional chaining for undefined properties
+- **Icon Import Issue**: Removed explicit Icon import from InfoTooltip component since Nuxt Icons are auto-imported
+- **Tooltip Positioning Issue**: Fixed tooltips appearing in top-left corner instead of below buttons by implementing job-specific refs for confirmation buttons and proper tooltip state management
+- **Tooltip Keyboard Shortcut Styling**: Improved keyboard shortcut display in tooltips by capitalizing text, removing backdrop blur glow effect, and ensuring proper blue color application
+- **Code Style Guidelines**: Added CSS specificity rules preferring greater specificity over `!important` and using `:deep()` for sub-component styling
+- **Keyboard Event Logging**: Added comprehensive keyboard logging system that tracks key combinations while filtering modifier-only presses and preventing log flooding from held keys
+- **Debugging Enhancements**: Added temporary debugging logs to investigate keyboard event handling and Enter key functionality in dropdown menus
+- **Keyboard Logger Fixes**: Fixed keyboard logging to only log meaningful combinations (not standalone modifier keys) and prevent log flooding from held keys
+- **Enter Key Functionality**: Fixed Enter key not working in remove job dropdown by adding missing event handler binding
+- **Keyboard Logger Improvements**: Enhanced keyboard logging to completely eliminate individual modifier key logging and prevent log flooding from held modifier keys
+- **Tooltip Consistency**: Fixed Remove Job tooltip to use proper keyboard shortcut formatting with icon and separate line display
+- **Tooltip Alignment**: Changed tooltip text alignment from centered to left-justified for better readability
+- **Job Navigation Shortcuts**: Added browser-style keyboard shortcuts for job tab navigation: Ctrl+Tab (next job), Ctrl+Shift+Tab (previous job), and Ctrl+1-9 (jump to specific job)
+- **Job Switch Delay**: Added 150ms delay between job switches via Ctrl+Tab to prevent accidental rapid cycling
+
+### Technical Details
+- *Development work in progress...*
+
+---
+
 ## [0.1.16] - 2025-01-27T21:00:00Z
 
 ### Changed

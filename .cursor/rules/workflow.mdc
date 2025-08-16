@@ -1,7 +1,7 @@
 ---
 description: "Development workflow and tooling guidelines for the Q-Zip project."
 globs: ["*"]
-alwaysApply: false
+alwaysApply: true
 ---
 # Development Workflow
 - Always check the existing file structure before creating new files.
@@ -9,4 +9,13 @@ alwaysApply: false
 - Use the existing store structure (Pinia) for state management.
 - Maintain consistency with existing UI components and styling.
 - Use `pnpm` for all package management commands.
+- **Package Management Commands**:
+  - Install dependencies: `pnpm install`
+  - Start development server (Tauri + frontend): `pnpm tauri dev`
+  - Build frontend assets only (HTML, CSS, JS): `pnpm build`
+  - Build full Tauri application (including distribution exe): `pnpm tauri build`
+  - Regenerate Nuxt configuration and types: `pnpm regenerate`
 - Provide PowerShell commands when applicable; do not use CMD.
+- **Hot Reload Available**: The development server supports hot reload for Vue components. Most component changes will automatically refresh without needing to restart the dev server.
+- **Debugging Protocol**: If we've attempted to fix the same problem multiple times without success, automatically add debugging/logging to help diagnose the issue. Use the existing debugging infrastructure in `app/utils/loggers.ts` and `app/utils/debugConfig.ts` - import the appropriate logger functions (e.g., `logInteraction`, `logStoreAction`, `logTrace`) and enable relevant debug flags. Inform the user when adding debugging and request relevant logs when appropriate.
+- **Debug Logging Cleanup**: NEVER automatically remove debug logging after making changes, even if you believe the issue is resolved. Always wait for explicit user confirmation that the issue is fixed before cleaning up debug code. The user must verify the fix works before debug logging can be removed.

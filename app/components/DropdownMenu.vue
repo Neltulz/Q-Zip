@@ -656,6 +656,7 @@ const handleKeyDown = (event: KeyboardEvent): void => {
         }
         
         // Emit custom event instead of calling click() to bypass dropdownManager
+        console.log('DropdownMenu: Emitting action-button-activated event', { dataName, btnTheme, text });
         emit('action-button-activated', { dataName, btnTheme, text });
       } else {
         if (DEBUG && debugConfig.logUIInteractivity) {

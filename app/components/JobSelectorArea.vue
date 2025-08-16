@@ -69,6 +69,7 @@
                   :on-button-click="(event) => handleRemoveJobClick(event, job.id)"
                   @mouseenter="handleRemoveJobButtonMouseEnter(job.id)"
                   @mouseleave="handleRemoveJobButtonMouseLeave"
+                  @action-button-activated="handleActionButtonActivated"
                 >
                                    <template #default="{ close }">
                     <div class="remove-job-confirmation">
@@ -102,27 +103,25 @@
                     <hr />
                     <div class="confirmation-actions">
                       <CustomButton
-                        ref="cancelRemoveJobBtnRef"
+                        :ref="(el) => setCancelRemoveJobBtnRef(job.id, el)"
                         button-style-class="bordered-btn"
                         :data-name="'cancel-remove-job-' + job.id + '-btn'"
                         first-icon-name="mdi:close"
                         :first-icon-size="20"
-                        shortcut-text="Esc"
                         justify="end"
                         @mouseup="close"
-                        @mouseenter="cancelRemoveJobTooltip.showTooltip"
-                        @mouseleave="cancelRemoveJobTooltip.hideTooltip"
+                        @mouseenter="showCancelRemoveJobTooltip(job.id)"
+                        @mouseleave="hideCancelRemoveJobTooltip(job.id)"
                       >
                         Cancel
                       </CustomButton>
                       <CustomButton
-                        ref="confirmRemoveJobBtnRef"
+                        :ref="(el) => setConfirmRemoveJobBtnRef(job.id, el)"
                         button-style-class="bordered-btn"
                         :data-name="'confirm-remove-job-' + job.id + '-btn'"
                         first-icon-name="mdi:trash"
                         :first-icon-size="16"
                         btn-theme="danger"
-                        shortcut-text="Enter"
                         justify="end"
                         @mouseup="
                           () => {
@@ -130,35 +129,36 @@
                             close();
                           }
                         "
-                        @mouseenter="confirmRemoveJobTooltip.showTooltip"
-                        @mouseleave="confirmRemoveJobTooltip.hideTooltip"
+                        @mouseenter="showConfirmRemoveJobTooltip(job.id)"
+                        @mouseleave="hideConfirmRemoveJobTooltip(job.id)"
                       >
                         Remove Job
                       </CustomButton>
                       
                       <!-- Tooltips for remove job confirmation buttons -->
                       <InfoTooltip
-                        :visible="cancelRemoveJobTooltip.isTooltipVisible.value"
-                        :content="cancelRemoveJobTooltip.tooltipContent.value"
-                        :target="cancelRemoveJobBtnRef?.visualStyleRef"
-                        :placement="cancelRemoveJobTooltip.tooltipPlacement"
-                        :keyboard-shortcut="cancelRemoveJobTooltip.keyboardShortcut"
+                        :visible="getCancelRemoveJobTooltipVisible(job.id)"
+                        :content="{ text: 'Cancel the removal' }"
+                        :target="cancelRemoveJobBtnRefs.get(job.id)?.visualStyleRef"
+                        placement="bottom"
+                        keyboardShortcut="Esc"
                       />
                       <InfoTooltip
-                        :visible="confirmRemoveJobTooltip.isTooltipVisible.value"
-                        :content="confirmRemoveJobTooltip.tooltipContent.value"
-                        :target="confirmRemoveJobBtnRef?.visualStyleRef"
-                        :placement="confirmRemoveJobTooltip.tooltipPlacement"
-                        :keyboard-shortcut="confirmRemoveJobTooltip.keyboardShortcut"
+                        :visible="getConfirmRemoveJobTooltipVisible(job.id)"
+                        :content="{ text: 'Confirm job removal' }"
+                        :target="confirmRemoveJobBtnRefs.get(job.id)?.visualStyleRef"
+                        placement="bottom"
+                        keyboardShortcut="Enter"
                       />
                     </div>
                   </template>
                               </DropdownMenu>
                <InfoTooltip
                  :visible="tooltipManager.activeTooltipId.value === 'remove-job-' + job.id"
-                 :content="{ text: 'Remove Job (Shift+Del)' }"
+                 :content="{ text: 'Remove Job' }"
                  :target="removeJobDropdownRefs.get(job.id)?.$el?.querySelector('.visual-style')"
                  placement="bottom"
+                 keyboardShortcut="Shift+Del"
                />
              </div>
           </CustomButton>
@@ -439,22 +439,43 @@ const pendingDropSourceJobId = ref<number | null>(null);
 const jobNotificationStates = ref<Map<number | "new-job", NotificationType>>(new Map());
 const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
 
-// Tooltip instances for remove job confirmation buttons
-const cancelRemoveJobTooltip = useButtonTooltip({
-  shortcutText: "Esc",
-  tooltipPlacement: "bottom"
-});
+// Job-specific tooltip visibility states
+const cancelRemoveJobTooltipVisible = ref(new Map<number, boolean>());
+const confirmRemoveJobTooltipVisible = ref(new Map<number, boolean>());
 
-const confirmRemoveJobTooltip = useButtonTooltip({
-  shortcutText: "Enter",
-  tooltipPlacement: "bottom"
-});
+// Function to get tooltip visibility for a job
+const getCancelRemoveJobTooltipVisible = (jobId: number) => {
+  return cancelRemoveJobTooltipVisible.value.get(jobId) || false;
+};
 
-// Refs for remove job confirmation buttons
-const cancelRemoveJobBtnRef = ref<InstanceType<typeof CustomButton> | null>(null);
-const confirmRemoveJobBtnRef = ref<InstanceType<typeof CustomButton> | null>(null);
+const getConfirmRemoveJobTooltipVisible = (jobId: number) => {
+  return confirmRemoveJobTooltipVisible.value.get(jobId) || false;
+};
 
+// Function to show/hide tooltips for a job
+const showCancelRemoveJobTooltip = (jobId: number) => {
+  cancelRemoveJobTooltipVisible.value.set(jobId, true);
+};
 
+const hideCancelRemoveJobTooltip = (jobId: number) => {
+  cancelRemoveJobTooltipVisible.value.set(jobId, false);
+};
+
+const showConfirmRemoveJobTooltip = (jobId: number) => {
+  confirmRemoveJobTooltipVisible.value.set(jobId, true);
+};
+
+const hideConfirmRemoveJobTooltip = (jobId: number) => {
+  confirmRemoveJobTooltipVisible.value.set(jobId, false);
+};
+
+// Job-specific refs for remove job confirmation buttons
+const cancelRemoveJobBtnRefs = ref(new Map<number, InstanceType<typeof CustomButton>>());
+const confirmRemoveJobBtnRefs = ref(new Map<number, InstanceType<typeof CustomButton>>());
+
+// Add delay for job switching to prevent rapid cycling
+const lastJobSwitchTime = ref(0);
+const JOB_SWITCH_DELAY = 150; // 150ms delay between job switches
 
 const extraOptionsTarget = computed(() => {
   const el = extraOptionsDropdownRef.value as any;
@@ -579,17 +600,87 @@ const setRemoveJobMenuRef = (jobId: number, el: Element | ComponentPublicInstanc
     removeJobDropdownRefs.value.set(jobId, el as InstanceType<typeof DropdownMenu>);
   }
 };
+
+const setCancelRemoveJobBtnRef = (jobId: number, el: Element | ComponentPublicInstance | null) => {
+  if (el) {
+    cancelRemoveJobBtnRefs.value.set(jobId, el as InstanceType<typeof CustomButton>);
+  }
+};
+
+const setConfirmRemoveJobBtnRef = (jobId: number, el: Element | ComponentPublicInstance | null) => {
+  if (el) {
+    confirmRemoveJobBtnRefs.value.set(jobId, el as InstanceType<typeof CustomButton>);
+  }
+};
 onBeforeUpdate(() => {
   jobButtonRefs.value.clear();
   jobContextMenuRefs.value.clear();
   dragActionDropdownRefs.value.clear();
   removeJobDropdownRefs.value.clear();
+  cancelRemoveJobBtnRefs.value.clear();
+  confirmRemoveJobBtnRefs.value.clear();
+  cancelRemoveJobTooltipVisible.value.clear();
+  confirmRemoveJobTooltipVisible.value.clear();
 });
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.ctrlKey && event.key.toLowerCase() === "t") {
     event.preventDefault();
     addJob();
   }
+  
+  // Add Ctrl+Tab/Ctrl+Shift+Tab shortcuts for cycling between job tabs (browser-style)
+  if (event.ctrlKey && event.key === "Tab" && jobsList.value.length > 1) {
+    event.preventDefault();
+    
+    // Check if enough time has passed since last job switch
+    const now = Date.now();
+    if (now - lastJobSwitchTime.value < JOB_SWITCH_DELAY) {
+      if (DEBUG && debugConfig.logUIInteractivity) {
+        logUI("JobSelectorArea", `CTRL+${event.shiftKey ? "SHIFT+" : ""}TAB detected but ignored due to rapid switching (${now - lastJobSwitchTime.value}ms < ${JOB_SWITCH_DELAY}ms)`);
+      }
+      return;
+    }
+    
+    const currentIndex = jobsList.value.findIndex(job => job.id === jobsStore.selectedJobId);
+    if (currentIndex === -1) return;
+    
+    let newIndex: number;
+    if (event.shiftKey) {
+      // Ctrl+Shift+Tab: Previous job (wrap around to last)
+      newIndex = currentIndex === 0 ? jobsList.value.length - 1 : currentIndex - 1;
+    } else {
+      // Ctrl+Tab: Next job (wrap around to first)
+      newIndex = currentIndex === jobsList.value.length - 1 ? 0 : currentIndex + 1;
+    }
+    
+    const newJob = jobsList.value[newIndex];
+    if (newJob) {
+      const newJobId = newJob.id;
+      lastJobSwitchTime.value = now; // Update the last switch time
+      if (DEBUG && debugConfig.logUIInteractivity) {
+        const direction = event.shiftKey ? "previous" : "next";
+        logUI("JobSelectorArea", `CTRL+${event.shiftKey ? "SHIFT+" : ""}TAB detected, cycling ${direction} from job ${jobsStore.selectedJobId} to job ${newJobId}`);
+      }
+      selectJob(newJobId);
+    }
+    return;
+  }
+  
+  // Add Ctrl+1-9 shortcuts for jumping to specific jobs
+  if (event.ctrlKey && /^[1-9]$/.test(event.key) && jobsList.value.length > 0) {
+    event.preventDefault();
+    const jobIndex = parseInt(event.key) - 1; // Convert 1-9 to 0-8
+    const targetJob = jobsList.value[jobIndex];
+    
+    if (targetJob) {
+      if (DEBUG && debugConfig.logUIInteractivity) {
+        logUI("JobSelectorArea", `CTRL+${event.key} detected, jumping to job ${targetJob.id}`);
+      }
+      selectJob(targetJob.id);
+    }
+    return;
+  }
+  
   // Add Shift+Delete shortcut for opening the remove job dropdown for the currently selected job
   if (event.shiftKey && event.key === "Delete" && jobsStore.selectedJobId !== null) {
     // If there's only 1 job, clear it instead of removing
@@ -919,6 +1010,7 @@ const handleRemoveJobButtonMouseLeave = (): void => {
 };
 
 const handleActionButtonActivated = (buttonData: { dataName: string | undefined, btnTheme: string | undefined, text: string | undefined }): void => {
+  console.log('JobSelectorArea: handleActionButtonActivated called', buttonData);
   if (DEBUG && debugConfig.logUIInteractivity) {
     logUI("JobSelectorArea", `handleActionButtonActivated called`, buttonData);
   }
@@ -926,7 +1018,7 @@ const handleActionButtonActivated = (buttonData: { dataName: string | undefined,
   // Extract job ID from the data-name (format: "remove-job-{jobId}-btn")
   const jobIdMatch = buttonData.dataName?.match(/remove-job-(\d+)-btn/);
   if (jobIdMatch) {
-    const jobId = parseInt(jobIdMatch[1]);
+    const jobId = parseInt(jobIdMatch[1]!);
     if (DEBUG && debugConfig.logUIInteractivity) {
       const dataName = buttonData.dataName ?? 'undefined';
       logUI("JobSelectorArea", `Extracted job ID ${jobId} from data-name "${dataName}"`);

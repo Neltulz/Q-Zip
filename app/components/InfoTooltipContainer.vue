@@ -78,6 +78,14 @@
               </ul>
             </div>
           </template>
+          
+          <!-- Keyboard shortcut slot -->
+          <template v-if="keyboardShortcut">
+            <div class="info-line keyboard-shortcut-line">
+              <Icon name="mdi:keyboard" class="keyboard-icon" />
+              <span class="keyboard-shortcut-text">{{ keyboardShortcut.toUpperCase() }}</span>
+            </div>
+          </template>
         </div>
         <!-- Use an inline SVG for a perfect, styleable arrow -->
         <svg ref="arrowRef" class="tooltip-arrow" :data-side="side" :style="arrowStyle" viewBox="0 0 16 9">
@@ -94,7 +102,7 @@ import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-u
 import type { MaybeElement } from "@vueuse/core";
 import { logUI, logRendering } from "@/utils/loggers";
 // Allow a simple text property for more generic tooltips
-type TooltipContent = NotificationMessageDetails | { text: string };
+type TooltipContent = NotificationMessageDetails | { text: string; icon?: string };
 const props = defineProps({
   visible: {
     type: Boolean,
@@ -138,6 +146,11 @@ const props = defineProps({
     default: null,
   },
   class: {
+    type: String,
+    default: "",
+  },
+  // Optional keyboard shortcut to display with icon
+  keyboardShortcut: {
     type: String,
     default: "",
   },
@@ -489,6 +502,31 @@ const getFileName = (path: string) => {
         }
       }
     }
+    .keyboard-shortcut-line {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-block-start: 4px;
+      .keyboard-icon {
+        inline-size: 16px;
+        block-size: 16px;
+        color: var(--blu-lite);
+      }
+      .keyboard-shortcut-text {
+        color: var(--blu-lite);
+        font-size: 0.9em;
+        font-weight: bold;
+      }
+    }
+  }
+  
+  /* More specific selectors to override inherited color */
+  .keyboard-shortcut-line .keyboard-icon {
+    color: var(--blu-lite);
+  }
+  
+  .keyboard-shortcut-line .keyboard-shortcut-text {
+    color: var(--blu-lite);
   }
 }
 /* Only when it's visible AND interactive should it get pointer events */

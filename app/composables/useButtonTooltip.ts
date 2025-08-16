@@ -4,6 +4,7 @@ export interface UseButtonTooltipOptions {
   shortcutText?: string;
   tooltipText?: string;
   tooltipPlacement?: "top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end";
+  buttonAction?: string; // New prop for button action description
 }
 
 export function useButtonTooltip(options: UseButtonTooltipOptions = {}) {
@@ -14,10 +15,14 @@ export function useButtonTooltip(options: UseButtonTooltipOptions = {}) {
     if (options.tooltipText) {
       return { text: options.tooltipText };
     }
-    // If no custom tooltip text but shortcut text is provided, show empty content
+    // If button action is provided, use it
+    if (options.buttonAction) {
+      return { text: options.buttonAction };
+    }
+    // If shortcut text is provided, show a generic tooltip
     // (the keyboard shortcut will be displayed via the keyboardShortcut prop)
     if (options.shortcutText) {
-      return { text: "" };
+      return { text: "Keyboard shortcut available" };
     }
     return { text: "" };
   });

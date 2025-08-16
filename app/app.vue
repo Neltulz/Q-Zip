@@ -30,12 +30,16 @@ import NotificationContainer from "@/components/NotificationContainer.vue";
 import { provideScrollContainer } from "@/composables/useScrollContainer";
 import { zoomIn, zoomOut, resetZoom, setFileTableZoomFactor, getFileTableZoomFactor, getZoomFactor, setZoomFactor } from "@/composables/useZoom";
 import { enableSelectionLock, disableSelectionLock } from "@/composables/useSelectionLock";
+import { useKeyboardLogger } from "@/composables/useKeyboardLogger";
 provideScrollContainer();
 const layoutStore = useLayoutStore();
 const userPreferencesStore = useUserPreferencesStore();
 const jobsStore = useJobsStore();
 const dragDropStore = useDragDropStore();
 const uiStore = useUiStore();
+
+// Initialize keyboard logging
+useKeyboardLogger();
 const handleGlobalKeyDown = (event: KeyboardEvent): void => {
   if (event.key === "Escape") {
     // Universal escape handler for any active drag operation

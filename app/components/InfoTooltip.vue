@@ -37,7 +37,7 @@
     :visible="isTooltipVisible"
     :content="{ text: 'Copy' }"
     :target="buttonRef"
-    keyboard-shortcut="Ctrl+C"
+    :keyboardShortcut="Ctrl+C"
   />
 -->
 <template>
@@ -80,17 +80,17 @@
           </template>
           <!-- Display structured notification details -->
           <template v-else-if="'filePaths' in content">
-            <div v-if="content.sourceJobId" class="info-line"><strong>Source:</strong> Job {{ content.sourceJobId }}</div>
-            <div v-if="content.destinationJobId" class="info-line">
-              <strong>Destination:</strong> Job {{ content.destinationJobId }}
+            <div v-if="(content as NotificationMessageDetails).sourceJobId" class="info-line"><strong>Source:</strong> Job {{ (content as NotificationMessageDetails).sourceJobId }}</div>
+            <div v-if="(content as NotificationMessageDetails).destinationJobId" class="info-line">
+              <strong>Destination:</strong> Job {{ (content as NotificationMessageDetails).destinationJobId }}
             </div>
-            <hr v-if="content.sourceJobId || content.destinationJobId" />
-            <div v-if="content.filePaths && content.filePaths.length > 0" class="file-list-container">
+            <hr v-if="(content as NotificationMessageDetails).sourceJobId || (content as NotificationMessageDetails).destinationJobId" />
+            <div v-if="(content as NotificationMessageDetails).filePaths && (content as NotificationMessageDetails).filePaths.length > 0" class="file-list-container">
               <strong>Affected Items:</strong>
               <ul class="file-list">
-                <li v-for="path in content.filePaths" :key="path">
+                <li v-for="path in (content as NotificationMessageDetails).filePaths" :key="path">
                   <span class="file-name">{{ getFileName(path) }}</span>
-                  <span v-if="content.reasons && content.reasons[path]" class="reason"> - {{ content.reasons[path] }} </span>
+                  <span v-if="(content as NotificationMessageDetails).reasons && (content as NotificationMessageDetails).reasons?.[path]" class="reason"> - {{ (content as NotificationMessageDetails).reasons?.[path] }} </span>
                 </li>
               </ul>
             </div>
@@ -100,7 +100,7 @@
           <template v-if="keyboardShortcut">
             <div class="info-line keyboard-shortcut-line">
               <Icon name="mdi:keyboard" class="keyboard-icon" />
-              <span class="keyboard-shortcut-text">{{ keyboardShortcut }}</span>
+              <span class="keyboard-shortcut-text">{{ keyboardShortcut.toUpperCase() }}</span>
             </div>
           </template>
         </div>
@@ -112,13 +112,13 @@
     </Transition>
   </teleport>
 </template>
+
 <script setup lang="ts">
 import { ref, computed, toRef, watch, nextTick, type PropType } from "vue";
 import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
 import { logUI, logRendering } from "@/utils/loggers";
-import { Icon } from "#components";
 // Allow a simple text property for more generic tooltips
 type TooltipContent = NotificationMessageDetails | { text: string; icon?: string };
 const props = defineProps({
@@ -420,6 +420,7 @@ const getFileName = (path: string) => {
   return path.split(/[\\/]/).pop() || path;
 };
 </script>
+
 <style scoped>
 /* Transition animations for smooth enter/leave */
 .tooltip-fade-enter-active,
@@ -445,7 +446,7 @@ const getFileName = (path: string) => {
   pointer-events: none;
   white-space: nowrap;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   padding-block: 6px;
   padding-inline: 10px;
   .tooltip-arrow {
@@ -479,12 +480,12 @@ const getFileName = (path: string) => {
     .tooltip-text-content {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 0.5em;
       position: relative;
       inset-block-start: 1px;
       width: 100%;
-      text-align: center;
+      text-align: left;
       
       .tooltip-icon {
         width: 16px;
@@ -535,6 +536,7 @@ const getFileName = (path: string) => {
     .keyboard-shortcut-line {
       display: flex;
       align-items: center;
+      justify-content: flex-start;
       gap: 0.5em;
       margin-block-start: 4px;
       .keyboard-icon {
@@ -550,17 +552,32 @@ const getFileName = (path: string) => {
       }
     }
   }
+  
+  /* More specific selectors to override inherited color */
+  .keyboard-shortcut-line .keyboard-icon {
+    color: var(--blu-lite);
+  }
+  
+  .keyboard-shortcut-line .keyboard-shortcut-text {
+    color: var(--blu-lite);
+  }
 }
 /* Only when it's visible AND interactive should it get pointer events */
 .info-tooltip.interactive {
   pointer-events: auto;
 }
-/* For simple-text tooltips, center the tooltip body itself so the arrow
-   and content remain visually centered. Applying justify-content to the
-   root `.info-tooltip` element is more reliable than targeting an inner
-   child when positioning is handled by Floating UI. */
+/* For simple-text tooltips, left-align the content */
 .info-tooltip.simple-tooltip {
-  justify-content: center;
-  text-align: center; /* also ensure text within is centered */
+  justify-content: flex-start;
+  text-align: left;
+}
+
+/* Ensure tooltip content is left-aligned */
+.info-tooltip .tooltip-content {
+  text-align: left;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 </style>

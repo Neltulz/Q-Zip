@@ -15,18 +15,18 @@
    </NuxtLink>
    @preserve
  */
-   import { defineNuxtPlugin } from "nuxt/app";
-   import type { NuxtApp } from "nuxt/app";
-   export default defineNuxtPlugin((nuxtApp: NuxtApp) => {
-     nuxtApp.vueApp.directive("bounce-on-click", {
-       mounted(el: HTMLElement) {
-         el.addEventListener("click", () => {
-           const icon = el.querySelector(".bounce-icon-on-click") as HTMLElement | null;
-           if (icon) {
-             icon.classList.add("bounce");
-             setTimeout(() => icon.classList.remove("bounce"), 250);
-           }
-         });
-       },
-     });
-   });
+import { defineNuxtPlugin } from "nuxt/app";
+import type { NuxtApp } from "nuxt/app";
+export default defineNuxtPlugin((nuxtApp: NuxtApp) => {
+  nuxtApp.vueApp.directive("bounce-on-click", {
+    mounted(el: HTMLElement) {
+      el.addEventListener("click", () => {
+        const icon = el.querySelector(".bounce-icon-on-click") as HTMLElement | null;
+        if (icon) {
+          icon.classList.add("bounce");
+          setTimeout(() => icon.classList.remove("bounce"), 250);
+        }
+      });
+    },
+  });
+});
