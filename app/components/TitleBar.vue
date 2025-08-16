@@ -1,4 +1,3 @@
-<!-- styles for drag region moved to scoped CSS file -->
 <!-- 
   components/TitleBar.vue @preserve 
 -->

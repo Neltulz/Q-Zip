@@ -1,11 +1,5 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
-<!-- 
-  FileTable.vue @preserve
--->
-<!-- components/FileTable.vue @preserve -->
-<!-- 
-  FileTable.vue @preserve
--->
+<!-- app/components/FileTable.vue @preserve -->
 <!--
   RECOMMENDATIONS FOR IMPROVEMENT:
   1. COMPONENT DECOMPOSITION
@@ -58,12 +52,16 @@
      - Document component props and events
      - Add usage examples and best practices
      - Document performance considerations
-  6. ACCESSIBILITY
-     - Add more ARIA labels and descriptions
-     - Improve keyboard navigation (Tab, Arrow keys)
-     - Add screen reader announcements for state changes
-     - Ensure proper focus management
-  7. UI/UX ENHANCEMENTS
+     6. ACCESSIBILITY
+      - Add more ARIA labels and descriptions
+      - Improve keyboard navigation (Tab, Arrow keys)
+      - Add screen reader announcements for state changes
+      - Ensure proper focus management
+      - [Important (3)] Implement proper CTRL+A behavior in checkbox mode when auto-check is disabled
+        * When using CTRL+A and checkbox mode is enabled, but auto-check on select is disabled, 
+          the shortcut should select the rows, not check them
+        * Currently, CTRL+A behavior needs to be implemented to handle this case properly
+   7. UI/UX ENHANCEMENTS
      - Add fancy animations/highlights to job selectors that have notifications above them
      - Consider pulse effects, glow animations, or attention-grabbing visual cues
      - Implement smooth transitions for notification states
@@ -1952,6 +1950,7 @@ watch(
 // Handle keyboard navigation
 const handleKeyDown = (event: KeyboardEvent) => {
   if (!isActive.value || sortedFiles.value.length === 0) return;
+  
   switch (event.key) {
     case 'ArrowUp':
       event.preventDefault();
