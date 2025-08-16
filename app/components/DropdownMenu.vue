@@ -102,7 +102,7 @@
 <!-- #endregion -->
 <!-- #region script -->
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, useSlots, watch, type CSSProperties, type PropType, type Ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, useSlots, watch, type CSSProperties, type PropType, type Ref } from "vue";
 import { useDropdownManager, type Dropdown } from "@/composables/dropdownManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logInteraction, logTrace, logWarning, logManagerAction } from "@/utils/loggers";
@@ -182,9 +182,14 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  onButtonClick: {
+    type: Function as PropType<(event: MouseEvent) => boolean | void>,
+    default: undefined,
+  },
 });
 const emit = defineEmits<{
   'dropdown-opened': [];
+      'action-button-activated': [buttonData: { dataName: string | undefined, btnTheme: string | undefined, text: string | undefined }]
 }>();
 const themeStore = useThemeStore();
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
@@ -498,6 +503,16 @@ const closeDropdown = (): void => {
 };
 const handleButtonClick = async (event?: MouseEvent): Promise<void> => {
   if (props.disabled || !hasSlotContent) return;
+  
+  // Call custom button click handler if provided
+  if (props.onButtonClick && event) {
+    const result = props.onButtonClick(event);
+    // If the handler returns true, prevent default dropdown behavior
+    if (result === true) {
+      return;
+    }
+  }
+  
   cancelSubmenuClosure();
   if (openTimeoutId.value) {
     clearTimeout(openTimeoutId.value);
@@ -569,20 +584,110 @@ const handleContentMouseLeave = (): void => {
     scheduleSubmenuClosure();
   }
 };
+
+// ESC key handler to close dropdown and Enter key handler for default action
+const handleKeyDown = (event: KeyboardEvent): void => {
+  if (DEBUG && debugConfig.logUIInteractivity) {
+    logInteraction("DropdownMenu", `handleKeyDown called - key: ${event.key}, isOpen: ${isOpen.value}, dropdownName: ${props.dropdownDataName}`);
+  }
+  
+  if (event.key === 'Escape' && isOpen.value) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (DEBUG && debugConfig.logUIInteractivity) {
+      logInteraction("DropdownMenu", `ESC key detected, closing dropdown "${props.dropdownDataName}"`);
+    }
+    closeDropdown();
+  } else if (event.key === 'Enter' && isOpen.value) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (DEBUG && debugConfig.logUIInteractivity) {
+      logInteraction("DropdownMenu", `Enter key detected, looking for default action button in "${props.dropdownDataName}"`);
+    }
+    
+    // Find the default action button (usually the primary action like "Remove Job")
+    const content = dropdownContent.value;
+    if (content) {
+      if (DEBUG && debugConfig.logUIInteractivity) {
+        logInteraction("DropdownMenu", `Found dropdown content, searching for action buttons`);
+        
+        // Debug: log all buttons in the dropdown
+        const allButtons = content.querySelectorAll('.custom-button');
+        const allButtonInfo = Array.from(allButtons).map(btn => ({
+          dataName: btn.getAttribute('data-name'),
+          btnTheme: btn.getAttribute('btn-theme'),
+          text: btn.textContent?.trim(),
+          className: btn.className
+        }));
+        logInteraction("DropdownMenu", `All buttons in dropdown: ${JSON.stringify(allButtonInfo)}`);
+      }
+      
+      // Look for a button with btn-theme="danger" or the first action button
+      // Try multiple selectors to ensure we find the right button
+      let actionButtons = content.querySelectorAll('.custom-button[btn-theme="danger"]');
+      if (actionButtons.length === 0) {
+        actionButtons = content.querySelectorAll('.custom-button[data-name*="confirm"]');
+      }
+      if (actionButtons.length === 0) {
+        actionButtons = content.querySelectorAll('.custom-button[data-name*="remove"]');
+      }
+      if (actionButtons.length === 0) {
+        // Fallback: look for any button with danger theme or confirm/remove in data-name
+        actionButtons = content.querySelectorAll('.custom-button[btn-theme="danger"], .custom-button[data-name*="confirm"], .custom-button[data-name*="remove"]');
+      }
+      
+      if (DEBUG && debugConfig.logUIInteractivity) {
+        const buttonInfo = Array.from(actionButtons).map(btn => ({
+          dataName: btn.getAttribute('data-name'),
+          btnTheme: btn.getAttribute('btn-theme'),
+          text: btn.textContent?.trim()
+        }));
+        logInteraction("DropdownMenu", `Found ${actionButtons.length} action buttons: ${JSON.stringify(buttonInfo)}`);
+      }
+      
+      if (actionButtons.length > 0) {
+        const defaultButton = actionButtons[0] as HTMLElement;
+        const dataName = defaultButton.getAttribute('data-name') || '';
+        const btnTheme = defaultButton.getAttribute('btn-theme') || '';
+        const text = defaultButton.textContent?.trim() || '';
+        
+        if (DEBUG && debugConfig.logUIInteractivity) {
+          logInteraction("DropdownMenu", `Emitting action-button-activated event - dataName: ${dataName}, btnTheme: ${btnTheme}, text: ${text}`);
+        }
+        
+        // Emit custom event instead of calling click() to bypass dropdownManager
+        emit('action-button-activated', { dataName, btnTheme, text });
+      } else {
+        if (DEBUG && debugConfig.logUIInteractivity) {
+          logInteraction("DropdownMenu", `No action buttons found for Enter key`);
+        }
+      }
+    } else {
+      if (DEBUG && debugConfig.logUIInteractivity) {
+        logInteraction("DropdownMenu", `No dropdown content found for Enter key`);
+      }
+    }
+  }
+};
 watch(isOpen, (newIsOpen: boolean): void => {
   if (debugConfig.logDropdownEvents)
     logInteraction("DropdownMenu", `Visibility changed for "${props.dropdownDataName}" to ${newIsOpen}`);
   if (newIsOpen) {
     adjustDropdownPosition();
     window.addEventListener("resize", adjustDropdownPosition);
+    // Add ESC key listener when dropdown opens
+    document.addEventListener("keydown", handleKeyDown);
   } else {
     window.removeEventListener("resize", adjustDropdownPosition);
+    // Remove ESC key listener when dropdown closes
+    document.removeEventListener("keydown", handleKeyDown);
     logManagerAction("DropdownMenu", `About to unregister dropdown: ${props.dropdownDataName}`);
     unregisterDropdown(dropdownId);
   }
 });
 onUnmounted((): void => {
   window.removeEventListener("resize", adjustDropdownPosition);
+  document.removeEventListener("keydown", handleKeyDown);
   if (openTimeoutId.value) clearTimeout(openTimeoutId.value);
   if (isOpen.value) unregisterDropdown(dropdownId);
 });

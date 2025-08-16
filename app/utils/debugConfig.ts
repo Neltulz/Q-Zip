@@ -49,7 +49,11 @@ export const debugConfig: Record<string, boolean> = {
   // Logs events related to the Vue rendering lifecycle.
   logRenderingEvents: false,
   // Logs events related to UI interactivity and responsiveness.
-  logUIInteractivity: false,
+  logUIInteractivity: true,
+  // Logs component attribute inheritance issues and Vue warnings.
+  logComponentAttributes: true,
+  // Logs Vue warnings and component inheritance issues.
+  logVueWarnings: true,
 };
 // Helper to toggle all logging flags at runtime. This updates the master DEBUG
 // flag and flips every individual debugConfig flag to the provided value.

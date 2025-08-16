@@ -418,14 +418,22 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
 .confirmation-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: flex-start;
   gap: 8px;
   padding-block: 8px;
   padding-inline: 16px;
 }
 
-.confirmation-actions .custom-button {
+.confirmation-actions :deep(.custom-button) {
   width: fit-content;
   min-width: 80px;
   flex-shrink: 0;
   flex-grow: 0;
+  max-width: fit-content;
+  flex-basis: auto;
+  align-self: flex-start;
+  /* Override any potential width inheritance */
+  width: auto;
+  /* Ensure the button doesn't stretch */
+  display: inline-flex;
 }

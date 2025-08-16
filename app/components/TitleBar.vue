@@ -7,7 +7,7 @@
   Description: This component defines the application's title bar, including
   the app menu, navigation buttons, and window controls. It now dynamically
   disables navigation buttons when the 'welcome' layout is active, uses
-  the modalsStore to open modals for user interaction, and prevents the
+  the modalsStore to open modals for user interaction, and prevents the 
   default system context menu from appearing on right-click. It now correctly
   closes all dropdown menus when a theme is selected or the app is exited.
 -->
@@ -160,7 +160,7 @@
             :target="mainMenuTooltipTarget"
             placement="bottom-start"
           />
-          <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.16-dev</span></span>
+          <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.16</span></span>
         </div>
           <div class="center-nav-btns" :class="{ disabled: isWelcomeLayout }">
           <CustomButton

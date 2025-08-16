@@ -401,6 +401,18 @@ export const useJobsStore = defineStore(
         console.log(`Moved job from index ${fromIndex} to ${toIndex}`);
       }
     }
+    function clearJob(jobId: number): void {
+      const job = jobs.value.find((j) => j.id === jobId);
+      if (job) {
+        // Clear all files from the job
+        job.files = [];
+        // Reset job-specific settings to empty object (will inherit from global settings)
+        job.settings = {};
+        if (DEBUG && debugConfig.logStoreActions) {
+          console.log(`Cleared job ${jobId}: removed all files and reset settings`);
+        }
+      }
+    }
     async function createJobsFromPaths(paths: string[]): Promise<void> {
       const newJobIds: number[] = [];
       for (const path of paths) {
@@ -433,6 +445,7 @@ export const useJobsStore = defineStore(
       moveFilesBetweenJobs,
       copyFilesToJob,
       moveJob,
+      clearJob,
       createJobsFromPaths,
       cancelCurrentOperation,
       pauseCurrentOperation,

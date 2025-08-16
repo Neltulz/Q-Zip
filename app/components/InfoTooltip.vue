@@ -18,22 +18,26 @@
   - Automatically flips/offsets/shifts to stay in view and renders a styled arrow
     pointing at the target element.
   - Uses a lightweight fade transition and high-contrast, blurred backdrop styling.
+  - Supports keyboard shortcut display with a keyboard icon.
   Key features:
   - Teleport to body for layering reliability
   - Smart positioning (offset, flip, shift, arrow)
   - Simple text mode with shortcut extraction
   - Rich details mode for notification/message details
   - Conditional rendering - only mounts in DOM when visible
+  - Keyboard shortcut slot with icon
   Props:
   - visible: boolean — Controls visibility and DOM mounting
   - content: TooltipContent (NotificationMessageDetails | { text: string }) — What to display
   - target: MaybeElement — The reference element for positioning
   - debugForceVisible: boolean — Forces visibility for debugging
+  - keyboardShortcut: string — Optional keyboard shortcut to display with icon
   Example usage:
   <InfoTooltip
     :visible="isTooltipVisible"
-    :content="{ text: 'Copy (Ctrl+C)' }"
+    :content="{ text: 'Copy' }"
     :target="buttonRef"
+    keyboard-shortcut="Ctrl+C"
   />
 -->
 <template>
@@ -54,11 +58,24 @@
         @mouseleave="(event) => emit('mouseleave', event)"
       >
         <div class="tooltip-content">
-          <!-- Display simple text content -->
-          <template v-if="parsedContent">
+          <!-- Display simple text content with optional icon (check first) -->
+          <template v-if="'text' in content && !('filePaths' in content) && content.icon">
+            <div class="info-line tooltip-text-content">
+              <Icon :name="content.icon" class="tooltip-icon" />
+              <span>{{ content.text }}</span>
+            </div>
+          </template>
+          <!-- Display simple text content (legacy parsing) -->
+          <template v-else-if="parsedContent">
             <div class="info-line tooltip-text-content">
               <span>{{ parsedContent.mainText }}</span>
               <span v-if="parsedContent.shortcut" class="shortcut-key-text">{{ parsedContent.shortcut }}</span>
+            </div>
+          </template>
+          <!-- Display simple text content without icon -->
+          <template v-else-if="'text' in content && !('filePaths' in content)">
+            <div class="info-line tooltip-text-content">
+              <span>{{ content.text }}</span>
             </div>
           </template>
           <!-- Display structured notification details -->
@@ -78,6 +95,14 @@
               </ul>
             </div>
           </template>
+          
+          <!-- Keyboard shortcut slot -->
+          <template v-if="keyboardShortcut">
+            <div class="info-line keyboard-shortcut-line">
+              <Icon name="mdi:keyboard" class="keyboard-icon" />
+              <span class="keyboard-shortcut-text">{{ keyboardShortcut }}</span>
+            </div>
+          </template>
         </div>
         <!-- Use an inline SVG for a perfect, styleable arrow -->
         <svg ref="arrowRef" class="tooltip-arrow" :data-side="side" :style="arrowStyle" viewBox="0 0 16 9">
@@ -93,8 +118,9 @@ import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
 import { logUI, logRendering } from "@/utils/loggers";
+import { Icon } from "#components";
 // Allow a simple text property for more generic tooltips
-type TooltipContent = NotificationMessageDetails | { text: string };
+type TooltipContent = NotificationMessageDetails | { text: string; icon?: string };
 const props = defineProps({
   visible: {
     type: Boolean,
@@ -132,6 +158,11 @@ const props = defineProps({
   fallbackPlacements: {
     type: Array as PropType<("top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end")[]>,
     default: () => [],
+  },
+  // Optional keyboard shortcut to display with icon
+  keyboardShortcut: {
+    type: String,
+    default: "",
   },
 });
 // Define emits for mouse events
@@ -283,6 +314,21 @@ const parsedContent = computed(() => {
   }
   return null;
 });
+
+// Debug logging for tooltip content
+const debugTooltipContent = computed(() => {
+  if (DEBUG && debugConfig.logUIInteractivity && props.visible) {
+    logUI("InfoTooltip", "Tooltip content debug", {
+      hasText: 'text' in props.content,
+      hasFilePaths: 'filePaths' in props.content,
+      hasIcon: 'icon' in props.content,
+      content: props.content,
+      parsedContent: parsedContent.value,
+      templateCondition: 'text' in props.content && !('filePaths' in props.content)
+    });
+  }
+  return props.content;
+});
 const arrowStyle = computed(() => {
   const { x, y } = middlewareData.value.arrow || {};
   const currentSide = side.value;
@@ -386,14 +432,14 @@ const getFileName = (path: string) => {
 }
 .info-tooltip {
   position: absolute;
-  z-index: 10001;
+  z-index: 100002;
   background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
   backdrop-filter: blur(10px);
   border: 1px solid var(--brdr-clr-liter);
   border-radius: var(--brdr-rad-smal);
   box-shadow: 0 2px 15px hsla(0, 0%, 0%, 0.5);
   inline-size: max-content;
-  min-inline-size: 150px;
+  min-inline-size: var(--min-tch-tgt);
   max-inline-size: 500px;
   /* Default: don't capture pointer events so tooltips don't block underlying controls */
   pointer-events: none;
@@ -439,6 +485,13 @@ const getFileName = (path: string) => {
       inset-block-start: 1px;
       width: 100%;
       text-align: center;
+      
+      .tooltip-icon {
+        width: 16px;
+        height: 16px;
+        color: var(--txt-clr-liter);
+        flex-shrink: 0;
+      }
     }
     /* Only center the simple text tooltip mode; keep other structured content left-aligned.
        Use a non-nested selector below to target when the root tooltip also has the
@@ -477,6 +530,23 @@ const getFileName = (path: string) => {
           font-style: italic;
           white-space: nowrap;
         }
+      }
+    }
+    .keyboard-shortcut-line {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      margin-block-start: 4px;
+      .keyboard-icon {
+        width: 16px;
+        height: 16px;
+        color: var(--blu-lite); /* Use the blue color from styles.css */
+        flex-shrink: 0;
+      }
+      .keyboard-shortcut-text {
+        font-size: 0.9em;
+        color: var(--blu-lite); /* Use the blue color from styles.css */
+        font-weight: 500;
       }
     }
   }

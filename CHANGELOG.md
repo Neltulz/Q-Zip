@@ -4,6 +4,48 @@
 
 ## Recent Changes
 
+## [0.1.16] - 2025-01-27T21:00:00Z
+
+### Changed
+- **CustomButton Component**: Enhanced with integrated tooltip support using InfoTooltip component for consistent tooltip behavior across the application
+
+### Added
+- **CustomButton Tooltip Integration**: Added built-in tooltip functionality to CustomButton component with props for `showTooltip`, `tooltipText`, and `tooltipPlacement`
+- **Keyboard Shortcut Tooltips**: CustomButton now automatically displays keyboard shortcuts in tooltips when `shortcutText` prop is provided and `showTooltip` is enabled
+- **Enhanced Job Selector UX**: Remove Job and Cancel buttons in job confirmation dropdowns now display their keyboard shortcuts (Esc, Shift+Del) in tooltips
+- **DropdownMenu ESC Key Support**: Added automatic ESC key handling to close any open dropdown menu and backdrop
+- **Tooltip Icon Support**: Added keyboard icon display in tooltips when showing keyboard shortcuts, enhancing visual clarity
+- **Tooltip Template Priority**: Fixed template condition ordering to ensure icon tooltips are displayed correctly over legacy shortcut parsing
+- **SHIFT+Click Job Removal**: Added ability to bypass confirmation dialog by holding SHIFT while clicking the remove job button, providing quick job removal functionality
+- **SHIFT+Del Hotkey Behavior**: Modified SHIFT+Del to open the remove job confirmation dropdown for the currently selected job instead of bypassing confirmation, preventing accidental job deletion
+- **CTRL+SHIFT+Del Force Delete**: Added new hotkey for force removing the currently selected job without confirmation, providing quick deletion for power users
+- **Last Job Protection**: Modified behavior when only one job remains - instead of preventing removal, SHIFT+Click and CTRL+SHIFT+Del now clear the job (remove all files and reset settings) while keeping the job structure intact
+- **Job Clearing Functionality**: Added `clearJob` method to jobsStore for clearing all files and resetting job-specific settings while preserving the job structure
+- **DropdownMenu Enter Key Support**: Added Enter key handling to DropdownMenu component to trigger the default action button (e.g., "Remove Job" button) when the dropdown is active, with enhanced debugging and improved button detection logic
+- **DropdownMenu Custom Event Emission**: Modified DropdownMenu to emit `action-button-activated` events instead of programmatic clicks to bypass dropdownManager interception, enabling proper Enter key functionality
+- **JobSelectorArea Event Handling**: Added `handleActionButtonActivated` function to JobSelectorArea to process custom events from DropdownMenu and handle job removal/clearing logic appropriately
+- **DropdownMenu Custom Click Handler**: Enhanced DropdownMenu component with `onButtonClick` prop to support custom click handling while maintaining dropdown functionality
+
+### Fixed
+- **Tooltip Z-Index Layering**: Fixed InfoTooltip appearing behind dropdown menus by increasing z-index to 100002 (above dropdown z-index of 100001)
+- **Duplicate Keyboard Shortcuts**: Fixed CustomButton showing keyboard shortcuts both in button text and tooltip - now only shows in tooltip when `showTooltip` is enabled
+- **InfoTooltip Min-Width**: Updated InfoTooltip to use `var(--min-tch-tgt)` for consistent minimum touch target sizing
+- **Button Flex-Grow Issue**: Fixed Remove Job and Cancel buttons growing to fill available space using `:deep()` selector for proper specificity without `!important` declarations
+- **TypeScript Error in JobSelectorArea**: Fixed type error where `buttonData.dataName` (string | undefined) was being used in template literals without proper null coalescing
+- **Vue Component Emits**: Added proper emits declaration to CustomButton component to resolve Vue warnings about non-emits event listeners (click, contextmenu, dragover, dragleave, drop, mouseenter, mouseleave)
+- **Enhanced Debugging**: Added comprehensive logging for component attribute inheritance issues and Vue warnings to help diagnose attribute binding problems
+- **Vue Warning Interception**: Created plugin to intercept and log Vue warnings about non-props attributes and non-emits event listeners
+- **Vue Watch Source Warning**: Fixed CustomButton component Vue warnings about invalid watch sources by wrapping `attrs` in a getter function for proper reactive watching
+- **Vue Attribute Inheritance Warning**: Fixed CustomButton component Vue warnings about extraneous non-props attributes by wrapping template in a single root element with `display: contents` to maintain layout while enabling proper attribute inheritance
+
+### Technical Details
+- **Version Update**: Incremented patch version from 0.1.15 to 0.1.16
+  - Updated version display in `app/components/TitleBar.vue` to `v0.1.16`
+  - Updated version in `src-tauri/Cargo.toml` to `0.1.16`
+  - Updated version in `src-tauri/tauri.conf.json` to `0.1.16`
+
+---
+
 ## [0.1.15] - 2025-01-27T20:00:00Z
 
 ### Changed

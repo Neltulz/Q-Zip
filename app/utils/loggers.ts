@@ -153,13 +153,13 @@ export const logTrace = (callerName: string, message: string): void => {
   }
 };
 // --- Logger for Developer Warnings ---
-const warningStyle: string = `${baseStyle} background-color: #ff9800; color: black;`; // Bright Orange
+const devWarningStyle: string = `${baseStyle} background-color: #ff9800; color: black;`; // Bright Orange
 export const logWarning = (callerName: string, message: string, data?: unknown): void => {
   if (DEBUG && debugConfig.logMissingPropWarnings) {
     if (data) {
-      console.warn(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, warningStyle, data);
+      console.warn(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, devWarningStyle, data);
     } else {
-      console.warn(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, warningStyle);
+      console.warn(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, devWarningStyle);
     }
   }
 };
@@ -226,6 +226,30 @@ export const logFocus = (callerName: string, message: string, data?: unknown): v
       console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, focusStyle, data);
     } else {
       console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, focusStyle);
+    }
+  }
+};
+
+// --- Logger for Component Attribute Issues ---
+const attributeStyle: string = `${baseStyle} background-color: #795548; color: white;`; // Brown
+export const logComponentAttributes = (callerName: string, message: string, data?: unknown): void => {
+  if (DEBUG && debugConfig.logComponentAttributes) {
+    if (data) {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, attributeStyle, data);
+    } else {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, attributeStyle);
+    }
+  }
+};
+
+// --- Logger for Vue Warnings ---
+const warningStyle: string = `${baseStyle} background-color: #ff9800; color: black;`; // Orange
+export const logVueWarning = (callerName: string, message: string, data?: unknown): void => {
+  if (DEBUG && debugConfig.logVueWarnings) {
+    if (data) {
+      console.warn(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, warningStyle, data);
+    } else {
+      console.warn(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, warningStyle);
     }
   }
 };
