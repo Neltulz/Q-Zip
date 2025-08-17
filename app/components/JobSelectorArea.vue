@@ -48,7 +48,7 @@
             @dragleave="handleDragLeave"
             @drop.prevent="handleJobTabDrop($event, job.id)"
             @mouseenter="handleJobMouseEnter(job.id)"
-            @mouseleave="handleJobMouseLeave()"
+            @mouseleave="handleJobMouseLeave"
           >
             <span class="job-sel-icon">
               <Icon name="mdi:briefcase" size="20" />
@@ -156,7 +156,7 @@
                <InfoTooltip
                  :visible="tooltipManager.activeTooltipId.value === 'remove-job-' + job.id"
                  :content="{ text: 'Remove Job' }"
-                 :target="removeJobDropdownRefs.get(job.id)?.$el?.querySelector('.visual-style')"
+                 :target="removeJobDropdownRefs.get(job.id)?.$el"
                  placement="bottom"
                  keyboardShortcut="Shift+Del"
                />
@@ -268,7 +268,7 @@
       <div
         class="job-selector-btns-start"
         @mouseenter="handleAddJobMouseEnter()"
-        @mouseleave="handleAddJobMouseLeave()"
+        @mouseleave="handleAddJobMouseLeave"
       >
         <CustomButton
           ref="addJobButtonRef"
@@ -342,7 +342,7 @@
            placement="bottom-end"
            :show-cancel-button="true"
            @mouseenter="handleExtraOptionsMouseEnter()"
-           @mouseleave="handleExtraOptionsMouseLeave()"
+           @mouseleave="handleExtraOptionsMouseLeave"
            @click="tooltipManager.hideTooltip()"
          >
            <template #default="{ close }">
@@ -412,7 +412,7 @@ import { useScrollContainer } from "@/composables/useScrollContainer";
 import { useTooltipManager } from "@/composables/useTooltipManager";
 import { useDropdownManager } from "@/composables/dropdownManager";
 import { useButtonTooltip } from "@/composables/useButtonTooltip";
-import { logDragDropEvent, logUI, logManagerAction, logNotification, logGlobalEvent } from "@/utils/loggers";
+import { logDragDropEvent, logUI, logManagerAction, logNotification, logGlobalEvent, logHover, logTooltip } from "@/utils/loggers";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 interface ScrollableOverlayScrollbars extends OverlayScrollbars {
   scroll: (destination: { x?: string | number; y?: string | number }, duration?: number) => void;
@@ -983,29 +983,121 @@ const openOperationConfirmModal = (
   );
 };
 const handleJobMouseEnter = (jobId: number): void => {
+  logHover("JobSelectorArea", `Job mouse enter for job ${jobId}`, { jobId });
   tooltipManager.showTooltip('job-' + jobId);
 };
-const handleJobMouseLeave = (): void => {
+const handleJobMouseLeave = (event?: MouseEvent): void => {
+  logHover("JobSelectorArea", `Job mouse leave`, { 
+    hasEvent: !!event,
+    relatedTarget: event?.relatedTarget,
+    currentTarget: event?.currentTarget,
+    containsRelatedTarget: event ? (event.currentTarget as HTMLElement)?.contains(event.relatedTarget as HTMLElement) : false
+  });
+  
+  // If no event provided, hide the tooltip
+  if (!event) {
+    tooltipManager.hideTooltip();
+    return;
+  }
+  
+  // Check if the mouse is moving to a child element within the same job selector button
+  const relatedTarget = event.relatedTarget as HTMLElement | null;
+  const currentTarget = event.currentTarget as HTMLElement;
+  
+  // If the related target is still within the current job selector button, don't hide the tooltip
+  if (relatedTarget && currentTarget.contains(relatedTarget)) {
+    logHover("JobSelectorArea", `Not hiding tooltip - mouse still within job selector button`, { relatedTarget, currentTarget });
+    return;
+  }
+  
+  logHover("JobSelectorArea", `Hiding tooltip - mouse left job selector button`, { relatedTarget, currentTarget });
   tooltipManager.hideTooltip();
 };
 const handleAddJobMouseEnter = (): void => {
   tooltipManager.showTooltip('add-job');
 };
-const handleAddJobMouseLeave = (): void => {
+const handleAddJobMouseLeave = (event?: MouseEvent): void => {
+  // If no event provided, hide the tooltip
+  if (!event) {
+    tooltipManager.hideTooltip();
+    return;
+  }
+  
+  // Check if the mouse is moving to a child element within the same button
+  const relatedTarget = event.relatedTarget as HTMLElement | null;
+  const currentTarget = event.currentTarget as HTMLElement;
+  
+  // If the related target is still within the current button, don't hide the tooltip
+  if (relatedTarget && currentTarget.contains(relatedTarget)) {
+    return;
+  }
+  
   tooltipManager.hideTooltip();
 };
+
 const handleExtraOptionsMouseEnter = (): void => {
   tooltipManager.showTooltip('job-selector-options');
 };
-const handleExtraOptionsMouseLeave = (): void => {
+
+const handleExtraOptionsMouseLeave = (event?: MouseEvent): void => {
+  // If no event provided, hide the tooltip
+  if (!event) {
+    tooltipManager.hideTooltip();
+    return;
+  }
+  
+  // Check if the mouse is moving to a child element within the same button
+  const relatedTarget = event.relatedTarget as HTMLElement | null;
+  const currentTarget = event.currentTarget as HTMLElement;
+  
+  // If the related target is still within the current button, don't hide the tooltip
+  if (relatedTarget && currentTarget.contains(relatedTarget)) {
+    return;
+  }
+  
   tooltipManager.hideTooltip();
 };
 
 const handleRemoveJobButtonMouseEnter = (jobId: number): void => {
+  logHover("JobSelectorArea", `Remove job button mouse enter for job ${jobId}`, { jobId });
   tooltipManager.showTooltip('remove-job-' + jobId);
 };
 
-const handleRemoveJobButtonMouseLeave = (): void => {
+const handleRemoveJobButtonMouseLeave = (event?: MouseEvent): void => {
+  logHover("JobSelectorArea", `Remove job button mouse leave`, { 
+    hasEvent: !!event,
+    relatedTarget: event?.relatedTarget,
+    currentTarget: event?.currentTarget,
+    containsRelatedTarget: event ? (event.currentTarget as HTMLElement)?.contains(event.relatedTarget as HTMLElement) : false
+  });
+  
+  // If no event provided, hide the tooltip
+  if (!event) {
+    tooltipManager.hideTooltip();
+    return;
+  }
+  
+  // Check if the mouse is moving to a child element within the same button
+  const relatedTarget = event.relatedTarget as HTMLElement | null;
+  const currentTarget = event.currentTarget as HTMLElement;
+  
+  // If the related target is still within the current button, don't hide the tooltip
+  if (relatedTarget && currentTarget.contains(relatedTarget)) {
+    logHover("JobSelectorArea", `Not hiding remove job tooltip - mouse still within button`, { relatedTarget, currentTarget });
+    return;
+  }
+  
+  // Special case: if we're moving from the close button back to the job selector button,
+  // don't hide the tooltip because the job selector button will handle it
+  if (relatedTarget && relatedTarget.classList.contains('job-selector')) {
+    logHover("JobSelectorArea", `Moving from close button to job selector - not hiding tooltip`, { 
+      relatedTarget: relatedTarget,
+      currentTarget: currentTarget
+    });
+    return;
+  }
+  
+  logHover("JobSelectorArea", `Hiding remove job tooltip - mouse left button`, { relatedTarget, currentTarget });
   tooltipManager.hideTooltip();
 };
 

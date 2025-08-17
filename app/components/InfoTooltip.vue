@@ -118,7 +118,7 @@ import { ref, computed, toRef, watch, nextTick, type PropType } from "vue";
 import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
-import { logUI, logRendering } from "@/utils/loggers";
+import { logUI, logRendering, logTooltip } from "@/utils/loggers";
 // Allow a simple text property for more generic tooltips
 type TooltipContent = NotificationMessageDetails | { text: string; icon?: string };
 const props = defineProps({
@@ -181,9 +181,14 @@ const shouldRender = computed(() => {
 // `.visual-style` element when available so tooltips anchor to the visible surface.
 const resolvedTarget = computed(() => {
   const raw = (props as any).target;
-  if (!raw) return null;
+  if (!raw) {
+    logTooltip("InfoTooltip", "No target provided", { target: props.target });
+    return null;
+  }
+  
   // Unwrap refs if necessary
   const maybe = raw && (raw.value !== undefined ? raw.value : raw);
+  
   // If a component instance exposing `visualStyleRef` was passed, use that
   if (maybe && typeof maybe === "object") {
     // Component proxy exposing a ref
@@ -193,21 +198,32 @@ const resolvedTarget = computed(() => {
       if (typeof vsRef === "function") {
         try {
           const el = vsRef();
-          if (el instanceof Element) return el;
+          if (el instanceof Element) {
+            logTooltip("InfoTooltip", "Resolved target via function", { element: el, target: props.target });
+            return el;
+          }
         } catch (e) {
-          /* ignore */
+          logTooltip("InfoTooltip", "Error calling visual style function", { error: e, target: props.target });
         }
       } else if (vsRef.value instanceof Element) {
+        logTooltip("InfoTooltip", "Resolved target via ref value", { element: vsRef.value, target: props.target });
         return vsRef.value;
       }
     }
   }
+  
   // If an Element was passed, prefer its `.visual-style` child when present
   if (maybe instanceof Element) {
     const inner = (maybe as Element).querySelector?.(".visual-style");
-    if (inner) return inner as Element;
+    if (inner) {
+      logTooltip("InfoTooltip", "Resolved target via .visual-style child", { element: inner, parent: maybe, target: props.target });
+      return inner as Element;
+    }
+    logTooltip("InfoTooltip", "Resolved target directly as Element", { element: maybe, target: props.target });
     return maybe as Element;
   }
+  
+  logTooltip("InfoTooltip", "Could not resolve target", { raw, maybe, target: props.target });
   return null;
 });
 // Transition handlers for smooth enter/leave animations
@@ -229,26 +245,28 @@ const onLeave = (el: Element) => {
 watch(
   () => props.visible,
   (v) => {
-    // Disabled logging for InfoTooltip
-    // logUI("InfoTooltip", "Visibility changed", { visible: v, interactive: props.interactive });
+    logTooltip("InfoTooltip", `Visibility changed to ${v}`, { 
+      visible: v, 
+      interactive: props.interactive,
+      content: props.content,
+      placement: props.placement
+    });
     if (v) {
       try {
         const el = resolvedTarget.value as Element | null;
         if (el) {
-          // Disabled logging for InfoTooltip
-          // logUI("InfoTooltip", "Resolved target element", { 
-          //   element: el, 
-          //   rect: el.getBoundingClientRect(),
-          //   placement: props.placement,
-          //   fallbackPlacements: props.fallbackPlacements
-          // });
+          logTooltip("InfoTooltip", "Resolved target element", { 
+            element: el, 
+            rect: el.getBoundingClientRect(),
+            placement: props.placement,
+            fallbackPlacements: props.fallbackPlacements,
+            target: props.target
+          });
         } else {
-          // Disabled logging for InfoTooltip
-          // logUI("InfoTooltip", "No resolved target");
+          logTooltip("InfoTooltip", "No resolved target", { target: props.target });
         }
       } catch (e) {
-        // Disabled logging for InfoTooltip
-        // logUI("InfoTooltip", "Error resolving target", { error: e });
+        logTooltip("InfoTooltip", "Error resolving target", { error: e, target: props.target });
       }
     }
   }
@@ -422,162 +440,11 @@ const getFileName = (path: string) => {
 </script>
 
 <style scoped>
-/* Transition animations for smooth enter/leave */
-.tooltip-fade-enter-active,
-.tooltip-fade-leave-active {
-  transition: opacity 240ms cubic-bezier(0.2, 0, 0, 1);
-}
-.tooltip-fade-enter-from,
-.tooltip-fade-leave-to {
-  opacity: 0;
-}
-.info-tooltip {
-  position: absolute;
-  z-index: 100002;
-  background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--brdr-clr-liter);
-  border-radius: var(--brdr-rad-smal);
-  box-shadow: 0 2px 15px hsla(0, 0%, 0%, 0.5);
-  inline-size: max-content;
-  min-inline-size: var(--min-tch-tgt);
-  max-inline-size: 500px;
-  /* Default: don't capture pointer events so tooltips don't block underlying controls */
-  pointer-events: none;
-  white-space: nowrap;
-  display: flex;
-  align-items: flex-start;
-  padding-block: 6px;
-  padding-inline: 10px;
-  .tooltip-arrow {
-    position: absolute;
-    inline-size: 16px;
-    block-size: 9px;
-    /* Ensure arrow is properly centered and positioned */
-    transform-origin: center;
-    /* Prevent any layout shifts */
-    pointer-events: none;
-    path {
-      fill: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
-      stroke: var(--brdr-clr-liter);
-      stroke-width: 1px;
-      /* Ensure the path is centered within the SVG */
-      vector-effect: non-scaling-stroke;
-    }
-    &[data-side="bottom"] {
-      transform: rotate(180deg);
-    }
-    &[data-side="left"] {
-      transform: rotate(-90deg);
-    }
-    &[data-side="right"] {
-      transform: rotate(90deg);
-    }
-  }
-  .tooltip-content {
-    font-size: 1em;
-    color: var(--txt-clr-liter);
-    .tooltip-text-content {
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 0.5em;
-      position: relative;
-      inset-block-start: 1px;
-      width: 100%;
-      text-align: left;
-      
-      .tooltip-icon {
-        width: 16px;
-        height: 16px;
-        color: var(--txt-clr-liter);
-        flex-shrink: 0;
-      }
-    }
-    /* Only center the simple text tooltip mode; keep other structured content left-aligned.
-       Use a non-nested selector below to target when the root tooltip also has the
-       `simple-tooltip` class (the previous nested selector was not matching). */
-    .info-line {
-      margin-block-end: 4px;
-    }
-    hr {
-      border: none;
-      border-block-start: 1px solid var(--brdr-clr);
-      margin-block: 6px;
-      margin-inline: 0;
-    }
-    .file-list-container {
-      max-block-size: 200px;
-      overflow-y: auto;
-    }
-    .file-list {
-      list-style: none;
-      padding-inline-start: 12px;
-      margin-block-start: 4px;
-      margin-block-end: 0;
-      margin-inline: 0;
-      display: grid;
-      gap: 2px;
-      li {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 8px;
-        .file-name {
-          white-space: normal;
-          word-break: break-all;
-        }
-        .reason {
-          color: var(--txt-clr-dark);
-          font-style: italic;
-          white-space: nowrap;
-        }
-      }
-    }
-    .keyboard-shortcut-line {
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 0.5em;
-      margin-block-start: 4px;
-      .keyboard-icon {
-        width: 16px;
-        height: 16px;
-        color: var(--blu-lite); /* Use the blue color from styles.css */
-        flex-shrink: 0;
-      }
-      .keyboard-shortcut-text {
-        font-size: 0.9em;
-        color: var(--blu-lite); /* Use the blue color from styles.css */
-        font-weight: 500;
-      }
-    }
-  }
+/* 
+  IMPORTANT: All tooltip CSS has been moved to app/components/info-tooltip-comp/info-tooltip.scoped.css
+  DO NOT add any CSS here - add it to the dedicated CSS file instead.
   
-  /* More specific selectors to override inherited color */
-  .keyboard-shortcut-line .keyboard-icon {
-    color: var(--blu-lite);
-  }
-  
-  .keyboard-shortcut-line .keyboard-shortcut-text {
-    color: var(--blu-lite);
-  }
-}
-/* Only when it's visible AND interactive should it get pointer events */
-.info-tooltip.interactive {
-  pointer-events: auto;
-}
-/* For simple-text tooltips, left-align the content */
-.info-tooltip.simple-tooltip {
-  justify-content: flex-start;
-  text-align: left;
-}
-
-/* Ensure tooltip content is left-aligned */
-.info-tooltip .tooltip-content {
-  text-align: left;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
+  CSS file location: app/components/info-tooltip-comp/info-tooltip.scoped.css
+*/
+@import './info-tooltip-comp/info-tooltip.scoped.css';
 </style>

@@ -4,6 +4,24 @@
 
 ## Recent Changes
 
+## [0.1.18] - 2025-01-27T23:00:00Z
+
+### Changed
+- **Tooltip Functionality**: Enhanced tooltip functionality and logging across components for improved debugging and user interaction tracking
+- **CSS Organization**: Refined CSS styles for tooltips and buttons, including relocation of tooltip styles to dedicated CSS files for better organization
+
+### Added
+- **Detailed Hover and Tooltip Logging**: Integrated comprehensive logging in CustomButton, DropdownMenu, and InfoTooltip components to track user interactions and improve debugging capabilities
+- **Enhanced Mouse Event Handlers**: Updated mouse event handlers in JobSelectorArea to manage tooltip visibility more effectively, ensuring tooltips remain visible when interacting with related elements
+
+### Fixed
+- *Development work in progress...*
+
+### Technical Details
+- **Version Update**: Incremented version number to 0.1.18 in configuration files to reflect ongoing development
+
+---
+
 ## [0.1.17] - 2025-01-27T22:00:00Z
 
 ### Changed

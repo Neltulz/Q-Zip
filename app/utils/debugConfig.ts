@@ -56,6 +56,10 @@ export const debugConfig: Record<string, boolean> = {
   logVueWarnings: false,
   // Logs keyboard events and combinations with intelligent filtering.
   logKeyboardEvents: false,
+  // Logs mouse hover events for debugging tooltip issues.
+  logHoverEvents: true,
+  // Logs tooltip visibility and positioning events.
+  logTooltipEvents: true,
 };
 // Helper to toggle all logging flags at runtime. This updates the master DEBUG
 // flag and flips every individual debugConfig flag to the provided value.

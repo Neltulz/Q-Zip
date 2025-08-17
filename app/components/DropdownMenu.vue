@@ -105,7 +105,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, useSlots, watch, type CSSProperties, type PropType, type Ref } from "vue";
 import { useDropdownManager, type Dropdown } from "@/composables/dropdownManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-import { logInteraction, logTrace, logWarning, logManagerAction } from "@/utils/loggers";
+import { logInteraction, logTrace, logWarning, logManagerAction, logHover } from "@/utils/loggers";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
 import CustomButton from "./CustomButton.vue";
@@ -534,6 +534,14 @@ const handleButtonClick = async (event?: MouseEvent): Promise<void> => {
   }
 };
 const handleMouseEnter = (event?: MouseEvent): void => {
+  logHover("DropdownMenu", `Mouse enter on dropdown ${props.dropdownDataName}`, {
+    dropdownDataName: props.dropdownDataName,
+    isSubmenu: props.isSubmenu,
+    isOpen: isOpen.value,
+    event: event,
+    currentTarget: event?.currentTarget
+  });
+  
   cancelSubmenuClosure();
   if (props.isSubmenu) {
     if (openTimeoutId.value) clearTimeout(openTimeoutId.value);
@@ -570,7 +578,16 @@ const handleMouseEnter = (event?: MouseEvent): void => {
     openDropdown({ anchorEl });
   }
 };
-const handleMouseLeave = (): void => {
+const handleMouseLeave = (event?: MouseEvent): void => {
+  logHover("DropdownMenu", `Mouse leave on dropdown ${props.dropdownDataName}`, {
+    dropdownDataName: props.dropdownDataName,
+    isSubmenu: props.isSubmenu,
+    isOpen: isOpen.value,
+    event: event,
+    currentTarget: event?.currentTarget,
+    relatedTarget: event?.relatedTarget
+  });
+  
   if (props.isSubmenu) {
     if (openTimeoutId.value) clearTimeout(openTimeoutId.value);
     scheduleSubmenuClosure();

@@ -1,6 +1,7 @@
 /* 
   "components/custom-button-comp/custom-button.scoped.css" --for-- "components/CustomButton.vue" 
 */
+/* Main button container - <button class="custom-button"> */
 .custom-button {
   /* Base Styles */
   align-items: center;
@@ -21,21 +22,26 @@
   text-decoration: none;
   transition: all var(--btn-trans-dur-end) ease;
   z-index: 0;
-  /* Remove padding for icon-only buttons */
+  
+  /* .custom-button:has(> .button-content:empty) - Remove padding for icon-only buttons */
   &:has(> .button-content:empty) {
     padding: 0;
   }
-  /* States */
+  
+  /* .custom-button:disabled, .custom-button.disabled - Disabled state */
   &:disabled,
   &.disabled {
     cursor: default;
     opacity: var(--disabled-opacity);
     pointer-events: none;
   }
+  
+  /* .custom-button:hover - Hover state */
   &:hover {
     cursor: pointer;
   }
-  /* Child Elements */
+  
+  /* .custom-button > .visual-style - Visual style container */
   > .visual-style {
     border: 1px solid transparent; /* Default to flat */
     border-radius: var(--btn-border-radius);
@@ -43,6 +49,8 @@
     inset: var(--visual-style-inset);
     position: absolute;
     transition: all var(--btn-trans-dur-end) ease;
+    
+    /* .custom-button > .visual-style::after - Flash effect pseudo-element */
     &::after {
       backdrop-filter: brightness(1.5);
       border-radius: inherit;
@@ -56,6 +64,8 @@
       z-index: 1000;
     }
   }
+  
+  /* .custom-button > .button-content, .custom-button > .icon-placeholder, .custom-button > .shortcut-text - Content elements */
   > .button-content,
   > .icon-placeholder,
   > .shortcut-text { /* Include new shortcut-text */
@@ -64,6 +74,7 @@
 }
 /* --- Justification and Layout --- */
 /* 1. Set the overall alignment of the grid items within the button */
+/* Main button container - <button class="custom-button"> */
 .custom-button {
   /* Default alignment for 'auto' (no-icon case), icon-only buttons, and 'center' */
   justify-content: center;
@@ -139,36 +150,44 @@
   /* Content only */
   grid-template-columns: 1fr;
 }
+
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .first-icon):has(> .button-content:not(:empty)):not(:has(> .last-icon)):not(:has(> .shortcut-text)) {
   /* First icon + content */
   grid-template-columns: auto 1fr;
 }
+
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):not(:has(> .first-icon)):has(> .button-content:not(:empty)):has(> .last-icon):not(:has(> .shortcut-text)) {
   /* Content + last icon */
   grid-template-columns: 1fr auto;
 }
+
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .first-icon):has(> .button-content:not(:empty)):has(> .last-icon):not(:has(> .shortcut-text)) {
   /* All three parts: first icon, content, and last icon */
   grid-template-columns: auto 1fr auto;
 }
+
 /* New grid definitions for shortcut text */
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .button-content:not(:empty)):has(> .shortcut-text):not(:has(> .first-icon)):not(:has(> .last-icon)) {
   /* Content + shortcut */
   grid-template-columns: 1fr auto;
 }
+
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .first-icon):has(> .button-content:not(:empty)):has(> .shortcut-text):not(:has(> .last-icon)) {
   /* First icon + content + shortcut */
   grid-template-columns: auto 1fr auto;
 }
+
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):not(:has(> .first-icon)):has(> .button-content:not(:empty)):has(> .shortcut-text):has(> .last-icon) {
   /* Content + shortcut + last icon */
   grid-template-columns: 1fr auto auto;
 }
+
 .custom-button:is([data-justify="stretch"], [data-justify="auto"]:has(> .icon-placeholder)):has(> .first-icon):has(> .button-content:not(:empty)):has(> .shortcut-text):has(> .last-icon) {
   /* All four parts: first icon, content, shortcut, last icon */
   grid-template-columns: auto 1fr auto auto;
 }
 /* 3. Justify the text within the .button-content cell */
+/* Button content wrapper - <div class="button-content"> */
 .button-content {
   align-items: center;
   display: inline-flex;
@@ -182,6 +201,7 @@
   justify-content: start;
 }
 /* New: Styles for shortcut text */
+/* Keyboard shortcut text - <div class="shortcut-text"> */
 .shortcut-text {
   color: var(--txt-clr); /* Softer color */
   font-size: 0.9em; /* Larger font size */
@@ -192,218 +212,335 @@
 }
 /* --- THEME SELECTORS --- */
 /* Default Theme */
+/* Default theme button - <button class="custom-button" data-btn-theme="default"> */
 .custom-button[data-btn-theme="default"] {
   color: var(--btn-txt-clr);
+  
+  /* .custom-button[data-btn-theme="default"]:hover - Default theme hover */
+  &:hover {
+    color: var(--btn-txt-hvr-clr);
+  }
+  
+  /* .custom-button[data-btn-theme="default"].active - Default theme active */
+  &.active {
+    color: var(--btn-txt-activ-clr);
+  }
+  
+  /* .custom-button[data-btn-theme="default"] > .visual-style - Default theme visual style */
+  > .visual-style {
+    background-color: var(--btn-bg-clr);
+    
+    /* .custom-button[data-btn-theme="default"]:hover > .visual-style - Default theme hover visual style */
+    .custom-button[data-btn-theme="default"]:hover & {
+      background-color: var(--btn-bg-hvr-clr);
+    }
+    
+    /* .custom-button[data-btn-theme="default"].active > .visual-style - Default theme active visual style */
+    .custom-button[data-btn-theme="default"].active & {
+      background-color: var(--btn-bg-activ-clr);
+    }
+  }
 }
-.custom-button[data-btn-theme="default"]:hover {
-  color: var(--btn-txt-hvr-clr);
-}
-.custom-button[data-btn-theme="default"].active {
-  color: var(--btn-txt-activ-clr);
-}
-.custom-button[data-btn-theme="default"] > .visual-style {
-  background-color: var(--btn-bg-clr);
-}
-.custom-button[data-btn-theme="default"]:hover > .visual-style {
-  background-color: var(--btn-bg-hvr-clr);
-}
-.custom-button[data-btn-theme="default"].active > .visual-style {
-  background-color: var(--btn-bg-activ-clr);
-}
+
 /* Lite Theme */
+/* Lite theme button - <button class="custom-button" data-btn-theme="lite"> */
 .custom-button[data-btn-theme="lite"] {
   color: var(--btn-txt-clr-lite);
-}
-.custom-button[data-btn-theme="lite"]:hover {
-  color: var(--btn-txt-hvr-clr-lite);
-}
-.custom-button[data-btn-theme="lite"].active {
-  color: var(--btn-txt-activ-clr-lite);
-}
-.custom-button[data-btn-theme="lite"] > .visual-style {
-  background-color: var(--btn-bg-clr-lite);
-}
-.custom-button[data-btn-theme="lite"]:hover > .visual-style {
-  background-color: var(--btn-bg-hvr-clr-lite);
-}
-.custom-button[data-btn-theme="lite"].active > .visual-style {
-  background-color: var(--btn-bg-activ-clr-lite);
+  
+  /* .custom-button[data-btn-theme="lite"]:hover - Lite theme hover */
+  &:hover {
+    color: var(--btn-txt-hvr-clr-lite);
+  }
+  
+  /* .custom-button[data-btn-theme="lite"].active - Lite theme active */
+  &.active {
+    color: var(--btn-txt-activ-clr-lite);
+  }
+  
+  /* .custom-button[data-btn-theme="lite"] > .visual-style - Lite theme visual style */
+  > .visual-style {
+    background-color: var(--btn-bg-clr-lite);
+    
+    /* .custom-button[data-btn-theme="lite"]:hover > .visual-style - Lite theme hover visual style */
+    .custom-button[data-btn-theme="lite"]:hover & {
+      background-color: var(--btn-bg-hvr-clr-lite);
+    }
+    
+    /* .custom-button[data-btn-theme="lite"].active > .visual-style - Lite theme active visual style */
+    .custom-button[data-btn-theme="lite"].active & {
+      background-color: var(--btn-bg-activ-clr-lite);
+    }
+  }
 }
 /* Liter Theme */
+/* Liter theme button - <button class="custom-button" data-btn-theme="liter"> */
 .custom-button[data-btn-theme="liter"] {
   color: var(--btn-txt-clr-liter);
-}
-.custom-button[data-btn-theme="liter"]:hover {
-  color: var(--btn-txt-hvr-clr-liter);
-}
-.custom-button[data-btn-theme="liter"].active {
-  color: var(--btn-txt-activ-clr-liter);
-}
-.custom-button[data-btn-theme="liter"] > .visual-style {
-  background-color: var(--btn-bg-clr-liter);
-}
-.custom-button[data-btn-theme="liter"]:hover > .visual-style {
-  background-color: var(--btn-bg-hvr-clr-liter);
-}
-.custom-button[data-btn-theme="liter"].active > .visual-style {
-  background-color: var(--btn-bg-activ-clr-liter);
+  
+  /* .custom-button[data-btn-theme="liter"]:hover - Liter theme hover */
+  &:hover {
+    color: var(--btn-txt-hvr-clr-liter);
+  }
+  
+  /* .custom-button[data-btn-theme="liter"].active - Liter theme active */
+  &.active {
+    color: var(--btn-txt-activ-clr-liter);
+  }
+  
+  /* .custom-button[data-btn-theme="liter"] > .visual-style - Liter theme visual style */
+  > .visual-style {
+    background-color: var(--btn-bg-clr-liter);
+    
+    /* .custom-button[data-btn-theme="liter"]:hover > .visual-style - Liter theme hover visual style */
+    .custom-button[data-btn-theme="liter"]:hover & {
+      background-color: var(--btn-bg-hvr-clr-liter);
+    }
+    
+    /* .custom-button[data-btn-theme="liter"].active > .visual-style - Liter theme active visual style */
+    .custom-button[data-btn-theme="liter"].active & {
+      background-color: var(--btn-bg-activ-clr-liter);
+    }
+  }
 }
 /* Dark Theme */
+/* Dark theme button - <button class="custom-button" data-btn-theme="dark"> */
 .custom-button[data-btn-theme="dark"] {
   color: var(--btn-txt-clr-dark);
-}
-.custom-button[data-btn-theme="dark"]:hover {
-  color: var(--btn-txt-hvr-clr-dark);
-}
-.custom-button[data-btn-theme="dark"].active {
-  color: var(--btn-txt-activ-clr-dark);
-}
-.custom-button[data-btn-theme="dark"] > .visual-style {
-  background-color: var(--btn-bg-clr-dark);
-}
-.custom-button[data-btn-theme="dark"]:hover > .visual-style {
-  background-color: var(--btn-bg-hvr-clr-dark);
-}
-.custom-button[data-btn-theme="dark"].active > .visual-style {
-  background-color: var(--btn-bg-activ-clr-dark);
+  
+  /* .custom-button[data-btn-theme="dark"]:hover - Dark theme hover */
+  &:hover {
+    color: var(--btn-txt-hvr-clr-dark);
+  }
+  
+  /* .custom-button[data-btn-theme="dark"].active - Dark theme active */
+  &.active {
+    color: var(--btn-txt-activ-clr-dark);
+  }
+  
+  /* .custom-button[data-btn-theme="dark"] > .visual-style - Dark theme visual style */
+  > .visual-style {
+    background-color: var(--btn-bg-clr-dark);
+    
+    /* .custom-button[data-btn-theme="dark"]:hover > .visual-style - Dark theme hover visual style */
+    .custom-button[data-btn-theme="dark"]:hover & {
+      background-color: var(--btn-bg-hvr-clr-dark);
+    }
+    
+    /* .custom-button[data-btn-theme="dark"].active > .visual-style - Dark theme active visual style */
+    .custom-button[data-btn-theme="dark"].active & {
+      background-color: var(--btn-bg-activ-clr-dark);
+    }
+  }
 }
 /* Darkr Theme */
+/* Darkr theme button - <button class="custom-button" data-btn-theme="darkr"> */
 .custom-button[data-btn-theme="darkr"] {
   color: var(--btn-txt-clr-darkr);
-}
-.custom-button[data-btn-theme="darkr"]:hover {
-  color: var(--btn-txt-hvr-clr-darkr);
-}
-.custom-button[data-btn-theme="darkr"].active {
-  color: var(--btn-txt-activ-clr-darkr);
-}
-.custom-button[data-btn-theme="darkr"] > .visual-style {
-  background-color: var(--btn-bg-clr-darkr);
-}
-.custom-button[data-btn-theme="darkr"]:hover > .visual-style {
-  background-color: var(--btn-bg-hvr-clr-darkr);
-}
-.custom-button[data-btn-theme="darkr"].active > .visual-style {
-  background-color: var(--btn-bg-activ-clr-darkr);
+  
+  /* .custom-button[data-btn-theme="darkr"]:hover - Darkr theme hover */
+  &:hover {
+    color: var(--btn-txt-hvr-clr-darkr);
+  }
+  
+  /* .custom-button[data-btn-theme="darkr"].active - Darkr theme active */
+  &.active {
+    color: var(--btn-txt-activ-clr-darkr);
+  }
+  
+  /* .custom-button[data-btn-theme="darkr"] > .visual-style - Darkr theme visual style */
+  > .visual-style {
+    background-color: var(--btn-bg-clr-darkr);
+    
+    /* .custom-button[data-btn-theme="darkr"]:hover > .visual-style - Darkr theme hover visual style */
+    .custom-button[data-btn-theme="darkr"]:hover & {
+      background-color: var(--btn-bg-hvr-clr-darkr);
+    }
+    
+    /* .custom-button[data-btn-theme="darkr"].active > .visual-style - Darkr theme active visual style */
+    .custom-button[data-btn-theme="darkr"].active & {
+      background-color: var(--btn-bg-activ-clr-darkr);
+    }
+  }
 }
 /* Primary Theme */
+/* Primary theme button - <button class="custom-button" data-btn-theme="primary"> */
 .custom-button[data-btn-theme="primary"] {
   color: var(--success-clr);
-}
-.custom-button[data-btn-theme="primary"]:hover,
-.custom-button[data-btn-theme="primary"].active {
-  color: hsla(0, 0%, 100%, 1);
-}
-.custom-button[data-btn-theme="primary"] > .visual-style {
-  background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.1);
-}
-.custom-button[data-btn-theme="primary"]:hover > .visual-style {
-  background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-hvr), 0.25);
-}
-.custom-button[data-btn-theme="primary"].active > .visual-style {
-  background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-activ), 0.25);
-}
-.custom-button[data-btn-theme="primary"].bordered-btn > .visual-style {
-  background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.1);
-  border-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.2);
-}
-.custom-button[data-btn-theme="primary"].bordered-btn:hover > .visual-style {
-  background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-hvr), 0.25);
-  border-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-hvr), 0.4);
-}
-.custom-button[data-btn-theme="primary"].bordered-btn.active > .visual-style {
-  background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-activ), 0.25);
-  border-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-activ), 0.4);
+  
+  /* .custom-button[data-btn-theme="primary"]:hover, .custom-button[data-btn-theme="primary"].active - Primary theme hover/active */
+  &:hover,
+  &.active {
+    color: hsla(0, 0%, 100%, 1);
+  }
+  
+  /* .custom-button[data-btn-theme="primary"] > .visual-style - Primary theme visual style */
+  > .visual-style {
+    background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.1);
+    
+    /* .custom-button[data-btn-theme="primary"]:hover > .visual-style - Primary theme hover visual style */
+    .custom-button[data-btn-theme="primary"]:hover & {
+      background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-hvr), 0.25);
+    }
+    
+    /* .custom-button[data-btn-theme="primary"].active > .visual-style - Primary theme active visual style */
+    .custom-button[data-btn-theme="primary"].active & {
+      background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-activ), 0.25);
+    }
+  }
+  
+  /* .custom-button[data-btn-theme="primary"].bordered-btn > .visual-style - Primary bordered theme visual style */
+  &.bordered-btn > .visual-style {
+    background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.1);
+    border-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.2);
+    
+    /* .custom-button[data-btn-theme="primary"].bordered-btn:hover > .visual-style - Primary bordered theme hover visual style */
+    .custom-button[data-btn-theme="primary"].bordered-btn:hover & {
+      background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-hvr), 0.25);
+      border-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-hvr), 0.4);
+    }
+  }
+  
+  /* .custom-button[data-btn-theme="primary"].bordered-btn.active > .visual-style - Primary bordered theme active visual style */
+  &.bordered-btn.active > .visual-style {
+    background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-activ), 0.25);
+    border-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-activ), 0.4);
+  }
 }
 /* Danger Theme */
+/* Danger theme button - <button class="custom-button" data-btn-theme="danger"> */
 .custom-button[data-btn-theme="danger"] {
   color: var(--danger-clr);
-}
-.custom-button[data-btn-theme="danger"]:hover,
-.custom-button[data-btn-theme="danger"].active {
-  color: hsla(0, 0%, 100%, 1);
-}
-.custom-button[data-btn-theme="danger"] > .visual-style {
-  background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum), 0.1);
-}
-.custom-button[data-btn-theme="danger"]:hover > .visual-style {
-  background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-hvr), 0.25);
-}
-.custom-button[data-btn-theme="danger"].active > .visual-style {
-  background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-activ), 0.25);
-}
-.custom-button[data-btn-theme="danger"].bordered-btn > .visual-style {
-  background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum), 0.1);
-  border-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum), 0.2);
-}
-.custom-button[data-btn-theme="danger"].bordered-btn:hover > .visual-style {
-  background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-hvr), 0.25);
-  border-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-hvr), 0.4);
-}
-.custom-button[data-btn-theme="danger"].bordered-btn.active > .visual-style {
-  background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-activ), 0.25);
-  border-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-activ), 0.4);
+  
+  /* .custom-button[data-btn-theme="danger"]:hover, .custom-button[data-btn-theme="danger"].active - Danger theme hover/active */
+  &:hover,
+  &.active {
+    color: hsla(0, 0%, 100%, 1);
+  }
+  
+  /* .custom-button[data-btn-theme="danger"] > .visual-style - Danger theme visual style */
+  > .visual-style {
+    background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum), 0.1);
+    
+    /* .custom-button[data-btn-theme="danger"]:hover > .visual-style - Danger theme hover visual style */
+    .custom-button[data-btn-theme="danger"]:hover & {
+      background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-hvr), 0.25);
+    }
+    
+    /* .custom-button[data-btn-theme="danger"].active > .visual-style - Danger theme active visual style */
+    .custom-button[data-btn-theme="danger"].active & {
+      background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-activ), 0.25);
+    }
+  }
+  
+  /* .custom-button[data-btn-theme="danger"].bordered-btn > .visual-style - Danger bordered theme visual style */
+  &.bordered-btn > .visual-style {
+    background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum), 0.1);
+    border-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum), 0.2);
+    
+    /* .custom-button[data-btn-theme="danger"].bordered-btn:hover > .visual-style - Danger bordered theme hover visual style */
+    .custom-button[data-btn-theme="danger"].bordered-btn:hover & {
+      background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-hvr), 0.25);
+      border-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-hvr), 0.4);
+    }
+    
+    /* .custom-button[data-btn-theme="danger"].bordered-btn.active > .visual-style - Danger bordered theme active visual style */
+    .custom-button[data-btn-theme="danger"].bordered-btn.active & {
+      background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-activ), 0.25);
+      border-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-activ), 0.4);
+    }
+  }
 }
 /* Warning Theme */
+/* Warning theme button - <button class="custom-button" data-btn-theme="warning"> */
 .custom-button[data-btn-theme="warning"] {
   color: var(--warning-clr);
-}
-.custom-button[data-btn-theme="warning"]:hover,
-.custom-button[data-btn-theme="warning"].active {
-  color: hsla(0, 0%, 100%, 1);
-}
-.custom-button[data-btn-theme="warning"] > .visual-style {
-  background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum), 0.1);
-}
-.custom-button[data-btn-theme="warning"]:hover > .visual-style {
-  background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-hvr), 0.25);
-}
-.custom-button[data-btn-theme="warning"].active > .visual-style {
-  background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-activ), 0.25);
-}
-.custom-button[data-btn-theme="warning"].bordered-btn > .visual-style {
-  background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum), 0.1);
-  border-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum), 0.2);
-}
-.custom-button[data-btn-theme="warning"].bordered-btn:hover > .visual-style {
-  background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-hvr), 0.25);
-  border-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-hvr), 0.4);
-}
-.custom-button[data-btn-theme="warning"].bordered-btn.active > .visual-style {
-  background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-activ), 0.25);
-  border-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-activ), 0.4);
+  
+  /* .custom-button[data-btn-theme="warning"]:hover, .custom-button[data-btn-theme="warning"].active - Warning theme hover/active */
+  &:hover,
+  &.active {
+    color: hsla(0, 0%, 100%, 1);
+  }
+  
+  /* .custom-button[data-btn-theme="warning"] > .visual-style - Warning theme visual style */
+  > .visual-style {
+    background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum), 0.1);
+    
+    /* .custom-button[data-btn-theme="warning"]:hover > .visual-style - Warning theme hover visual style */
+    .custom-button[data-btn-theme="warning"]:hover & {
+      background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-hvr), 0.25);
+    }
+    
+    /* .custom-button[data-btn-theme="warning"].active > .visual-style - Warning theme active visual style */
+    .custom-button[data-btn-theme="warning"].active & {
+      background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-activ), 0.25);
+    }
+  }
+  
+  /* .custom-button[data-btn-theme="warning"].bordered-btn > .visual-style - Warning bordered theme visual style */
+  &.bordered-btn > .visual-style {
+    background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum), 0.1);
+    border-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum), 0.2);
+    
+    /* .custom-button[data-btn-theme="warning"].bordered-btn:hover > .visual-style - Warning bordered theme hover visual style */
+    .custom-button[data-btn-theme="warning"].bordered-btn:hover & {
+      background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-hvr), 0.25);
+      border-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-hvr), 0.4);
+    }
+    
+    /* .custom-button[data-btn-theme="warning"].bordered-btn.active > .visual-style - Warning bordered theme active visual style */
+    .custom-button[data-btn-theme="warning"].bordered-btn.active & {
+      background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-activ), 0.25);
+      border-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-activ), 0.4);
+    }
+  }
 }
 /* Info Theme */
+/* Info theme button - <button class="custom-button" data-btn-theme="info"> */
 .custom-button[data-btn-theme="info"] {
   color: var(--info-clr);
-}
-.custom-button[data-btn-theme="info"]:hover,
-.custom-button[data-btn-theme="info"].active {
-  color: hsla(0, 0%, 100%, 1);
-}
-.custom-button[data-btn-theme="info"] > .visual-style {
-  background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum), 0.1);
-}
-.custom-button[data-btn-theme="info"]:hover > .visual-style {
-  background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-hvr), 0.4);
-}
-.custom-button[data-btn-theme="info"].active > .visual-style {
-  background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-activ), 0.4);
-}
-.custom-button[data-btn-theme="info"].bordered-btn > .visual-style {
-  background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum), 0.1);
-  border-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum), 0.2);
-}
-.custom-button[data-btn-theme="info"].bordered-btn:hover > .visual-style {
-  background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-hvr), 0.25);
-  border-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-hvr), 0.4);
-}
-.custom-button[data-btn-theme="info"].bordered-btn.active > .visual-style {
-  background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-activ), 0.25);
-  border-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-activ), 0.4);
+  
+  /* .custom-button[data-btn-theme="info"]:hover, .custom-button[data-btn-theme="info"].active - Info theme hover/active */
+  &:hover,
+  &.active {
+    color: hsla(0, 0%, 100%, 1);
+  }
+  
+  /* .custom-button[data-btn-theme="info"] > .visual-style - Info theme visual style */
+  > .visual-style {
+    background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum), 0.1);
+    
+    /* .custom-button[data-btn-theme="info"]:hover > .visual-style - Info theme hover visual style */
+    .custom-button[data-btn-theme="info"]:hover & {
+      background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-hvr), 0.4);
+    }
+    
+    /* .custom-button[data-btn-theme="info"].active > .visual-style - Info theme active visual style */
+    .custom-button[data-btn-theme="info"].active & {
+      background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-activ), 0.4);
+    }
+  }
+  
+  /* .custom-button[data-btn-theme="info"].bordered-btn > .visual-style - Info bordered theme visual style */
+  &.bordered-btn > .visual-style {
+    background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum), 0.1);
+    border-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum), 0.2);
+    
+    /* .custom-button[data-btn-theme="info"].bordered-btn:hover > .visual-style - Info bordered theme hover visual style */
+    .custom-button[data-btn-theme="info"].bordered-btn:hover & {
+      background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-hvr), 0.25);
+      border-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-hvr), 0.4);
+    }
+    
+    /* .custom-button[data-btn-theme="info"].bordered-btn.active > .visual-style - Info bordered theme active visual style */
+    .custom-button[data-btn-theme="info"].bordered-btn.active & {
+      background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-activ), 0.25);
+      border-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-activ), 0.4);
+    }
+  }
 }
 /* --- OTHER STYLE CLASSES --- */
 /* Flashing effect */
+/* Flashing button state - <button class="custom-button flashing"> */
 .custom-button.flashing > .visual-style::after {
   opacity: 1;
 }
@@ -411,6 +548,7 @@
 /* Trigger a short pulse when the button is activated via mouse or keyboard. */
 /* Removed :active rule - now using JavaScript-controlled flash */
 /* New flash effect controlled by JavaScript */
+/* .custom-button > .visual-style::after - Flash effect pseudo-element */
 .custom-button > .visual-style::after {
   opacity: var(--flash-active, 0);
   transition: opacity 100ms ease-out;
@@ -426,6 +564,7 @@
   }
 }
 /* Move focus outline onto the visual-style element so it matches the visual inset */
+/* .custom-button::-moz-focus-inner - Firefox focus outline removal */
 .custom-button::-moz-focus-inner {
   border: 0; /* remove Firefox inner focus outline */
 }
@@ -438,6 +577,7 @@
    the icon itself instead of the full visual-style area. This prevents a large
    rectangle around minimal checkbox buttons and keeps the ring tightly
    aligned with the icon. */
+/* .custom-button[role="checkbox"] > .button-content - Checkbox button content */
 .custom-button[role="checkbox"] > .button-content {
   position: relative; /* for pseudo-element positioning */
   z-index: 1;
@@ -448,64 +588,109 @@
 /* Suppress the visual-style ring for checkbox buttons */
 /* Removed checkbox-specific focus ring rules per user preference */
 /* Bordered variant */
-.custom-button.bordered-btn > .visual-style {
-  border-color: var(--btn-brdr-clr);
+/* .custom-button.bordered-btn - Bordered button variant */
+.custom-button.bordered-btn {
+  /* .custom-button.bordered-btn > .visual-style - Bordered button visual style */
+  > .visual-style {
+    border-color: var(--btn-brdr-clr);
+  }
+  
+  /* .custom-button.bordered-btn:hover > .visual-style - Bordered button hover visual style */
+  &:hover > .visual-style {
+    border-color: var(--btn-brdr-hvr-clr);
+  }
+  
+  /* .custom-button.bordered-btn.active > .visual-style - Bordered button active visual style */
+  &.active > .visual-style {
+    border-color: var(--btn-brdr-activ-clr);
+  }
 }
-.custom-button.bordered-btn:hover > .visual-style {
-  border-color: var(--btn-brdr-hvr-clr);
+/* .custom-button[data-btn-theme="lite"].bordered-btn - Lite theme bordered button */
+.custom-button[data-btn-theme="lite"].bordered-btn {
+  /* .custom-button[data-btn-theme="lite"].bordered-btn > .visual-style - Lite theme bordered visual style */
+  > .visual-style {
+    border-color: var(--btn-brdr-clr-lite);
+  }
+  
+  /* .custom-button[data-btn-theme="lite"].bordered-btn:hover > .visual-style - Lite theme bordered hover visual style */
+  &:hover > .visual-style {
+    border-color: var(--btn-brdr-hvr-clr-lite);
+  }
+  
+  /* .custom-button[data-btn-theme="lite"].bordered-btn.active > .visual-style - Lite theme bordered active visual style */
+  &.active > .visual-style {
+    border-color: var(--btn-brdr-activ-clr-lite);
+  }
 }
-.custom-button.bordered-btn.active > .visual-style {
-  border-color: var(--btn-brdr-activ-clr);
+/* .custom-button[data-btn-theme="liter"].bordered-btn - Liter theme bordered button */
+.custom-button[data-btn-theme="liter"].bordered-btn {
+  /* .custom-button[data-btn-theme="liter"].bordered-btn > .visual-style - Liter theme bordered visual style */
+  > .visual-style {
+    border-color: var(--btn-brdr-clr-liter);
+  }
+  
+  /* .custom-button[data-btn-theme="liter"].bordered-btn:hover > .visual-style - Liter theme bordered hover visual style */
+  &:hover > .visual-style {
+    border-color: var(--btn-brdr-hvr-clr-liter);
+  }
+  
+  /* .custom-button[data-btn-theme="liter"].bordered-btn.active > .visual-style - Liter theme bordered active visual style */
+  &.active > .visual-style {
+    border-color: var(--btn-brdr-activ-clr-liter);
+  }
 }
-.custom-button[data-btn-theme="lite"].bordered-btn > .visual-style {
-  border-color: var(--btn-brdr-clr-lite);
+/* .custom-button[data-btn-theme="dark"].bordered-btn - Dark theme bordered button */
+.custom-button[data-btn-theme="dark"].bordered-btn {
+  /* .custom-button[data-btn-theme="dark"].bordered-btn > .visual-style - Dark theme bordered visual style */
+  > .visual-style {
+    border-color: var(--btn-brdr-clr-dark);
+  }
+  
+  /* .custom-button[data-btn-theme="dark"].bordered-btn:hover > .visual-style - Dark theme bordered hover visual style */
+  &:hover > .visual-style {
+    border-color: var(--btn-brdr-hvr-clr-dark);
+  }
+  
+  /* .custom-button[data-btn-theme="dark"].bordered-btn.active > .visual-style - Dark theme bordered active visual style */
+  &.active > .visual-style {
+    border-color: var(--btn-brdr-activ-clr-dark);
+  }
 }
-.custom-button[data-btn-theme="lite"].bordered-btn:hover > .visual-style {
-  border-color: var(--btn-brdr-hvr-clr-lite);
-}
-.custom-button[data-btn-theme="lite"].bordered-btn.active > .visual-style {
-  border-color: var(--btn-brdr-activ-clr-lite);
-}
-.custom-button[data-btn-theme="liter"].bordered-btn > .visual-style {
-  border-color: var(--btn-brdr-clr-liter);
-}
-.custom-button[data-btn-theme="liter"].bordered-btn:hover > .visual-style {
-  border-color: var(--btn-brdr-hvr-clr-liter);
-}
-.custom-button[data-btn-theme="liter"].bordered-btn.active > .visual-style {
-  border-color: var(--btn-brdr-activ-clr-liter);
-}
-.custom-button[data-btn-theme="dark"].bordered-btn > .visual-style {
-  border-color: var(--btn-brdr-clr-dark);
-}
-.custom-button[data-btn-theme="dark"].bordered-btn:hover > .visual-style {
-  border-color: var(--btn-brdr-hvr-clr-dark);
-}
-.custom-button[data-btn-theme="dark"].bordered-btn.active > .visual-style {
-  border-color: var(--btn-brdr-activ-clr-dark);
-}
-.custom-button[data-btn-theme="darkr"].bordered-btn > .visual-style {
-  border-color: var(--btn-brdr-clr-darkr);
-}
-.custom-button[data-btn-theme="darkr"].bordered-btn:hover > .visual-style {
-  border-color: var(--btn-brdr-hvr-clr-darkr);
-}
-.custom-button[data-btn-theme="darkr"].bordered-btn.active > .visual-style {
-  border-color: var(--btn-brdr-activ-clr-darkr);
+/* .custom-button[data-btn-theme="darkr"].bordered-btn - Darkr theme bordered button */
+.custom-button[data-btn-theme="darkr"].bordered-btn {
+  /* .custom-button[data-btn-theme="darkr"].bordered-btn > .visual-style - Darkr theme bordered visual style */
+  > .visual-style {
+    border-color: var(--btn-brdr-clr-darkr);
+  }
+  
+  /* .custom-button[data-btn-theme="darkr"].bordered-btn:hover > .visual-style - Darkr theme bordered hover visual style */
+  &:hover > .visual-style {
+    border-color: var(--btn-brdr-hvr-clr-darkr);
+  }
+  
+  /* .custom-button[data-btn-theme="darkr"].bordered-btn.active > .visual-style - Darkr theme bordered active visual style */
+  &.active > .visual-style {
+    border-color: var(--btn-brdr-activ-clr-darkr);
+  }
 }
 /* Minimal Transparent variant */
+/* .custom-button.minimal-trans-btn - Minimal transparent button */
 .custom-button.minimal-trans-btn {
   padding: 0;
-}
-.custom-button.minimal-trans-btn > .visual-style {
-  background-color: transparent;
-  border: 0;
-  box-shadow: none;
-}
-.custom-button.minimal-trans-btn:hover > .visual-style {
-  background-color: transparent;
-  border: 0;
-  box-shadow: none;
+  
+  /* .custom-button.minimal-trans-btn > .visual-style - Minimal transparent visual style */
+  > .visual-style {
+    background-color: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+  
+  /* .custom-button.minimal-trans-btn:hover > .visual-style - Minimal transparent hover visual style */
+  &:hover > .visual-style {
+    background-color: transparent;
+    border: 0;
+    box-shadow: none;
+  }
 }
 /* Active State Indicator Line */
 .custom-button.can-become-active {
@@ -559,14 +744,17 @@
   opacity: 1;
 }
 /* Content & Icon styles */
+/* Empty button content - <div class="button-content"> (when empty) */
 .button-content:empty {
   display: none;
 }
+/* Icon placeholder container - <div class="icon-placeholder"> */
 .icon-placeholder {
   align-items: center;
   display: flex;
   justify-content: center;
 }
+/* First and last icons - <div class="icon-placeholder first-icon"> and <div class="icon-placeholder last-icon"> */
 .custom-button .first-icon,
 .custom-button .last-icon {
   color: var(--txt-clr-lite);
@@ -582,9 +770,11 @@
 }
 /* --- TRANSPARENT BUTTON OVERRIDES --- */
 /* By default, make the visual style for all transparent buttons completely invisible, unless they are active. */
+/* Transparent button - <button class="custom-button trans-btn"> */
 .custom-button.trans-btn:not(:hover):not(.active) > .visual-style {
   opacity: 0;
 }
+/* Dropdown content spacing - <div class="dropdown-content"> */
 .dropdown-content {
   > [data-overlayscrollbars="host"] > [data-overlayscrollbars-contents] {
     > .dropdown-menu > .custom-button.options-btn,

@@ -6,9 +6,8 @@ alwaysApply: true
 # Code Style Guidelines
 ## CSS/SCSS
 - **Color Format**: Use HSL/HSLA.
-- **CSS Nesting**: Use native CSS nesting wherever possible.
+- **CSS Nesting & Comments**: Use native CSS nesting for cleaner, more maintainable code. Add concise comments above each selector (including nested ones) to help AI understand what HTML elements they target. Use the format: `/* Element description - <element class="class-name"> */` for simple selectors, or `/* Full CSS selector path - Element description */` for nested selectors. Examples: `/* Main tooltip container - <div class="info-tooltip"> */` or `/* .custom-button > .visual-style::after - Flash effect pseudo-element */`. **IMPORTANT**: Always verify comments against the associated Vue component template to ensure accuracy and completeness. **For property-specific comments, place them inline after the property** (e.g., `pointer-events: none; /* Don't block underlying controls */`) rather than on separate lines between properties.
 - **Logical Properties**: Use logical CSS properties (e.g., `margin-inline`, `padding-block`).
-- **Nested Selectors**: Prefix nested selectors like `:has` or `:deep` with ampersand (`&`).
 - **Property Organization**: Alphabetize CSS properties within each rule. For CSS custom properties (variables), group related properties together (e.g., all `--bg-*` variables) but alphabetize within each group.
 - **CSS Variables**: Place CSS variables at the top of a rule, followed by an empty line.
 - **Individual Properties**: Use individual logical properties instead of shorthands. Simple shorthands like `margin: 0` or `padding: 1rem` are acceptable, but avoid complex shorthands like `margin: 0 5px 2px 3px` or `padding: 1rem 2rem 0.5rem`.

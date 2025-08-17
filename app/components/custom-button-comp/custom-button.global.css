@@ -1,6 +1,7 @@
 /* 
   "components/custom-button-comp/custom-button.global.css" --for-- "components/CustomButton.vue" 
 */
+/* CSS Variables for CustomButton component - Light theme defaults */
 :root {
   /* Base Variables */
   --btn-trans-dur-start: 125ms;
@@ -106,6 +107,7 @@
   --btn-brdr-activ-clr-lite: hsla(0, 0%, calc(var(--btn-brdr-activ-lum) + 2%), var(--btn-brdr-activ-alph));
   --btn-brdr-activ-clr-liter: hsla(0, 0%, calc(var(--btn-brdr-activ-lum) + 4%), var(--btn-brdr-activ-alph));
 }
+/* CSS Variables for CustomButton component - Dark theme overrides */
 :is(.dark, .dark-theme) {
   /* Theme Colors */
   --success-clr: hsla(var(--success-hue), 50%, 50%, 1);
@@ -168,6 +170,7 @@
   --btn-brdr-activ-clr-lite: hsla(0, 0%, calc(var(--btn-brdr-activ-lum) * 1.2), var(--btn-brdr-activ-alph));
   --btn-brdr-activ-clr-liter: hsla(0, 0%, calc(var(--btn-brdr-activ-lum) * 1.6), var(--btn-brdr-activ-alph));
 }
+/* Bounce animation for button interactions */
 @keyframes bounce {
   0% {
     transform: translateY(0);
@@ -179,7 +182,7 @@
     transform: translateY(0);
   }
 }
-/* Remove box-shadow from buttons inside dropdowns */
+/* Remove box-shadow from buttons inside dropdowns - <div data-name="*-dropdown"> */
 [data-name*="-dropdown"] .custom-button > .visual-style {
   box-shadow: none;
 }

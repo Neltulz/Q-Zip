@@ -30,8 +30,8 @@
     @drop="(event) => emit('drop', event)"
     @mousedown="handleMouseDown"
     @mouseup="handleMouseUp"
-    @mouseleave="(event) => { handleMouseLeave(); emit('mouseleave', event); }"
-    @mouseenter="(event) => { handleMouseEnter(); emit('mouseenter', event); }"
+         @mouseleave="(event) => { handleMouseLeave(event); emit('mouseleave', event); }"
+     @mouseenter="(event) => { handleMouseEnter(event); emit('mouseenter', event); }"
   >
     <div ref="visualStyleRef" class="visual-style" />
     <div v-if="props.firstIconName" class="icon-placeholder first-icon" :style="firstIconPlaceholderStyle">
@@ -54,7 +54,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useAttrs, watch } from "vue";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-import { logComponentAttributes, logVueWarning } from "@/utils/loggers";
+import { logComponentAttributes, logVueWarning, logHover } from "@/utils/loggers";
 
 
 const attrs = useAttrs();
@@ -107,11 +107,31 @@ const handleMouseUp = () => {
   isPressed.value = false;
 };
 
-const handleMouseLeave = () => {
+const handleMouseLeave = (event: MouseEvent) => {
   isPressed.value = false;
+  if (DEBUG && debugConfig.logHoverEvents) {
+    logHover("CustomButton", `Mouse leave on ${props.dataName}`, {
+      dataName: props.dataName,
+      target: event.target,
+      currentTarget: event.currentTarget,
+      relatedTarget: event.relatedTarget,
+      buttonRef: buttonRef.value,
+      visualStyleRef: visualStyleRef.value
+    });
+  }
 };
 
-const handleMouseEnter = () => {
+const handleMouseEnter = (event: MouseEvent) => {
+  if (DEBUG && debugConfig.logHoverEvents) {
+    logHover("CustomButton", `Mouse enter on ${props.dataName}`, {
+      dataName: props.dataName,
+      target: event.target,
+      currentTarget: event.currentTarget,
+      relatedTarget: event.relatedTarget,
+      buttonRef: buttonRef.value,
+      visualStyleRef: visualStyleRef.value
+    });
+  }
   // Tooltip logic moved to parent components
 };
 

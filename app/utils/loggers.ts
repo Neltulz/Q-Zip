@@ -253,3 +253,27 @@ export const logVueWarning = (callerName: string, message: string, data?: unknow
     }
   }
 };
+
+// --- Logger for Hover Events ---
+const hoverStyle: string = `${baseStyle} background-color: #4caf50; color: white;`; // Green
+export const logHover = (callerName: string, message: string, data?: unknown): void => {
+  if (DEBUG && debugConfig.logHoverEvents) {
+    if (data) {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, hoverStyle, data);
+    } else {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, hoverStyle);
+    }
+  }
+};
+
+// --- Logger for Tooltip Events ---
+const tooltipStyle: string = `${baseStyle} background-color: #ff4081; color: white;`; // Pink
+export const logTooltip = (callerName: string, message: string, data?: unknown): void => {
+  if (DEBUG && debugConfig.logTooltipEvents) {
+    if (data) {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, tooltipStyle, data);
+    } else {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, tooltipStyle);
+    }
+  }
+};
