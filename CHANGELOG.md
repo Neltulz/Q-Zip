@@ -4,6 +4,55 @@
 
 ## Recent Changes
 
+## [0.1.19] - 2025-01-27T23:00:00Z
+
+### Changed
+- Enhanced CSS styles across various components, including tooltips, job area, and title bar, for improved layout and maintainability.
+- Added comments for clarity and organization in CSS files, ensuring better readability and structure.
+- Updated LoadingAnim component CSS to use logical properties, proper nesting, and detailed comments for better maintainability.
+
+### Added
+- Enhanced LoadingAnim component to support multiple animation types via `animationType` prop:
+  - `'full'` (default): Complete loading animation with progress tracking, pause/resume, and cancel functionality
+  - `'spinner'`: Simple three-dot bouncing animation for lightweight loading states
+  - `'double-bounce'`: Two-circle bouncing animation for medium-weight loading states
+- Both animations maintain proper attribution to Tobias Ahlin's SpinKit library
+- Refactored LoadingAnim component architecture:
+  - Created `CircleLoadingAnim.vue` for full-featured loading with progress and controls
+  - Created `SpinnerLoadingAnim.vue` for simple three-dot animation
+  - Created `DoubleBounceLoadingAnim.vue` for two-circle bouncing animation
+  - Main `LoadingAnim.vue` now acts as a master component that delegates to specific animation types
+  - Improved code organization and maintainability through component separation
+- Enhanced FileTable refresh functionality:
+  - Refresh button now shows DoubleBounceLoadingAnim animation when clicked
+  - 5-second loading state with cancel functionality
+  - Full-screen loading overlay with circular animation, progress tracking, and pause/cancel buttons during refresh
+  - Improved user feedback during file refresh operations
+- Refactored loading animation architecture for better separation of concerns:
+  - Created `FileTableLoadingOverlay.vue` for full-featured loading UI with progress, buttons, and controls
+  - Simplified `CircleLoadingAnim.vue` to contain only the circular animation (no UI logic)
+  - Maintained `DoubleBounceLoadingAnim.vue` and `SpinnerLoadingAnim.vue` as pure animation components
+  - Updated `LoadingAnim.vue` master component to use the new overlay architecture
+
+### Fixed
+- *Development work in progress...*
+
+### Technical Details
+- FileTable refresh implementation:
+  - Added `isRefreshing` reactive state to track refresh loading
+  - Implemented 5-second timeout with cleanup in `onUnmounted`
+  - Added `cancelRefresh` function for user cancellation
+  - Modified FileTableToolbar to show DoubleBounceLoadingAnim in refresh button
+  - Added proper CSS styling for scaled-down animation in button context
+  - Maintained existing refresh functionality while adding visual feedback
+- Loading animation architecture refactoring:
+  - Separated UI logic from animation components for better maintainability
+  - Created reusable `FileTableLoadingOverlay.vue` component for full-featured loading experiences
+  - Simplified animation components to focus solely on visual animations
+  - Maintained backward compatibility with existing loading implementations
+
+---
+
 ## [0.1.18] - 2025-01-27T23:00:00Z
 
 ### Changed

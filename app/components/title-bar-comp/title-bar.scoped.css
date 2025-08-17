@@ -1,116 +1,153 @@
 /* 
   "components/title-bar-comp/title-bar.scoped.css" --for-- "components/TitleBar.vue" 
 */
+
+/* Main title bar container - <div id="title-bar"> */
 #title-bar {
-  /* Place the title-bar inside the native decorum toolbar grid. */
-  display: flex;
+  /* Place the title-bar inside the native decorum toolbar grid */
   align-items: center;
-  height: var(--title-bar-height);
-  padding-block: 0;
-  padding-inline: 3px;
-  justify-content: center;
-  position: relative; /* let the container (decorum) handle fixed positioning */
-  width: 100%;
+  display: flex;
   grid-column: 1; /* occupy the main area only */
   grid-row: 1;
-  z-index: 100;
-  pointer-events: none;
-}
-#title-bar:deep(.custom-button) {
-  z-index: 100;
-}
-#title-bar:deep(.custom-button:not(:disabled):not(.disabled)) {
-  pointer-events: all;
-}
-#title-bar .header-content {
-  align-items: center;
-  display: grid;
-  grid-template-columns: 1fr;
+  height: var(--title-bar-height);
   justify-content: center;
-  width: 100%;
-}
-#title-bar .header-content > .dropdown-and-app-title-wrapper {
-  align-items: center;
-  display: flex;
-  font-size: 1rem;
-  gap: 3px;
-  grid-column: 1 / span all;
-  grid-row: 1;
-  justify-content: center;
-  justify-self: start;
-  z-index: 100;
-}
-#title-bar .header-content > .dropdown-and-app-title-wrapper .app-title-wrapper {
-  align-items: baseline;
-  column-gap: 0.3em;
-  display: flex;
-}
-#title-bar .header-content > .dropdown-and-app-title-wrapper .app-title-wrapper .ver-num {
-  color: var(--blu-lite);
-  font-size: 0.8em;
-  font-style: oblique;
-}
-#title-bar > .header-content > .center-nav-btns {
-  display: flex;
-  grid-column: 1 / span all;
-  /* removed grid-row so it no longer participates in the grid flow */
-  justify-self: center;
-  /* Make the center nav buttons fixed so they remain centered in the viewport */
-  position: fixed;
-  inset-inline: 0; /* logical left/right 0 */
-  transition: opacity 500ms ease;
-  z-index: 100;
-}
-#title-bar > .header-content > .center-nav-btns.disabled {
-  opacity: 0.25;
-  pointer-events: none;
-}
-#title-bar > .header-content > .center-nav-btns .btn-group {
-  --btn-line-thickness: 2px;
-  display: flex;
+  padding-block: 0;
   padding-inline: 3px;
-  position: relative;
-}
-#title-bar > .header-content > .center-nav-btns .btn-group:before {
-  background-color: var(--bg-clr-liter);
-  border-radius: var(--brdr-rad-smalr);
-  content: "";
-  inset: 2px;
-  position: absolute;
-}
-#title-bar > .header-content > .center-nav-btns .btn-group .divider {
-  border-inline-start: 1px solid var(--brdr-clr-liter);
-  margin-block: 8px;
-  transition: opacity 500ms ease;
+  pointer-events: none;
+  position: relative; /* let the container (decorum) handle fixed positioning */
+  width: 100%;
   z-index: 100;
+
+  /* Custom buttons within title bar - <div class="custom-button"> */
+  :deep(.custom-button) {
+    z-index: 100;
+
+    /* Enabled custom buttons - <div class="custom-button:not(:disabled):not(.disabled)"> */
+    &:not(:disabled):not(.disabled) {
+      pointer-events: all;
+    }
+  }
+
+  /* Header content container - <div class="header-content"> */
+  .header-content {
+    align-items: center;
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-content: center;
+    width: 100%;
+
+    /* Dropdown and app title wrapper - <div class="dropdown-and-app-title-wrapper"> */
+    > .dropdown-and-app-title-wrapper {
+      align-items: center;
+      display: flex;
+      font-size: 1rem;
+      gap: 3px;
+      grid-column: 1 / span all;
+      grid-row: 1;
+      justify-content: center;
+      justify-self: start;
+      z-index: 100;
+
+      /* App title wrapper - <div class="app-title-wrapper"> */
+      .app-title-wrapper {
+        align-items: baseline;
+        column-gap: 0.3em;
+        display: flex;
+
+        /* Version number - <span class="ver-num"> */
+        .ver-num {
+          color: var(--blu-lite);
+          font-size: 0.8em;
+          font-style: oblique;
+        }
+      }
+    }
+
+    /* Center navigation buttons - <div class="center-nav-btns"> */
+    > .center-nav-btns {
+      display: flex;
+      grid-column: 1 / span all;
+      /* removed grid-row so it no longer participates in the grid flow */
+      inset-inline: 0; /* logical left/right 0 */
+      justify-self: center;
+      /* Make the center nav buttons fixed so they remain centered in the viewport */
+      position: fixed;
+      transition: opacity 500ms ease;
+      z-index: 100;
+
+      /* Disabled state - <div class="center-nav-btns disabled"> */
+      &.disabled {
+        opacity: 0.25;
+        pointer-events: none;
+      }
+
+      /* Button group container - <div class="btn-group"> */
+      .btn-group {
+        --btn-line-thickness: 2px;
+        display: flex;
+        padding-inline: 3px;
+        position: relative;
+
+        /* Background pseudo-element for button group */
+        &:before {
+          background-color: var(--bg-clr-liter);
+          border-radius: var(--brdr-rad-smalr);
+          content: "";
+          inset: 2px;
+          position: absolute;
+        }
+
+        /* Divider between buttons - <div class="divider"> */
+        .divider {
+          border-inline-start: 1px solid var(--brdr-clr-liter);
+          margin-block: 8px;
+          transition: opacity 500ms ease;
+          z-index: 100;
+        }
+
+        /* Custom buttons within group - <div class="custom-button"> */
+        .custom-button {
+          margin-inline: -3px;
+          padding-inline: 2em;
+
+          /* Hover state affects adjacent divider */
+          &:hover + .divider,
+          &.active + .divider {
+            opacity: 0;
+          }
+        }
+
+        /* Divider opacity when adjacent button is hovered/active */
+        .divider:has(+ .custom-button:hover),
+        .divider:has(+ .custom-button.active) {
+          opacity: 0;
+        }
+      }
+    }
+  }
 }
-#title-bar > .header-content > .center-nav-btns .btn-group .custom-button {
-  margin-inline: -3px;
-  padding-inline: 2em;
-}
-#title-bar > .header-content > .center-nav-btns .btn-group .custom-button:hover + .divider,
-#title-bar > .header-content > .center-nav-btns .btn-group .divider:has(+ .custom-button:hover),
-#title-bar > .header-content > .center-nav-btns .btn-group .custom-button.active + .divider,
-#title-bar > .header-content > .center-nav-btns .btn-group .divider:has(+ .custom-button.active) {
-  opacity: 0;
-}
-/* Zoom indicator sits in the middle column of the native toolbar grid.
-   Use logical properties (inset-inline-end) when needed; prefer grid placement. */
+
+/* Zoom indicator container - <div class="titlebar-zoom-indicator"> */
 .titlebar-zoom-indicator {
-  grid-column: 2;
+  /* Zoom indicator sits in the middle column of the native toolbar grid.
+     Use logical properties (inset-inline-end) when needed; prefer grid placement */
   align-self: center;
-  justify-self: end; /* push to the end (right in LTR) of the column */
+  grid-column: 2;
   inset-inline-end: 0; /* logical equivalent of right: 0 */
+  justify-self: end; /* push to the end (right in LTR) of the column */
   z-index: 100001;
+
+  /* Zoom indicator button - <button class="zoom-indicator-btn"> */
+  .zoom-indicator-btn {
+    font-size: 0.9em;
+    padding-block: 6px;
+    padding-inline: 8px;
+    pointer-events: auto; /* ensure the button can be clicked even if parent has pointer-events:none */
+  }
 }
-.titlebar-zoom-indicator .zoom-indicator-btn {
-  padding-inline: 8px;
-  padding-block: 6px;
-  font-size: 0.9em;
-  pointer-events: auto; /* ensure the button can be clicked even if parent has pointer-events:none */
-}
+
 /* Ensure the drag region element (sometimes provided directly) is placed into
-   the first grid cell so it occupies the main title area for dragging. */
+   the first grid cell so it occupies the main title area for dragging */
 [data-tauri-decorum-tb] > [data-tauri-drag-region],
 [data-tauri-decorum-tb] [data-tauri-drag-region],
 [data-tauri-drag-region] {

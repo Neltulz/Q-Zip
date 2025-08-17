@@ -93,13 +93,23 @@
       </div>
     </div>
     <div class="file-table-visual-select" />
+    <!-- Main loading animation for file operations -->
     <LoadingAnim :visible="props.isLoading" @cancel="$emit('cancel-load')"> Adding files, please wait... </LoadingAnim>
+    <!-- Refresh loading animation with full overlay -->
+    <LoadingAnim 
+      :visible="isRefreshing" 
+      animation-type="full"
+      @cancel="cancelRefresh"
+    > 
+      Refreshing files, please wait... 
+    </LoadingAnim>
          <FileTableToolbar
        v-if="shouldShowToolbar"
        :job-id="props.jobId"
        :selected-files="actionItems"
        :show-toolbar="shouldShowToolbar"
        :is-filetable-active="isActive"
+       :is-refreshing="isRefreshing"
        @remove-files="removeSelectedFiles"
        @move-files="moveToJob"
        @move-to-new-job="moveToNewJob"
@@ -310,6 +320,8 @@ const isActive = ref(false);
 const isScrolling = ref(false);
 const isMarqueeActive = ref(false);
 const wasMarqueeActive = ref(false); // Track if marquee was recently active
+const isRefreshing = ref(false); // Track refresh loading state
+let refreshTimeout: NodeJS.Timeout | null = null; // Timeout for refresh animation
 const marqueeIsAdditive = ref(false);
 const marqueeAnchorX = ref(0);
 const marqueeAnchorY = ref(0);
@@ -1824,6 +1836,11 @@ onUnmounted(() => {
     clearTimeout(forceRefreshTimeout);
     forceRefreshTimeout = null;
   }
+  // Clean up refresh timeout
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout);
+    refreshTimeout = null;
+  }
 });
 // Programmatic setter so parents can toggle active state. Log for debugging.
 const setActive = (val: boolean) => {
@@ -1865,6 +1882,17 @@ const setActive = (val: boolean) => {
   }
 };
 const handleRefreshFiles = (): void => {
+  // Start refresh loading state
+  isRefreshing.value = true;
+  logUI("FileTable", "Refresh files started - showing loading animation");
+  
+  // Set 5-second timeout for refresh animation
+  refreshTimeout = setTimeout(() => {
+    isRefreshing.value = false;
+    refreshTimeout = null;
+    logUI("FileTable", "Refresh files completed - hiding loading animation");
+  }, 5000);
+  
   // Use debounced force refresh for better performance
   debouncedForceRefresh();
   // Force the component to re-render by triggering reactive updates
@@ -1881,6 +1909,16 @@ const handleRefreshFiles = (): void => {
     }
     logUI("FileTable", "Refresh files triggered - forcing re-render and recalculations");
   });
+};
+
+const cancelRefresh = (): void => {
+  // Cancel the refresh operation
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout);
+    refreshTimeout = null;
+  }
+  isRefreshing.value = false;
+  logUI("FileTable", "Refresh files cancelled by user");
 };
 // Expose methods to parent components
 defineExpose({

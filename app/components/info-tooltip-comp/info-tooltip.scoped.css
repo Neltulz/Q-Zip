@@ -11,132 +11,139 @@
 
 /* Main tooltip container - <div class="info-tooltip"> */
 .info-tooltip {
-  position: absolute;
-  z-index: 999999;
-  background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
+  /* CSS Variables */
+  --bg-hue: var(--bg-hue);
+  --bg-sat: var(--bg-sat);
+  --bg-lum: var(--bg-lum);
+  --brdr-clr-liter: var(--brdr-clr-liter);
+  --brdr-rad-smal: var(--brdr-rad-smal);
+  --txt-clr-liter: var(--txt-clr-liter);
+
+  align-items: flex-start;
   backdrop-filter: blur(10px);
+  background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
   border: 1px solid var(--brdr-clr-liter);
   border-radius: var(--brdr-rad-smal);
+  block-size: auto;
   box-shadow: 0 2px 15px hsla(0, 0%, 0%, 0.5);
-  inline-size: max-content;
-  min-inline-size: 150px;
-  max-inline-size: 500px;
-  pointer-events: none; /* Default: don't capture pointer events so tooltips don't block underlying controls */
-  white-space: normal;
   display: flex;
-  align-items: flex-start;
+  inline-size: max-content;
   justify-content: flex-start;
+  max-inline-size: 500px;
+  min-inline-size: 150px;
   padding-block: 6px;
   padding-inline: 10px;
-  
-  /* .info-tooltip .tooltip-arrow - Arrow SVG container */
+  pointer-events: none; /* Default: don't capture pointer events so tooltips don't block underlying controls */
+  position: absolute;
+  white-space: normal;
+  z-index: 999999;
+
+  /* Arrow SVG container - <div class="tooltip-arrow"> */
   .tooltip-arrow {
-    position: absolute;
-    inline-size: 16px;
     block-size: 9px;
-    /* Ensure arrow is properly centered and positioned */
-    transform-origin: center;
-    /* Prevent any layout shifts */
-    pointer-events: none;
-    
-    /* .info-tooltip .tooltip-arrow path - Arrow path element */
+    inline-size: 16px;
+    pointer-events: none; /* Prevent any layout shifts */
+    position: absolute;
+    transform-origin: center; /* Ensure arrow is properly centered and positioned */
+
+    /* Arrow path element - <path> */
     path {
       fill: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.2), 0.75);
       stroke: var(--brdr-clr-liter);
       stroke-width: 1px;
-      /* Ensure the path is centered within the SVG */
-      vector-effect: non-scaling-stroke;
+      vector-effect: non-scaling-stroke; /* Ensure the path is centered within the SVG */
     }
-    
-    /* .info-tooltip .tooltip-arrow[data-side="bottom"] - Arrow rotation for bottom placement */
+
+    /* Arrow rotation for bottom placement - <div class="tooltip-arrow" data-side="bottom"> */
     &[data-side="bottom"] {
       transform: rotate(180deg);
     }
-    
-    /* .info-tooltip .tooltip-arrow[data-side="left"] - Arrow rotation for left placement */
+
+    /* Arrow rotation for left placement - <div class="tooltip-arrow" data-side="left"> */
     &[data-side="left"] {
       transform: rotate(-90deg);
     }
-    
-    /* .info-tooltip .tooltip-arrow[data-side="right"] - Arrow rotation for right placement */
+
+    /* Arrow rotation for right placement - <div class="tooltip-arrow" data-side="right"> */
     &[data-side="right"] {
       transform: rotate(90deg);
     }
   }
-  
-  /* .info-tooltip .tooltip-content - Content container */
+
+  /* Content container - <div class="tooltip-content"> */
   .tooltip-content {
-    font-size: 1em;
+    align-items: flex-start;
     color: var(--txt-clr-liter);
-    text-align: left;
-    width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    
-    /* .info-tooltip .tooltip-content .tooltip-text-content - Text content wrapper */
+    font-size: 1em;
+    inline-size: 100%;
+    text-align: left;
+
+    /* Text content wrapper - <div class="tooltip-text-content"> */
     .tooltip-text-content {
-      display: flex;
       align-items: center;
-      justify-content: flex-start;
+      display: flex;
       gap: 0.5em;
-      position: relative;
       inset-block-start: 1px;
-      width: 100%;
+      justify-content: flex-start;
+      position: relative;
       text-align: left;
       white-space: normal;
+      width: 100%;
       word-wrap: break-word;
-      
-      /* .info-tooltip .tooltip-content .tooltip-text-content .tooltip-icon - Icon in text content */
+
+      /* Icon in text content - <Icon class="tooltip-icon"> */
       .tooltip-icon {
-        width: 16px;
-        height: 16px;
+        block-size: 16px;
         color: var(--txt-clr-liter);
         flex-shrink: 0;
+        inline-size: 16px;
       }
     }
-    
-    /* .info-tooltip .tooltip-content .info-line - Generic line wrapper */
+
+    /* Generic line wrapper - <div class="info-line"> */
     .info-line {
       margin-block-end: 4px;
     }
-    
-    /* .info-tooltip .tooltip-content hr - Horizontal rule separator */
+
+    /* Horizontal rule separator - <hr> */
     hr {
       border: none;
       border-block-start: 1px solid var(--brdr-clr);
       margin-block: 6px;
       margin-inline: 0;
     }
-    
-    /* .info-tooltip .tooltip-content .file-list-container - File list container */
+
+    /* File list container - <div class="file-list-container"> */
     .file-list-container {
+      block-size: max-content;
       max-block-size: 200px;
       overflow-y: auto;
-      
-      /* .info-tooltip .tooltip-content .file-list-container .file-list - File list */
+
+      /* File list - <ul class="file-list"> */
       .file-list {
-        list-style: none;
-        padding-inline-start: 12px;
-        margin-block-start: 4px;
-        margin-block-end: 0;
-        margin-inline: 0;
         display: grid;
         gap: 2px;
-        
-        /* .info-tooltip .tooltip-content .file-list-container .file-list li - File list item */
+        list-style: none;
+        margin-block-end: 0;
+        margin-block-start: 4px;
+        margin-inline: 0;
+        padding-inline-start: 12px;
+
+        /* File list item - <li> */
         li {
           display: grid;
-          grid-template-columns: 1fr auto;
           gap: 8px;
-          
-          /* .info-tooltip .tooltip-content .file-list-container .file-list li .file-name - File name in list */
+          grid-template-columns: 1fr auto;
+
+          /* File name in list - <span class="file-name"> */
           .file-name {
-            white-space: normal;
             word-break: break-all;
+            white-space: normal;
           }
-          
-          /* .info-tooltip .tooltip-content .file-list-container .file-list li .reason - Reason text in list */
+
+          /* Reason text in list - <span class="reason"> */
           .reason {
             color: var(--txt-clr-dark);
             font-style: italic;
@@ -145,38 +152,38 @@
         }
       }
     }
-    
-    /* .info-tooltip .tooltip-content .keyboard-shortcut-line - Keyboard shortcut line */
+
+    /* Keyboard shortcut line - <div class="keyboard-shortcut-line"> */
     .keyboard-shortcut-line {
-      display: flex;
       align-items: center;
-      justify-content: flex-start;
+      display: flex;
       gap: 0.5em;
+      justify-content: flex-start;
       margin-block-start: 4px;
-      
-      /* .info-tooltip .tooltip-content .keyboard-shortcut-line .keyboard-icon - Keyboard icon */
+
+      /* Keyboard icon - <Icon class="keyboard-icon"> */
       .keyboard-icon {
-        width: 16px;
-        height: 16px;
+        block-size: 16px;
         color: var(--blu-lite);
         flex-shrink: 0;
+        inline-size: 16px;
       }
-      
-      /* .info-tooltip .tooltip-content .keyboard-shortcut-line .keyboard-shortcut-text - Keyboard shortcut text */
+
+      /* Keyboard shortcut text - <span class="keyboard-shortcut-text"> */
       .keyboard-shortcut-text {
-        font-size: 0.9em;
         color: var(--blu-lite);
+        font-size: 0.9em;
         font-weight: 500;
       }
     }
   }
-  
-  /* .info-tooltip.interactive - Interactive tooltip state */
+
+  /* Interactive tooltip state - <div class="info-tooltip interactive"> */
   &.interactive {
     pointer-events: auto;
   }
-  
-  /* .info-tooltip.simple-tooltip - Simple tooltip state */
+
+  /* Simple tooltip state - <div class="info-tooltip simple-tooltip"> */
   &.simple-tooltip {
     justify-content: flex-start;
     text-align: left;

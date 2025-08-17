@@ -38,10 +38,17 @@
       <CustomButton
         button-style-class="trans-btn"
         data-name="refresh-files-btn"
-        first-icon-name="mdi:refresh"
+        :disabled="isRefreshing"
+        :first-icon-name="isRefreshing ? '' : 'mdi:refresh'"
         :first-icon-size="20"
         @click.stop="refreshFiles"
       >
+        <!-- Show loading animation when refreshing -->
+        <template v-if="isRefreshing">
+          <div class="refresh-loading-container">
+            <DoubleBounceLoadingAnim />
+          </div>
+        </template>
         Refresh
       </CustomButton>
       <CustomButton
@@ -209,11 +216,13 @@ import { open } from "@tauri-apps/plugin-dialog";
 import DropdownMenu from "../DropdownMenu.vue";
 import CustomButton from "../CustomButton.vue";
 import ToolBar from "../ToolBar.vue";
+import DoubleBounceLoadingAnim from "../loading-anim-comp/DoubleBounceLoadingAnim.vue";
 const props = defineProps<{
   jobId: number;
   selectedFiles: string[];
   showToolbar?: boolean;
   isFiletableActive?: boolean;
+  isRefreshing?: boolean;
 }>();
 const emit = defineEmits([
   "remove-files",
@@ -317,5 +326,28 @@ const handleToolbarClick = (event: Event): void => {
 :deep(.trans-btn:disabled) {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Refresh loading container styling */
+.refresh-loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+/* Scale down the double bounce animation for button use */
+.refresh-loading-container :deep(.double-bounce-animation) {
+  gap: 0;
+}
+
+.refresh-loading-container :deep(.spinner) {
+  block-size: 16px;
+  inline-size: 16px;
+}
+
+.refresh-loading-container :deep(.loading-message) {
+  display: none;
 }
 </style>

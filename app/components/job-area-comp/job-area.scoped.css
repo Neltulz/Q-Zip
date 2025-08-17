@@ -1,14 +1,8 @@
 /* 
-  components/job-area-comp/job-area.scoped.css 
+  "components/job-area-comp/job-area.scoped.css" --for-- "components/JobArea.vue" 
 */
-/*
-  Description:
-  Styles for the JobArea component, including the main layout,
-  drag-and-drop overlay, and job content view. Uses native syntactical
-  CSS nesting and grid areas for layout management. Includes an active
-  state to show a visual selection border.
-*/
-/* Updated pulse-glow animation to pulse from 0.5 to 1 opacity */
+
+/* Pulse glow animation for drop zone hover effects */
 @keyframes pulse-glow {
   0%,
   100% {
@@ -18,35 +12,41 @@
     box-shadow: 0 0 15px 2px hsla(210, 100%, 70%, 0.5);
   }
 }
-/* --- Root Container --- */
+
+/* Main job area container - <div class="job-area"> */
 .job-area {
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
   overflow: hidden;
   position: relative;
-  /* Make all direct children occupy the same grid cell */
+
+  /* All direct children span full grid */
   & > * {
     grid-column: 1 / -1;
     grid-row: 1 / -1;
   }
-  /* REMOVED: Selection box styles are now in FileTable.vue's CSS */
-  /* --- Standard Job View --- */
+
+  /* Standard job view container - <div class="job"> */
   .job {
+    block-size: 100%;
     display: grid;
     grid-template-areas:
       "header"
       "content";
     grid-template-rows: auto 1fr;
-    height: 100%;
     overflow: hidden;
     z-index: 1;
+
+    /* Job header section - <div class="job-header"> */
     .job-header {
       border-block-end: 1px solid var(--brdr-clr);
       flex-shrink: 0;
       grid-area: header;
       padding: 10px;
     }
+
+    /* Job content section - <div class="job-content"> */
     .job-content {
       display: flex;
       flex-direction: column;
@@ -55,7 +55,8 @@
       overflow: hidden;
     }
   }
-  /* --- External Drag Overlay --- */
+
+  /* External drag overlay - <div class="external-drag-overlay"> */
   .external-drag-overlay {
     backdrop-filter: blur(10px);
     background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.6), 0.8);
@@ -69,13 +70,13 @@
     position: absolute;
     transition: opacity 0.2s ease-in-out;
     z-index: 100;
-    /* Light theme adjustment for overlay */
+
+    /* Light theme background adjustment */
     @container style(--theme: light) {
-      & {
-        background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) + 3.6%), 0.8);
-      }
+      background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) + 3.6%), 0.8);
     }
-    /* --- Drop Zones within Overlay --- */
+
+    /* Drop zones within overlay - <div class="external-drop-zone"> */
     .external-drop-zone {
       align-items: center;
       color: var(--txt-clr-liter);
@@ -86,19 +87,22 @@
       padding: 2cqw;
       position: relative;
       transition: opacity 0.2s ease-in-out;
+
+      /* Drop zone visual container - <div class="drop-zone-visual"> */
       .drop-zone-visual {
         align-items: center;
         background-color: hsla(var(--bg-hue), var(--bg-sat), var(--bg-lum), 0.1);
+        block-size: 100%;
         border: 2px dashed var(--brdr-clr-liter);
         border-radius: var(--brdr-rad);
-        block-size: 100%;
         display: flex;
         inline-size: 100%;
         justify-content: center;
         transform: scale(0.975);
-        transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease-in-out,
-          background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, opacity 0.2s ease-in-out, transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       }
+
+      /* Drop zone content - <div class="drop-zone-content"> */
       .drop-zone-content {
         align-items: center;
         display: flex;
@@ -109,8 +113,8 @@
         justify-content: center;
         transition: color 0.2s ease-in-out;
       }
-      /* --- Drop Zone Interaction Logic --- */
-      /* 1. Universal hover/active state for ALL zones: scale up, add glow, and change to light blue. */
+
+      /* Hover and active states for drop zone */
       &:hover .drop-zone-visual,
       &.drop-target-active .drop-zone-visual {
         animation: pulse-glow 4s infinite ease-in-out;
@@ -118,56 +122,67 @@
         border-color: hsla(210, 100%, 75%, 0.8);
         transform: scale(1);
       }
-      /* Make text brighter on hover/active */
+
       &:hover .drop-zone-content,
       &.drop-target-active .drop-zone-content {
         color: hsl(0, 0%, 100%);
       }
-      /* --- Drop Zone Layout & Theming --- */
+
+      /* Specific drop zone types */
       &.new-job,
       &.separate-jobs {
         flex-basis: 25%;
       }
+
       &.current-job {
         flex-basis: 50%;
       }
     }
-    /* 2. When the overlay has a hovered OR active drop zone, affect the OTHER zones. */
+
+    /* Dim non-hovered drop zones when one is hovered */
     &:has(.external-drop-zone:hover) .external-drop-zone:not(:hover),
     &:has(.external-drop-zone.drop-target-active) .external-drop-zone:not(.drop-target-active) {
       opacity: 0.5;
+
       .drop-zone-visual {
         transform: scale(0.95);
       }
     }
-    /* --- Error State --- */
+
+    /* Error state styling */
     &.has-error {
       border: 2px dashed hsla(0, 70%, 60%, 0.8);
     }
+
+    /* Drop error message - <div class="drop-error-message"> */
     .drop-error-message {
       align-items: center;
       background-color: hsla(0, 70%, 30%, 0.5);
+      block-size: 100%;
       color: hsl(0, 100%, 85%);
       display: flex;
       flex-direction: column;
       font-size: 1.5rem;
       font-weight: bold;
       gap: 16px;
+      inline-size: 100%;
       inset: 0;
       justify-content: center;
       padding: 20px;
-      pointer-events: none;
+      pointer-events: none; /* Don't block underlying controls */
       position: absolute;
       text-align: center;
-      z-index: 101; /* Ensure it's on top of the drop zones */
+      z-index: 101;
     }
   }
 }
-/* --- Vue Transition --- */
+
+/* Vue transition animations */
 .job-fade-enter-active,
 .job-fade-leave-active {
   transition: opacity 0.15s ease-in-out;
 }
+
 .job-fade-enter-from,
 .job-fade-leave-to {
   opacity: 0;
