@@ -101,6 +101,9 @@
       :current-item="progressInfo.currentItem"
       :total-items="progressInfo.totalItems"
       :progress-message="progressInfo.message"
+      :overall-current-folder="progressInfo.overallCurrentFolder"
+      :overall-total-folders="progressInfo.overallTotalFolders"
+      :overall-progress-message="progressInfo.overallProgressMessage"
       animation-type="full"
       @cancel="cancelRefresh"
       @pause="handleRefreshPause"
@@ -331,7 +334,10 @@ const isRefreshPaused = ref(false); // Track if refresh is currently paused
 const progressInfo = ref({
   currentItem: 0,
   totalItems: 0,
-  message: ""
+  message: "",
+  overallCurrentFolder: 0,
+  overallTotalFolders: 0,
+  overallProgressMessage: ""
 });
 const marqueeIsAdditive = ref(false);
 const marqueeAnchorX = ref(0);
@@ -1924,6 +1930,10 @@ const handleRefreshFiles = (): void => {
       progressInfo.value.currentItem = step;
       progressInfo.value.totalItems = totalSteps;
       progressInfo.value.message = message;
+      // Set dual progress tracking values for refresh operation
+      progressInfo.value.overallCurrentFolder = step;
+      progressInfo.value.overallTotalFolders = totalSteps;
+      progressInfo.value.overallProgressMessage = `Refreshing job ${props.jobId}`;
       console.log(`[FileTable] Progress info updated: currentItem=${step}, totalItems=${totalSteps}, message="${message}"`);
       logUI("FileTable", `Progress info updated: currentItem=${step}, totalItems=${totalSteps}, message="${message}"`);
     }
@@ -1976,9 +1986,9 @@ const handleRefreshFiles = (): void => {
   });
 };
 
-const cancelRefresh = (): void => {
+const cancelRefresh = (removeScannedItems: boolean = true): void => {
   const startTime = performance.now();
-  logUI("FileTable", `Cancel refresh called at ${startTime.toFixed(2)}ms`);
+  logUI("FileTable", `Cancel refresh called at ${startTime.toFixed(2)}ms with removeScannedItems=${removeScannedItems}`);
   
   // Cancel the refresh operation
   if (refreshTimeout) {
@@ -1993,7 +2003,10 @@ const cancelRefresh = (): void => {
   progressInfo.value = {
     currentItem: 0,
     totalItems: 0,
-    message: ""
+    message: "",
+    overallCurrentFolder: 0,
+    overallTotalFolders: 0,
+    overallProgressMessage: ""
   };
   
   // Reset pause flag

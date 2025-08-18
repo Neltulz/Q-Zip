@@ -10,7 +10,7 @@ import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";
 import { getFileDetails, setCancellationFlag, setPauseFlag, setProgressCallback as setFileUtilsProgressCallback } from "@/utils/fileUtils";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-import { logStoreAction } from "@/utils/loggers";
+import { logStoreAction, logDualProgress } from "@/utils/loggers";
 import type { FileItem } from "@/types/types";
 // Type definitions are now exported to be available across the application.
 export interface CompressionSettings {
@@ -89,10 +89,46 @@ export const useJobsStore = defineStore(
     let currentOperationJobId: number | null = null;
     let cancelledPaths: string[] = [];
     let cancelStartTime: number | null = null;
-    let progressCallback: ((current: number, total: number, message: string) => void) | null = null;
+    let shouldRemoveScannedItems = true; // Default to true to maintain current behavior
+
     let isOperationPaused = false;
     // Track pause logging to avoid flooding
     let pauseLogged = false;
+    // Progress tracking
+    const progressInfo = ref({
+      currentItem: 0,
+      totalItems: 0,
+      message: "",
+      overallCurrentFolder: 0,
+      overallTotalFolders: 0,
+      overallProgressMessage: ""
+    });
+    // Progress callback for file operations
+    const progressCallback = (current: number, total: number, message: string, overallCurrent?: number, overallTotal?: number, overallMessage?: string) => {
+      const oldProgress = { ...progressInfo.value };
+      progressInfo.value = {
+        currentItem: current,
+        totalItems: total,
+        message: message,
+        overallCurrentFolder: overallCurrent !== undefined ? overallCurrent : oldProgress.overallCurrentFolder,
+        overallTotalFolders: overallTotal !== undefined ? overallTotal : oldProgress.overallTotalFolders,
+        overallProgressMessage: overallMessage !== undefined ? overallMessage : oldProgress.overallProgressMessage
+      };
+
+      // Log dual progress changes (only when overall values change)
+      if (oldProgress.overallTotalFolders !== progressInfo.value.overallTotalFolders ||
+        oldProgress.overallCurrentFolder !== progressInfo.value.overallCurrentFolder) {
+        logDualProgress("jobsStore", `Dual progress updated`, {
+          overallCurrentFolder: progressInfo.value.overallCurrentFolder,
+          overallTotalFolders: progressInfo.value.overallTotalFolders,
+          overallProgressMessage: progressInfo.value.overallProgressMessage,
+          oldOverallCurrentFolder: oldProgress.overallCurrentFolder,
+          oldOverallTotalFolders: oldProgress.overallTotalFolders,
+          overallCurrentParam: overallCurrent,
+          overallTotalParam: overallTotal
+        });
+      }
+    };
     // Actions
     function initialize(): void {
       if (jobs.value.length === 0) {
@@ -122,14 +158,18 @@ export const useJobsStore = defineStore(
       }
       return newId;
     }
-    function cancelCurrentOperation(): void {
+    function cancelCurrentOperation(removeScannedItems: boolean = true): void {
       if (currentOperationJobId !== null) {
         cancelStartTime = performance.now();
         currentOperationCancelled = true;
         isOperationPaused = false; // Reset pause state when cancelling
         setCancellationFlag(true); // Set the flag in fileUtils
         setPauseFlag(false); // Reset pause flag in fileUtils
-        logStoreAction("jobsStore", `Cancelling current operation for job ${currentOperationJobId} at ${new Date().toISOString()}`);
+
+        // Store the rollback preference for use during cancellation
+        shouldRemoveScannedItems = removeScannedItems;
+
+        logStoreAction("jobsStore", `Cancelling current operation for job ${currentOperationJobId} at ${new Date().toISOString()} with removeScannedItems=${removeScannedItems}`);
       }
     }
     function pauseCurrentOperation(): void {
@@ -158,8 +198,7 @@ export const useJobsStore = defineStore(
         console.log(`[jobsStore] WARNING: No current operation to resume (currentOperationJobId is null)`);
       }
     }
-    function setProgressCallbackInternal(callback: ((current: number, total: number, message: string) => void) | null): void {
-      progressCallback = callback;
+    function setProgressCallbackInternal(callback: ((current: number, total: number, message: string, overallCurrent?: number, overallTotal?: number, overallMessage?: string) => void) | null): void {
       setFileUtilsProgressCallback(callback); // Set the callback in fileUtils
     }
     function getCancelledPaths(): string[] {
@@ -176,6 +215,16 @@ export const useJobsStore = defineStore(
       currentOperationJobId = jobId;
       cancelledPaths = []; // Reset cancelled paths for this operation
       setCancellationFlag(false); // Reset the flag in fileUtils
+
+      // Track initial file count for rollback on cancellation
+      const initialFileCount = job.files.length;
+      const initialFilePaths = new Set(job.files.map(f => f.path));
+
+      // Set up progress callback for dual progress tracking
+      // Don't override the progress callback if it's already set by addMultipleFoldersToJob
+      if (!progressInfo.value.overallTotalFolders) {
+        setProgressCallbackInternal(progressCallback);
+      }
       const startTime = performance.now();
       const operationStartTime = new Date().toISOString();
       logStoreAction("jobsStore", `Starting to process ${paths.length} items for job ${jobId} at ${operationStartTime}...`);
@@ -188,18 +237,39 @@ export const useJobsStore = defineStore(
       let addedCount = 0;
       const processedPaths: string[] = [];
       const newFileDetails: FileItem[] = []; // Collect all file details before updating
+
+      // Track overall progress for multiple folders
+      const totalFolders = newPaths.length;
+      let currentFolderIndex = 0;
+
       // Process items one by one with frequent cancellation checks
       for (let i = 0; i < newPaths.length; i++) {
         const path = newPaths[i];
         if (!path) continue; // Skip undefined paths
         // Check for cancellation and pause more frequently for better responsiveness
         if (i % 1 === 0 || i === newPaths.length - 1) {
-          console.log(`[jobsStore] PAUSE CHECK at item ${i}/${newPaths.length} - isOperationPaused=${isOperationPaused}, currentOperationCancelled=${currentOperationCancelled}`);
+          // Reduced logging - only log every 100 items or on the last item
+          if (i % 100 === 0 || i === newPaths.length - 1) {
+            console.log(`[jobsStore] PAUSE CHECK at item ${i}/${newPaths.length} - isOperationPaused=${isOperationPaused}, currentOperationCancelled=${currentOperationCancelled}`);
+          }
           if (currentOperationCancelled) {
             const cancelTime = performance.now();
             const timeSinceStart = cancelTime - startTime;
             const cancelDelay = cancelTime - (cancelStartTime || startTime);
             logStoreAction("jobsStore", `Item processing cancelled for job ${jobId} after ${timeSinceStart.toFixed(2)}ms. Cancellation delay: ${cancelDelay.toFixed(2)}ms. Processed ${processedPaths.length}/${newPaths.length} items. Cancelled paths: ${newPaths.length - processedPaths.length}`);
+
+            // ROLLBACK: Remove any files that were added during this operation
+            if (newFileDetails.length > 0 && shouldRemoveScannedItems) {
+              const addedFilePaths = new Set(newFileDetails.map(f => f.path));
+              const filesToRemove = job.files.filter(f => addedFilePaths.has(f.path));
+              if (filesToRemove.length > 0) {
+                logStoreAction("jobsStore", `Rolling back ${filesToRemove.length} files that were added during cancelled operation`);
+                job.files = job.files.filter(f => !addedFilePaths.has(f.path));
+              }
+            } else if (newFileDetails.length > 0 && !shouldRemoveScannedItems) {
+              logStoreAction("jobsStore", `Keeping ${newFileDetails.length} files that were added during cancelled operation (user chose to keep scanned items)`);
+            }
+
             // Add remaining paths to cancelled paths
             cancelledPaths = newPaths.slice(i);
             // Reset operation state when cancelled
@@ -208,7 +278,7 @@ export const useJobsStore = defineStore(
             isOperationPaused = false;
             setCancellationFlag(false);
             setPauseFlag(false);
-            return processedPaths.length;
+            return shouldRemoveScannedItems ? 0 : processedPaths.length; // Return 0 if rollback, or count of kept files
           }
           // Check for pause and wait if paused
           while (isOperationPaused && !currentOperationCancelled) {
@@ -225,12 +295,37 @@ export const useJobsStore = defineStore(
             pauseLogged = false;
           }
         } else {
-          console.log(`[jobsStore] PAUSE CHECK SKIPPED at item ${i}/${newPaths.length} (not even number)`);
+          // Removed verbose logging for skipped pause checks
         }
         try {
           // Update progress for the current item
+          // Note: For single folder processing, we don't show overall progress
+          // When called from addMultipleFoldersToJob, don't update overall progress
           if (progressCallback) {
-            progressCallback(i + 1, newPaths.length, `Processing: ${path.split('\\').pop() || path.split('/').pop() || path}`);
+            // Check if we're in a multiple folders context by checking if overall progress is already set
+            const isMultipleFoldersContext = progressInfo.value.overallTotalFolders > 0;
+
+            if (isMultipleFoldersContext) {
+              // In multiple folders context, only update individual file progress, not overall progress
+              progressCallback(
+                i, // Show last completed item (0-based index)
+                newPaths.length,
+                `Processing: ${path.split('\\').pop() || path.split('/').pop() || path}`,
+                progressInfo.value.overallCurrentFolder, // Preserve existing overall progress
+                progressInfo.value.overallTotalFolders, // Preserve existing overall progress
+                progressInfo.value.overallProgressMessage // Preserve existing overall message
+              );
+            } else {
+              // Single folder context, no overall progress
+              progressCallback(
+                i, // Show last completed item (0-based index)
+                newPaths.length,
+                `Processing: ${path.split('\\').pop() || path.split('/').pop() || path}`,
+                0, // No overall progress for single folder
+                0, // No overall progress for single folder
+                "" // No overall message for single folder
+              );
+            }
           }
           // Get actual file details using the fileUtils function
           const fileDetails = await getFileDetails(path);
@@ -239,6 +334,19 @@ export const useJobsStore = defineStore(
             const cancelTime = performance.now();
             const timeSinceStart = cancelTime - startTime;
             logStoreAction("jobsStore", `Item processing cancelled for job ${jobId} after ${timeSinceStart.toFixed(2)}ms. Processed ${processedPaths.length}/${newPaths.length} items. Cancelled paths: ${newPaths.length - processedPaths.length}`);
+
+            // ROLLBACK: Remove any files that were added during this operation
+            if (newFileDetails.length > 0 && shouldRemoveScannedItems) {
+              const addedFilePaths = new Set(newFileDetails.map(f => f.path));
+              const filesToRemove = job.files.filter(f => addedFilePaths.has(f.path));
+              if (filesToRemove.length > 0) {
+                logStoreAction("jobsStore", `Rolling back ${filesToRemove.length} files that were added during cancelled operation`);
+                job.files = job.files.filter(f => !addedFilePaths.has(f.path));
+              }
+            } else if (newFileDetails.length > 0 && !shouldRemoveScannedItems) {
+              logStoreAction("jobsStore", `Keeping ${newFileDetails.length} files that were added during cancelled operation (user chose to keep scanned items)`);
+            }
+
             // Add remaining paths to cancelled paths
             cancelledPaths = newPaths.slice(i);
             // Reset operation state when cancelled
@@ -247,14 +355,14 @@ export const useJobsStore = defineStore(
             isOperationPaused = false;
             setCancellationFlag(false);
             setPauseFlag(false);
-            return processedPaths.length;
+            return shouldRemoveScannedItems ? 0 : processedPaths.length; // Return 0 if rollback, or count of kept files
           }
           if (fileDetails) {
             newFileDetails.push(fileDetails); // Collect instead of pushing immediately
             processedPaths.push(path);
             addedCount++;
-            // Log progress every 10 items (more frequent for folder scanning)
-            if (addedCount % 10 === 0) {
+            // Log progress every 100 items (reduced frequency to avoid log flooding)
+            if (addedCount % 100 === 0) {
               const currentTime = performance.now();
               const elapsed = currentTime - startTime;
               const rate = addedCount / (elapsed / 1000);
@@ -453,13 +561,154 @@ export const useJobsStore = defineStore(
         console.log(`Created ${newJobIds.length} new jobs from paths.`);
       }
     }
+
+    // New function for processing multiple folders with dual progress tracking
+    async function addMultipleFoldersToJob(jobId: number, folderPaths: string[]): Promise<number> {
+      const job = jobs.value.find((j) => j.id === jobId);
+      if (!job) return 0;
+
+      // Set up cancellation tracking for this operation
+      currentOperationCancelled = false;
+      currentOperationJobId = jobId;
+      cancelledPaths = [];
+      setCancellationFlag(false);
+
+      // Track initial file count for rollback on cancellation
+      const initialFileCount = job.files.length;
+      const initialFilePaths = new Set(job.files.map(f => f.path));
+
+      // Create a custom progress callback that preserves overall progress
+      const dualProgressCallback = (current: number, total: number, message: string, overallCurrent?: number, overallTotal?: number, overallMessage?: string) => {
+        const oldProgress = { ...progressInfo.value };
+
+        // Always preserve the overall progress values from the multiple folders context
+        progressInfo.value = {
+          currentItem: current,
+          totalItems: total,
+          message: message,
+          overallCurrentFolder: overallCurrent ?? 0, // Default to 0 if not provided
+          overallTotalFolders: folderPaths.length,
+          overallProgressMessage: overallMessage || `Adding folders: ${overallCurrent ?? 0}/${folderPaths.length}`
+        };
+
+        logDualProgress("jobsStore", `Dual progress callback`, {
+          overallCurrentFolder: progressInfo.value.overallCurrentFolder,
+          overallTotalFolders: progressInfo.value.overallTotalFolders,
+          overallProgressMessage: progressInfo.value.overallProgressMessage
+        });
+      };
+      setProgressCallbackInternal(dualProgressCallback);
+
+      const startTime = performance.now();
+      const operationStartTime = new Date().toISOString();
+      logStoreAction("jobsStore", `Starting to process ${folderPaths.length} folders for job ${jobId} at ${operationStartTime}...`);
+
+      let totalAddedCount = 0;
+      const totalFolders = folderPaths.length;
+      const addedFilesDuringOperation: FileItem[] = []; // Track all files added during this operation
+
+      // Process each folder
+      for (let folderIndex = 0; folderIndex < folderPaths.length; folderIndex++) {
+        const folderPath = folderPaths[folderIndex];
+        if (!folderPath) continue;
+
+        // Check for cancellation
+        if (currentOperationCancelled) {
+          // ROLLBACK: Remove any files that were added during this operation
+          if (addedFilesDuringOperation.length > 0 && shouldRemoveScannedItems) {
+            const addedFilePaths = new Set(addedFilesDuringOperation.map(f => f.path));
+            const filesToRemove = job.files.filter(f => addedFilePaths.has(f.path));
+            if (filesToRemove.length > 0) {
+              logStoreAction("jobsStore", `Rolling back ${filesToRemove.length} files that were added during cancelled multiple folders operation`);
+              job.files = job.files.filter(f => !addedFilePaths.has(f.path));
+            }
+          } else if (addedFilesDuringOperation.length > 0 && !shouldRemoveScannedItems) {
+            logStoreAction("jobsStore", `Keeping ${addedFilesDuringOperation.length} files that were added during cancelled multiple folders operation (user chose to keep scanned items)`);
+          }
+
+          cancelledPaths = folderPaths.slice(folderIndex);
+          currentOperationCancelled = false;
+          currentOperationJobId = null;
+          isOperationPaused = false;
+          setCancellationFlag(false);
+          setPauseFlag(false);
+          return shouldRemoveScannedItems ? 0 : totalAddedCount; // Return 0 if rollback, or count of kept files
+        }
+
+        // Check for pause
+        while (isOperationPaused && !currentOperationCancelled) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        try {
+          // Update overall progress for folder processing
+          if (dualProgressCallback) {
+            dualProgressCallback(
+              0, // No current file progress at folder level
+              0, // No current file total at folder level
+              `Processing folder: ${folderPath.split('\\').pop() || folderPath.split('/').pop() || folderPath}`,
+              folderIndex, // Show completed folders (0-based index)
+              totalFolders,
+              `Adding folders: ${folderIndex}/${totalFolders}`
+            );
+          }
+
+          // Track files before processing this folder
+          const filesBeforeFolder = new Set(job.files.map(f => f.path));
+
+          // Process the individual folder
+          const addedCount = await addFilesToJob(jobId, [folderPath]);
+
+          // Track files added during this folder processing
+          const filesAfterFolder = new Set(job.files.map(f => f.path));
+          const newFilesFromThisFolder = job.files.filter(f =>
+            filesAfterFolder.has(f.path) && !filesBeforeFolder.has(f.path)
+          );
+          addedFilesDuringOperation.push(...newFilesFromThisFolder);
+
+          totalAddedCount += addedCount;
+
+        } catch (error) {
+          if (error instanceof Error && error.message === "Operation cancelled") {
+            // ROLLBACK: Remove any files that were added during this operation
+            if (addedFilesDuringOperation.length > 0 && shouldRemoveScannedItems) {
+              const addedFilePaths = new Set(addedFilesDuringOperation.map(f => f.path));
+              const filesToRemove = job.files.filter(f => addedFilePaths.has(f.path));
+              if (filesToRemove.length > 0) {
+                logStoreAction("jobsStore", `Rolling back ${filesToRemove.length} files that were added during cancelled multiple folders operation`);
+                job.files = job.files.filter(f => !addedFilePaths.has(f.path));
+              }
+            } else if (addedFilesDuringOperation.length > 0 && !shouldRemoveScannedItems) {
+              logStoreAction("jobsStore", `Keeping ${addedFilesDuringOperation.length} files that were added during cancelled multiple folders operation (user chose to keep scanned items)`);
+            }
+            throw error;
+          }
+          logStoreAction("jobsStore", `Error processing folder ${folderPath}: ${error}`);
+        }
+      }
+
+      const endTime = performance.now();
+      const totalTime = endTime - startTime;
+      logStoreAction("jobsStore", `Completed processing ${totalFolders} folders for job ${jobId} in ${totalTime.toFixed(2)}ms. Total files added: ${totalAddedCount}`);
+
+      // Reset operation state
+      currentOperationCancelled = false;
+      currentOperationJobId = null;
+      isOperationPaused = false;
+      setCancellationFlag(false);
+      setPauseFlag(false);
+
+      return totalAddedCount;
+    }
     return {
       jobs,
       globalSettings,
       selectedJobId,
+      progressInfo,
       initialize,
       addJob,
       addFilesToJob,
+      addMultipleFoldersToJob,
       addClipboardFilesToJob,
       removeJobs,
       removeAllJobs,

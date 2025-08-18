@@ -39,9 +39,12 @@
         <div ref="jobContentRef" class="job-content" @contextmenu.prevent.stop="showJobContextMenu">
           <LoadingAnim 
             :visible="showLoading" 
-            :current-item="progressInfo.currentItem"
-            :total-items="progressInfo.totalItems"
-            :progress-message="progressInfo.message"
+            :current-item="jobsStore.progressInfo.currentItem"
+            :total-items="jobsStore.progressInfo.totalItems"
+            :progress-message="jobsStore.progressInfo.message"
+            :overall-current-folder="jobsStore.progressInfo.overallCurrentFolder"
+            :overall-total-folders="jobsStore.progressInfo.overallTotalFolders"
+            :overall-progress-message="jobsStore.progressInfo.overallProgressMessage"
             @cancel="cancelOperation" 
             @pause="handlePause"
             @animation-finished="onAnimationFinished"
@@ -84,7 +87,7 @@ import FileTable from "@/components/FileTable.vue";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import type { FileItem } from "@/types/types";
 import LoadingAnim from "@/components/LoadingAnim.vue";
-import { logLoading, logRendering, logUI, logFocus, logGlobalEvent, logStoreAction } from "@/utils/loggers";
+import { logLoading, logRendering, logUI, logFocus, logGlobalEvent, logStoreAction, logDualProgress } from "@/utils/loggers";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 type FileOperationPayload = {
   targetJobId: number;
@@ -108,11 +111,7 @@ const selectedFilePaths = ref<string[]>([]);
 const operationTimer = ref<NodeJS.Timeout | null>(null);
 const loadingState = ref<LoadingState>("idle");
 const showLoading = ref(false);
-const progressInfo = ref({
-  currentItem: 0,
-  totalItems: 0,
-  message: ""
-});
+
 let operationCancelled = false;
 const loadingMessage = computed(() => {
   switch (loadingState.value) {
@@ -149,6 +148,30 @@ watch(
   () => activeJob.value?.files,
   (newFiles, oldFiles) => {
     logRendering("JobArea", `Active job files changed: ${oldFiles?.length || 0} -> ${newFiles?.length || 0} files`);
+  },
+  { deep: true }
+);
+
+// Watch for progress info changes to track dual progress
+watch(
+  () => jobsStore.progressInfo,
+  (newProgress, oldProgress) => {
+    if (newProgress.overallTotalFolders !== oldProgress.overallTotalFolders || 
+        newProgress.overallCurrentFolder !== oldProgress.overallCurrentFolder) {
+      logDualProgress("JobArea", `Progress info changed in JobArea`, {
+        old: {
+          overallCurrentFolder: oldProgress.overallCurrentFolder,
+          overallTotalFolders: oldProgress.overallTotalFolders,
+          overallProgressMessage: oldProgress.overallProgressMessage
+        },
+        new: {
+          overallCurrentFolder: newProgress.overallCurrentFolder,
+          overallTotalFolders: newProgress.overallTotalFolders,
+          overallProgressMessage: newProgress.overallProgressMessage
+        },
+        showLoading: showLoading.value
+      });
+    }
   },
   { deep: true }
 );
@@ -238,17 +261,17 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("app:selected-job-changed", selectedJobHandler as EventListener);
 });
-const cancelOperation = () => {
+const cancelOperation = (removeScannedItems: boolean = true) => {
   const cancelRequestTime = performance.now();
   const cancelRequestISO = new Date().toISOString();
-  logLoading("JobArea", `Cancel button clicked at ${cancelRequestISO}. Clearing operation timer.`);
+  logLoading("JobArea", `Cancel button clicked at ${cancelRequestISO} with removeScannedItems=${removeScannedItems}. Clearing operation timer.`);
   operationCancelled = true;
   if (operationTimer.value) {
     clearTimeout(operationTimer.value);
     operationTimer.value = null;
   }
   // Cancel the ongoing file processing operation in the jobs store
-  jobsStore.cancelCurrentOperation();
+  jobsStore.cancelCurrentOperation(removeScannedItems);
   showLoading.value = false;
 };
 const onAnimationFinished = () => {
@@ -285,15 +308,7 @@ const handleOperation = async (
 ): Promise<void> => {
   operationCancelled = false;
   loadingState.value = state;
-  // Set up progress tracking
-  const progressCallback = (current: number, total: number, message: string) => {
-    progressInfo.value = {
-      currentItem: current,
-      totalItems: total,
-      message: message
-    };
-  };
-  jobsStore.setProgressCallback(progressCallback);
+  // Set up progress tracking - jobsStore handles this internally now
   let loadingTimer: NodeJS.Timeout | null = null;
   const operationPromise = new Promise<void>((resolve) => {
     const performAction = async () => {
@@ -688,7 +703,20 @@ const addItemsToJob = async (paths: string[]): Promise<void> => {
     await handleOperation("adding", paths, async () => {
       const processingStartTime = performance.now();
       logLoading("JobArea", `Starting file processing for ${paths.length} paths at ${new Date().toISOString()}...`);
-      const addedCount = await jobsStore.addFilesToJob(activeJob.value!.id, paths);
+      
+      // Determine if we're processing multiple folders or individual files
+      // If we have multiple paths, treat them as folders for dual progress tracking
+      let addedCount: number;
+      if (paths.length > 1) {
+        // Multiple folders - use dual progress tracking
+        logLoading("JobArea", `Processing ${paths.length} folders with dual progress tracking`);
+        addedCount = await jobsStore.addMultipleFoldersToJob(activeJob.value!.id, paths);
+      } else {
+        // Single folder or individual files - use single progress tracking
+        logLoading("JobArea", `Processing single item with single progress tracking`);
+        addedCount = await jobsStore.addFilesToJob(activeJob.value!.id, paths);
+      }
+      
       const processingEndTime = performance.now();
       const processingDuration = processingEndTime - processingStartTime;
       logLoading("JobArea", `File processing completed in ${processingDuration.toFixed(2)}ms. Added ${addedCount} files.`);

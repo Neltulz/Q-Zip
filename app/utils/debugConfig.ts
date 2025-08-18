@@ -46,6 +46,8 @@ export const debugConfig: Record<string, boolean> = {
   logNotifications: false,
   // Logs events related to loading animations.
   logLoadingEvents: true,
+  // Logs dual progress tracking events for debugging multiple folder operations.
+  logDualProgress: true,
   // Logs events related to the Vue rendering lifecycle.
   logRenderingEvents: false,
   // Logs events related to UI interactivity and responsiveness.

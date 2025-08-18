@@ -15,7 +15,7 @@ import type { FileItem } from "@/types/types";
 // Global cancellation and pause flags - will be set by the jobsStore
 let isCancelled = false;
 let isPaused = false;
-let progressCallback: ((current: number, total: number, message: string) => void) | null = null;
+let progressCallback: ((current: number, total: number, message: string, overallCurrent?: number, overallTotal?: number, overallMessage?: string) => void) | null = null;
 // Track pause logging to avoid flooding
 let pauseLogged = false;
 export function setCancellationFlag(cancelled: boolean): void {
@@ -24,7 +24,7 @@ export function setCancellationFlag(cancelled: boolean): void {
 export function setPauseFlag(paused: boolean): void {
   isPaused = paused;
 }
-export function setProgressCallback(callback: ((current: number, total: number, message: string) => void) | null): void {
+export function setProgressCallback(callback: ((current: number, total: number, message: string, overallCurrent?: number, overallTotal?: number, overallMessage?: string) => void) | null): void {
   progressCallback = callback;
 }
 /**
@@ -70,7 +70,7 @@ async function getDirectoryContents(path: string, depth: number = 0): Promise<{
         }
       }
       // Skip entries without a name, which can happen in some edge cases.
-      if (!entry.name) continue;
+      if (!entry?.name) continue;
       const entryPath = await join(path, entry.name);
       if (entry.isDirectory) {
         topLevelFolders++;

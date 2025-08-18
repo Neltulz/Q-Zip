@@ -14,6 +14,9 @@
             :total-items="totalItems"
             :progress-message="progressMessage"
             :is-paused="isPaused"
+            :overall-current-folder="overallCurrentFolder"
+            :overall-total-folders="overallTotalFolders"
+            :overall-progress-message="overallProgressMessage"
             animation-type="circle"
             @pause="handlePauseClick"
             @cancel="handleCancelClick"
@@ -42,7 +45,7 @@
 
 <script setup lang="ts">
 import { watch, ref, nextTick } from "vue";
-import { logLoading } from "@/utils/loggers";
+import { logLoading, logDualProgress } from "@/utils/loggers";
 import FileTableLoadingOverlay from "./file-table-comp/FileTableLoadingOverlay.vue";
 import SpinnerLoadingAnim from "./loading-anim-comp/SpinnerLoadingAnim.vue";
 import DoubleBounceLoadingAnim from "./loading-anim-comp/DoubleBounceLoadingAnim.vue";
@@ -53,11 +56,20 @@ const props = withDefaults(defineProps<{
   totalItems?: number;
   progressMessage?: string;
   animationType?: 'full' | 'spinner' | 'double-bounce';
+  // New props for dual progress tracking
+  overallCurrentFolder?: number;
+  overallTotalFolders?: number;
+  overallProgressMessage?: string;
 }>(), {
   animationType: 'full'
 });
 
-const emit = defineEmits(["cancel", "pause", "animation-finished", "nevermind"]);
+const emit = defineEmits<{
+  cancel: [removeScannedItems?: boolean];
+  pause: [isPaused: boolean];
+  "animation-finished": [];
+  nevermind: [];
+}>();
 const isPaused = ref(false);
 
 watch(
@@ -84,12 +96,40 @@ watch(
   }
 );
 
-// Watch for progress updates
+// Watch for progress updates (reduced logging to avoid spam)
 watch(
   () => [props.currentItem, props.totalItems, props.progressMessage],
   ([newCurrent, newTotal, newMessage], [oldCurrent, oldTotal, oldMessage]) => {
-    if (newCurrent !== oldCurrent || newTotal !== oldTotal || newMessage !== oldMessage) {
-      logLoading("LoadingAnim", `Progress update received: ${newCurrent}/${newTotal} - "${newMessage}" at ${performance.now().toFixed(2)}ms`);
+    // Only log significant progress changes (every 10% or when total changes)
+    const oldTotalNum = Number(oldTotal) || 0;
+    const newTotalNum = Number(newTotal) || 0;
+    const oldPercentage = oldTotalNum > 0 ? Math.round((Number(oldCurrent) || 0) / oldTotalNum * 10) : 0;
+    const newPercentage = newTotalNum > 0 ? Math.round((Number(newCurrent) || 0) / newTotalNum * 10) : 0;
+    
+    if (newTotalNum !== oldTotalNum || newPercentage !== oldPercentage) {
+      logLoading("LoadingAnim", `Progress update: ${newCurrent}/${newTotal} (${newPercentage * 10}%) - "${newMessage}"`);
+    }
+  },
+  { deep: true }
+);
+
+// Watch for dual progress updates
+watch(
+  () => [props.overallCurrentFolder, props.overallTotalFolders, props.overallProgressMessage],
+  ([newOverallCurrent, newOverallTotal, newOverallMessage], [oldOverallCurrent, oldOverallTotal, oldOverallMessage]) => {
+    if (newOverallCurrent !== oldOverallCurrent || newOverallTotal !== oldOverallTotal || newOverallMessage !== oldOverallMessage) {
+      logDualProgress("LoadingAnim", `Dual progress update received`, {
+        old: {
+          overallCurrentFolder: oldOverallCurrent,
+          overallTotalFolders: oldOverallTotal,
+          overallProgressMessage: oldOverallMessage
+        },
+        new: {
+          overallCurrentFolder: newOverallCurrent,
+          overallTotalFolders: newOverallTotal,
+          overallProgressMessage: newOverallMessage
+        }
+      });
     }
   },
   { deep: true }
@@ -100,17 +140,17 @@ const onAfterLeave = () => {
   emit("animation-finished");
 };
 
-const handleCancelClick = () => {
+const handleCancelClick = (removeScannedItems?: boolean) => {
   const startTime = performance.now();
-  logLoading("LoadingAnim", `Cancel button clicked at ${startTime.toFixed(2)}ms`);
+  logLoading("LoadingAnim", `Cancel button clicked at ${startTime.toFixed(2)}ms with removeScannedItems=${removeScannedItems}`);
   
   // Reset pause state when cancelling
   isPaused.value = false;
-  emit("cancel");
+  emit("cancel", removeScannedItems);
   
   const endTime = performance.now();
   const responseTime = endTime - startTime;
-  logLoading("LoadingAnim", `Cancel event emitted in ${responseTime.toFixed(2)}ms`);
+  logLoading("LoadingAnim", `Cancel event emitted in ${responseTime.toFixed(2)}ms with removeScannedItems=${removeScannedItems}`);
 };
 
 const handlePauseClick = (paused: boolean) => {

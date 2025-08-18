@@ -4,6 +4,67 @@
 
 ## Recent Changes
 
+## [0.1.21] - 2025-01-27T23:00:00Z
+
+### Fixed
+- **CRITICAL**: Fixed cancellation behavior to properly rollback all files added during cancelled operations
+  - When cancelling folder addition operations, all files that were processed and added during the operation are now removed
+  - This ensures that cancelled operations leave the file table in the same state as before the operation started
+  - Applies to both single folder and multiple folder addition operations
+  - Previously, files added before cancellation would remain in the file table, which was confusing for users
+
+### Added
+- **NEW**: Added conditional rollback option for cancelled operations
+  - Users can now choose whether to keep or remove already scanned items when cancelling
+  - Added checkbox in cancel confirmation dialog: "Remove already scanned items" (checked by default)
+  - When unchecked, users can keep the folders that were successfully processed while abandoning the problematic ones
+  - Maintains backward compatibility - default behavior remains the same (removes all scanned items)
+  - Provides flexibility for users who want to keep their progress when only some folders are problematic
+
+### Changed
+- Incremented version to v0.1.21
+- Enhanced progress information layout with proper spacing and alignment
+- Better visual hierarchy in loading overlay with consistent text sizing
+- Fixed dual progress bar logic to only show overall progress when processing multiple folders
+- Corrected single folder processing to show only current file progress without overall progress bar
+- Updated JobArea to use addMultipleFoldersToJob when processing multiple folders for proper dual progress tracking
+- Fixed dual progress tracking to show completed folders instead of current folder (e.g., 9/10 instead of 10/10 when processing last folder)
+- Fixed individual progress tracking to show last completed item instead of current item (e.g., 269/2699 instead of 270/2699)
+- Fixed overall progress initialization to start at 0 instead of defaulting to total folders count
+- Fixed FileTable refresh loading to properly display dual progress bars with overall and current progress tracking
+- Fixed multiple folder addition to properly preserve overall progress values and show dual progress bars
+- Added detailed dual progress tracking logging to diagnose multiple folder progress bar issues
+- Reduced log flooding by limiting progress logging to every 100 items instead of every 10
+- Fixed dual progress bar visibility issue in FileTableLoadingOverlay component
+- Reduced excessive logging to focus on essential dual progress debugging information
+- Fixed addFilesToJob to not override progress callback when called from addMultipleFoldersToJob
+- Fixed overall progress tracking to properly maintain folder count when processing individual folders within multiple folder operations
+- Fixed progressCallback to preserve existing overall progress values when undefined parameters are passed (prevents resetting to 0)
+- Fixed addFilesToJob to properly detect multiple folders context and preserve overall progress during individual folder processing
+
+### Technical Details
+- Added progress wrapper container for better layout control
+- Implemented CSS transitions for smooth state changes
+- Enhanced pause state visual feedback with opacity and color changes
+- Standardized all animation container heights to 68px for consistent visual proportions
+- Implemented CSS variable for animation height to improve maintainability
+- Optimized pause icon size to 48px for better visual balance within 68px container
+- Enhanced progress callback system to support dual progress tracking
+- Updated file utilities to provide both current and overall progress information
+- Centralized progress state management in jobsStore for consistent tracking
+- **NEW**: Implemented comprehensive rollback mechanism for cancelled operations
+  - Tracks all files added during an operation for potential rollback
+  - Removes all added files when cancellation occurs, ensuring clean state
+  - Applies to both single and multiple folder processing operations
+  - Returns 0 for cancelled operations to indicate no files were successfully added
+- **NEW**: Added conditional rollback with user preference
+  - Users can choose to keep scanned items when cancelling via checkbox in cancel dialog
+  - Default behavior maintains backward compatibility (removes all scanned items)
+  - Conditional rollback logic respects user preference for keeping or removing files
+  - Enhanced logging to track whether files are kept or removed based on user choice
+
+---
+
 ## [0.1.20] - 2025-01-27T23:00:00Z
 
 ### Changed

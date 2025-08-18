@@ -277,3 +277,15 @@ export const logTooltip = (callerName: string, message: string, data?: unknown):
     }
   }
 };
+
+// --- Logger for Dual Progress Tracking Events ---
+const dualProgressStyle: string = `${baseStyle} background-color: #4caf50; color: white;`; // Green
+export const logDualProgress = (callerName: string, message: string, data?: unknown): void => {
+  if (DEBUG && debugConfig.logDualProgress) {
+    if (data) {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, dualProgressStyle, data);
+    } else {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, dualProgressStyle);
+    }
+  }
+};

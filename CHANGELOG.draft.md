@@ -1,12 +1,12 @@
-## [0.1.21] - 2025-01-27T23:00:00Z
+## [0.1.22] - Development
 
-### Changed
+### Fixed
 - *Development work in progress...*
 
 ### Added
 - *Development work in progress...*
 
-### Fixed
+### Changed
 - *Development work in progress...*
 
 ### Technical Details
