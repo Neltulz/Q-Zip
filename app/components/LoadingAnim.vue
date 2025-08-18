@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { watch, ref, nextTick } from "vue";
 import { logLoading } from "@/utils/loggers";
-import FileTableLoadingOverlay from "./FileTableLoadingOverlay.vue";
+import FileTableLoadingOverlay from "./file-table-comp/FileTableLoadingOverlay.vue";
 import SpinnerLoadingAnim from "./loading-anim-comp/SpinnerLoadingAnim.vue";
 import DoubleBounceLoadingAnim from "./loading-anim-comp/DoubleBounceLoadingAnim.vue";
 
@@ -74,22 +74,57 @@ watch(
   }
 );
 
+// Watch for pause state changes
+watch(
+  () => isPaused.value,
+  (newPausedState, oldPausedState) => {
+    if (newPausedState !== oldPausedState) {
+      logLoading("LoadingAnim", `Pause state changed: ${oldPausedState} -> ${newPausedState} at ${performance.now().toFixed(2)}ms`);
+    }
+  }
+);
+
+// Watch for progress updates
+watch(
+  () => [props.currentItem, props.totalItems, props.progressMessage],
+  ([newCurrent, newTotal, newMessage], [oldCurrent, oldTotal, oldMessage]) => {
+    if (newCurrent !== oldCurrent || newTotal !== oldTotal || newMessage !== oldMessage) {
+      logLoading("LoadingAnim", `Progress update received: ${newCurrent}/${newTotal} - "${newMessage}" at ${performance.now().toFixed(2)}ms`);
+    }
+  },
+  { deep: true }
+);
+
 const onAfterLeave = () => {
   logLoading("LoadingAnim", "Fade-out transition finished. Emitting animation-finished.");
   emit("animation-finished");
 };
 
 const handleCancelClick = () => {
-  logLoading("LoadingAnim", "Cancel button clicked.");
+  const startTime = performance.now();
+  logLoading("LoadingAnim", `Cancel button clicked at ${startTime.toFixed(2)}ms`);
+  
   // Reset pause state when cancelling
   isPaused.value = false;
   emit("cancel");
+  
+  const endTime = performance.now();
+  const responseTime = endTime - startTime;
+  logLoading("LoadingAnim", `Cancel event emitted in ${responseTime.toFixed(2)}ms`);
 };
 
 const handlePauseClick = (paused: boolean) => {
-  logLoading("LoadingAnim", `Pause button clicked. Current state: ${paused ? 'paused' : 'playing'}`);
+  const startTime = performance.now();
+  console.log(`[LoadingAnim] PAUSE BUTTON CLICKED at ${startTime.toFixed(2)}ms. Current state: ${paused ? 'paused' : 'playing'}`);
+  logLoading("LoadingAnim", `Pause button clicked at ${startTime.toFixed(2)}ms. Current state: ${paused ? 'paused' : 'playing'}`);
+  
   isPaused.value = paused;
   emit("pause", paused);
+  
+  const endTime = performance.now();
+  const responseTime = endTime - startTime;
+  console.log(`[LoadingAnim] Pause event emitted in ${responseTime.toFixed(2)}ms - new state: ${paused ? 'paused' : 'playing'}`);
+  logLoading("LoadingAnim", `Pause event emitted in ${responseTime.toFixed(2)}ms - new state: ${paused ? 'paused' : 'playing'}`);
 };
 
 </script>

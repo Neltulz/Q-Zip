@@ -267,11 +267,15 @@ const handlePause = (isPaused: boolean) => {
   if (isPaused) {
     // Pause the current operation
     logLoading("JobArea", "Pausing current operation...");
+    console.log(`[JobArea] Calling jobsStore.pauseCurrentOperation() at ${performance.now().toFixed(2)}ms`);
     jobsStore.pauseCurrentOperation();
+    console.log(`[JobArea] jobsStore.pauseCurrentOperation() completed at ${performance.now().toFixed(2)}ms`);
   } else {
     // Resume the current operation
     logLoading("JobArea", "Resuming current operation...");
+    console.log(`[JobArea] Calling jobsStore.resumeCurrentOperation() at ${performance.now().toFixed(2)}ms`);
     jobsStore.resumeCurrentOperation();
+    console.log(`[JobArea] jobsStore.resumeCurrentOperation() completed at ${performance.now().toFixed(2)}ms`);
   }
 };
 const handleOperation = async (

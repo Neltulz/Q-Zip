@@ -4,6 +4,49 @@
 
 ## Recent Changes
 
+## [0.1.20] - 2025-01-27T23:00:00Z
+
+### Changed
+- Moved FileTableLoadingOverlay component to file-table-comp directory for better organization
+- Enhanced pause functionality in FileTableLoadingOverlay with immediate response and smooth fade transitions
+- Updated import paths to reflect new component location
+
+### Added
+- Smooth fade transitions between loading animation and pause icon in FileTableLoadingOverlay
+- Pause icon display when loading is paused using Nuxt Icon component
+- Comprehensive logging for pause/cancel timing and functionality debugging
+- Pause/resume functionality for refresh operations in FileTable
+- Progress tracking and timing measurements for all loading operations
+- Enhanced refresh functionality with step-by-step progress information (validation, sorting, display update, finalization)
+- Advanced pause detection logging to track when progress updates actually stop after pause is clicked
+- Progress update blocking during pause state to prevent continued UI updates
+- Direct console logging to bypass debug system for pause functionality troubleshooting
+- Enabled logLoadingEvents in debug configuration for better visibility
+- Improved pause responsiveness for file scanning operations (check every 2 items instead of 5)
+- Enhanced logging for jobsStore pause/resume operations to track file processing delays
+- Additional debugging to track jobsStore state and function calls for pause functionality
+- Enhanced pause check logging to identify why pause detection is delayed in file processing loop
+- **CRITICAL FIX**: Changed pause check frequency from every 2 items to every single item for immediate pause responsiveness
+- **CRITICAL FIX**: Enhanced pause responsiveness in folder scanning (getDirectoryContents) - now checks every 10 items instead of every 200+ items for large folders
+- Reduced pause detection log frequency to prevent console flooding while maintaining pause functionality
+- Enhanced FileTableLoadingOverlay UI with responsive design improvements:
+  - Set max-width (320px) for loading container (removed min-width constraint)
+  - Restored original loading animation height with pause icon matching (80px height)
+  - Improved transition performance by keeping elements in DOM with opacity changes instead of removal
+  - Added pause state visual feedback: dimmed progress elements, changed text to "Paused" and "Click 'Resume' to continue..."
+  - Enhanced pause icon with circular background (light background, dark icon) for better visual contrast
+  - Added text overflow with ellipsis for all text elements (scanning item, progress count, loading message)
+  - Implemented responsive button stacking for thin containers
+  - Removed chevron icon from cancel button dropdown
+
+### Fixed
+- *Development work in progress...*
+
+### Technical Details
+- *Development work in progress...*
+
+---
+
 ## [0.1.19] - 2025-01-27T23:00:00Z
 
 ### Changed

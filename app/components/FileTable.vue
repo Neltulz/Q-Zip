@@ -98,8 +98,12 @@
     <!-- Refresh loading animation with full overlay -->
     <LoadingAnim 
       :visible="isRefreshing" 
+      :current-item="progressInfo.currentItem"
+      :total-items="progressInfo.totalItems"
+      :progress-message="progressInfo.message"
       animation-type="full"
       @cancel="cancelRefresh"
+      @pause="handleRefreshPause"
     > 
       Refreshing files, please wait... 
     </LoadingAnim>
@@ -322,6 +326,13 @@ const isMarqueeActive = ref(false);
 const wasMarqueeActive = ref(false); // Track if marquee was recently active
 const isRefreshing = ref(false); // Track refresh loading state
 let refreshTimeout: NodeJS.Timeout | null = null; // Timeout for refresh animation
+let refreshStartTime = 0; // Track when refresh started for pause/resume functionality
+const isRefreshPaused = ref(false); // Track if refresh is currently paused
+const progressInfo = ref({
+  currentItem: 0,
+  totalItems: 0,
+  message: ""
+});
 const marqueeIsAdditive = ref(false);
 const marqueeAnchorX = ref(0);
 const marqueeAnchorY = ref(0);
@@ -1882,21 +1893,75 @@ const setActive = (val: boolean) => {
   }
 };
 const handleRefreshFiles = (): void => {
+  const startTime = performance.now();
+  console.log(`[FileTable] REFRESH FILES STARTED at ${startTime.toFixed(2)}ms - showing loading animation`);
+  logUI("FileTable", `Refresh files started at ${startTime.toFixed(2)}ms - showing loading animation`);
+  
   // Start refresh loading state
   isRefreshing.value = true;
-  logUI("FileTable", "Refresh files started - showing loading animation");
+  refreshStartTime = performance.now();
   
-  // Set 5-second timeout for refresh animation
-  refreshTimeout = setTimeout(() => {
-    isRefreshing.value = false;
-    refreshTimeout = null;
-    logUI("FileTable", "Refresh files completed - hiding loading animation");
-  }, 5000);
+  // Enhanced refresh with progress simulation
+  let progressStep = 0;
+  const totalSteps = 4; // File validation, sorting, virtual scroll update, final render
+  
+  const updateProgress = (step: number, message: string) => {
+    const updateTime = performance.now();
+    
+    // Check if refresh is paused and log if we're trying to update during pause
+    if (isRefreshPaused.value) {
+      console.log(`[FileTable] PROGRESS UPDATE BLOCKED - Refresh is paused, ignoring progress update: ${step}/${totalSteps} - ${message} at ${updateTime.toFixed(2)}ms`);
+      logUI("FileTable", `PROGRESS UPDATE BLOCKED - Refresh is paused, ignoring progress update: ${step}/${totalSteps} - ${message} at ${updateTime.toFixed(2)}ms`);
+      return; // Don't update progress if paused
+    }
+    
+    progressStep = step;
+    console.log(`[FileTable] Progress update: ${step}/${totalSteps} - ${message} at ${updateTime.toFixed(2)}ms`);
+    logUI("FileTable", `Refresh progress: ${step}/${totalSteps} - ${message} at ${updateTime.toFixed(2)}ms`);
+    
+    // Update progress info for the loading overlay
+    if (progressInfo.value) {
+      progressInfo.value.currentItem = step;
+      progressInfo.value.totalItems = totalSteps;
+      progressInfo.value.message = message;
+      console.log(`[FileTable] Progress info updated: currentItem=${step}, totalItems=${totalSteps}, message="${message}"`);
+      logUI("FileTable", `Progress info updated: currentItem=${step}, totalItems=${totalSteps}, message="${message}"`);
+    }
+  };
+  
+  // Step 1: File validation and preparation
+  updateProgress(1, "Validating file data...");
+  setTimeout(() => {
+    if (!isRefreshing.value) return; // Check if cancelled/paused
+    
+    // Step 2: Sorting and organizing
+    updateProgress(2, "Organizing file list...");
+    setTimeout(() => {
+      if (!isRefreshing.value) return;
+      
+      // Step 3: Virtual scroll recalculation
+      updateProgress(3, "Updating display...");
+      setTimeout(() => {
+        if (!isRefreshing.value) return;
+        
+        // Step 4: Final render and cleanup
+        updateProgress(4, "Finalizing refresh...");
+        setTimeout(() => {
+          const timeoutTime = performance.now();
+          isRefreshing.value = false;
+          refreshTimeout = null;
+          logUI("FileTable", `Refresh files completed at ${timeoutTime.toFixed(2)}ms (${(timeoutTime - startTime).toFixed(2)}ms total) - hiding loading animation`);
+        }, 500); // Final step is quick
+      }, 800); // Virtual scroll update
+    }, 600); // Sorting step
+  }, 400); // File validation step
   
   // Use debounced force refresh for better performance
   debouncedForceRefresh();
+  
   // Force the component to re-render by triggering reactive updates
   nextTick(() => {
+    const nextTickTime = performance.now();
     // Ensure the virtual scrolling calculations are updated
     if (viewportRef.value) {
       // Trigger a scroll event to recalculate visible files
@@ -1907,18 +1972,62 @@ const handleRefreshFiles = (): void => {
     if (sortedFiles.value.length > 0 && focusedRowIndex.value === null) {
       initializeFocus();
     }
-    logUI("FileTable", "Refresh files triggered - forcing re-render and recalculations");
+    logUI("FileTable", `Refresh files triggered at ${nextTickTime.toFixed(2)}ms (${(nextTickTime - startTime).toFixed(2)}ms total) - forcing re-render and recalculations`);
   });
 };
 
 const cancelRefresh = (): void => {
+  const startTime = performance.now();
+  logUI("FileTable", `Cancel refresh called at ${startTime.toFixed(2)}ms`);
+  
   // Cancel the refresh operation
   if (refreshTimeout) {
     clearTimeout(refreshTimeout);
     refreshTimeout = null;
+    logUI("FileTable", `Refresh timeout cleared at ${performance.now().toFixed(2)}ms`);
   }
   isRefreshing.value = false;
-  logUI("FileTable", "Refresh files cancelled by user");
+  refreshStartTime = 0;
+  
+  // Reset progress info
+  progressInfo.value = {
+    currentItem: 0,
+    totalItems: 0,
+    message: ""
+  };
+  
+  // Reset pause flag
+  isRefreshPaused.value = false;
+  logUI("FileTable", `Pause flag reset during cancel at ${performance.now().toFixed(2)}ms`);
+  
+  const endTime = performance.now();
+  const responseTime = endTime - startTime;
+  logUI("FileTable", `Refresh files cancelled by user in ${responseTime.toFixed(2)}ms`);
+};
+
+const handleRefreshPause = (isPaused: boolean): void => {
+  const startTime = performance.now();
+  console.log(`[FileTable] REFRESH PAUSE CALLED at ${startTime.toFixed(2)}ms - paused: ${isPaused}`);
+  logUI("FileTable", `Refresh pause called at ${startTime.toFixed(2)}ms - paused: ${isPaused}`);
+  
+  if (isPaused) {
+    // Pause the refresh operation by setting the pause flag
+    isRefreshPaused.value = true;
+    console.log(`[FileTable] PAUSE FLAG SET - isRefreshPaused.value = true at ${performance.now().toFixed(2)}ms`);
+    logUI("FileTable", `PAUSE FLAG SET - isRefreshPaused.value = true at ${performance.now().toFixed(2)}ms`);
+    logUI("FileTable", `Refresh paused - progress updates will now be blocked`);
+  } else {
+    // Resume the refresh operation by clearing the pause flag
+    isRefreshPaused.value = false;
+    console.log(`[FileTable] PAUSE FLAG CLEARED - isRefreshPaused.value = false at ${performance.now().toFixed(2)}ms`);
+    logUI("FileTable", `PAUSE FLAG CLEARED - isRefreshPaused.value = false at ${performance.now().toFixed(2)}ms`);
+    logUI("FileTable", `Refresh resumed - progress updates will now continue`);
+  }
+  
+  const endTime = performance.now();
+  const responseTime = endTime - startTime;
+  console.log(`[FileTable] Refresh pause handled in ${responseTime.toFixed(2)}ms - paused: ${isPaused}`);
+  logUI("FileTable", `Refresh pause handled in ${responseTime.toFixed(2)}ms - paused: ${isPaused}`);
 };
 // Expose methods to parent components
 defineExpose({

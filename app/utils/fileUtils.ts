@@ -16,6 +16,8 @@ import type { FileItem } from "@/types/types";
 let isCancelled = false;
 let isPaused = false;
 let progressCallback: ((current: number, total: number, message: string) => void) | null = null;
+// Track pause logging to avoid flooding
+let pauseLogged = false;
 export function setCancellationFlag(cancelled: boolean): void {
   isCancelled = cancelled;
 }
@@ -45,17 +47,26 @@ async function getDirectoryContents(path: string, depth: number = 0): Promise<{
   try {
     const entries = await readDir(path);
     // Check for cancellation and pause more frequently at deeper levels
-    const checkInterval = Math.max(1, Math.floor(entries.length / 10));
+    const checkInterval = Math.max(1, Math.floor(entries.length / 100)); // Check every 1% instead of 10%
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       // Check for cancellation and pause more frequently for large directories
-      if (i % checkInterval === 0 || depth > 2) {
+      if (i % checkInterval === 0 || depth > 2 || i % 10 === 0) { // Also check every 10 items regardless
         if (isCancelled) {
           throw new Error("Operation cancelled");
         }
         // Check for pause and wait if paused
         while (isPaused && !isCancelled) {
+          // Only log the first pause detection to avoid flooding
+          if (!pauseLogged) {
+            console.log(`[fileUtils] PAUSE DETECTED in getDirectoryContents - Waiting for resume at ${performance.now().toFixed(2)}ms (item ${i}/${entries.length}, depth ${depth})`);
+            pauseLogged = true;
+          }
           await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before checking again
+        }
+        // Clear the pause logged flag when we resume
+        if (pauseLogged && !isPaused) {
+          pauseLogged = false;
         }
       }
       // Skip entries without a name, which can happen in some edge cases.

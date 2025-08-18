@@ -91,6 +91,8 @@ export const useJobsStore = defineStore(
     let cancelStartTime: number | null = null;
     let progressCallback: ((current: number, total: number, message: string) => void) | null = null;
     let isOperationPaused = false;
+    // Track pause logging to avoid flooding
+    let pauseLogged = false;
     // Actions
     function initialize(): void {
       if (jobs.value.length === 0) {
@@ -131,17 +133,29 @@ export const useJobsStore = defineStore(
       }
     }
     function pauseCurrentOperation(): void {
+      const pauseTime = performance.now();
+      console.log(`[jobsStore] PAUSE OPERATION CALLED at ${pauseTime.toFixed(2)}ms for job ${currentOperationJobId}`);
+      console.log(`[jobsStore] Current state: currentOperationJobId=${currentOperationJobId}, isOperationPaused=${isOperationPaused}`);
       if (currentOperationJobId !== null) {
         isOperationPaused = true;
         setPauseFlag(true); // Set the flag in fileUtils
+        console.log(`[jobsStore] Pause state set: isOperationPaused=${isOperationPaused}`);
         logStoreAction("jobsStore", `Pausing current operation for job ${currentOperationJobId} at ${new Date().toISOString()}`);
+      } else {
+        console.log(`[jobsStore] WARNING: No current operation to pause (currentOperationJobId is null)`);
       }
     }
     function resumeCurrentOperation(): void {
+      const resumeTime = performance.now();
+      console.log(`[jobsStore] RESUME OPERATION CALLED at ${resumeTime.toFixed(2)}ms for job ${currentOperationJobId}`);
+      console.log(`[jobsStore] Current state: currentOperationJobId=${currentOperationJobId}, isOperationPaused=${isOperationPaused}`);
       if (currentOperationJobId !== null) {
         isOperationPaused = false;
         setPauseFlag(false); // Clear the flag in fileUtils
+        console.log(`[jobsStore] Resume state set: isOperationPaused=${isOperationPaused}`);
         logStoreAction("jobsStore", `Resuming current operation for job ${currentOperationJobId} at ${new Date().toISOString()}`);
+      } else {
+        console.log(`[jobsStore] WARNING: No current operation to resume (currentOperationJobId is null)`);
       }
     }
     function setProgressCallbackInternal(callback: ((current: number, total: number, message: string) => void) | null): void {
@@ -179,7 +193,8 @@ export const useJobsStore = defineStore(
         const path = newPaths[i];
         if (!path) continue; // Skip undefined paths
         // Check for cancellation and pause more frequently for better responsiveness
-        if (i % 5 === 0 || i === newPaths.length - 1) {
+        if (i % 1 === 0 || i === newPaths.length - 1) {
+          console.log(`[jobsStore] PAUSE CHECK at item ${i}/${newPaths.length} - isOperationPaused=${isOperationPaused}, currentOperationCancelled=${currentOperationCancelled}`);
           if (currentOperationCancelled) {
             const cancelTime = performance.now();
             const timeSinceStart = cancelTime - startTime;
@@ -197,8 +212,20 @@ export const useJobsStore = defineStore(
           }
           // Check for pause and wait if paused
           while (isOperationPaused && !currentOperationCancelled) {
+            // Only log the first pause detection to avoid flooding
+            if (!pauseLogged) {
+              console.log(`[jobsStore] PAUSE DETECTED - Waiting for resume at ${performance.now().toFixed(2)}ms (item ${i}/${newPaths.length})`);
+              logStoreAction("jobsStore", `PAUSE DETECTED - Waiting for resume at ${performance.now().toFixed(2)}ms (item ${i}/${newPaths.length})`);
+              pauseLogged = true;
+            }
             await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before checking again
           }
+          // Clear the pause logged flag when we resume
+          if (pauseLogged && !isOperationPaused) {
+            pauseLogged = false;
+          }
+        } else {
+          console.log(`[jobsStore] PAUSE CHECK SKIPPED at item ${i}/${newPaths.length} (not even number)`);
         }
         try {
           // Update progress for the current item
