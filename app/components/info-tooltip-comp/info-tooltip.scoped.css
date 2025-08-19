@@ -180,6 +180,35 @@
     justify-content: flex-start;
     text-align: left;
   }
+
+  /* Dimmed tooltip for disabled targets - <div class="info-tooltip disabled-target"> */
+  &.disabled-target {
+    opacity: 0.6; /* Dim the entire tooltip */
+    background-color: hsla(0, 0%, 15%, 0.8); /* Slightly more transparent background */
+    
+    /* Dim the arrow as well */
+    .tooltip-arrow path {
+      fill: hsla(0, 0%, 15%, 0.8);
+      opacity: 0.6;
+    }
+    
+    /* Dim the text content */
+    .tooltip-content {
+      color: var(--txt-clr-dark); /* Use darker text color for disabled state */
+      
+      .tooltip-icon {
+        color: var(--txt-clr-dark);
+      }
+      
+      .keyboard-shortcut-text {
+        color: var(--txt-clr-dark);
+      }
+      
+      .keyboard-icon {
+        color: var(--txt-clr-dark);
+      }
+    }
+  }
 }
 
 

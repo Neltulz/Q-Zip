@@ -114,10 +114,141 @@ export function useTooltipManager() {
       logTooltip("TooltipManager", `Hide timer already exists, no action needed`);
     }
   };
+
+  const hideTooltipImmediately = () => {
+    logTooltip("TooltipManager", `hideTooltipImmediately called`, {
+      currentActiveId: activeTooltipId.value,
+      isAnyTooltipVisible: isAnyTooltipVisible.value,
+      hasShowTimer: !!showTimer,
+      hasHideTimer: !!hideTimer,
+      stackTrace: new Error().stack // Add stack trace to see where this is called from
+    });
+
+    // Clear any pending timers
+    if (showTimer) {
+      logTooltip("TooltipManager", `Clearing show timer for immediate hide`);
+      clearTimeout(showTimer);
+      showTimer = null;
+    }
+    if (hideTimer) {
+      logTooltip("TooltipManager", `Clearing hide timer for immediate hide`);
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+    if (crossfadeTimer) {
+      logTooltip("TooltipManager", `Clearing crossfade timer for immediate hide`);
+      clearTimeout(crossfadeTimer);
+      crossfadeTimer = null;
+    }
+
+    // Hide immediately without any delay
+    logTooltip("TooltipManager", `Hiding tooltip immediately`);
+    activeTooltipId.value = null;
+    isAnyTooltipVisible.value = false;
+  };
+
+  /**
+   * Check if the current active tooltip's target element still exists in the DOM.
+   * If not, hide the tooltip to prevent orphaned tooltips.
+   * @param targetElement The element that the tooltip should be attached to
+   * @returns true if the tooltip was hidden due to missing target, false otherwise
+   */
+  const checkAndHideOrphanedTooltip = (targetElement: HTMLElement | null): boolean => {
+    logTooltip("TooltipManager", `checkAndHideOrphanedTooltip called`, {
+      isAnyTooltipVisible: isAnyTooltipVisible.value,
+      activeTooltipId: activeTooltipId.value,
+      hasTargetElement: !!targetElement,
+      targetElementTagName: targetElement?.tagName,
+      stackTrace: new Error().stack
+    });
+
+    if (!isAnyTooltipVisible.value || !targetElement) {
+      logTooltip("TooltipManager", `checkAndHideOrphanedTooltip: No action needed`, {
+        isAnyTooltipVisible: isAnyTooltipVisible.value,
+        hasTargetElement: !!targetElement
+      });
+      return false;
+    }
+
+    // Check if the target element is still in the DOM
+    if (!document.contains(targetElement)) {
+      logTooltip("TooltipManager", `Target element no longer in DOM, hiding orphaned tooltip`, {
+        activeTooltipId: activeTooltipId.value,
+        targetElement: targetElement.tagName,
+        targetElementClassName: targetElement.className
+      });
+      hideTooltipImmediately();
+      return true;
+    }
+
+    // Check if the target element is hidden or has zero dimensions
+    const rect = targetElement.getBoundingClientRect();
+    const isHidden = rect.width === 0 || rect.height === 0 ||
+      targetElement.style.display === 'none' ||
+      targetElement.style.visibility === 'hidden' ||
+      targetElement.offsetParent === null;
+
+    if (isHidden) {
+      logTooltip("TooltipManager", `Target element is hidden, hiding orphaned tooltip`, {
+        activeTooltipId: activeTooltipId.value,
+        targetElement: targetElement.tagName,
+        targetElementClassName: targetElement.className,
+        rect: { width: rect.width, height: rect.height },
+        display: targetElement.style.display,
+        visibility: targetElement.style.visibility,
+        offsetParent: targetElement.offsetParent
+      });
+      hideTooltipImmediately();
+      return true;
+    }
+
+    // Check if the target element is inside a dropdown that's closing
+    // (dropdown content has pointer-events: none and opacity: 0 during transition)
+    const dropdownContent = targetElement.closest('.dropdown-content');
+    if (dropdownContent) {
+      const computedStyle = window.getComputedStyle(dropdownContent);
+      const hasPointerEvents = computedStyle.pointerEvents !== 'none';
+      const hasOpacity = parseFloat(computedStyle.opacity) > 0;
+      const hasContentReadyClass = dropdownContent.classList.contains('content-ready');
+
+      logTooltip("TooltipManager", `Target element is inside dropdown, checking state`, {
+        targetElement: targetElement.tagName,
+        dropdownContent: dropdownContent.getAttribute('data-belongs-to'),
+        pointerEvents: computedStyle.pointerEvents,
+        opacity: computedStyle.opacity,
+        hasContentReadyClass,
+        isClosing: !hasPointerEvents || !hasOpacity || !hasContentReadyClass
+      });
+
+      // If dropdown content is not interactive or not visible, hide the tooltip
+      if (!hasPointerEvents || !hasOpacity || !hasContentReadyClass) {
+        logTooltip("TooltipManager", `Target element is in closing dropdown, hiding orphaned tooltip`, {
+          activeTooltipId: activeTooltipId.value,
+          targetElement: targetElement.tagName,
+          dropdownContent: dropdownContent.getAttribute('data-belongs-to'),
+          pointerEvents: computedStyle.pointerEvents,
+          opacity: computedStyle.opacity,
+          hasContentReadyClass
+        });
+        hideTooltipImmediately();
+        return true;
+      }
+    } else {
+      logTooltip("TooltipManager", `Target element is not inside any dropdown`, {
+        targetElement: targetElement.tagName
+      });
+    }
+
+    logTooltip("TooltipManager", `checkAndHideOrphanedTooltip: No orphaned tooltip detected`);
+    return false;
+  };
+
   return {
     activeTooltipId,
     isAnyTooltipVisible,
     showTooltip,
     hideTooltip,
+    hideTooltipImmediately,
+    checkAndHideOrphanedTooltip,
   };
 }

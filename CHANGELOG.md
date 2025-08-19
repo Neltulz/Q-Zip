@@ -11,6 +11,10 @@
   - Updated version in `src-tauri/Cargo.toml` to `0.1.22`
   - Updated version in `src-tauri/tauri.conf.json` to `0.1.22`
   - Updated version display in `app/components/TitleBar.vue` to `v0.1.22`
+- Incremented version to v0.1.23-dev (development version)
+  - Updated version in `src-tauri/Cargo.toml` to `0.1.23-dev`
+  - Updated version in `src-tauri/tauri.conf.json` to `0.1.23-dev`
+  - Updated version display in `app/components/TitleBar.vue` to `v0.1.23-dev`
 
 ### Fixed
 - *Development work in progress...*

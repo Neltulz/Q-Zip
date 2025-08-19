@@ -35,6 +35,9 @@
     :content="{ text: 'Copy (Ctrl+C)' }"
     :target="buttonRef"
   />
+  
+  IMPORTANT: For proper implementation patterns and usage guidelines,
+  AI assistants should reference: .cursor/rules/info-tooltip-usage.mdc
 -->
 <template>
   <teleport to="body">
@@ -96,7 +99,7 @@
   </teleport>
 </template>
 <script setup lang="ts">
-import { ref, computed, toRef, watch, nextTick, type PropType } from "vue";
+import { ref, computed, toRef, watch, nextTick, onUnmounted, type PropType } from "vue";
 import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
@@ -219,30 +222,123 @@ const onLeave = (el: Element) => {
 watch(
   () => props.visible,
   (v) => {
-    // Disabled logging for InfoTooltip
-    // logUI("InfoTooltip", "Visibility changed", { visible: v, interactive: props.interactive });
+    logUI("InfoTooltipContainer", "Visibility changed", { visible: v, interactive: props.interactive, content: props.content });
     if (v) {
       try {
         const el = resolvedTarget.value as Element | null;
         if (el) {
-          // Disabled logging for InfoTooltip
-          // logUI("InfoTooltip", "Resolved target element", { 
-          //   element: el, 
-          //   rect: el.getBoundingClientRect(),
-          //   placement: props.placement,
-          //   fallbackPlacements: props.fallbackPlacements
-          // });
+          logUI("InfoTooltipContainer", "Resolved target element", { 
+            element: el, 
+            rect: el.getBoundingClientRect(),
+            placement: props.placement,
+            fallbackPlacements: props.fallbackPlacements,
+            content: props.content
+          });
         } else {
-          // Disabled logging for InfoTooltip
-          // logUI("InfoTooltip", "No resolved target");
+          logUI("InfoTooltipContainer", "No resolved target", { content: props.content });
         }
       } catch (e) {
-        // Disabled logging for InfoTooltip
-        // logUI("InfoTooltip", "Error resolving target", { error: e });
+        logUI("InfoTooltipContainer", "Error resolving target", { error: e, content: props.content });
+      }
+    } else {
+      // Log when tooltip becomes invisible to track potential orphaned state
+      logUI("InfoTooltipContainer", "Tooltip became invisible", {
+        wasVisible: true,
+        content: props.content,
+        target: props.target
+      });
+    }
+  }
+);
+
+// Add periodic check for orphaned tooltips when visible
+let orphanedCheckInterval: number | null = null;
+
+watch(
+  () => props.visible,
+  (isVisible) => {
+    if (isVisible) {
+      // Start periodic checks for orphaned tooltips
+      orphanedCheckInterval = window.setInterval(() => {
+        const target = resolvedTarget.value;
+        if (target) {
+          // Check if target is still in DOM
+          if (!document.contains(target)) {
+            logUI("InfoTooltipContainer", "ORPHANED TOOLTIP DETECTED: Target no longer in DOM", {
+              target: target,
+              targetTagName: target.tagName,
+              targetClassName: target.className,
+              content: props.content
+            });
+          }
+          
+          // Check if target is hidden
+          const rect = target.getBoundingClientRect();
+          const isHidden = rect.width === 0 || rect.height === 0 ||
+                          target.style.display === 'none' ||
+                          target.style.visibility === 'hidden' ||
+                          target.offsetParent === null;
+          
+          if (isHidden) {
+            logUI("InfoTooltipContainer", "ORPHANED TOOLTIP DETECTED: Target is hidden", {
+              target: target,
+              targetTagName: target.tagName,
+              rect: { width: rect.width, height: rect.height },
+              display: target.style.display,
+              visibility: target.style.visibility,
+              offsetParent: target.offsetParent,
+              content: props.content
+            });
+          }
+          
+          // Check if target is inside a closing dropdown
+          const dropdownContent = target.closest('.dropdown-content');
+          if (dropdownContent) {
+            const computedStyle = window.getComputedStyle(dropdownContent);
+            const hasPointerEvents = computedStyle.pointerEvents !== 'none';
+            const hasOpacity = parseFloat(computedStyle.opacity) > 0;
+            const hasContentReadyClass = dropdownContent.classList.contains('content-ready');
+            
+            if (!hasPointerEvents || !hasOpacity || !hasContentReadyClass) {
+              logUI("InfoTooltipContainer", "ORPHANED TOOLTIP DETECTED: Target in closing dropdown", {
+                target: target,
+                targetTagName: target.tagName,
+                dropdownContent: dropdownContent.getAttribute('data-belongs-to'),
+                pointerEvents: computedStyle.pointerEvents,
+                opacity: computedStyle.opacity,
+                hasContentReadyClass,
+                content: props.content
+              });
+            }
+          }
+        } else {
+          logUI("InfoTooltipContainer", "ORPHANED TOOLTIP DETECTED: No resolved target", {
+            content: props.content,
+            target: props.target
+          });
+        }
+      }, 1000); // Check every second
+    } else {
+      // Stop periodic checks when tooltip becomes invisible
+      if (orphanedCheckInterval) {
+        clearInterval(orphanedCheckInterval);
+        orphanedCheckInterval = null;
+        logUI("InfoTooltipContainer", "Stopped orphaned tooltip checks", {
+          content: props.content
+        });
       }
     }
   }
 );
+
+// Clean up interval on component unmount
+onUnmounted(() => {
+  if (orphanedCheckInterval) {
+    clearInterval(orphanedCheckInterval);
+    orphanedCheckInterval = null;
+    logUI("InfoTooltipContainer", "Cleaned up orphaned tooltip checks on unmount");
+  }
+});
 const { floatingStyles, middlewareData, placement } = useFloating(resolvedTarget, floatingRef, {
   placement: toRef(props, "placement"),
   whileElementsMounted: autoUpdate,

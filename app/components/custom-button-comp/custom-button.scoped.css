@@ -33,7 +33,13 @@
   &.disabled {
     cursor: default;
     opacity: var(--disabled-opacity);
-    pointer-events: none;
+    pointer-events: auto; /* Allow hover events for tooltips */
+  }
+  
+  /* .custom-button:disabled:hover, .custom-button.disabled:hover - Disabled hover state */
+  &:disabled:hover,
+  &.disabled:hover {
+    cursor: default; /* Prevent cursor change on disabled button hover */
   }
   
   /* .custom-button:hover - Hover state */
@@ -217,7 +223,7 @@
   color: var(--btn-txt-clr);
   
   /* .custom-button[data-btn-theme="default"]:hover - Default theme hover */
-  &:hover {
+  &:hover:not(:disabled):not(.disabled) {
     color: var(--btn-txt-hvr-clr);
   }
   
@@ -231,7 +237,7 @@
     background-color: var(--btn-bg-clr);
     
     /* .custom-button[data-btn-theme="default"]:hover > .visual-style - Default theme hover visual style */
-    .custom-button[data-btn-theme="default"]:hover & {
+    .custom-button[data-btn-theme="default"]:hover:not(:disabled):not(.disabled) & {
       background-color: var(--btn-bg-hvr-clr);
     }
     
@@ -248,7 +254,7 @@
   color: var(--btn-txt-clr-lite);
   
   /* .custom-button[data-btn-theme="lite"]:hover - Lite theme hover */
-  &:hover {
+  &:hover:not(:disabled):not(.disabled) {
     color: var(--btn-txt-hvr-clr-lite);
   }
   
@@ -262,7 +268,7 @@
     background-color: var(--btn-bg-clr-lite);
     
     /* .custom-button[data-btn-theme="lite"]:hover > .visual-style - Lite theme hover visual style */
-    .custom-button[data-btn-theme="lite"]:hover & {
+    .custom-button[data-btn-theme="lite"]:hover:not(:disabled):not(.disabled) & {
       background-color: var(--btn-bg-hvr-clr-lite);
     }
     
@@ -278,7 +284,7 @@
   color: var(--btn-txt-clr-liter);
   
   /* .custom-button[data-btn-theme="liter"]:hover - Liter theme hover */
-  &:hover {
+  &:hover:not(:disabled):not(.disabled) {
     color: var(--btn-txt-hvr-clr-liter);
   }
   
@@ -292,7 +298,7 @@
     background-color: var(--btn-bg-clr-liter);
     
     /* .custom-button[data-btn-theme="liter"]:hover > .visual-style - Liter theme hover visual style */
-    .custom-button[data-btn-theme="liter"]:hover & {
+    .custom-button[data-btn-theme="liter"]:hover:not(:disabled):not(.disabled) & {
       background-color: var(--btn-bg-hvr-clr-liter);
     }
     
@@ -308,7 +314,7 @@
   color: var(--btn-txt-clr-dark);
   
   /* .custom-button[data-btn-theme="dark"]:hover - Dark theme hover */
-  &:hover {
+  &:hover:not(:disabled):not(.disabled) {
     color: var(--btn-txt-hvr-clr-dark);
   }
   
@@ -322,7 +328,7 @@
     background-color: var(--btn-bg-clr-dark);
     
     /* .custom-button[data-btn-theme="dark"]:hover > .visual-style - Dark theme hover visual style */
-    .custom-button[data-btn-theme="dark"]:hover & {
+    .custom-button[data-btn-theme="dark"]:hover:not(:disabled):not(.disabled) & {
       background-color: var(--btn-bg-hvr-clr-dark);
     }
     
@@ -338,7 +344,7 @@
   color: var(--btn-txt-clr-darkr);
   
   /* .custom-button[data-btn-theme="darkr"]:hover - Darkr theme hover */
-  &:hover {
+  &:hover:not(:disabled):not(.disabled) {
     color: var(--btn-txt-hvr-clr-darkr);
   }
   
@@ -352,7 +358,7 @@
     background-color: var(--btn-bg-clr-darkr);
     
     /* .custom-button[data-btn-theme="darkr"]:hover > .visual-style - Darkr theme hover visual style */
-    .custom-button[data-btn-theme="darkr"]:hover & {
+    .custom-button[data-btn-theme="darkr"]:hover:not(:disabled):not(.disabled) & {
       background-color: var(--btn-bg-hvr-clr-darkr);
     }
     
@@ -368,7 +374,7 @@
   color: var(--success-clr);
   
   /* .custom-button[data-btn-theme="primary"]:hover, .custom-button[data-btn-theme="primary"].active - Primary theme hover/active */
-  &:hover,
+  &:hover:not(:disabled):not(.disabled),
   &.active {
     color: hsla(0, 0%, 100%, 1);
   }
@@ -378,7 +384,7 @@
     background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.1);
     
     /* .custom-button[data-btn-theme="primary"]:hover > .visual-style - Primary theme hover visual style */
-    .custom-button[data-btn-theme="primary"]:hover & {
+    .custom-button[data-btn-theme="primary"]:hover:not(:disabled):not(.disabled) & {
       background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-hvr), 0.25);
     }
     
@@ -394,7 +400,7 @@
     border-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum), 0.2);
     
     /* .custom-button[data-btn-theme="primary"].bordered-btn:hover > .visual-style - Primary bordered theme hover visual style */
-    .custom-button[data-btn-theme="primary"].bordered-btn:hover & {
+    .custom-button[data-btn-theme="primary"].bordered-btn:hover:not(:disabled):not(.disabled) & {
       background-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-hvr), 0.25);
       border-color: hsla(var(--success-hue), var(--success-sat), var(--success-lum-hvr), 0.4);
     }
@@ -412,7 +418,7 @@
   color: var(--danger-clr);
   
   /* .custom-button[data-btn-theme="danger"]:hover, .custom-button[data-btn-theme="danger"].active - Danger theme hover/active */
-  &:hover,
+  &:hover:not(:disabled):not(.disabled),
   &.active {
     color: hsla(0, 0%, 100%, 1);
   }
@@ -422,7 +428,7 @@
     background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum), 0.1);
     
     /* .custom-button[data-btn-theme="danger"]:hover > .visual-style - Danger theme hover visual style */
-    .custom-button[data-btn-theme="danger"]:hover & {
+    .custom-button[data-btn-theme="danger"]:hover:not(:disabled):not(.disabled) & {
       background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-hvr), 0.25);
     }
     
@@ -438,7 +444,7 @@
     border-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum), 0.2);
     
     /* .custom-button[data-btn-theme="danger"].bordered-btn:hover > .visual-style - Danger bordered theme hover visual style */
-    .custom-button[data-btn-theme="danger"].bordered-btn:hover & {
+    .custom-button[data-btn-theme="danger"].bordered-btn:hover:not(:disabled):not(.disabled) & {
       background-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-hvr), 0.25);
       border-color: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum-hvr), 0.4);
     }
@@ -456,7 +462,7 @@
   color: var(--warning-clr);
   
   /* .custom-button[data-btn-theme="warning"]:hover, .custom-button[data-btn-theme="warning"].active - Warning theme hover/active */
-  &:hover,
+  &:hover:not(:disabled):not(.disabled),
   &.active {
     color: hsla(0, 0%, 100%, 1);
   }
@@ -466,7 +472,7 @@
     background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum), 0.1);
     
     /* .custom-button[data-btn-theme="warning"]:hover > .visual-style - Warning theme hover visual style */
-    .custom-button[data-btn-theme="warning"]:hover & {
+    .custom-button[data-btn-theme="warning"]:hover:not(:disabled):not(.disabled) & {
       background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-hvr), 0.25);
     }
     
@@ -482,7 +488,7 @@
     border-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum), 0.2);
     
     /* .custom-button[data-btn-theme="warning"].bordered-btn:hover > .visual-style - Warning bordered theme hover visual style */
-    .custom-button[data-btn-theme="warning"].bordered-btn:hover & {
+    .custom-button[data-btn-theme="warning"].bordered-btn:hover:not(:disabled):not(.disabled) & {
       background-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-hvr), 0.25);
       border-color: hsla(var(--warn-hue), var(--warn-sat), var(--warn-lum-hvr), 0.4);
     }
@@ -500,7 +506,7 @@
   color: var(--info-clr);
   
   /* .custom-button[data-btn-theme="info"]:hover, .custom-button[data-btn-theme="info"].active - Info theme hover/active */
-  &:hover,
+  &:hover:not(:disabled):not(.disabled),
   &.active {
     color: hsla(0, 0%, 100%, 1);
   }
@@ -510,7 +516,7 @@
     background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum), 0.1);
     
     /* .custom-button[data-btn-theme="info"]:hover > .visual-style - Info theme hover visual style */
-    .custom-button[data-btn-theme="info"]:hover & {
+    .custom-button[data-btn-theme="info"]:hover:not(:disabled):not(.disabled) & {
       background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-hvr), 0.4);
     }
     
@@ -526,7 +532,7 @@
     border-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum), 0.2);
     
     /* .custom-button[data-btn-theme="info"].bordered-btn:hover > .visual-style - Info bordered theme hover visual style */
-    .custom-button[data-btn-theme="info"].bordered-btn:hover & {
+    .custom-button[data-btn-theme="info"].bordered-btn:hover:not(:disabled):not(.disabled) & {
       background-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-hvr), 0.25);
       border-color: hsla(var(--info-hue), var(--info-sat), var(--info-lum-hvr), 0.4);
     }
@@ -596,7 +602,7 @@
   }
   
   /* .custom-button.bordered-btn:hover > .visual-style - Bordered button hover visual style */
-  &:hover > .visual-style {
+  &:hover:not(:disabled):not(.disabled) > .visual-style {
     border-color: var(--btn-brdr-hvr-clr);
   }
   
@@ -613,7 +619,7 @@
   }
   
   /* .custom-button[data-btn-theme="lite"].bordered-btn:hover > .visual-style - Lite theme bordered hover visual style */
-  &:hover > .visual-style {
+  &:hover:not(:disabled):not(.disabled) > .visual-style {
     border-color: var(--btn-brdr-hvr-clr-lite);
   }
   
@@ -630,7 +636,7 @@
   }
   
   /* .custom-button[data-btn-theme="liter"].bordered-btn:hover > .visual-style - Liter theme bordered hover visual style */
-  &:hover > .visual-style {
+  &:hover:not(:disabled):not(.disabled) > .visual-style {
     border-color: var(--btn-brdr-hvr-clr-liter);
   }
   
@@ -647,7 +653,7 @@
   }
   
   /* .custom-button[data-btn-theme="dark"].bordered-btn:hover > .visual-style - Dark theme bordered hover visual style */
-  &:hover > .visual-style {
+  &:hover:not(:disabled):not(.disabled) > .visual-style {
     border-color: var(--btn-brdr-hvr-clr-dark);
   }
   
@@ -664,7 +670,7 @@
   }
   
   /* .custom-button[data-btn-theme="darkr"].bordered-btn:hover > .visual-style - Darkr theme bordered hover visual style */
-  &:hover > .visual-style {
+  &:hover:not(:disabled):not(.disabled) > .visual-style {
     border-color: var(--btn-brdr-hvr-clr-darkr);
   }
   
@@ -686,7 +692,7 @@
   }
   
   /* .custom-button.minimal-trans-btn:hover > .visual-style - Minimal transparent hover visual style */
-  &:hover > .visual-style {
+  &:hover:not(:disabled):not(.disabled) > .visual-style {
     background-color: transparent;
     border: 0;
     box-shadow: none;

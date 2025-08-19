@@ -39,6 +39,9 @@
     :target="buttonRef"
     :keyboardShortcut="Ctrl+C"
   />
+  
+  IMPORTANT: For proper implementation patterns and usage guidelines,
+  AI assistants should reference: .cursor/rules/info-tooltip-usage.mdc
 -->
 <template>
   <teleport to="body">
@@ -52,7 +55,11 @@
         v-if="shouldRender"
         ref="floatingRef"
         class="info-tooltip"
-        :class="{ interactive: interactive, 'simple-tooltip': !!parsedContent }"
+        :class="{ 
+          interactive: interactive, 
+          'simple-tooltip': !!parsedContent,
+          'disabled-target': isTargetDisabled
+        }"
         :style="floatingStyles"
         @mouseenter="(event) => emit('mouseenter', event)"
         @mouseleave="(event) => emit('mouseleave', event)"
@@ -114,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, toRef, watch, nextTick, type PropType } from "vue";
+import { ref, computed, toRef, watch, nextTick, onUnmounted, type PropType } from "vue";
 import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
@@ -182,7 +189,10 @@ const shouldRender = computed(() => {
 const resolvedTarget = computed(() => {
   const raw = (props as any).target;
   if (!raw) {
-    logTooltip("InfoTooltip", "No target provided", { target: props.target });
+    // Only log when tooltip is visible to avoid spam
+    if (props.visible || props.debugForceVisible) {
+      logTooltip("InfoTooltip", "No target provided", { target: props.target });
+    }
     return null;
   }
   
@@ -226,6 +236,27 @@ const resolvedTarget = computed(() => {
   logTooltip("InfoTooltip", "Could not resolve target", { raw, maybe, target: props.target });
   return null;
 });
+
+// Check if the target element is disabled
+const isTargetDisabled = computed(() => {
+  const target = resolvedTarget.value;
+  if (!target) return false;
+  
+  // Check if the target element itself is disabled
+  if (target.hasAttribute('disabled')) return true;
+  
+  // Check if the target has the disabled class
+  if (target.classList.contains('disabled')) return true;
+  
+  // Check if the target is a button and is disabled
+  if (target instanceof HTMLButtonElement && target.disabled) return true;
+  
+  // Check if the target is inside a disabled button
+  const disabledButton = target.closest('button[disabled], .disabled');
+  if (disabledButton) return true;
+  
+  return false;
+});
 // Transition handlers for smooth enter/leave animations
 const onEnter = (el: Element) => {
   // Ensure the element is properly positioned before showing
@@ -268,6 +299,111 @@ watch(
       } catch (e) {
         logTooltip("InfoTooltip", "Error resolving target", { error: e, target: props.target });
       }
+    } else {
+      // Log when tooltip becomes invisible to track potential orphaned state
+      logTooltip("InfoTooltip", "Tooltip became invisible", {
+        wasVisible: true,
+        content: props.content,
+        target: props.target
+      });
+    }
+  }
+);
+
+// Add periodic check for orphaned tooltips when visible
+let orphanedCheckInterval: number | null = null;
+
+watch(
+  () => props.visible,
+  (isVisible) => {
+    if (isVisible) {
+      // Start periodic checks for orphaned tooltips
+      orphanedCheckInterval = window.setInterval(() => {
+        const target = resolvedTarget.value;
+        if (target) {
+          // Check if target is still in DOM
+          if (!document.contains(target)) {
+            logTooltip("InfoTooltip", "ORPHANED TOOLTIP DETECTED: Target no longer in DOM", {
+              target: target,
+              targetTagName: target.tagName,
+              targetClassName: target.className,
+              content: props.content
+            });
+          }
+          
+          // Check if target is hidden
+          const rect = target.getBoundingClientRect();
+          const isHidden = rect.width === 0 || rect.height === 0 ||
+                          target.style.display === 'none' ||
+                          target.style.visibility === 'hidden' ||
+                          target.offsetParent === null;
+          
+          if (isHidden) {
+            logTooltip("InfoTooltip", "ORPHANED TOOLTIP DETECTED: Target is hidden", {
+              target: target,
+              targetTagName: target.tagName,
+              rect: { width: rect.width, height: rect.height },
+              display: target.style.display,
+              visibility: target.style.visibility,
+              offsetParent: target.offsetParent,
+              content: props.content
+            });
+          }
+          
+          // Check if target is inside a closing dropdown
+          const dropdownContent = target.closest('.dropdown-content');
+          if (dropdownContent) {
+            const computedStyle = window.getComputedStyle(dropdownContent);
+            const hasPointerEvents = computedStyle.pointerEvents !== 'none';
+            const hasOpacity = parseFloat(computedStyle.opacity) > 0;
+            const hasContentReadyClass = dropdownContent.classList.contains('content-ready');
+            
+            if (!hasPointerEvents || !hasOpacity || !hasContentReadyClass) {
+              logTooltip("InfoTooltip", "ORPHANED TOOLTIP DETECTED: Target in closing dropdown", {
+                target: target,
+                targetTagName: target.tagName,
+                dropdownContent: dropdownContent.getAttribute('data-belongs-to'),
+                pointerEvents: computedStyle.pointerEvents,
+                opacity: computedStyle.opacity,
+                hasContentReadyClass,
+                content: props.content
+              });
+            }
+          }
+        }
+        // Removed the else clause that was logging "No resolved target" when target is null
+        // This was causing unnecessary orphaned tooltip detection logs
+      }, 1000); // Check every second
+    } else {
+      // Stop periodic checks when tooltip becomes invisible
+      if (orphanedCheckInterval) {
+        clearInterval(orphanedCheckInterval);
+        orphanedCheckInterval = null;
+        logTooltip("InfoTooltip", "Stopped orphaned tooltip checks", {
+          content: props.content
+        });
+      }
+    }
+  }
+);
+
+// Clean up interval on component unmount
+onUnmounted(() => {
+  if (orphanedCheckInterval) {
+    clearInterval(orphanedCheckInterval);
+    orphanedCheckInterval = null;
+    logTooltip("InfoTooltip", "Cleaned up orphaned tooltip checks on unmount");
+  }
+});
+
+// Also watch for target changes and stop orphaned checks if target becomes null
+watch(
+  () => props.target,
+  (newTarget) => {
+    if (!newTarget && orphanedCheckInterval) {
+      clearInterval(orphanedCheckInterval);
+      orphanedCheckInterval = null;
+      logTooltip("InfoTooltip", "Stopped orphaned tooltip checks due to null target");
     }
   }
 );

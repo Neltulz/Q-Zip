@@ -1,3 +1,8 @@
+---
+description: "Workflow for managing version numbers and changelog entries during development and releases."
+globs: ["CHANGELOG*.md", "src-tauri/Cargo.toml", "src-tauri/tauri.conf.json", "app/components/TitleBar.vue"]
+alwaysApply: false
+---
 # Changelog & Versioning Rules (Comprehensive)
 
 This workflow is designed to support rapid iteration without triggering a full Tauri rebuild on every change.

@@ -72,20 +72,21 @@
       >
         {{ isPaused ? 'Resume' : 'Pause' }}
       </CustomButton>
-      <DropdownMenu
-        ref="cancelDropdownRef"
-        btn-theme="danger"
-        button-style-class="default"
-        data-name="cancel-dropdown"
-        dropdown-data-name="cancel-dropdown"
-        first-icon-name="mdi:cancel"
-        placement="right-center"
-        :show-cancel-button="false"
-        last-icon-name=""
-        @dropdown-opened="handleDropdownOpened"
-        @mouseenter="handleCancelButtonMouseEnter"
-        @mouseleave="handleCancelButtonMouseLeave"
-      >
+              <DropdownMenu
+          ref="cancelDropdownRef"
+          btn-theme="danger"
+          button-style-class="default"
+          data-name="cancel-dropdown"
+          dropdown-data-name="cancel-dropdown"
+          first-icon-name="mdi:cancel"
+          placement="right-center"
+          :show-cancel-button="false"
+          last-icon-name=""
+          @dropdown-opened="handleDropdownOpened"
+          @dropdown-closed="handleDropdownClosed"
+          @mouseenter="handleCancelButtonMouseEnter"
+          @mouseleave="handleCancelButtonMouseLeave"
+        >
         <template #button-content>
           Cancel
         </template>
@@ -201,6 +202,7 @@ import CircleLoadingAnim from "../loading-anim-comp/CircleLoadingAnim.vue";
 import SpinnerLoadingAnim from "../loading-anim-comp/SpinnerLoadingAnim.vue";
 import DoubleBounceLoadingAnim from "../loading-anim-comp/DoubleBounceLoadingAnim.vue";
 import { logLoading, logDualProgress } from "@/utils/loggers";
+import { useOrphanedTooltipDetector } from "@/composables/useOrphanedTooltipDetector";
 
 const props = defineProps<{
   currentItem?: number;
@@ -220,6 +222,9 @@ const emit = defineEmits<{
 }>();
 
 const cancelDropdownRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
+
+// Orphaned tooltip detector for handling tooltips when dropdown closes unexpectedly
+const { checkMultipleTooltipTargets } = useOrphanedTooltipDetector();
 
 // Tooltip state management
 const pauseButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
@@ -242,6 +247,10 @@ watch(cancelDropdownRef, (newRef) => {
   console.log(`[FileTableLoadingOverlay] Dropdown ref changed:`, newRef);
   if (newRef) {
     console.log(`[FileTableLoadingOverlay] Dropdown ref set:`, !!newRef);
+  } else {
+    // Dropdown ref is null, but don't call resetAllTooltipState() to avoid circular dependency
+    // The resetAllTooltipState() function itself sets the ref to null
+    console.log(`[FileTableLoadingOverlay] Dropdown ref is null`);
   }
 });
 const removeScannedItems = ref(true); // Default to true to maintain current behavior
@@ -352,6 +361,15 @@ const handleDropdownOpened = () => {
   startDropdownCloseMonitoring();
 };
 
+const handleDropdownClosed = () => {
+  console.log(`[FileTableLoadingOverlay] Dropdown closed event received`);
+  logLoading("FileTableLoadingOverlay", `Dropdown closed event received at ${performance.now().toFixed(2)}ms`);
+  
+  // Stop monitoring since the dropdown is now fully closed
+  // This will also handle tooltip cleanup and resuming scanning
+  stopDropdownCloseMonitoring();
+};
+
 let dropdownCloseMonitorInterval: number | null = null;
 
 const startDropdownCloseMonitoring = () => {
@@ -387,6 +405,12 @@ const stopDropdownCloseMonitoring = () => {
     clearInterval(dropdownCloseMonitorInterval);
     dropdownCloseMonitorInterval = null;
     
+    // Complete cleanup of tooltip state when dropdown closes
+    resetAllTooltipState();
+    
+    // Check for orphaned tooltips when dropdown closes
+    checkForOrphanedTooltips();
+    
     // Resume scanning if we weren't paused before
     console.log(`[FileTableLoadingOverlay] Was paused before: ${wasPausedBeforeCancel.value}`);
     if (!wasPausedBeforeCancel.value) {
@@ -396,23 +420,100 @@ const stopDropdownCloseMonitoring = () => {
   }
 };
 
+// Hide all tooltips to prevent orphaned tooltips when dropdown closes
+const hideAllTooltips = () => {
+  pauseTooltipVisible.value = false;
+  cancelTooltipVisible.value = false;
+  closeButtonTooltipVisible.value = false;
+  checkboxTooltipVisible.value = false;
+  confirmCancelButtonTooltipVisible.value = false;
+  
+  // Reset tooltip refs to prevent orphaned tooltips
+  resetTooltipRefs();
+};
+
+// Reset tooltip refs to prevent orphaned tooltips
+const resetTooltipRefs = () => {
+  closeButtonRef.value = null;
+  checkboxRef.value = null;
+  checkboxLabelRef.value = null;
+  confirmCancelButtonRef.value = null;
+};
+
+// Complete tooltip state reset
+const resetAllTooltipState = () => {
+  hideAllTooltips();
+  resetTooltipRefs();
+  
+  // Don't reset the dropdown ref here to avoid circular dependency with the watcher
+  // The dropdown ref will be managed by Vue's reactivity system
+};
+
+// Check if tooltip refs are still valid (elements still in DOM)
+const areTooltipRefsValid = () => {
+  const refs = [
+    closeButtonRef.value?.visualStyleRef,
+    checkboxLabelRef.value,
+    confirmCancelButtonRef.value?.visualStyleRef
+  ];
+  
+  return refs.every(ref => {
+    if (!ref) return false;
+    if (ref instanceof Element) {
+      return document.contains(ref);
+    }
+    // Check if it's a ref with a value property
+    if (typeof ref === 'object' && ref !== null && 'value' in ref) {
+      const refValue = (ref as any).value;
+      if (refValue instanceof Element) {
+        return document.contains(refValue);
+      }
+    }
+    return false;
+  });
+};
+
+// Check for orphaned tooltips when dropdown closes unexpectedly
+const checkForOrphanedTooltips = () => {
+  // Check all tooltip targets that might be orphaned
+  const tooltipTargets = [
+    { element: closeButtonRef.value?.visualStyleRef || null, name: 'close button' },
+    { element: checkboxLabelRef.value || null, name: 'checkbox' },
+    { element: confirmCancelButtonRef.value?.visualStyleRef || null, name: 'confirm cancel button' }
+  ];
+
+  // If any tooltip targets are null or invalid, complete cleanup of tooltip state
+  const hasNullTargets = tooltipTargets.some(target => target.element === null);
+  const hasInvalidRefs = !areTooltipRefsValid();
+  
+  if (hasNullTargets || hasInvalidRefs) {
+    console.log(`[FileTableLoadingOverlay] Invalid tooltip targets detected, resetting all tooltip state`);
+    resetAllTooltipState();
+  }
+
+  checkMultipleTooltipTargets(tooltipTargets);
+};
+
 const handleConfirmCancel = () => {
   const startTime = performance.now();
   logLoading("FileTableLoadingOverlay", `Cancel confirmed at ${startTime.toFixed(2)}ms`);
   
-  // Stop monitoring since we're confirming the cancel
+  // Stop monitoring immediately since we're confirming the cancel
   stopDropdownCloseMonitoring();
+  
+  // Close the dropdown properly
+  if (cancelDropdownRef.value) {
+    cancelDropdownRef.value.closeDropdown();
+  }
+  
+  // Complete cleanup of tooltip state when cancel is confirmed
+  resetAllTooltipState();
   
   emit("cancel", removeScannedItems.value);
   
   const endTime = performance.now();
   const responseTime = endTime - startTime;
   logLoading("FileTableLoadingOverlay", `Cancel event emitted in ${responseTime.toFixed(2)}ms`);
-  
-  // Close the dropdown properly
-  if (cancelDropdownRef.value) {
-    cancelDropdownRef.value.closeDropdown();
-  }
 };
 
 // Tooltip event handlers
@@ -516,6 +617,18 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown);
+  
+  // Complete cleanup of all tooltip state when component is destroyed
+  resetAllTooltipState();
+  
+  // Stop any ongoing monitoring
+  if (dropdownCloseMonitorInterval) {
+    clearInterval(dropdownCloseMonitorInterval);
+    dropdownCloseMonitorInterval = null;
+  }
+  
+  // Reset remaining refs to prevent memory leaks
+  pauseButtonRef.value = null;
 });
 </script>
 

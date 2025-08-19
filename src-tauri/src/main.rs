@@ -10,7 +10,9 @@ use tauri_plugin_log::Builder as LogBuilder; // adds helper methods to WebviewWi
 fn main() {
     Builder::default()
         .plugin(tauri_plugin_fs::init())
-        .plugin(LogBuilder::new().build())
+        .plugin(LogBuilder::new()
+            .level(log::LevelFilter::Warn) // Set minimum log level to Warn to filter out Info logs
+            .build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_decorum::init()) // Initialize the decorum plugin
         .plugin(tauri_plugin_dialog::init()) // Initialize the dialog plugin

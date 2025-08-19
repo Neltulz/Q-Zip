@@ -69,6 +69,7 @@
                   :on-button-click="(event) => handleRemoveJobClick(event, job.id)"
                   @mouseenter="handleRemoveJobButtonMouseEnter(job.id)"
                   @mouseleave="handleRemoveJobButtonMouseLeave"
+                  @dropdown-opened="handleRemoveJobDropdownOpened(job.id)"
                   @action-button-activated="handleActionButtonActivated"
                 >
                                    <template #default="{ close }">
@@ -343,7 +344,7 @@
            :show-cancel-button="true"
            @mouseenter="handleExtraOptionsMouseEnter()"
            @mouseleave="handleExtraOptionsMouseLeave"
-           @click="tooltipManager.hideTooltip()"
+           @dropdown-opened="handleExtraOptionsDropdownOpened"
          >
            <template #default="{ close }">
              <CustomButton
@@ -1058,6 +1059,11 @@ const handleExtraOptionsMouseLeave = (event?: MouseEvent): void => {
   tooltipManager.hideTooltip();
 };
 
+// Dropdown opened event handler to hide associated tooltip immediately
+const handleExtraOptionsDropdownOpened = (): void => {
+  tooltipManager.hideTooltipImmediately();
+};
+
 const handleRemoveJobButtonMouseEnter = (jobId: number): void => {
   logHover("JobSelectorArea", `Remove job button mouse enter for job ${jobId}`, { jobId });
   tooltipManager.showTooltip('remove-job-' + jobId);
@@ -1099,6 +1105,11 @@ const handleRemoveJobButtonMouseLeave = (event?: MouseEvent): void => {
   
   logHover("JobSelectorArea", `Hiding remove job tooltip - mouse left button`, { relatedTarget, currentTarget });
   tooltipManager.hideTooltip();
+};
+
+// Dropdown opened event handler to hide associated tooltip
+const handleRemoveJobDropdownOpened = (jobId: number): void => {
+  tooltipManager.hideTooltipImmediately();
 };
 
 const handleActionButtonActivated = (buttonData: { dataName: string | undefined, btnTheme: string | undefined, text: string | undefined }): void => {

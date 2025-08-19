@@ -193,7 +193,8 @@ const props = defineProps({
 });
 const emit = defineEmits<{
   'dropdown-opened': [];
-      'action-button-activated': [buttonData: { dataName: string | undefined, btnTheme: string | undefined, text: string | undefined }]
+  'dropdown-closed': [];
+  'action-button-activated': [buttonData: { dataName: string | undefined, btnTheme: string | undefined, text: string | undefined }]
 }>();
 const themeStore = useThemeStore();
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
@@ -705,6 +706,11 @@ watch(isOpen, (newIsOpen: boolean): void => {
     document.removeEventListener("keydown", handleKeyDown);
     logManagerAction("DropdownMenu", `About to unregister dropdown: ${props.dropdownDataName}`);
     unregisterDropdown(dropdownId);
+    
+    // Emit dropdown-closed event after a delay to ensure the transition is complete
+    setTimeout(() => {
+      emit('dropdown-closed');
+    }, 200); // Slightly longer than the 180ms transition to ensure it's complete
   }
 });
 onUnmounted((): void => {
@@ -824,9 +830,9 @@ defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle, isOpen });
   transition: opacity 120ms ease, background-color 120ms ease;
   opacity: 0.75; /* slightly more visible by default */
 }
-/* Hover only applies when NOT active so active overrides hover.
+/* Hover only applies when NOT active and NOT disabled so active overrides hover.
    Exclude themed buttons so their own hover backgrounds remain intact. */
-.dropdown-content .custom-button:not(.active):not([data-btn-theme="primary"]):not([data-btn-theme="danger"]):not([data-btn-theme="warning"]):not([data-btn-theme="info"]):hover > .visual-style {
+.dropdown-content .custom-button:not(.active):not([data-btn-theme="primary"]):not([data-btn-theme="danger"]):not([data-btn-theme="warning"]):not([data-btn-theme="info"]):hover:not(:disabled):not(.disabled) > .visual-style {
   opacity: 0.95;
   background-color: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) + 8%), 0.14);
 }

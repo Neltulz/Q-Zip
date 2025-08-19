@@ -28,6 +28,7 @@
             :show-cancel-button="true"
             @mouseenter="showMainMenuTooltip"
             @mouseleave="hideMainMenuTooltip"
+            @dropdown-opened="handleMainMenuDropdownOpened"
           >
             <template #default="{ close }">
               <DropdownMenu
@@ -159,7 +160,7 @@
             :target="mainMenuTooltipTarget"
             placement="bottom-start"
           />
-          <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.22</span></span>
+          <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.23-dev</span></span>
         </div>
           <div class="center-nav-btns" :class="{ disabled: isWelcomeLayout }">
           <CustomButton
@@ -451,6 +452,12 @@ const showMainMenuTooltip = () => {
 const hideMainMenuTooltip = () => {
   mainMenuTooltipVisible.value = false;
 };
+
+// Dropdown opened event handler to hide associated tooltip immediately
+const handleMainMenuDropdownOpened = () => {
+  mainMenuTooltipVisible.value = false;
+};
+
 // If the menu opens, ensure the tooltip is hidden
 watch(isMainMenuActive, (val) => {
   if (val) mainMenuTooltipVisible.value = false;
