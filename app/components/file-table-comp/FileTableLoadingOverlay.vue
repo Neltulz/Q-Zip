@@ -62,10 +62,13 @@
     <!-- Control buttons -->
     <div class="button-group">
       <CustomButton
+        ref="pauseButtonRef"
         button-style-class="default"
         data-name="pause-loading-btn"
         :first-icon-name="isPaused ? 'mdi:play' : 'mdi:pause'"
         @click="handlePauseClick"
+        @mouseenter="handlePauseButtonMouseEnter"
+        @mouseleave="handlePauseButtonMouseLeave"
       >
         {{ isPaused ? 'Resume' : 'Pause' }}
       </CustomButton>
@@ -80,6 +83,8 @@
         :show-cancel-button="false"
         last-icon-name=""
         @dropdown-opened="handleDropdownOpened"
+        @mouseenter="handleCancelButtonMouseEnter"
+        @mouseleave="handleCancelButtonMouseLeave"
       >
         <template #button-content>
           Cancel
@@ -88,6 +93,7 @@
           <div class="cancel-confirmation">
             <!-- Close button positioned absolutely -->
             <CustomButton
+              ref="closeButtonRef"
               class="close-button"
               btn-theme="liter"
               button-style-class="trans-btn"
@@ -95,6 +101,8 @@
               first-icon-name="mdi:close"
               :first-icon-size="16"
               @click="cancelDropdownRef?.closeDropdown()"
+              @mouseenter="handleCloseButtonMouseEnter"
+              @mouseleave="handleCloseButtonMouseLeave"
             />
             
             <!-- Main content -->
@@ -110,8 +118,14 @@
             </div>
             
             <div class="confirmation-checkbox">
-              <label class="checkbox-label">
+              <label 
+                ref="checkboxLabelRef"
+                class="checkbox-label"
+                @mouseenter="handleCheckboxMouseEnter"
+                @mouseleave="handleCheckboxMouseLeave"
+              >
                 <input 
+                  ref="checkboxRef"
                   type="checkbox" 
                   v-model="removeScannedItems"
                 />
@@ -121,11 +135,14 @@
             
             <div class="confirmation-actions">
               <CustomButton
+                ref="confirmCancelButtonRef"
                 button-style-class="default"
                 btn-theme="danger"
                 data-name="confirm-cancel-btn"
                 first-icon-name="mdi:stop"
                 @click="handleConfirmCancel"
+                @mouseenter="handleConfirmCancelButtonMouseEnter"
+                @mouseleave="handleConfirmCancelButtonMouseLeave"
               >
                 Cancel Process
               </CustomButton>
@@ -134,14 +151,52 @@
         </template>
       </DropdownMenu>
     </div>
+    
+    <!-- Tooltips -->
+    <InfoTooltip
+      :visible="pauseTooltipVisible"
+      :content="{ text: isPaused ? 'Resume scanning' : 'Pause scanning' }"
+      :target="pauseButtonRef?.visualStyleRef"
+      placement="bottom"
+      keyboard-shortcut="Space"
+    />
+    <InfoTooltip
+      :visible="cancelTooltipVisible"
+      :content="{ text: 'Cancel scanning' }"
+      :target="cancelDropdownRef?.$el"
+      placement="bottom"
+      keyboard-shortcut="Esc"
+    />
+    <InfoTooltip
+      :visible="closeButtonTooltipVisible"
+      :content="{ text: 'Close cancel dialog' }"
+      :target="closeButtonRef?.visualStyleRef"
+      placement="right"
+      keyboard-shortcut="Esc"
+    />
+    <InfoTooltip
+      :visible="checkboxTooltipVisible"
+      :content="{ text: 'Also remove already scanned items' }"
+      :target="checkboxLabelRef"
+      placement="right"
+      keyboard-shortcut="Space"
+    />
+    <InfoTooltip
+      :visible="confirmCancelButtonTooltipVisible"
+      :content="{ text: 'Confirm cancel process' }"
+      :target="confirmCancelButtonRef?.visualStyleRef"
+      placement="bottom"
+      keyboard-shortcut="Enter"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import CustomButton from "../CustomButton.vue";
 import DropdownMenu from "../DropdownMenu.vue";
 import ProgressBar from "../ProgressBar.vue";
+import InfoTooltip from "../InfoTooltip.vue";
 import CircleLoadingAnim from "../loading-anim-comp/CircleLoadingAnim.vue";
 import SpinnerLoadingAnim from "../loading-anim-comp/SpinnerLoadingAnim.vue";
 import DoubleBounceLoadingAnim from "../loading-anim-comp/DoubleBounceLoadingAnim.vue";
@@ -164,13 +219,29 @@ const emit = defineEmits<{
   cancel: [removeScannedItems?: boolean];
 }>();
 
-const cancelDropdownRef = ref<{ isOpen: { value: boolean }; closeDropdown: () => void } | null>(null);
+const cancelDropdownRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
+
+// Tooltip state management
+const pauseButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
+const pauseTooltipVisible = ref(false);
+const cancelTooltipVisible = ref(false);
+
+// New refs for cancel confirmation elements
+const closeButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
+const checkboxRef = ref<HTMLInputElement | null>(null);
+const checkboxLabelRef = ref<HTMLLabelElement | null>(null);
+const confirmCancelButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
+
+// New tooltip visibility state
+const closeButtonTooltipVisible = ref(false);
+const checkboxTooltipVisible = ref(false);
+const confirmCancelButtonTooltipVisible = ref(false);
 
 // Debug: Watch for when the dropdown ref is set
 watch(cancelDropdownRef, (newRef) => {
   console.log(`[FileTableLoadingOverlay] Dropdown ref changed:`, newRef);
   if (newRef) {
-    console.log(`[FileTableLoadingOverlay] Dropdown isOpen value:`, newRef.isOpen.value);
+    console.log(`[FileTableLoadingOverlay] Dropdown ref set:`, !!newRef);
   }
 });
 const removeScannedItems = ref(true); // Default to true to maintain current behavior
@@ -343,6 +414,109 @@ const handleConfirmCancel = () => {
     cancelDropdownRef.value.closeDropdown();
   }
 };
+
+// Tooltip event handlers
+const handlePauseButtonMouseEnter = () => {
+  pauseTooltipVisible.value = true;
+};
+
+const handlePauseButtonMouseLeave = () => {
+  pauseTooltipVisible.value = false;
+};
+
+const handleCancelButtonMouseEnter = () => {
+  cancelTooltipVisible.value = true;
+};
+
+const handleCancelButtonMouseLeave = () => {
+  cancelTooltipVisible.value = false;
+};
+
+const handleCloseButtonMouseEnter = () => {
+  closeButtonTooltipVisible.value = true;
+};
+
+const handleCloseButtonMouseLeave = () => {
+  closeButtonTooltipVisible.value = false;
+};
+
+const handleConfirmCancelButtonMouseEnter = () => {
+  confirmCancelButtonTooltipVisible.value = true;
+};
+
+const handleConfirmCancelButtonMouseLeave = () => {
+  confirmCancelButtonTooltipVisible.value = false;
+};
+
+const handleCheckboxMouseEnter = () => {
+  checkboxTooltipVisible.value = true;
+};
+
+const handleCheckboxMouseLeave = () => {
+  checkboxTooltipVisible.value = false;
+};
+
+// Keyboard event handling
+const handleKeydown = (event: KeyboardEvent) => {
+  // Check if dropdown is open
+  const dropdownContent = document.querySelector('[data-belongs-to="cancel-dropdown"]');
+  const isDropdownOpen = !!dropdownContent;
+  
+  switch (event.code) {
+    case 'Space':
+      if (isDropdownOpen) {
+        // When dropdown is open, Space should toggle the checkbox
+        event.preventDefault();
+        removeScannedItems.value = !removeScannedItems.value;
+      } else {
+        // When dropdown is closed, Space pauses/resumes scanning
+        event.preventDefault();
+        if (!props.isPaused) {
+          emit("pause", true);
+        } else {
+          emit("pause", false);
+        }
+      }
+      break;
+    case 'Escape':
+      if (isDropdownOpen) {
+        // Close dropdown if open
+        if (cancelDropdownRef.value) {
+          cancelDropdownRef.value.closeDropdown();
+        }
+      } else {
+        // Open dropdown if closed
+        if (cancelDropdownRef.value) {
+          cancelDropdownRef.value.openDropdown();
+        }
+      }
+      break;
+    case 'Enter':
+      if (isDropdownOpen) {
+        // When dropdown is open, Enter should trigger the Cancel Process button
+        event.preventDefault();
+        handleConfirmCancel();
+      } else {
+        // When dropdown is closed, Enter pauses/resumes scanning
+        event.preventDefault();
+        if (!props.isPaused) {
+          emit("pause", true);
+        } else {
+          emit("pause", false);
+        }
+      }
+      break;
+  }
+};
+
+// Set up keyboard event listeners
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown);
+});
 </script>
 
 <style scoped>
