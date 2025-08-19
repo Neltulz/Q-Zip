@@ -723,7 +723,7 @@ const getTriggerVisualStyle = (): HTMLElement | null => {
     return null;
   }
 };
-defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle });
+defineExpose({ openDropdown, closeDropdown, getTriggerVisualStyle, isOpen });
 </script>
 <!-- #endregion -->
 <!-- #region style scoped -->

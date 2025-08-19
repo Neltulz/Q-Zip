@@ -81,6 +81,7 @@
         placement="right-center"
         :show-cancel-button="false"
         last-icon-name=""
+        @dropdown-opened="handleDropdownOpened"
       >
         <template #button-content>
           Cancel
@@ -164,8 +165,17 @@ const emit = defineEmits<{
   cancel: [removeScannedItems?: boolean];
 }>();
 
-const cancelDropdownRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
+const cancelDropdownRef = ref<{ isOpen: { value: boolean }; closeDropdown: () => void } | null>(null);
+
+// Debug: Watch for when the dropdown ref is set
+watch(cancelDropdownRef, (newRef) => {
+  console.log(`[FileTableLoadingOverlay] Dropdown ref changed:`, newRef);
+  if (newRef) {
+    console.log(`[FileTableLoadingOverlay] Dropdown isOpen value:`, newRef.isOpen.value);
+  }
+});
 const removeScannedItems = ref(true); // Default to true to maintain current behavior
+const wasPausedBeforeCancel = ref(false); // Track if we were already paused before opening cancel dialog
 
 // Determine which animation component to use
 const animationComponent = computed(() => {
@@ -248,6 +258,9 @@ watch(
   }
 );
 
+// Removed the watcher approach since it wasn't working reliably
+// Now using DOM-based monitoring instead
+
 const handlePauseClick = () => {
   const startTime = performance.now();
   console.log(`[FileTableLoadingOverlay] PAUSE BUTTON CLICKED at ${startTime.toFixed(2)}ms - current state: ${props.isPaused ? 'paused' : 'playing'}`);
@@ -262,9 +275,71 @@ const handlePauseClick = () => {
   logLoading("FileTableLoadingOverlay", `Pause event emitted in ${responseTime.toFixed(2)}ms - new state: ${!props.isPaused ? 'paused' : 'playing'}`);
 };
 
+const handleDropdownOpened = () => {
+  console.log(`[FileTableLoadingOverlay] Dropdown opened event received`);
+  logLoading("FileTableLoadingOverlay", `Dropdown opened event received at ${performance.now().toFixed(2)}ms`);
+  
+  // Pause the scanning when dropdown opens
+  wasPausedBeforeCancel.value = props.isPaused;
+  if (!props.isPaused) {
+    logLoading("FileTableLoadingOverlay", `Auto-pausing scanning for cancel confirmation at ${performance.now().toFixed(2)}ms`);
+    emit("pause", true);
+  }
+  
+  // Start monitoring for dropdown close
+  startDropdownCloseMonitoring();
+};
+
+let dropdownCloseMonitorInterval: number | null = null;
+
+const startDropdownCloseMonitoring = () => {
+  // Clear any existing monitor
+  if (dropdownCloseMonitorInterval) {
+    clearInterval(dropdownCloseMonitorInterval);
+  }
+  
+  // Check every 100ms if the dropdown is still open
+  dropdownCloseMonitorInterval = window.setInterval(() => {
+    const dropdown = cancelDropdownRef.value;
+    if (!dropdown) {
+      // Dropdown ref is gone, assume it's closed
+      stopDropdownCloseMonitoring();
+      return;
+    }
+    
+    // Try to check if dropdown is open by looking for the dropdown content in the DOM
+    const dropdownContent = document.querySelector('[data-belongs-to="cancel-dropdown"]');
+    if (!dropdownContent) {
+      // Dropdown content is not in DOM, assume it's closed
+      console.log(`[FileTableLoadingOverlay] Dropdown content not found in DOM, assuming closed`);
+      stopDropdownCloseMonitoring();
+      return;
+    }
+    
+    console.log(`[FileTableLoadingOverlay] Dropdown still open, content found:`, !!dropdownContent);
+  }, 100);
+};
+
+const stopDropdownCloseMonitoring = () => {
+  if (dropdownCloseMonitorInterval) {
+    clearInterval(dropdownCloseMonitorInterval);
+    dropdownCloseMonitorInterval = null;
+    
+    // Resume scanning if we weren't paused before
+    console.log(`[FileTableLoadingOverlay] Was paused before: ${wasPausedBeforeCancel.value}`);
+    if (!wasPausedBeforeCancel.value) {
+      logLoading("FileTableLoadingOverlay", `Auto-resuming scanning after cancel dialog closed at ${performance.now().toFixed(2)}ms`);
+      emit("pause", false);
+    }
+  }
+};
+
 const handleConfirmCancel = () => {
   const startTime = performance.now();
   logLoading("FileTableLoadingOverlay", `Cancel confirmed at ${startTime.toFixed(2)}ms`);
+  
+  // Stop monitoring since we're confirming the cancel
+  stopDropdownCloseMonitoring();
   
   emit("cancel", removeScannedItems.value);
   
