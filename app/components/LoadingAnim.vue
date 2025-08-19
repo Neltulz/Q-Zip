@@ -174,7 +174,7 @@ const handlePauseClick = (paused: boolean) => {
 .loading-overlay {
   align-items: center;
   backdrop-filter: blur(2px);
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: hsla(0, 0%, 0%, 0.5);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -185,11 +185,11 @@ const handlePauseClick = (paused: boolean) => {
 
 /* Loading container - <div class="loading-container"> */
 .loading-container {
+  --loading-container-pad: 16px;
   background-color: var(--bg-clr-darkr);
   border: 1px solid var(--brdr-clr-lite);
   border-radius: 8px;
   min-width: 320px;
-  padding: 24px;
 }
 
 /* Loading content wrapper - <div class="loading-content"> */

@@ -29,30 +29,32 @@
       <div class="scanning-label" :class="{ 'paused': isPaused }">
         {{ isPaused ? 'PAUSED' : 'SCANNING' }}
       </div>
-      <div class="filename-text" :title="processedFilename" :class="{ 'paused': isPaused }">{{ processedFilename }}</div>
       
       <!-- Overall progress bar for multiple folders -->
-      <div v-if="showOverallProgress" class="overall-progress-section">
-        <div class="overall-progress-label" :class="{ 'paused': isPaused }">
+      <div v-if="showOverallProgress" class="progress-section overall-progress-section">
+        <div class="progress-wrapper">
+          <div class="progress-percentage" :title="`${overallProgressPercentage}%`" :class="{ 'paused': isPaused }">{{ overallProgressPercentage }}%</div>
+          <div class="progress-count" :title="`${overallCurrentFolder}/${overallTotalFolders}`" :class="{ 'paused': isPaused }">{{ overallCurrentFolder }}/{{ overallTotalFolders }}</div>
+        </div>
+        <div class="progress-bar" :class="{ 'paused': isPaused }">
+          <div class="progress-fill overall-progress-fill" :style="{ width: `${overallProgressPercentage}%` }"></div>
+        </div>
+        <div class="progress-label" :class="{ 'paused': isPaused }">
           Overall Progress
-        </div>
-        <div class="overall-progress-bar" :class="{ 'paused': isPaused }">
-          <div class="overall-progress-fill" :style="{ width: `${overallProgressPercentage}%` }"></div>
-        </div>
-        <div class="overall-progress-wrapper">
-          <div class="overall-progress-percentage" :title="`${overallProgressPercentage}%`" :class="{ 'paused': isPaused }">{{ overallProgressPercentage }}%</div>
-          <div class="overall-progress-count" :title="`${overallCurrentFolder}/${overallTotalFolders}`" :class="{ 'paused': isPaused }">{{ overallCurrentFolder }}/{{ overallTotalFolders }}</div>
         </div>
       </div>
       
       <!-- Current folder progress bar -->
-      <div v-if="totalItems && totalItems > 0" class="progress-bar" :class="{ 'paused': isPaused }">
-        <div class="progress-fill" :style="{ width: `${progressPercentage}%` }"></div>
+      <div v-if="totalItems && totalItems > 0" class="progress-section current-progress-section">
+        <div class="progress-wrapper">
+          <div class="progress-percentage" :title="`${progressPercentage}%`" :class="{ 'paused': isPaused }">{{ progressPercentage }}%</div>
+          <div class="progress-count" :title="`${currentItem}/${totalItems}`" :class="{ 'paused': isPaused }">{{ currentItem }}/{{ totalItems }}</div>
+        </div>
+        <div class="progress-bar" :class="{ 'paused': isPaused }">
+          <div class="progress-fill current-progress-fill" :style="{ width: `${progressPercentage}%` }"></div>
+        </div>
       </div>
-      <div class="progress-wrapper">
-        <div class="progress-percentage" :title="`${progressPercentage}%`" :class="{ 'paused': isPaused }">{{ progressPercentage }}%</div>
-        <div class="progress-count" :title="`${currentItem}/${totalItems}`" :class="{ 'paused': isPaused }">{{ currentItem }}/{{ totalItems }}</div>
-      </div>
+      <div class="filename-text" :title="processedFilename" :class="{ 'paused': isPaused }">{{ processedFilename }}</div>
     </div>
     
     <!-- Loading message -->
@@ -360,9 +362,9 @@ const handleConfirmCancel = () => {
   align-items: center;
   display: flex;
   flex-direction: column;
-  /* Avoid using gap here - use individual margins instead for better control */
   max-width: 320px;
   width: 100%;
+  /* Avoid using gap here - use individual margins instead for better control */
 }
 
 /* Progress information container - <div class="progress-info"> */
@@ -370,9 +372,10 @@ const handleConfirmCancel = () => {
   align-items: center;
   display: flex;
   flex-direction: column;
+  margin-block-end: var(--loading-container-pad);
   max-width: 100%;
+  padding: 0 var(--loading-container-pad);
   width: 100%;
-  margin-block-end: 16px;
 }
 
 /* Scanning label text - <div class="scanning-label"> */
@@ -380,14 +383,14 @@ const handleConfirmCancel = () => {
   color: var(--txt-clr-liter);
   font-size: 16px;
   font-weight: 500;
+  margin-block-end: 16px;
   max-width: 100%;
   overflow: hidden;
   text-align: center;
   text-overflow: ellipsis;
+  transition: opacity 0.2s ease;
   white-space: nowrap;
   width: 100%;
-  margin-block-end: 16px;
-  transition: opacity 0.2s ease;
 }
 
 .scanning-label.paused {
@@ -402,13 +405,32 @@ const handleConfirmCancel = () => {
   overflow: hidden;
   text-align: start;
   text-overflow: ellipsis;
+  transition: opacity 0.2s ease;
   white-space: nowrap;
   width: 100%;
-  transition: opacity 0.2s ease;
 }
 
 .filename-text.paused {
   opacity: 0.5;
+}
+
+/* Progress section container - <div class="progress-section"> */
+.progress-section {
+  --progress-bar-height: 6px;
+  --progress-fill-transition: inline-size 0.3s ease;
+  --progress-text-size: 12px;
+  --progress-transition: opacity 0.2s ease;
+  
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Overall progress section - <div class="overall-progress-section"> */
+.overall-progress-section {
+  margin-block-end: 16px;
 }
 
 /* Progress wrapper container - <div class="progress-wrapper"> */
@@ -423,10 +445,10 @@ const handleConfirmCancel = () => {
 /* Progress percentage display - <div class="progress-percentage"> */
 .progress-percentage {
   color: var(--txt-clr-lite);
-  font-size: 12px;
+  font-size: var(--progress-text-size);
   font-weight: 500;
   text-align: start;
-  transition: opacity 0.2s ease;
+  transition: var(--progress-transition);
 }
 
 .progress-percentage.paused {
@@ -436,10 +458,10 @@ const handleConfirmCancel = () => {
 /* Progress count display - <div class="progress-count"> */
 .progress-count {
   color: var(--txt-clr-lite);
-  font-size: 12px;
+  font-size: var(--progress-text-size);
   font-weight: 500;
   text-align: end;
-  transition: opacity 0.2s ease;
+  transition: var(--progress-transition);
 }
 
 .progress-count.paused {
@@ -449,12 +471,12 @@ const handleConfirmCancel = () => {
 /* Progress bar container - <div class="progress-bar"> */
 .progress-bar {
   background-color: var(--brdr-clr-lite);
-  block-size: 6px;
+  block-size: var(--progress-bar-height);
   border-radius: 2px;
   inline-size: 100%;
-  margin-block: 8px;
+  margin-block: 4px;
   overflow: hidden;
-  transition: opacity 0.2s ease;
+  transition: var(--progress-transition);
 }
 
 .progress-bar.paused {
@@ -463,10 +485,19 @@ const handleConfirmCancel = () => {
 
 /* Progress fill indicator - <div class="progress-fill"> */
 .progress-fill {
-  background-color: var(--accent-clr, hsl(211, 100%, 50%));
   border-radius: 2px;
   block-size: 100%;
-  transition: inline-size 0.3s ease;
+  transition: var(--progress-fill-transition);
+}
+
+/* Overall progress fill - <div class="overall-progress-fill"> */
+.overall-progress-fill {
+  background-color: var(--accent-clr, hsl(211, 100%, 50%));
+}
+
+/* Current progress fill - <div class="current-progress-fill"> */
+.current-progress-fill {
+  background-color: hsl(120, 100%, 50%); /* Green color for current progress */
 }
 
 /* Progress fill when paused - desaturated */
@@ -474,13 +505,32 @@ const handleConfirmCancel = () => {
   background-color: hsl(0, 0%, 60%);
 }
 
+/* Progress label - <div class="progress-label"> */
+.progress-label {
+  color: var(--txt-clr-lite);
+  font-size: var(--progress-text-size);
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  text-align: start;
+  text-overflow: ellipsis;
+  transition: var(--progress-transition);
+  white-space: nowrap;
+  width: 100%;
+}
+
+.progress-label.paused {
+  opacity: 0.5;
+}
+
 /* Loading message container - <div class="loading-message"> */
 .loading-message {
   color: var(--txt-clr-liter);
   font-size: 14px;
-  margin-block-end: 16px;
+  margin-block-end: var(--loading-container-pad);
   max-width: 100%;
   overflow: hidden;
+  padding: 0 var(--loading-container-pad);
   text-align: center;
   text-overflow: ellipsis;
   transition: opacity 0.2s ease;
@@ -500,20 +550,22 @@ const handleConfirmCancel = () => {
 
 /* Button group container - <div class="button-group"> */
 .button-group {
+  border-top: 1px solid var(--brdr-clr-lite);
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   gap: 12px;
   justify-content: center;
+  padding: var(--loading-container-pad);
   width: 100%;
 }
 
 /* Ensure buttons have consistent width */
 .button-group :deep(.custom-button) {
-  flex-shrink: 0;
   flex-grow: 0;
-  width: auto;
+  flex-shrink: 0;
   max-width: none;
+  width: auto;
 }
 
 
@@ -538,8 +590,8 @@ const handleConfirmCancel = () => {
 
 
 .close-button :deep(.iconify) {
-  display: flex;
   align-items: center;
+  display: flex;
   justify-content: center;
 }
 
@@ -593,8 +645,8 @@ const handleConfirmCancel = () => {
 
 /* Confirmation checkbox - <div class="confirmation-checkbox"> */
 .confirmation-checkbox {
-  display: flex;
   align-items: center;
+  display: flex;
   justify-content: center;
   padding: 0 10px;
 }
@@ -612,10 +664,10 @@ const handleConfirmCancel = () => {
 
 /* Checkbox text - <span class="checkbox-text"> */
 .checkbox-text {
-  user-select: none;
+  line-height: 1.25;
   max-width: 16ch;
   text-wrap: balance;
-  line-height: 1.25;
+  user-select: none;
 }
 
 /* Confirmation actions container - <div class="confirmation-actions"> */
@@ -631,114 +683,27 @@ const handleConfirmCancel = () => {
   width: auto;
 }
 
-/* Overall progress section - <div class="overall-progress-section"> */
-.overall-progress-section {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  max-width: 100%;
-  width: 100%;
-  margin-block-end: 16px;
-}
 
-/* Overall progress label - <div class="overall-progress-label"> */
-.overall-progress-label {
-  color: var(--txt-clr-lite);
-  font-size: 12px;
-  font-weight: 500;
-  margin-block-end: 8px;
-  max-width: 100%;
-  overflow: hidden;
-  text-align: center;
-  text-overflow: ellipsis;
-  transition: opacity 0.2s ease;
-  white-space: nowrap;
-  width: 100%;
-}
-
-.overall-progress-label.paused {
-  opacity: 0.5;
-}
-
-/* Overall progress bar - <div class="overall-progress-bar"> */
-.overall-progress-bar {
-  background-color: var(--brdr-clr-lite);
-  block-size: 6px;
-  border-radius: 2px;
-  inline-size: 100%;
-  margin-block-end: 8px;
-  overflow: hidden;
-  transition: opacity 0.2s ease;
-}
-
-.overall-progress-bar.paused {
-  opacity: 0.5;
-}
-
-/* Overall progress fill indicator - <div class="overall-progress-fill"> */
-.overall-progress-fill {
-  background-color: var(--accent-clr, hsl(211, 100%, 50%));
-  border-radius: 2px;
-  block-size: 100%;
-  transition: inline-size 0.3s ease;
-}
-
-/* Overall progress fill when paused - desaturated */
-.overall-progress-bar.paused .overall-progress-fill {
-  background-color: hsl(0, 0%, 60%);
-}
-
-/* Overall progress wrapper - <div class="overall-progress-wrapper"> */
-.overall-progress-wrapper {
-  align-items: center;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  width: 100%;
-}
-
-/* Overall progress percentage - <div class="overall-progress-percentage"> */
-.overall-progress-percentage {
-  color: var(--txt-clr-lite);
-  font-size: 12px;
-  font-weight: 500;
-  text-align: start;
-  transition: opacity 0.2s ease;
-}
-
-.overall-progress-percentage.paused {
-  opacity: 0.5;
-}
-
-/* Overall progress count - <div class="overall-progress-count"> */
-.overall-progress-count {
-  color: var(--txt-clr-lite);
-  font-size: 12px;
-  font-weight: 500;
-  text-align: end;
-  transition: opacity 0.2s ease;
-}
-
-.overall-progress-count.paused {
-  opacity: 0.5;
-}
 
 /* Animation container to maintain consistent height */
 .animation-container {
   --animation-height: 68px;
+  
+  align-items: center;
   block-size: var(--animation-height);
   display: flex;
-  align-items: center;
   justify-content: center;
-  position: relative;
   margin-block-end: 8px;
+  margin-block-start: var(--loading-container-pad);
+  padding-inline: var(--loading-container-pad);
+  position: relative;
 }
 
 /* Loading animation and pause icon positioning */
 .animation-container > * {
+  left: 50%;
   position: absolute;
   top: 50%;
-  left: 50%;
   transform: translate(-50%, -50%);
   transition: opacity 0.2s ease;
 }
@@ -751,18 +716,18 @@ const handleConfirmCancel = () => {
 
 /* Pause icon container - <div class="pause-icon-container"> */
 .pause-icon-container {
+  align-items: center;
+  background-color: var(--bg-clr-lite);
+  block-size: var(--animation-height);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px hsla(0, 0%, 0%, 0.1);
+  display: flex;
+  inline-size: var(--animation-height);
+  justify-content: center;
+  left: 50%;
   position: absolute;
   top: 50%;
-  left: 50%;
   transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--bg-clr-lite);
-  border-radius: 50%;
-  block-size: var(--animation-height);
-  inline-size: var(--animation-height);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Pause icon styling - <Icon class="pause-icon"> */
