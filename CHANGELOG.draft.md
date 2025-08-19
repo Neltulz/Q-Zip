@@ -15,4 +15,8 @@
   - Border now extends to full width of dropdown menu for cleaner appearance
 
 ### Technical Details
-- *Development work in progress...*
+- Refactored progress section from FileTableLoadingOverlay into reusable ProgressBar component
+  - Extracted progress bar logic and styling into standalone component
+  - Added support for different progress variants (default, overall, current)
+  - Component now supports custom labels and pause state styling
+  - Improved code reusability and maintainability

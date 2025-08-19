@@ -31,29 +31,25 @@
       </div>
       
       <!-- Overall progress bar for multiple folders -->
-      <div v-if="showOverallProgress" class="progress-section overall-progress-section">
-        <div class="progress-wrapper">
-          <div class="progress-percentage" :title="`${overallProgressPercentage}%`" :class="{ 'paused': isPaused }">{{ overallProgressPercentage }}%</div>
-          <div class="progress-count" :title="`${overallCurrentFolder}/${overallTotalFolders}`" :class="{ 'paused': isPaused }">{{ overallCurrentFolder }}/{{ overallTotalFolders }}</div>
-        </div>
-        <div class="progress-bar" :class="{ 'paused': isPaused }">
-          <div class="progress-fill overall-progress-fill" :style="{ width: `${overallProgressPercentage}%` }"></div>
-        </div>
-        <div class="progress-label" :class="{ 'paused': isPaused }">
-          Overall Progress
-        </div>
-      </div>
+      <ProgressBar
+        v-if="showOverallProgress"
+        :current="overallCurrentFolder || 0"
+        :total="overallTotalFolders || 0"
+        :is-paused="isPaused"
+        variant="overall"
+        label="Overall Progress"
+        section-class="overall-progress-section"
+      />
       
       <!-- Current folder progress bar -->
-      <div v-if="totalItems && totalItems > 0" class="progress-section current-progress-section">
-        <div class="progress-wrapper">
-          <div class="progress-percentage" :title="`${progressPercentage}%`" :class="{ 'paused': isPaused }">{{ progressPercentage }}%</div>
-          <div class="progress-count" :title="`${currentItem}/${totalItems}`" :class="{ 'paused': isPaused }">{{ currentItem }}/{{ totalItems }}</div>
-        </div>
-        <div class="progress-bar" :class="{ 'paused': isPaused }">
-          <div class="progress-fill current-progress-fill" :style="{ width: `${progressPercentage}%` }"></div>
-        </div>
-      </div>
+      <ProgressBar
+        v-if="totalItems && totalItems > 0"
+        :current="currentItem || 0"
+        :total="totalItems || 0"
+        :is-paused="isPaused"
+        variant="current"
+        section-class="current-progress-section"
+      />
       <div class="filename-text" :title="processedFilename" :class="{ 'paused': isPaused }">{{ processedFilename }}</div>
     </div>
     
@@ -145,6 +141,7 @@
 import { ref, computed, watch } from "vue";
 import CustomButton from "../CustomButton.vue";
 import DropdownMenu from "../DropdownMenu.vue";
+import ProgressBar from "../ProgressBar.vue";
 import CircleLoadingAnim from "../loading-anim-comp/CircleLoadingAnim.vue";
 import SpinnerLoadingAnim from "../loading-anim-comp/SpinnerLoadingAnim.vue";
 import DoubleBounceLoadingAnim from "../loading-anim-comp/DoubleBounceLoadingAnim.vue";
@@ -210,15 +207,7 @@ const showOverallProgress = computed(() => {
   return shouldShow;
 });
 
-const progressPercentage = computed(() => {
-  if (!props.totalItems || props.totalItems === 0) return 0;
-  return Math.round((props.currentItem || 0) / props.totalItems * 100);
-});
 
-const overallProgressPercentage = computed(() => {
-  if (!props.overallTotalFolders || props.overallTotalFolders === 0) return 0;
-  return Math.round((props.overallCurrentFolder || 0) / props.overallTotalFolders * 100);
-});
 
 const processedFilename = computed(() => {
   if (!props.progressMessage) return '';
@@ -414,113 +403,9 @@ const handleConfirmCancel = () => {
   opacity: 0.5;
 }
 
-/* Progress section container - <div class="progress-section"> */
-.progress-section {
-  --progress-bar-height: 6px;
-  --progress-fill-transition: inline-size 0.3s ease;
-  --progress-text-size: 12px;
-  --progress-transition: opacity 0.2s ease;
-  
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  max-width: 100%;
-  width: 100%;
-}
-
 /* Overall progress section - <div class="overall-progress-section"> */
 .overall-progress-section {
   margin-block-end: 16px;
-}
-
-/* Progress wrapper container - <div class="progress-wrapper"> */
-.progress-wrapper {
-  align-items: center;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  width: 100%;
-}
-
-/* Progress percentage display - <div class="progress-percentage"> */
-.progress-percentage {
-  color: var(--txt-clr-lite);
-  font-size: var(--progress-text-size);
-  font-weight: 500;
-  text-align: start;
-  transition: var(--progress-transition);
-}
-
-.progress-percentage.paused {
-  opacity: 0.5;
-}
-
-/* Progress count display - <div class="progress-count"> */
-.progress-count {
-  color: var(--txt-clr-lite);
-  font-size: var(--progress-text-size);
-  font-weight: 500;
-  text-align: end;
-  transition: var(--progress-transition);
-}
-
-.progress-count.paused {
-  opacity: 0.5;
-}
-
-/* Progress bar container - <div class="progress-bar"> */
-.progress-bar {
-  background-color: var(--brdr-clr-lite);
-  block-size: var(--progress-bar-height);
-  border-radius: 2px;
-  inline-size: 100%;
-  margin-block: 4px;
-  overflow: hidden;
-  transition: var(--progress-transition);
-}
-
-.progress-bar.paused {
-  opacity: 0.5;
-}
-
-/* Progress fill indicator - <div class="progress-fill"> */
-.progress-fill {
-  border-radius: 2px;
-  block-size: 100%;
-  transition: var(--progress-fill-transition);
-}
-
-/* Overall progress fill - <div class="overall-progress-fill"> */
-.overall-progress-fill {
-  background-color: var(--accent-clr, hsl(211, 100%, 50%));
-}
-
-/* Current progress fill - <div class="current-progress-fill"> */
-.current-progress-fill {
-  background-color: hsl(120, 100%, 50%); /* Green color for current progress */
-}
-
-/* Progress fill when paused - desaturated */
-.progress-bar.paused .progress-fill {
-  background-color: hsl(0, 0%, 60%);
-}
-
-/* Progress label - <div class="progress-label"> */
-.progress-label {
-  color: var(--txt-clr-lite);
-  font-size: var(--progress-text-size);
-  font-weight: 500;
-  max-width: 100%;
-  overflow: hidden;
-  text-align: start;
-  text-overflow: ellipsis;
-  transition: var(--progress-transition);
-  white-space: nowrap;
-  width: 100%;
-}
-
-.progress-label.paused {
-  opacity: 0.5;
 }
 
 /* Loading message container - <div class="loading-message"> */
