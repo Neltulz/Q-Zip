@@ -85,7 +85,7 @@
               :btn-theme="props.cancelButtonTheme"
               :button-style-class="props.cancelButtonStyleClass || 'trans-btn btn-lite'"
               data-name="dropdown-cancel-btn"
-              first-icon-name="mdi:close"
+              :first-icon-name="props.cancelButtonIcon"
               :first-icon-size="20"
               shortcut-text="Esc"
               @click="closeDropdown"
@@ -181,6 +181,10 @@ const props = defineProps({
   cancelButtonStyleClass: {
     type: String,
     default: "",
+  },
+  cancelButtonIcon: {
+    type: String,
+    default: "mdi:close",
   },
   onButtonClick: {
     type: Function as PropType<(event: MouseEvent) => boolean | void>,

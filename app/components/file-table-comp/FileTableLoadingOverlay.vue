@@ -79,8 +79,7 @@
         dropdown-data-name="cancel-dropdown"
         first-icon-name="mdi:cancel"
         placement="right-center"
-        :show-cancel-button="true"
-        cancel-button-text="Nevermind"
+        :show-cancel-button="false"
         last-icon-name=""
       >
         <template #button-content>
@@ -88,26 +87,48 @@
         </template>
         <template #default>
           <div class="cancel-confirmation">
-            <div class="confirmation-text">Confirm Cancel</div>
+            <!-- Close button positioned absolutely -->
+            <CustomButton
+              class="close-button"
+              btn-theme="liter"
+              button-style-class="trans-btn"
+              data-name="close-cancel-dialog-btn"
+              first-icon-name="mdi:close"
+              :first-icon-size="16"
+              @click="cancelDropdownRef?.closeDropdown()"
+            />
+            
+            <!-- Main content -->
+            <div class="confirmation-header">
+              <div class="confirmation-icon">
+                <Icon name="mdi:alert-outline" :size="32" />
+              </div>
+              <div class="confirmation-text">
+                <h3 class="confirmation-title">Cancel Scan?</h3>
+                <p class="confirmation-description">This will stop the current process.</p>
+              </div>
+              <div class="confirmation-spacer"></div>
+            </div>
+            
             <div class="confirmation-checkbox">
               <label class="checkbox-label">
                 <input 
                   type="checkbox" 
                   v-model="removeScannedItems"
-                  class="checkbox-input"
                 />
-                <span class="checkbox-text">Remove already scanned items</span>
+                <span class="checkbox-text">Also remove already scanned items</span>
               </label>
             </div>
-            <div class="confirmation-buttons">
+            
+            <div class="confirmation-actions">
               <CustomButton
                 button-style-class="default"
                 btn-theme="danger"
                 data-name="confirm-cancel-btn"
-                first-icon-name="mdi:check"
+                first-icon-name="mdi:stop"
                 @click="handleConfirmCancel"
               >
-                Yes, please cancel
+                Cancel Process
               </CustomButton>
             </div>
           </div>
@@ -317,10 +338,10 @@ const handleConfirmCancel = () => {
 
 /* Progress wrapper container - <div class="progress-wrapper"> */
 .progress-wrapper {
+  align-items: center;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  align-items: center;
   width: 100%;
 }
 
@@ -353,12 +374,12 @@ const handleConfirmCancel = () => {
 /* Progress bar container - <div class="progress-bar"> */
 .progress-bar {
   background-color: var(--brdr-clr-lite);
-  border-radius: 2px;
   block-size: 6px;
+  border-radius: 2px;
   inline-size: 100%;
+  margin-block: 8px;
   overflow: hidden;
   transition: opacity 0.2s ease;
-  margin-block: 8px;
 }
 
 .progress-bar.paused {
@@ -382,14 +403,14 @@ const handleConfirmCancel = () => {
 .loading-message {
   color: var(--txt-clr-liter);
   font-size: 14px;
+  margin-block-end: 16px;
   max-width: 100%;
   overflow: hidden;
   text-align: center;
   text-overflow: ellipsis;
+  transition: opacity 0.2s ease;
   white-space: nowrap;
   width: 100%;
-  transition: opacity 0.2s ease;
-  margin-block-end: 16px;
 }
 
 .loading-message.paused {
@@ -420,28 +441,79 @@ const handleConfirmCancel = () => {
   max-width: none;
 }
 
-/* Responsive button stacking for thin containers */
-@media (max-width: 280px) {
-  .button-group {
-    flex-direction: column;
-  }
-}
+
 
 /* Cancel confirmation container - <div class="cancel-confirmation"> */
 .cancel-confirmation {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 200px;
-  padding: 8px;
+  gap: 16px;
+  min-width: 100px;
+  position: relative;
 }
 
-/* Confirmation text - <div class="confirmation-text"> */
-.confirmation-text {
+/* Close button - <CustomButton class="close-button"> */
+.close-button {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 10;
+}
+
+
+
+.close-button :deep(.iconify) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Confirmation header - <div class="confirmation-header"> */
+.confirmation-header {
+  display: flex;
+  gap: 12px;
+  padding: 10px 10px 0 10px;
+}
+
+/* Confirmation icon - <div class="confirmation-icon"> */
+.confirmation-icon {
   color: var(--txt-clr-liter);
-  font-size: 14px;
-  font-weight: 500;
-  text-align: center;
+  flex-shrink: 0;
+  margin-block-start: 2px;
+}
+
+/* Confirmation text container - <div class="confirmation-text"> */
+.confirmation-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+/* Confirmation spacer - <div class="confirmation-spacer"> */
+.confirmation-spacer {
+  flex-shrink: 0;
+  inline-size: 32px;
+}
+
+/* Confirmation title - <h3 class="confirmation-title"> */
+.confirmation-title {
+  color: var(--txt-clr-liter);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  text-align: start;
+}
+
+/* Confirmation description - <p class="confirmation-description"> */
+.confirmation-description {
+  color: var(--txt-clr-lite);
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+  text-align: start;
+  max-width: 13ch;
+  text-wrap: balance;
 }
 
 /* Confirmation checkbox - <div class="confirmation-checkbox"> */
@@ -449,37 +521,39 @@ const handleConfirmCancel = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-block-end: 12px;
+  padding: 0 10px;
 }
 
 /* Checkbox label - <label class="checkbox-label"> */
 .checkbox-label {
-  display: flex;
   align-items: center;
-  cursor: pointer;
   color: var(--txt-clr-lite);
-  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
   user-select: none;
-}
-
-/* Checkbox input - <input class="checkbox-input"> */
-.checkbox-input {
-  inline-size: 16px;
-  block-size: 16px;
-  margin-inline-end: 8px;
-  accent-color: var(--accent-clr, hsl(211, 100%, 50%));
 }
 
 /* Checkbox text - <span class="checkbox-text"> */
 .checkbox-text {
   user-select: none;
+  max-width: 16ch;
+  text-wrap: balance;
+  line-height: 1.25;
 }
 
-/* Confirmation buttons container - <div class="confirmation-buttons"> */
-.confirmation-buttons {
+/* Confirmation actions container - <div class="confirmation-actions"> */
+.confirmation-actions {
+  border-top: 1px solid var(--brdr-clr-lite);
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  justify-content: center;
+  padding: 12px 10px 10px 10px;
+}
+
+.confirmation-actions :deep(.custom-button) {
+  flex-grow: 0;
+  width: auto;
 }
 
 /* Overall progress section - <div class="overall-progress-section"> */
@@ -497,14 +571,14 @@ const handleConfirmCancel = () => {
   color: var(--txt-clr-lite);
   font-size: 12px;
   font-weight: 500;
+  margin-block-end: 8px;
   max-width: 100%;
   overflow: hidden;
   text-align: center;
   text-overflow: ellipsis;
+  transition: opacity 0.2s ease;
   white-space: nowrap;
   width: 100%;
-  margin-block-end: 8px;
-  transition: opacity 0.2s ease;
 }
 
 .overall-progress-label.paused {
@@ -514,12 +588,12 @@ const handleConfirmCancel = () => {
 /* Overall progress bar - <div class="overall-progress-bar"> */
 .overall-progress-bar {
   background-color: var(--brdr-clr-lite);
-  border-radius: 2px;
   block-size: 6px;
+  border-radius: 2px;
   inline-size: 100%;
+  margin-block-end: 8px;
   overflow: hidden;
   transition: opacity 0.2s ease;
-  margin-block-end: 8px;
 }
 
 .overall-progress-bar.paused {
@@ -541,10 +615,10 @@ const handleConfirmCancel = () => {
 
 /* Overall progress wrapper - <div class="overall-progress-wrapper"> */
 .overall-progress-wrapper {
+  align-items: center;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  align-items: center;
   width: 100%;
 }
 

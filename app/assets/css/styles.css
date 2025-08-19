@@ -509,3 +509,46 @@ body.no-select *:not(textarea):not(input):not(select):not([contenteditable]) {
   -ms-user-select: none !important;
   user-select: none !important;
 }
+
+/* Global checkbox styling */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: var(--bg-clr-lite);
+  border: 1px solid var(--brdr-clr-lite);
+  border-radius: 3px;
+  height: 16px;
+  width: 16px;
+  cursor: pointer;
+  position: relative;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--accent-clr, hsl(211, 100%, 50%));
+  border-color: var(--accent-clr, hsl(211, 100%, 50%));
+}
+
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 8px;
+  border: 2px solid white;
+  border-top: 0;
+  border-left: 0;
+  transform: translate(-50%, -60%) rotate(45deg);
+}
+
+input[type="checkbox"]:hover {
+  border-color: var(--accent-clr, hsl(211, 100%, 50%));
+}
+
+input[type="checkbox"]:focus {
+  outline: 2px solid var(--accent-clr, hsl(211, 100%, 50%));
+  outline-offset: 2px;
+}
