@@ -1,7 +1,7 @@
 # Cargo.toml
 [package]
 name = "q-zip"
-version = "0.1.23-dev"
+version = "0.1.23"
 description = "Q-Zip (Queue-Zip), Batch Process Archive Creation"
 authors = ["Neil \"Creepio\" Moore"]
 license = "GPL-3.0"
