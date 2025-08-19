@@ -159,7 +159,7 @@
             :target="mainMenuTooltipTarget"
             placement="bottom-start"
           />
-          <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.22-dev</span></span>
+          <span class="app-title-wrapper"><span class="app-title">Q-Zip</span> <span class="ver-num">v0.1.22</span></span>
         </div>
           <div class="center-nav-btns" :class="{ disabled: isWelcomeLayout }">
           <CustomButton
