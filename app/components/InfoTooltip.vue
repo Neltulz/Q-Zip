@@ -64,53 +64,77 @@
         @mouseenter="(event) => emit('mouseenter', event)"
         @mouseleave="(event) => emit('mouseleave', event)"
       >
-        <div class="tooltip-content">
-          <!-- Display simple text content with optional icon (check first) -->
-          <template v-if="'text' in content && !('filePaths' in content) && content.icon">
-            <div class="info-line tooltip-text-content">
-              <Icon :name="content.icon" class="tooltip-icon" />
-              <span>{{ content.text }}</span>
-            </div>
-          </template>
-          <!-- Display simple text content (legacy parsing) -->
-          <template v-else-if="parsedContent">
-            <div class="info-line tooltip-text-content">
-              <span>{{ parsedContent.mainText }}</span>
-              <span v-if="parsedContent.shortcut" class="shortcut-key-text">{{ parsedContent.shortcut }}</span>
-            </div>
-          </template>
-          <!-- Display simple text content without icon -->
-          <template v-else-if="'text' in content && !('filePaths' in content)">
-            <div class="info-line tooltip-text-content">
-              <span>{{ content.text }}</span>
-            </div>
-          </template>
-          <!-- Display structured notification details -->
-          <template v-else-if="'filePaths' in content">
-            <div v-if="(content as NotificationMessageDetails).sourceJobId" class="info-line"><strong>Source:</strong> Job {{ (content as NotificationMessageDetails).sourceJobId }}</div>
-            <div v-if="(content as NotificationMessageDetails).destinationJobId" class="info-line">
-              <strong>Destination:</strong> Job {{ (content as NotificationMessageDetails).destinationJobId }}
-            </div>
-            <hr v-if="(content as NotificationMessageDetails).sourceJobId || (content as NotificationMessageDetails).destinationJobId" />
-            <div v-if="(content as NotificationMessageDetails).filePaths && (content as NotificationMessageDetails).filePaths.length > 0" class="file-list-container">
-              <strong>Affected Items:</strong>
-              <ul class="file-list">
-                <li v-for="path in (content as NotificationMessageDetails).filePaths" :key="path">
-                  <span class="file-name">{{ getFileName(path) }}</span>
-                  <span v-if="(content as NotificationMessageDetails).reasons && (content as NotificationMessageDetails).reasons?.[path]" class="reason"> - {{ (content as NotificationMessageDetails).reasons?.[path] }} </span>
-                </li>
-              </ul>
-            </div>
-          </template>
-          
-          <!-- Keyboard shortcut slot -->
-          <template v-if="keyboardShortcut">
-            <div class="info-line keyboard-shortcut-line">
-              <Icon name="mdi:keyboard" class="keyboard-icon" />
-              <span class="keyboard-shortcut-text">{{ keyboardShortcut.toUpperCase() }}</span>
-            </div>
-          </template>
-        </div>
+                          <div class="tooltip-content">
+           <!-- Display structured notification details -->
+           <template v-if="'filePaths' in content">
+             <div v-if="(content as NotificationMessageDetails).sourceJobId" class="info-line"><strong>Source:</strong> Job {{ (content as NotificationMessageDetails).sourceJobId }}</div>
+             <div v-if="(content as NotificationMessageDetails).destinationJobId" class="info-line">
+               <strong>Destination:</strong> Job {{ (content as NotificationMessageDetails).destinationJobId }}
+             </div>
+             <hr v-if="(content as NotificationMessageDetails).sourceJobId || (content as NotificationMessageDetails).destinationJobId" />
+             <div v-if="(content as NotificationMessageDetails).filePaths && (content as NotificationMessageDetails).filePaths.length > 0" class="file-list-container">
+               <strong>Affected Items:</strong>
+               <ul class="file-list">
+                 <li v-for="path in (content as NotificationMessageDetails).filePaths" :key="path">
+                   <span class="file-name">{{ getFileName(path) }}</span>
+                   <span v-if="(content as NotificationMessageDetails).reasons && (content as NotificationMessageDetails).reasons?.[path]" class="reason"> - {{ (content as NotificationMessageDetails).reasons?.[path] }} </span>
+                 </li>
+               </ul>
+             </div>
+           </template>
+           
+           <!-- Multi-line keyboard shortcuts (like Add Files/Folders) -->
+           <template v-else-if="keyboardShortcut && keyboardShortcutLines.length > 1">
+             <div 
+               v-for="(shortcut, index) in keyboardShortcutLines" 
+               :key="index"
+               class="info-line keyboard-shortcut-line"
+             >
+               <span class="keyboard-action-text">{{ getActionText(shortcut) }}</span>
+               <span class="keyboard-key-text">
+                 <Icon name="mdi:keyboard" class="keyboard-icon" />
+                 <span>{{ getShortcutKey(shortcut).toUpperCase() }}</span>
+               </span>
+             </div>
+           </template>
+           
+                       <!-- Single keyboard shortcut (like Refresh, Remove, etc.) -->
+            <template v-else-if="keyboardShortcut && keyboardShortcutLines.length === 1">
+              <div class="info-line tooltip-text-content">
+                <span>{{ content.text }}</span>
+              </div>
+              <div class="info-line keyboard-shortcut-line">
+                <span class="keyboard-action-text">{{ getActionName(content.text) }}</span>
+                <span class="keyboard-key-text">
+                  <Icon name="mdi:keyboard" class="keyboard-icon" />
+                  <span>{{ keyboardShortcut.toUpperCase() }}</span>
+                </span>
+              </div>
+            </template>
+           
+           <!-- Simple text content with icon -->
+           <template v-else-if="'text' in content && !('filePaths' in content) && content.icon">
+             <div class="info-line tooltip-text-content">
+               <Icon :name="content.icon" class="tooltip-icon" />
+               <span>{{ content.text }}</span>
+             </div>
+           </template>
+           
+           <!-- Simple text content (legacy parsing) -->
+           <template v-else-if="parsedContent">
+             <div class="info-line tooltip-text-content">
+               <span>{{ parsedContent.mainText }}</span>
+               <span v-if="parsedContent.shortcut" class="shortcut-key-text">{{ parsedContent.shortcut }}</span>
+             </div>
+           </template>
+           
+           <!-- Simple text content without icon or shortcuts -->
+           <template v-else-if="'text' in content && !('filePaths' in content)">
+             <div class="info-line tooltip-text-content">
+               <span>{{ content.text }}</span>
+             </div>
+           </template>
+         </div>
         <!-- Use an inline SVG for a perfect, styleable arrow -->
         <svg ref="arrowRef" class="tooltip-arrow" :data-side="side" :style="arrowStyle" viewBox="0 0 16 9">
           <path d="M 0 0 L 8 8 L 16 0" />
@@ -469,6 +493,12 @@ const parsedContent = computed(() => {
   return null;
 });
 
+// Split keyboard shortcut text into lines for separate rendering
+const keyboardShortcutLines = computed(() => {
+  if (!props.keyboardShortcut) return [];
+  return props.keyboardShortcut.split('\n').filter(line => line.trim());
+});
+
 // Debug logging for tooltip content
 const debugTooltipContent = computed(() => {
   if (DEBUG && debugConfig.logUIInteractivity && props.visible) {
@@ -572,6 +602,45 @@ const arrowStyle = computed(() => {
 });
 const getFileName = (path: string) => {
   return path.split(/[\\/]/).pop() || path;
+};
+
+// Helper functions for keyboard shortcut parsing
+const getActionText = (shortcut: string) => {
+  const colonIndex = shortcut.indexOf(':');
+  if (colonIndex !== -1) {
+    return shortcut.substring(0, colonIndex).trim();
+  }
+  return shortcut;
+};
+
+const getShortcutKey = (shortcut: string) => {
+  const colonIndex = shortcut.indexOf(':');
+  if (colonIndex !== -1) {
+    return shortcut.substring(colonIndex + 1).trim();
+  }
+  return shortcut;
+};
+
+// Extract action name from description text (e.g., "Refresh the item list" -> "Refresh")
+const getActionName = (description: string) => {
+  // Common patterns for extracting action names
+  const patterns = [
+    /^(\w+)\s+the\s+/i, // "Refresh the item list" -> "Refresh"
+    /^(\w+)\s+selected\s+/i, // "Remove selected items" -> "Remove"
+    /^(\w+)\s+to\s+/i, // "Copy to another job" -> "Copy"
+    /^(\w+)\s+from\s+/i, // "Remove from this job" -> "Remove"
+    /^(\w+)\s+display\s+/i, // "File table display settings" -> "File"
+  ];
+  
+  for (const pattern of patterns) {
+    const match = description.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+  
+  // Fallback: return first word
+  return description.split(' ')[0];
 };
 </script>
 

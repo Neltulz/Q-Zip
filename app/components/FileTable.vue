@@ -207,6 +207,7 @@
 import { ref, computed, watch, onBeforeUpdate, reactive, onUnmounted, onMounted, onUpdated, nextTick } from "vue";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useDragDropStore } from "@/stores/dragDropStore";
 import { useUiStore } from "@/stores/uiStore";
 import { useUserPreferencesStore } from "@/stores/userPreferencesStore";
@@ -218,7 +219,6 @@ import FileTableRow from "./file-table-comp/FileTableRow.vue";
 import { logDragDropEvent, logLifecycle, logRendering, logUI, logMarqueeSelection, logFocus } from "@/utils/loggers";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
-import { open } from "@tauri-apps/plugin-dialog";
 import LoadingAnim from "@/components/LoadingAnim.vue";
 // --- VIRTUAL SCROLLING CONSTANTS ---
 const ROW_HEIGHT = 35;
@@ -1689,11 +1689,25 @@ onMounted(() => {
   window.addEventListener('mousemove', handleGlobalDragMove);
   window.addEventListener('dragend', handleGlobalDragEnd);
   window.addEventListener('keydown', handleKeyDown);
+  
+  // Listen for ESC key deactivation event
+  const deactivateHandler = () => {
+    if (isActive.value) {
+      logFocus("FileTable", "ESC key deactivation event received", {
+        jobId: props.jobId,
+        currentIsActive: isActive.value
+      });
+      setActive(false);
+    }
+  };
+  window.addEventListener("app:deactivate-filetable", deactivateHandler);
+  
   // Store the handlers for cleanup
   const cleanup = () => {
     window.removeEventListener('mousemove', handleGlobalDragMove);
     window.removeEventListener('dragend', handleGlobalDragEnd);
     window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener("app:deactivate-filetable", deactivateHandler);
     stopDragScroll();
   };
   // Clean up on unmount
@@ -2107,9 +2121,118 @@ watch(
     }
   }
 );
+// Keyboard shortcut handlers for toolbar actions
+const handleKeyboardAddFile = async (): Promise<void> => {
+  const selected: string[] | null = await openDialog({
+    multiple: true,
+    directory: false,
+  });
+  if (selected) {
+    emit("add-files", selected);
+  }
+};
+
+const handleKeyboardAddFolder = async (): Promise<void> => {
+  const selected: string[] | null = await openDialog({
+    multiple: true,
+    directory: true,
+  });
+  if (selected) {
+    emit("add-folders", selected);
+  }
+};
+
 // Handle keyboard navigation
 const handleKeyDown = (event: KeyboardEvent) => {
-  if (!isActive.value || sortedFiles.value.length === 0) return;
+  if (!isActive.value) return;
+  
+  // Handle toolbar shortcuts first (these work even with empty file list)
+  if (event.ctrlKey || event.metaKey) {
+    switch (event.key.toLowerCase()) {
+      case 'o':
+        event.preventDefault();
+        logFocus("FileTable", "Ctrl+O: Opening add files/folders dialog", {
+          jobId: props.jobId
+        });
+        handleKeyboardAddFile();
+        return;
+      case 'f':
+        event.preventDefault();
+        logFocus("FileTable", "Ctrl+F: Opening add folders dialog", {
+          jobId: props.jobId
+        });
+        handleKeyboardAddFolder();
+        return;
+    }
+  }
+  
+  // Handle F5 refresh shortcut
+  if (event.key === 'F5') {
+    event.preventDefault();
+    logFocus("FileTable", "F5: Refreshing files", {
+      jobId: props.jobId
+    });
+    handleRefreshFiles();
+    return;
+  }
+  
+  // Handle Delete key for removing selected files
+  if (event.key === 'Delete') {
+    event.preventDefault();
+    if (actionItems.value.length > 0) {
+      logFocus("FileTable", "Delete: Removing selected files", {
+        jobId: props.jobId,
+        selectedCount: actionItems.value.length
+      });
+      removeSelectedFiles();
+    }
+    return;
+  }
+  
+  // Handle Ctrl+Shift+C for copy to job
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'c') {
+    event.preventDefault();
+    if (actionItems.value.length > 0) {
+      logFocus("FileTable", "Ctrl+Shift+C: Copy to job", {
+        jobId: props.jobId,
+        selectedCount: actionItems.value.length
+      });
+      // This would need to be implemented to show a job selection dialog
+      // For now, we'll just log it
+      console.log("Copy to job functionality would be triggered here");
+    }
+    return;
+  }
+  
+  // Handle Ctrl+Shift+M for move to job
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'm') {
+    event.preventDefault();
+    if (actionItems.value.length > 0) {
+      logFocus("FileTable", "Ctrl+Shift+M: Move to job", {
+        jobId: props.jobId,
+        selectedCount: actionItems.value.length
+      });
+      // This would need to be implemented to show a job selection dialog
+      // For now, we'll just log it
+      console.log("Move to job functionality would be triggered here");
+    }
+    return;
+  }
+  
+  // Handle Ctrl+, for settings
+  if ((event.ctrlKey || event.metaKey) && event.key === ',') {
+    event.preventDefault();
+    logFocus("FileTable", "Ctrl+,: Opening settings", {
+      jobId: props.jobId
+    });
+    // This would need to be implemented to show settings
+    // For now, we'll just log it
+    console.log("Settings functionality would be triggered here");
+    return;
+  }
+  
+  // Handle file navigation shortcuts (only if files exist)
+  if (sortedFiles.value.length === 0) return;
   
   switch (event.key) {
     case 'ArrowUp':

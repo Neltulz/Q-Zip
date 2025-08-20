@@ -166,6 +166,45 @@
         color: var(--blu-lite); /* --blu-lite defined in styles.css */
         font-size: 0.9em;
         font-weight: 500;
+        white-space: pre-line; /* Preserve line breaks in keyboard shortcut text */
+      }
+
+      /* Disabled target styling - apply neutral colors when target is disabled */
+      .disabled-target .keyboard-shortcut-text,
+      .disabled-target .keyboard-key-text {
+        color: var(--txt-clr-dark) !important; /* --txt-clr-dark defined in styles.css */
+        opacity: 0.6 !important;
+      }
+
+      .disabled-target .keyboard-icon {
+        opacity: 0.6 !important;
+      }
+
+      /* Keyboard shortcut line layout - <div class="keyboard-shortcut-line"> */
+      .keyboard-shortcut-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      /* Keyboard shortcut action text - <span class="keyboard-action-text"> */
+      .keyboard-action-text {
+        color: var(--txt-clr-dark); /* --txt-clr-dark defined in styles.css */
+        font-size: 0.9em;
+        font-weight: 400;
+        text-align: end;
+        flex: 1;
+      }
+
+      /* Keyboard shortcut key text - <span class="keyboard-key-text"> */
+      .keyboard-key-text {
+        color: var(--blu-lite); /* --blu-lite defined in styles.css */
+        font-size: 0.9em;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
     }
   }

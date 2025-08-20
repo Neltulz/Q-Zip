@@ -26,6 +26,7 @@
               first-icon-name="mdi:file-outline"
               :first-icon-size="20"
               data-name="add-files-btn"
+              shortcut-text="Ctrl+O"
               @click="handleAddFile(close)"
             >
               Add File
@@ -35,6 +36,7 @@
               first-icon-name="mdi:folder"
               :first-icon-size="20"
               data-name="add-folders-btn"
+              shortcut-text="Ctrl+F"
               @click="handleAddFolder(close)"
             >
               Add Folder
@@ -46,7 +48,8 @@
           :content="{ text: 'Add files or folders to this job' }"
           :target="addDropdownRef?.$el"
           placement="bottom"
-          keyboardShortcut="Ctrl+O"
+          keyboardShortcut="Add Files: Ctrl+O
+Add Folders: Ctrl+F"
         />
       </div>
 

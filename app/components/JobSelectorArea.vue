@@ -178,6 +178,7 @@
                 :disabled="index === 0"
                 first-icon-name="mdi:arrow-left"
                 :first-icon-size="20"
+                shortcut-text="Ctrl+Shift+Left"
                 @mouseup="
                   () => {
                     reorderJob(index, 'left');
@@ -193,6 +194,7 @@
                 :disabled="index === jobsList.length - 1"
                 first-icon-name="mdi:arrow-right"
                 :first-icon-size="20"
+                shortcut-text="Ctrl+Shift+Right"
                 @mouseup="
                   () => {
                     reorderJob(index, 'right');
@@ -722,6 +724,35 @@ const handleKeyDown = (event: KeyboardEvent) => {
       logUI("JobSelectorArea", `CTRL+SHIFT+DEL detected, force removing job ${selectedJobId} without confirmation`);
     }
     removeJob(selectedJobId);
+  }
+  
+  // Add Ctrl+Shift+Left/Right shortcuts for moving the currently selected job
+  if (event.ctrlKey && event.shiftKey && (event.key === "ArrowLeft" || event.key === "ArrowRight") && jobsStore.selectedJobId !== null) {
+    event.preventDefault();
+    const currentIndex = jobsList.value.findIndex(job => job.id === jobsStore.selectedJobId);
+    if (currentIndex === -1) return;
+    
+    const direction = event.key === "ArrowLeft" ? "left" : "right";
+    
+    // Check if the move is valid
+    if (direction === "left" && currentIndex === 0) {
+      if (DEBUG && debugConfig.logUIInteractivity) {
+        logUI("JobSelectorArea", `CTRL+SHIFT+LEFT detected but job ${jobsStore.selectedJobId} is already at the leftmost position`);
+      }
+      return;
+    }
+    
+    if (direction === "right" && currentIndex === jobsList.value.length - 1) {
+      if (DEBUG && debugConfig.logUIInteractivity) {
+        logUI("JobSelectorArea", `CTRL+SHIFT+RIGHT detected but job ${jobsStore.selectedJobId} is already at the rightmost position`);
+      }
+      return;
+    }
+    
+    if (DEBUG && debugConfig.logUIInteractivity) {
+      logUI("JobSelectorArea", `CTRL+SHIFT+${direction.toUpperCase()} detected, moving job ${jobsStore.selectedJobId} ${direction}`);
+    }
+    reorderJob(currentIndex, direction);
   }
 };
 onMounted(() => {

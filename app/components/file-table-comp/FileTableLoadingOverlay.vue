@@ -203,6 +203,7 @@ import SpinnerLoadingAnim from "../loading-anim-comp/SpinnerLoadingAnim.vue";
 import DoubleBounceLoadingAnim from "../loading-anim-comp/DoubleBounceLoadingAnim.vue";
 import { logLoading, logDualProgress } from "@/utils/loggers";
 import { useOrphanedTooltipDetector } from "@/composables/useOrphanedTooltipDetector";
+import { useDropdownManager } from "@/composables/dropdownManager";
 
 const props = defineProps<{
   currentItem?: number;
@@ -557,8 +558,77 @@ const handleCheckboxMouseLeave = () => {
   checkboxTooltipVisible.value = false;
 };
 
+// Get dropdown manager to check for other open dropdowns
+const { openDropdowns } = useDropdownManager();
+
+// Flag to track if global dropdown manager is processing ESC
+let isGlobalEscProcessing = false;
+
 // Keyboard event handling
 const handleKeydown = (event: KeyboardEvent) => {
+  // Handle ESC key globally
+  if (event.code === 'Escape') {
+    // Check if any dropdowns are open (highest priority)
+    const anyDropdownsOpen = openDropdowns.value.length > 0;
+    
+    if (anyDropdownsOpen) {
+      // Let the global dropdown manager handle closing dropdowns
+      return;
+    }
+    
+    // Add a small delay to allow global dropdown manager to finish processing
+    // This prevents the cancel dropdown from opening immediately after other dropdowns are closed
+    setTimeout(() => {
+      // Check again after the delay
+      const currentDropdownsOpen = openDropdowns.value.length > 0;
+      if (currentDropdownsOpen) {
+        return;
+      }
+      
+      // Check if this component is active by looking for the overlay in the DOM
+      const overlayElement = document.querySelector('.full-animation') as HTMLElement | null;
+      const isOverlayActive = overlayElement && overlayElement.offsetParent !== null;
+      
+      if (isOverlayActive) {
+        // Handle ESC for FileTableLoadingOverlay
+        const dropdownContent = document.querySelector('[data-belongs-to="cancel-dropdown"]');
+        const isDropdownOpen = !!dropdownContent;
+        
+        if (isDropdownOpen) {
+          // Close dropdown if open
+          if (cancelDropdownRef.value) {
+            cancelDropdownRef.value.closeDropdown();
+          }
+        } else {
+          // Open dropdown if closed
+          if (cancelDropdownRef.value) {
+            cancelDropdownRef.value.openDropdown();
+          }
+        }
+        return;
+      }
+      
+      // Default behavior: make FileTable inactive if it's active
+      const activeFileTable = document.querySelector('.file-table-comp.is-active');
+      if (activeFileTable) {
+        // Dispatch a custom event to deactivate the FileTable
+        window.dispatchEvent(new CustomEvent('app:deactivate-filetable'));
+        return;
+      }
+    }, 10); // 10ms delay to allow global dropdown manager to finish
+    
+    // Return early to prevent immediate execution
+    return;
+  }
+  
+  // Handle other keys only if overlay is active
+  const overlayElement = document.querySelector('.full-animation') as HTMLElement | null;
+  const isOverlayActive = overlayElement && overlayElement.offsetParent !== null;
+  
+  if (!isOverlayActive) {
+    return;
+  }
+  
   // Check if dropdown is open
   const dropdownContent = document.querySelector('[data-belongs-to="cancel-dropdown"]');
   const isDropdownOpen = !!dropdownContent;
@@ -576,19 +646,6 @@ const handleKeydown = (event: KeyboardEvent) => {
           emit("pause", true);
         } else {
           emit("pause", false);
-        }
-      }
-      break;
-    case 'Escape':
-      if (isDropdownOpen) {
-        // Close dropdown if open
-        if (cancelDropdownRef.value) {
-          cancelDropdownRef.value.closeDropdown();
-        }
-      } else {
-        // Open dropdown if closed
-        if (cancelDropdownRef.value) {
-          cancelDropdownRef.value.openDropdown();
         }
       }
       break;
