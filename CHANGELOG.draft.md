@@ -1,7 +1,9 @@
 ## 0.1.24-dev
 
 ### Fixed
-- *Development work in progress...*
+- **Disabled Button Tooltip Styling**: Fixed tooltip keyboard shortcuts to display in neutral colors when the associated button is disabled, indicating the shortcut is inaccessible
+- **Disabled Button Hover Effects**: Fixed issue where disabled buttons still showed hover background effects by adding proper `:not(:disabled):not(.disabled)` selectors to all hover states
+- **FileTableToolbar Disabled Button Hover**: Fixed hover effects on disabled buttons in FileTableToolbar (Remove Selected, Copy to, Move to) by adding specific CSS rules to prevent background color changes on hover
 
 ### Added
 - **FileTable Keyboard Shortcuts**: Added comprehensive keyboard shortcut support for FileTable toolbar actions:
@@ -14,6 +16,7 @@
   - `Ctrl+,`: Open file table settings (placeholder)
 - **Toolbar Button Shortcuts**: Added keyboard shortcut display to "Add File" (Ctrl+O) and "Add Folder" (Ctrl+F) buttons in the FileTableToolbar
 - **Enhanced Tooltips**: Updated "Add Files and Folders" dropdown tooltip to clearly show keyboard shortcuts with descriptive labels (Add Files: Ctrl+O | Add Folders: Ctrl+F)
+- **Keyboard Shortcut Keycap Styling**: Added modern keycap-style borders and backgrounds to keyboard shortcuts in tooltips with individual key styling and proper contrast. Enabled buttons show blue keycaps while disabled buttons show muted colors. Plus symbols are styled separately without keycap borders
 - **Disabled Button Tooltip Styling**: Fixed tooltip keyboard shortcuts to display in neutral colors when the associated button is disabled
 - **Job Reordering Keyboard Shortcuts**: Added keyboard shortcuts for moving jobs left/right:
   - `Ctrl+Shift+Left`: Move currently selected job to the left

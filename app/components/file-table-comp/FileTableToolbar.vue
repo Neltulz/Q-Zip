@@ -44,7 +44,7 @@
           </template>
         </DropdownMenu>
         <InfoTooltip
-          :visible="tooltipManager.activeTooltipId.value === 'add-files-dropdown'"
+          :visible="true"
           :content="{ text: 'Add files or folders to this job' }"
           :target="addDropdownRef?.$el"
           placement="bottom"
@@ -521,6 +521,14 @@ const handleToolbarClick = (event: Event): void => {
   opacity: 0.5;
   cursor: default; /* Don't show not-allowed cursor */
   pointer-events: auto; /* Allow hover events for tooltips */
+}
+
+/* Prevent hover effects on disabled buttons */
+:deep(.trans-btn:disabled:hover > .visual-style),
+:deep(.trans-btn.disabled:hover > .visual-style) {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 
 /* Refresh loading container styling */

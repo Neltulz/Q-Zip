@@ -147,51 +147,38 @@
 
     /* Keyboard shortcut line - <div class="keyboard-shortcut-line"> */
     .keyboard-shortcut-line {
+      /* CSS Variables for keyboard shortcut styling */
+      --keyboard-icon-size: 16px;
+      --keyboard-icon-margin: 4px;
+      --keyboard-font-size: 0.9em;
+      --keyboard-keycap-font-size: 1em;
+      --keyboard-keycap-padding-block: 1px;
+      --keyboard-keycap-padding-inline: 3px;
+      --keyboard-keycap-border-radius: 3px;
+      --keyboard-keycap-min-width: 1.2em;
+      --keyboard-keycap-line-height: 1.1;
+      --keyboard-gap: 1px;
+      --keyboard-plus-margin: 1px;
+      
       align-items: center;
       display: flex;
-      gap: 0.5em;
-      justify-content: flex-start;
+      justify-content: space-between;
+      gap: 8px;
       margin-block-start: 4px;
 
       /* Keyboard icon - <Icon class="keyboard-icon"> */
       .keyboard-icon {
-        block-size: 16px;
+        block-size: var(--keyboard-icon-size);
         color: var(--blu-lite); /* --blu-lite defined in styles.css */
         flex-shrink: 0;
-        inline-size: 16px;
-      }
-
-      /* Keyboard shortcut text - <span class="keyboard-shortcut-text"> */
-      .keyboard-shortcut-text {
-        color: var(--blu-lite); /* --blu-lite defined in styles.css */
-        font-size: 0.9em;
-        font-weight: 500;
-        white-space: pre-line; /* Preserve line breaks in keyboard shortcut text */
-      }
-
-      /* Disabled target styling - apply neutral colors when target is disabled */
-      .disabled-target .keyboard-shortcut-text,
-      .disabled-target .keyboard-key-text {
-        color: var(--txt-clr-dark) !important; /* --txt-clr-dark defined in styles.css */
-        opacity: 0.6 !important;
-      }
-
-      .disabled-target .keyboard-icon {
-        opacity: 0.6 !important;
-      }
-
-      /* Keyboard shortcut line layout - <div class="keyboard-shortcut-line"> */
-      .keyboard-shortcut-line {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
+        inline-size: var(--keyboard-icon-size);
+        margin-inline-end: var(--keyboard-icon-margin);
       }
 
       /* Keyboard shortcut action text - <span class="keyboard-action-text"> */
       .keyboard-action-text {
         color: var(--txt-clr-dark); /* --txt-clr-dark defined in styles.css */
-        font-size: 0.9em;
+        font-size: var(--keyboard-font-size);
         font-weight: 400;
         text-align: end;
         flex: 1;
@@ -200,11 +187,38 @@
       /* Keyboard shortcut key text - <span class="keyboard-key-text"> */
       .keyboard-key-text {
         color: var(--blu-lite); /* --blu-lite defined in styles.css */
-        font-size: 0.9em;
+        font-size: var(--keyboard-font-size);
         font-weight: 500;
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: var(--keyboard-gap);
+        font-family: monospace;
+        white-space: nowrap;
+      }
+
+      /* Individual keycap styling */
+      .keycap {
+        background-color: hsla(211, 100%, 50%, 0.8); /* Dimmed blue background */
+        border: 1px solid hsla(211, 100%, 60%, 0.5); /* Brighter border for contrast */
+        border-radius: var(--keyboard-keycap-border-radius);
+        color: hsla(211, 50%, 90%, 1); /* White text for contrast */
+        padding-block: var(--keyboard-keycap-padding-block);
+        padding-inline: var(--keyboard-keycap-padding-inline);
+        font-weight: 500;
+        min-width: var(--keyboard-keycap-min-width);
+        text-align: center;
+        line-height: var(--keyboard-keycap-line-height); /* Reduced line-height for tighter appearance */
+        display: inline-block;
+        font-size: var(--keyboard-keycap-font-size);
+      }
+
+      /* Plus symbol styling (not in keycap) */
+      .plus-symbol {
+        background: none;
+        border: none;
+        color: var(--blu-lite); /* --blu-lite defined in styles.css */
+        padding: 0;
+        margin-inline: var(--keyboard-plus-margin);
       }
     }
   }
@@ -239,14 +253,34 @@
         color: var(--txt-clr-dark);
       }
       
-      .keyboard-shortcut-text {
-        color: var(--txt-clr-dark);
+      .keycap {
+        background-color: hsla(0, 0%, 40%, 0.6);
+        border-color: hsla(0, 0%, 50%, 0.4);
+        color: hsla(0, 0%, 80%, 1);
+        opacity: 0.7;
       }
       
       .keyboard-icon {
         color: var(--txt-clr-dark);
+        opacity: 0.6;
+        margin-inline-end: var(--keyboard-icon-margin);
+      }
+
+      .plus-symbol {
+        color: var(--txt-clr-dark);
+        opacity: 0.6;
       }
     }
+  }
+
+  /* Debug mode tooltip - <div class="info-tooltip debug-mode"> */
+  &.debug-mode {
+    pointer-events: all; /* Enable all pointer interactions for debugging */
+    cursor: default; /* Show default cursor */
+    
+    /* Add a subtle debug indicator */
+    border: 2px solid hsla(60, 100%, 50%, 0.5); /* Yellow border for debug mode */
+    box-shadow: 0 0 10px hsla(60, 100%, 50%, 0.3); /* Yellow glow for debug mode */
   }
 }
 

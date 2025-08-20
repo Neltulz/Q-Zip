@@ -51,7 +51,7 @@
         v-if="shouldRender"
         ref="floatingRef"
         class="info-tooltip"
-        :class="{ interactive: interactive, 'simple-tooltip': !!parsedContent, [props.class]: props.class }"
+        :class="{ interactive: interactive, 'simple-tooltip': !!parsedContent, 'disabled-target': isTargetDisabled, [props.class]: props.class }"
         :style="floatingStyles"
         @mouseenter="(event) => emit('mouseenter', event)"
         @mouseleave="(event) => emit('mouseleave', event)"
@@ -86,7 +86,7 @@
           <template v-if="keyboardShortcut">
             <div class="info-line keyboard-shortcut-line">
               <Icon name="mdi:keyboard" class="keyboard-icon" />
-              <span class="keyboard-shortcut-text">{{ keyboardShortcut.toUpperCase() }}</span>
+              <span class="keyboard-shortcut-text" v-html="formatKeyboardShortcut(keyboardShortcut)"></span>
             </div>
           </template>
         </div>
@@ -202,6 +202,27 @@ const resolvedTarget = computed(() => {
     return maybe as Element;
   }
   return null;
+});
+
+// Check if the target element is disabled
+const isTargetDisabled = computed(() => {
+  const target = resolvedTarget.value;
+  if (!target) return false;
+  
+  // Check if the target element itself is disabled
+  if (target.hasAttribute('disabled')) return true;
+  
+  // Check if the target has the disabled class
+  if (target.classList.contains('disabled')) return true;
+  
+  // Check if the target is a button and is disabled
+  if (target instanceof HTMLButtonElement && target.disabled) return true;
+  
+  // Check if the target is inside a disabled button
+  const disabledButton = target.closest('button[disabled], .disabled');
+  if (disabledButton) return true;
+  
+  return false;
 });
 // Transition handlers for smooth enter/leave animations
 const onEnter = (el: Element) => {
@@ -489,6 +510,27 @@ const arrowStyle = computed(() => {
 });
 const getFileName = (path: string) => {
   return path.split(/[\\/]/).pop() || path;
+};
+
+// Format keyboard shortcut with individual keycaps
+const formatKeyboardShortcut = (shortcut: string) => {
+  if (!shortcut) return '';
+  
+  // Split by common separators and handle special cases
+  const parts = shortcut
+    .toUpperCase()
+    .split(/([+\-])/) // Split on + or - but keep the separators
+    .filter(part => part.trim()); // Remove empty parts
+  
+  return parts.map(part => {
+    if (part === '+' || part === '-') {
+      // Plus/minus symbols are not in keycaps - they get their own styling
+      return `<span class="plus-symbol">${part}</span>`;
+    } else {
+      // Individual keys get keycap styling
+      return `<span class="keycap">${part}</span>`;
+    }
+  }).join('');
 };
 </script>
 <style scoped>

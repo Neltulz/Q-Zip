@@ -269,7 +269,7 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   display: none !important;
 }
 /* Show remove job button on hover */
-.job-selector-list > :deep(button.job-selector:hover > .button-content .job-sel-options .dropdown-menu > button.options-btn),
+.job-selector-list > :deep(button.job-selector:hover:not(:disabled):not(.disabled) > .button-content .job-sel-options .dropdown-menu > button.options-btn),
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-options .dropdown-menu.active > button.options-btn) {
   opacity: 1;
 }

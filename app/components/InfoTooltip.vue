@@ -58,7 +58,8 @@
         :class="{ 
           interactive: interactive, 
           'simple-tooltip': !!parsedContent,
-          'disabled-target': isTargetDisabled
+          'disabled-target': isTargetDisabled,
+          'debug-mode': isDebugMode
         }"
         :style="floatingStyles"
         @mouseenter="(event) => emit('mouseenter', event)"
@@ -83,34 +84,40 @@
              </div>
            </template>
            
-           <!-- Multi-line keyboard shortcuts (like Add Files/Folders) -->
-           <template v-else-if="keyboardShortcut && keyboardShortcutLines.length > 1">
-             <div 
-               v-for="(shortcut, index) in keyboardShortcutLines" 
-               :key="index"
-               class="info-line keyboard-shortcut-line"
-             >
-               <span class="keyboard-action-text">{{ getActionText(shortcut) }}</span>
-               <span class="keyboard-key-text">
-                 <Icon name="mdi:keyboard" class="keyboard-icon" />
-                 <span>{{ getShortcutKey(shortcut).toUpperCase() }}</span>
-               </span>
-             </div>
-           </template>
-           
-                       <!-- Single keyboard shortcut (like Refresh, Remove, etc.) -->
-            <template v-else-if="keyboardShortcut && keyboardShortcutLines.length === 1">
-              <div class="info-line tooltip-text-content">
-                <span>{{ content.text }}</span>
-              </div>
-              <div class="info-line keyboard-shortcut-line">
-                <span class="keyboard-action-text">{{ getActionName(content.text) }}</span>
+                       <!-- Multi-line keyboard shortcuts (like Add Files/Folders) -->
+            <template v-else-if="keyboardShortcut && keyboardShortcutLines.length > 1">
+              <div 
+                v-for="(shortcut, index) in keyboardShortcutLines" 
+                :key="index"
+                class="info-line keyboard-shortcut-line"
+              >
+                <span class="keyboard-action-text">{{ getActionText(shortcut) }}</span>
                 <span class="keyboard-key-text">
                   <Icon name="mdi:keyboard" class="keyboard-icon" />
-                  <span>{{ keyboardShortcut.toUpperCase() }}</span>
+                  <template v-for="(part, partIndex) in getShortcutParts(getShortcutKey(shortcut))" :key="partIndex">
+                    <span v-if="part === '+' || part === '-'" class="plus-symbol">{{ part }}</span>
+                    <span v-else class="keycap">{{ part }}</span>
+                  </template>
                 </span>
               </div>
             </template>
+           
+                                   <!-- Single keyboard shortcut (like Refresh, Remove, etc.) -->
+             <template v-else-if="keyboardShortcut && keyboardShortcutLines.length === 1">
+               <div class="info-line tooltip-text-content">
+                 <span>{{ content.text }}</span>
+               </div>
+               <div class="info-line keyboard-shortcut-line">
+                 <span class="keyboard-action-text">{{ getActionName(content.text) }}</span>
+                 <span class="keyboard-key-text">
+                   <Icon name="mdi:keyboard" class="keyboard-icon" />
+                   <template v-for="(part, partIndex) in getShortcutParts(keyboardShortcut)" :key="partIndex">
+                     <span v-if="part === '+' || part === '-'" class="plus-symbol">{{ part }}</span>
+                     <span v-else class="keycap">{{ part }}</span>
+                   </template>
+                 </span>
+               </div>
+             </template>
            
            <!-- Simple text content with icon -->
            <template v-else-if="'text' in content && !('filePaths' in content) && content.icon">
@@ -206,6 +213,11 @@ const arrowRef = ref(null);
 // Computed property to determine if tooltip should be rendered in DOM
 const shouldRender = computed(() => {
   return props.visible || props.debugForceVisible;
+});
+
+// Computed property to determine if tooltip is in debug mode (permanently visible)
+const isDebugMode = computed(() => {
+  return props.visible && !props.interactive;
 });
 // Resolve the provided `target` prop to the "best" DOM element to anchor to.
 // If a CustomButton (or its wrapper) is passed, prefer its internal
@@ -641,6 +653,40 @@ const getActionName = (description: string) => {
   
   // Fallback: return first word
   return description.split(' ')[0];
+};
+
+// Format keyboard shortcut with individual keycaps
+const formatKeyboardShortcut = (shortcut: string) => {
+  if (!shortcut) return '';
+  
+  // Split by common separators and handle special cases
+  const parts = shortcut
+    .toUpperCase()
+    .split(/([+\-])/) // Split on + or - but keep the separators
+    .filter(part => part.trim()); // Remove empty parts
+  
+  return parts.map(part => {
+    if (part === '+' || part === '-') {
+      // Plus/minus symbols are not in keycaps - they get their own styling
+      return `<span class="plus-symbol">${part}</span>`;
+    } else {
+      // Individual keys get keycap styling
+      return `<span class="keycap">${part}</span>`;
+    }
+  }).join('');
+};
+
+// Get shortcut parts for template rendering (returns array instead of HTML string)
+const getShortcutParts = (shortcut: string) => {
+  if (!shortcut) return [];
+  
+  // Split by common separators and handle special cases
+  const parts = shortcut
+    .toUpperCase()
+    .split(/([+\-])/) // Split on + or - but keep the separators
+    .filter(part => part.trim()); // Remove empty parts
+  
+  return parts;
 };
 </script>
 

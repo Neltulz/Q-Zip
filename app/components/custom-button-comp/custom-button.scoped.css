@@ -780,6 +780,12 @@
 .custom-button.trans-btn:not(:hover):not(.active) > .visual-style {
   opacity: 0;
 }
+
+/* Prevent hover effects on disabled transparent buttons */
+.custom-button.trans-btn:disabled:hover > .visual-style,
+.custom-button.trans-btn.disabled:hover > .visual-style {
+  opacity: 0;
+}
 /* Dropdown content spacing - <div class="dropdown-content"> */
 .dropdown-content {
   > [data-overlayscrollbars="host"] > [data-overlayscrollbars-contents] {
