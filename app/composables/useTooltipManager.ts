@@ -3,6 +3,7 @@
 import { ref, type Ref } from "vue";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logTooltip } from "@/utils/loggers";
+import { useDebugStore } from "@/stores/debugStore";
 // Shared state for all tooltips using this manager
 const isAnyTooltipVisible = ref(false);
 const activeTooltipId: Ref<string | null> = ref(null);
@@ -88,6 +89,8 @@ export function useTooltipManager() {
     }
   };
   const hideTooltip = () => {
+    const debugStore = useDebugStore();
+
     logTooltip("TooltipManager", `hideTooltip called`, {
       currentActiveId: activeTooltipId.value,
       isAnyTooltipVisible: isAnyTooltipVisible.value,
@@ -116,6 +119,8 @@ export function useTooltipManager() {
   };
 
   const hideTooltipImmediately = () => {
+    const debugStore = useDebugStore();
+
     logTooltip("TooltipManager", `hideTooltipImmediately called`, {
       currentActiveId: activeTooltipId.value,
       isAnyTooltipVisible: isAnyTooltipVisible.value,
@@ -154,6 +159,8 @@ export function useTooltipManager() {
    * @returns true if the tooltip was hidden due to missing target, false otherwise
    */
   const checkAndHideOrphanedTooltip = (targetElement: HTMLElement | null): boolean => {
+    const debugStore = useDebugStore();
+
     logTooltip("TooltipManager", `checkAndHideOrphanedTooltip called`, {
       isAnyTooltipVisible: isAnyTooltipVisible.value,
       activeTooltipId: activeTooltipId.value,

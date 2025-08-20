@@ -272,16 +272,6 @@
       }
     }
   }
-
-  /* Debug mode tooltip - <div class="info-tooltip debug-mode"> */
-  &.debug-mode {
-    pointer-events: all; /* Enable all pointer interactions for debugging */
-    cursor: default; /* Show default cursor */
-    
-    /* Add a subtle debug indicator */
-    border: 2px solid hsla(60, 100%, 50%, 0.5); /* Yellow border for debug mode */
-    box-shadow: 0 0 10px hsla(60, 100%, 50%, 0.3); /* Yellow glow for debug mode */
-  }
 }
 
 

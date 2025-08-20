@@ -1,0 +1,39 @@
+/* Debug button container - <div class="debug-button"> */
+.debug-button {
+  align-items: center;
+  background: var(--bg-primary); /* --bg-primary defined in styles.css */
+  border: 2px solid var(--border-color); /* --border-color defined in styles.css */
+  border-block-end: 0;
+  border-radius: 50% 50% 0 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: flex;
+  height: var(--min-tch-tgt); /* --min-tch-tgt defined in styles.css */
+  inset-block-end: 0; /* Logical property for bottom */
+  inset-inline-start: 20px; /* Logical property for left */
+  justify-content: center;
+  position: fixed;
+  transition: all 0.2s ease;
+  user-select: none;
+  width: var(--min-tch-tgt); /* --min-tch-tgt defined in styles.css */
+  z-index: 9998;
+
+  /* Debug button hover state */
+  &:hover {
+    background: var(--bg-secondary); /* --bg-secondary defined in styles.css */
+    border-color: var(--accent-color); /* --accent-color defined in styles.css */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    transform: scale(1.05);
+  }
+
+  /* Debug button active/dragging state */
+  &:active {
+    transform: scale(0.95);
+  }
+
+  /* Debug button icon - <Icon name="mdi:bug" class="debug-button-icon"> */
+  .debug-button-icon {
+    color: var(--accent-color); /* --accent-color defined in styles.css */
+    font-size: 24px;
+    pointer-events: none; /* Don't block underlying controls */
+  }
+}

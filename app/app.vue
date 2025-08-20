@@ -7,6 +7,8 @@
     <TitleBar />
     <ModalContainer />
     <NotificationContainer />
+    <DebugPopup />
+    <DebugButton />
     <Transition name="layout-fade" mode="out-in">
       <!--
         Wrap NuxtLayout in a div with a key to ensure a single root element
@@ -31,12 +33,14 @@ import { provideScrollContainer } from "@/composables/useScrollContainer";
 import { zoomIn, zoomOut, resetZoom, setFileTableZoomFactor, getFileTableZoomFactor, getZoomFactor, setZoomFactor } from "@/composables/useZoom";
 import { enableSelectionLock, disableSelectionLock } from "@/composables/useSelectionLock";
 import { useKeyboardLogger } from "@/composables/useKeyboardLogger";
+import { useDebugStore } from "@/stores/debugStore";
 provideScrollContainer();
 const layoutStore = useLayoutStore();
 const userPreferencesStore = useUserPreferencesStore();
 const jobsStore = useJobsStore();
 const dragDropStore = useDragDropStore();
 const uiStore = useUiStore();
+const debugStore = useDebugStore();
 
 // Initialize keyboard logging
 useKeyboardLogger();
@@ -46,6 +50,12 @@ const handleGlobalKeyDown = (event: KeyboardEvent): void => {
     if (dragDropStore.isInternalDragActive) {
       dragDropStore.endInternalDrag();
     }
+  }
+  
+  // Debug popup keyboard shortcut: Ctrl + Alt + Shift + B (for "Bug")
+  if (event.ctrlKey && event.altKey && event.shiftKey && event.key.toLowerCase() === "b") {
+    event.preventDefault();
+    debugStore.toggleDebugPopup();
   }
 };
 onBeforeMount((): void => {

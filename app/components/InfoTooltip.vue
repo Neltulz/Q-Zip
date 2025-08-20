@@ -58,8 +58,7 @@
         :class="{ 
           interactive: interactive, 
           'simple-tooltip': !!parsedContent,
-          'disabled-target': isTargetDisabled,
-          'debug-mode': isDebugMode
+          'disabled-target': isTargetDisabled
         }"
         :style="floatingStyles"
         @mouseenter="(event) => emit('mouseenter', event)"
@@ -157,8 +156,12 @@ import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
 import { logUI, logRendering, logTooltip } from "@/utils/loggers";
+import { useDebugStore } from "@/stores/debugStore";
 // Allow a simple text property for more generic tooltips
 type TooltipContent = NotificationMessageDetails | { text: string; icon?: string };
+
+const debugStore = useDebugStore();
+
 const props = defineProps({
   visible: {
     type: Boolean,
@@ -342,6 +345,19 @@ watch(
         content: props.content,
         target: props.target
       });
+    }
+  }
+);
+
+// Watch for debug option changes to handle tooltip closing when debug mode is disabled
+watch(
+  () => debugStore.debugOptions.preventTooltipClosing,
+  (preventClosing) => {
+    if (!preventClosing) {
+      // When debug mode is disabled, allow tooltips to close normally
+      logTooltip("InfoTooltip", "Debug mode disabled - tooltips can now close normally");
+    } else {
+      logTooltip("InfoTooltip", "Debug mode enabled - tooltips will stay visible");
     }
   }
 );

@@ -10,6 +10,19 @@
 - *Development work in progress...*
 
 ### Added
+- **Enhanced Debug Popup**: Significantly improved the debug popup with comprehensive logging controls
+  - Debug popup now hidden by default for cleaner development experience
+  - Added new "Logging" tab with granular control over all debug logging options
+  - Organized logging options into logical sections: Component & Lifecycle, User Interactions, UI & Components, File Operations, System & Management, and Development & Warnings
+  - Added support for all debug logging flags from debugConfig.ts including component mounts, ref updates, clicks/inputs, store actions, dropdown events, UI events, drag & drop, composable manager events, missing prop warnings, file selection, notifications, loading events, dual progress, rendering events, UI interactivity, component attributes, Vue warnings, keyboard events, hover events, and tooltip events
+  - Added "Check All" and "Uncheck All" buttons for quick logging configuration
+  - Implemented responsive CSS grid layout for better space utilization and organization
+  - Added proper synchronization between debug store and debugConfig.ts
+  - Enhanced CSS styling with organized sections and improved visual hierarchy
+  - Added helper functions for resetting and syncing debug configuration
+  - Cleaned up debug features from InfoTooltips (removed yellow glow and permanent visibility)
+  - Removed "Enable All Logging" checkbox from General tab (now blank for future use)
+  - Maintained existing InfoTooltips and General tabs for backward compatibility
 - **FileTableToolbar Tooltips**: Added comprehensive tooltip support to all buttons in the FileTableToolbar
   - Added tooltips for "Add" button: "Add files or folders to this job" (Ctrl+O)
   - Added tooltips for "Refresh" button: "Refresh the file list" (F5)

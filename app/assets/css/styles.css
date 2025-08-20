@@ -157,6 +157,14 @@ body {
     var(--danger-lum),
     var(--danger-alph)
   );
+  
+  /* Semantic variable mappings for components */
+  --bg-primary: var(--bg-clr);
+  --bg-secondary: var(--bg-clr-lite);
+  --text-primary: var(--txt-clr);
+  --text-secondary: var(--txt-clr-darkr);
+  --border-color: var(--brdr-clr);
+  --accent-color: var(--blu-lite);
   @container style(--theme: dark) {
     --bg-lum: 9%;
     --bg-clr-dark: hsla(

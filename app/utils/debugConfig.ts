@@ -63,6 +63,10 @@ export const debugConfig: Record<string, boolean> = {
   // Logs tooltip visibility and positioning events.
   logTooltipEvents: true,
 };
+
+// Store the original values for reset functionality
+const originalDebugConfig = { ...debugConfig };
+
 // Helper to toggle all logging flags at runtime. This updates the master DEBUG
 // flag and flips every individual debugConfig flag to the provided value.
 export const setAllLoggingEnabled = (enabled: boolean) => {
@@ -72,6 +76,26 @@ export const setAllLoggingEnabled = (enabled: boolean) => {
     debugConfig[k] = enabled;
   });
 };
+
+// Helper to reset debugConfig to original values
+export const resetDebugConfig = () => {
+  Object.keys(originalDebugConfig).forEach((k) => {
+    // @ts-ignore - dynamic assignment to flags
+    debugConfig[k] = originalDebugConfig[k];
+  });
+  DEBUG = false; // Reset master switch to false
+};
+
+// Helper to sync debugConfig with store values
+export const syncDebugConfig = (storeConfig: Record<string, boolean>) => {
+  Object.keys(storeConfig).forEach((k) => {
+    if (k.startsWith('log') && k in debugConfig) {
+      // @ts-ignore - dynamic assignment to flags
+      debugConfig[k] = storeConfig[k];
+    }
+  });
+};
+
 // NOTE: Do NOT enable logging automatically on import. Call `setAllLoggingEnabled(true)`
 // from a dev-only entrypoint when you need verbose logs.
 // Convenience helper available in DevTools to toggle all logging at runtime.
