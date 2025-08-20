@@ -303,7 +303,9 @@ input:is(
   ) {
   user-select: text;
 }
-a {
+/* Q-Zip link styling */
+.qzip-link,
+a.qzip-link {
   color: hsl(227, 58%, 65%);
 }
 .selectable {
@@ -314,7 +316,19 @@ a {
   color: var(--blu-lite);
   font-weight: 500;
 }
-:disabled {
+/* Q-Zip disabled state styling */
+.qzip-button:disabled,
+.qzip-input:disabled,
+.qzip-textarea:disabled,
+.qzip-select:disabled,
+.qzip-checkbox:disabled,
+.qzip-link:disabled,
+button.qzip-button:disabled,
+input.qzip-input:disabled,
+textarea.qzip-textarea:disabled,
+select.qzip-select:disabled,
+input[type="checkbox"].qzip-checkbox:disabled,
+a.qzip-link:disabled {
   cursor: default;
   opacity: var(--disabled-opacity);
   pointer-events: none;
@@ -353,15 +367,21 @@ a {
   }
 }
 /* Removed :focus-visible global rules per user preference (focus rings disabled) */
-a,
-.button,
-button,
-label[for],
-[role="button"],
-[role="link"],
-select,
-textarea,
-input:is(
+/* Q-Zip button and form element styles - require qzip- prefix */
+.qzip-button,
+.qzip-input,
+.qzip-textarea,
+.qzip-select,
+.qzip-link,
+a.qzip-link,
+button.qzip-button,
+input.qzip-input,
+textarea.qzip-textarea,
+select.qzip-select,
+label[for].qzip-label,
+[role="button"].qzip-button,
+[role="link"].qzip-link,
+input.qzip-input:is(
     [type="date"],
     [type="datetime-local"],
     [type="email"],
@@ -384,19 +404,25 @@ input:is(
   touch-action: manipulation;
   transition: all 100ms ease;
 }
-textarea {
+/* Q-Zip textarea specific styles */
+.qzip-textarea,
+textarea.qzip-textarea {
   min-height: calc(2lh + (var(--pad-blok) * 2));
   padding: var(--pad-blok);
   resize: vertical;
 }
-a,
-button,
-.button,
-select,
-label[for],
-[role="button"],
-[role="link"],
-input:is(
+
+/* Q-Zip cursor pointer styles */
+.qzip-button,
+.qzip-select,
+.qzip-link,
+a.qzip-link,
+button.qzip-button,
+select.qzip-select,
+label[for].qzip-label,
+[role="button"].qzip-button,
+[role="link"].qzip-link,
+input.qzip-input:is(
     [type="date"],
     [type="time"],
     [type="datetime-local"],
@@ -406,8 +432,12 @@ input:is(
   ) {
   cursor: pointer;
 }
-textarea,
-input:is(
+
+/* Q-Zip cursor text styles */
+.qzip-textarea,
+.qzip-input,
+textarea.qzip-textarea,
+input.qzip-input:is(
     [type="text"],
     [type="password"],
     [type="email"],
@@ -418,16 +448,22 @@ input:is(
   ) {
   cursor: text;
 }
-select,
-input:not([type="checkbox"]),
-textarea {
+/* Q-Zip form element styling */
+.qzip-select,
+.qzip-input,
+.qzip-textarea,
+select.qzip-select,
+input.qzip-input:not([type="checkbox"]),
+textarea.qzip-textarea {
   background-color: var(--bg-clr);
   border: 1px solid var(--brdr-clr-liter);
   border-radius: 4px;
   min-width: 80px;
   padding: 4px;
 }
-select {
+/* Q-Zip select dropdown arrow styling */
+.qzip-select,
+select.qzip-select {
   appearance: none;
   position: relative;
   &:after {
@@ -518,8 +554,9 @@ body.no-select *:not(textarea):not(input):not(select):not([contenteditable]) {
   user-select: none !important;
 }
 
-/* Global checkbox styling */
-input[type="checkbox"] {
+/* Q-Zip checkbox styling */
+.qzip-checkbox,
+input[type="checkbox"].qzip-checkbox {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -534,12 +571,14 @@ input[type="checkbox"] {
   flex-shrink: 0;
 }
 
-input[type="checkbox"]:checked {
+.qzip-checkbox:checked,
+input[type="checkbox"].qzip-checkbox:checked {
   background-color: var(--accent-clr, hsl(211, 100%, 50%));
   border-color: var(--accent-clr, hsl(211, 100%, 50%));
 }
 
-input[type="checkbox"]:checked::after {
+.qzip-checkbox:checked::after,
+input[type="checkbox"].qzip-checkbox:checked::after {
   content: "";
   position: absolute;
   left: 50%;
@@ -552,11 +591,13 @@ input[type="checkbox"]:checked::after {
   transform: translate(-50%, -60%) rotate(45deg);
 }
 
-input[type="checkbox"]:hover {
+.qzip-checkbox:hover,
+input[type="checkbox"].qzip-checkbox:hover {
   border-color: var(--accent-clr, hsl(211, 100%, 50%));
 }
 
-input[type="checkbox"]:focus {
+.qzip-checkbox:focus,
+input[type="checkbox"].qzip-checkbox:focus {
   outline: 2px solid var(--accent-clr, hsl(211, 100%, 50%));
   outline-offset: 2px;
 }

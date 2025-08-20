@@ -44,7 +44,7 @@
           </template>
         </DropdownMenu>
         <InfoTooltip
-          :visible="true"
+          :visible="tooltipManager.activeTooltipId.value === 'add-files-dropdown'"
           :content="{ text: 'Add files or folders to this job' }"
           :target="addDropdownRef?.$el"
           placement="bottom"
