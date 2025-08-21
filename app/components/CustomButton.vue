@@ -45,7 +45,7 @@
     </div>
     <!-- Keyboard shortcut text -->
     <div v-if="props.shortcutText" class="shortcut-text">
-      {{ props.shortcutText }}
+      <HotKey :keys="getShortcutParts(props.shortcutText)" :show-icon="false" />
     </div>
     <div v-if="props.lastIconName" class="icon-placeholder last-icon" :style="lastIconPlaceholderStyle">
       <Icon :name="props.lastIconName" :size="String(props.lastIconSize ?? 20)" />
@@ -58,6 +58,7 @@
 import { computed, onMounted, ref, useAttrs, watch } from "vue";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logComponentAttributes, logVueWarning, logHover } from "@/utils/loggers";
+import HotKey from "@/components/HotKey.vue";
 
 
 const attrs = useAttrs();
@@ -136,6 +137,20 @@ const handleMouseEnter = (event: MouseEvent) => {
     });
   }
   // Tooltip logic moved to parent components
+};
+
+// Get shortcut parts for template rendering (returns array instead of HTML string)
+const getShortcutParts = (shortcut: string) => {
+  if (!shortcut) return [];
+  
+  // Split by common separators and handle special cases
+  const parts = shortcut
+    .toUpperCase()
+    .split(/[+\-]/) // Split on + or - but don't keep the separators
+    .map(part => part.trim()) // Trim whitespace
+    .filter(part => part.length > 0); // Remove empty parts
+  
+  return parts;
 };
 
 

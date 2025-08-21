@@ -23,8 +23,12 @@
   transition: all var(--btn-trans-dur-end) ease;
   z-index: 0;
   
-  /* .custom-button:has(> .button-content:empty) - Remove padding for icon-only buttons */
+  /* .custom-button:has(> .button-content:empty) - Set exact sizing for icon-only buttons */
   &:has(> .button-content:empty) {
+    height: var(--min-tch-tgt);
+    width: var(--min-tch-tgt);
+    min-height: var(--min-tch-tgt);
+    min-width: var(--min-tch-tgt);
     padding: 0;
   }
   

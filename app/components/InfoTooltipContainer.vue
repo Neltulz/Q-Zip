@@ -85,8 +85,7 @@
           <!-- Keyboard shortcut slot -->
           <template v-if="keyboardShortcut">
             <div class="info-line keyboard-shortcut-line">
-              <Icon name="mdi:keyboard" class="keyboard-icon" />
-              <span class="keyboard-shortcut-text" v-html="formatKeyboardShortcut(keyboardShortcut)"></span>
+              <HotKey :keys="getShortcutParts(keyboardShortcut)" :disabled="isTargetDisabled" />
             </div>
           </template>
         </div>
@@ -104,6 +103,7 @@ import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
 import { logUI, logRendering } from "@/utils/loggers";
+import HotKey from "@/components/HotKey.vue";
 // Allow a simple text property for more generic tooltips
 type TooltipContent = NotificationMessageDetails | { text: string; icon?: string };
 const props = defineProps({
@@ -209,18 +209,54 @@ const isTargetDisabled = computed(() => {
   const target = resolvedTarget.value;
   if (!target) return false;
   
+  // Force reactivity by accessing target properties
+  // This ensures the computed property updates when the target's state changes
+  const targetElement = target as HTMLElement;
+  
+  // Log disabled state detection for debugging
+  if (props.visible || props.debugForceVisible) {
+    const hasDisabledAttr = targetElement.hasAttribute('disabled');
+    const hasDisabledClass = targetElement.classList.contains('disabled');
+    const isButtonDisabled = targetElement instanceof HTMLButtonElement && targetElement.disabled;
+    const disabledButton = targetElement.closest('button[disabled], .disabled');
+    const ariaDisabled = targetElement.getAttribute('aria-disabled') === 'true';
+    const computedStyle = window.getComputedStyle(targetElement);
+    const pointerEventsNone = computedStyle.pointerEvents === 'none';
+    
+    logUI("InfoTooltipContainer", "Disabled state detection", {
+      target: targetElement,
+      targetTagName: targetElement.tagName,
+      targetClassName: targetElement.className,
+      hasDisabledAttr,
+      hasDisabledClass,
+      isButtonDisabled,
+      disabledButton: disabledButton ? disabledButton.tagName + '.' + disabledButton.className : null,
+      ariaDisabled,
+      pointerEvents: computedStyle.pointerEvents,
+      pointerEventsNone,
+      isDisabled: hasDisabledAttr || hasDisabledClass || isButtonDisabled || !!disabledButton || ariaDisabled || pointerEventsNone
+    });
+  }
+  
   // Check if the target element itself is disabled
-  if (target.hasAttribute('disabled')) return true;
+  if (targetElement.hasAttribute('disabled')) return true;
   
   // Check if the target has the disabled class
-  if (target.classList.contains('disabled')) return true;
+  if (targetElement.classList.contains('disabled')) return true;
   
   // Check if the target is a button and is disabled
-  if (target instanceof HTMLButtonElement && target.disabled) return true;
+  if (targetElement instanceof HTMLButtonElement && targetElement.disabled) return true;
   
   // Check if the target is inside a disabled button
-  const disabledButton = target.closest('button[disabled], .disabled');
+  const disabledButton = targetElement.closest('button[disabled], .disabled');
   if (disabledButton) return true;
+  
+  // Additional check for aria-disabled attribute
+  if (targetElement.getAttribute('aria-disabled') === 'true') return true;
+  
+  // Check computed styles for pointer-events: none (common disabled indicator)
+  const computedStyle = window.getComputedStyle(targetElement);
+  if (computedStyle.pointerEvents === 'none') return true;
   
   return false;
 });
@@ -512,25 +548,18 @@ const getFileName = (path: string) => {
   return path.split(/[\\/]/).pop() || path;
 };
 
-// Format keyboard shortcut with individual keycaps
-const formatKeyboardShortcut = (shortcut: string) => {
-  if (!shortcut) return '';
+// Get shortcut parts for template rendering (returns array instead of HTML string)
+const getShortcutParts = (shortcut: string) => {
+  if (!shortcut) return [];
   
   // Split by common separators and handle special cases
   const parts = shortcut
     .toUpperCase()
-    .split(/([+\-])/) // Split on + or - but keep the separators
-    .filter(part => part.trim()); // Remove empty parts
+    .split(/[+\-]/) // Split on + or - but don't keep the separators
+    .map(part => part.trim()) // Trim whitespace
+    .filter(part => part.length > 0); // Remove empty parts
   
-  return parts.map(part => {
-    if (part === '+' || part === '-') {
-      // Plus/minus symbols are not in keycaps - they get their own styling
-      return `<span class="plus-symbol">${part}</span>`;
-    } else {
-      // Individual keys get keycap styling
-      return `<span class="keycap">${part}</span>`;
-    }
-  }).join('');
+  return parts;
 };
 </script>
 <style scoped>

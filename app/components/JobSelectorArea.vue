@@ -75,7 +75,7 @@
                                    <template #default="{ close }">
                     <div class="remove-job-confirmation">
                       <div class="confirmation-header">
-                        <h3 class="confirmation-title">Remove Job</h3>
+                        <h3 class="confirmation-title">Remove Job?</h3>
                         <p class="confirmation-question">Are you sure you want to remove this job?</p>
                       </div>
                       
@@ -90,19 +90,21 @@
                           </div>
                         </div>
                       </div>
-                      
-                                             <InfoCard theme="info">
-                         <template #header>Tip</template>
-                         <template #icon>
-                           <Icon name="mdi:lightbulb-outline" size="16" />
-                         </template>
-                                                   You can hold <strong>Shift</strong> when clicking the <strong>X</strong> button in the job tab or press <strong>Ctrl+Shift+Del</strong> to bypass this confirmation entirely.
-                       </InfoCard>
                     </div>
                   </template>
                   <template #content-bottom="{ close }">
                     <hr />
                     <div class="confirmation-actions">
+                      <CustomButton
+                        :ref="(el) => setTipButtonRef(job.id, el)"
+                        button-style-class="tip-button"
+                        :data-name="'tip-button-' + job.id + '-btn'"
+                        first-icon-name="mdi:lightbulb-outline"
+                        :first-icon-size="20"
+                        justify="center"
+                        @mouseenter="showTipTooltip(job.id)"
+                        @mouseleave="hideTipTooltip(job.id)"
+                      />
                       <CustomButton
                         :ref="(el) => setCancelRemoveJobBtnRef(job.id, el)"
                         button-style-class="bordered-btn"
@@ -121,7 +123,7 @@
                         button-style-class="bordered-btn"
                         :data-name="'confirm-remove-job-' + job.id + '-btn'"
                         first-icon-name="mdi:trash"
-                        :first-icon-size="16"
+                        :first-icon-size="20"
                         btn-theme="danger"
                         justify="end"
                         @mouseup="
@@ -143,6 +145,12 @@
                         :target="cancelRemoveJobBtnRefs.get(job.id)?.visualStyleRef"
                         placement="bottom"
                         keyboardShortcut="Esc"
+                      />
+                      <InfoTooltip
+                        :visible="getTipTooltipVisible(job.id)"
+                        :content="{ text: 'Hold Shift when clicking X or press Ctrl+Shift+Del to bypass confirmation' }"
+                        :target="tipButtonRefs.get(job.id)?.visualStyleRef"
+                        placement="bottom"
                       />
                       <InfoTooltip
                         :visible="getConfirmRemoveJobTooltipVisible(job.id)"
@@ -410,7 +418,7 @@ import type { ModalOptions } from "@/types/modal";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import CustomButton from "./CustomButton.vue";
 import InfoTooltip from "./InfoTooltipContainer.vue";
-import InfoCard from "./InfoCard.vue";
+
 import { useScrollContainer } from "@/composables/useScrollContainer";
 import { useTooltipManager } from "@/composables/useTooltipManager";
 import { useDropdownManager } from "@/composables/dropdownManager";
@@ -445,6 +453,7 @@ const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
 // Job-specific tooltip visibility states
 const cancelRemoveJobTooltipVisible = ref(new Map<number, boolean>());
 const confirmRemoveJobTooltipVisible = ref(new Map<number, boolean>());
+const tipButtonTooltipVisible = ref(new Map<number, boolean>());
 
 // Function to get tooltip visibility for a job
 const getCancelRemoveJobTooltipVisible = (jobId: number) => {
@@ -453,6 +462,10 @@ const getCancelRemoveJobTooltipVisible = (jobId: number) => {
 
 const getConfirmRemoveJobTooltipVisible = (jobId: number) => {
   return confirmRemoveJobTooltipVisible.value.get(jobId) || false;
+};
+
+const getTipTooltipVisible = (jobId: number) => {
+  return tipButtonTooltipVisible.value.get(jobId) || false;
 };
 
 // Function to show/hide tooltips for a job
@@ -472,9 +485,18 @@ const hideConfirmRemoveJobTooltip = (jobId: number) => {
   confirmRemoveJobTooltipVisible.value.set(jobId, false);
 };
 
+const showTipTooltip = (jobId: number) => {
+  tipButtonTooltipVisible.value.set(jobId, true);
+};
+
+const hideTipTooltip = (jobId: number) => {
+  tipButtonTooltipVisible.value.set(jobId, false);
+};
+
 // Job-specific refs for remove job confirmation buttons
 const cancelRemoveJobBtnRefs = ref(new Map<number, InstanceType<typeof CustomButton>>());
 const confirmRemoveJobBtnRefs = ref(new Map<number, InstanceType<typeof CustomButton>>());
+const tipButtonRefs = ref(new Map<number, InstanceType<typeof CustomButton>>());
 
 // Add delay for job switching to prevent rapid cycling
 const lastJobSwitchTime = ref(0);
@@ -615,6 +637,13 @@ const setConfirmRemoveJobBtnRef = (jobId: number, el: Element | ComponentPublicI
     confirmRemoveJobBtnRefs.value.set(jobId, el as InstanceType<typeof CustomButton>);
   }
 };
+
+const setTipButtonRef = (jobId: number, el: Element | ComponentPublicInstance | null) => {
+  if (el) {
+    tipButtonRefs.value.set(jobId, el as InstanceType<typeof CustomButton>);
+  }
+};
+
 onBeforeUpdate(() => {
   jobButtonRefs.value.clear();
   jobContextMenuRefs.value.clear();
@@ -622,8 +651,10 @@ onBeforeUpdate(() => {
   removeJobDropdownRefs.value.clear();
   cancelRemoveJobBtnRefs.value.clear();
   confirmRemoveJobBtnRefs.value.clear();
+  tipButtonRefs.value.clear();
   cancelRemoveJobTooltipVisible.value.clear();
   confirmRemoveJobTooltipVisible.value.clear();
+  tipButtonTooltipVisible.value.clear();
 });
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.ctrlKey && event.key.toLowerCase() === "t") {

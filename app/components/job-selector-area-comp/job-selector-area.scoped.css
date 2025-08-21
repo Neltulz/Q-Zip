@@ -427,6 +427,7 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
 .confirmation-actions :deep(.custom-button) {
   width: fit-content;
   min-width: 80px;
+  min-height: var(--min-tch-tgt);
   flex-shrink: 0;
   flex-grow: 0;
   max-width: fit-content;
@@ -436,4 +437,29 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   width: auto;
   /* Ensure the button doesn't stretch */
   display: inline-flex;
+}
+
+/* Override for icon-only buttons in confirmation actions to ensure consistent height */
+.confirmation-actions :deep(.custom-button:has(> .button-content:empty)) {
+  height: var(--min-tch-tgt) !important;
+  min-height: var(--min-tch-tgt) !important;
+  width: var(--min-tch-tgt) !important;
+  min-width: var(--min-tch-tgt) !important;
+}
+
+
+
+/* Tip button specific styling */
+.confirmation-actions :deep(.tip-button > .visual-style) {
+  background-color: hsla(0, 0%, 20%, 0.6);
+  border-color: hsla(0, 0%, 30%, 0.4);
+  opacity: 0.8;
+  transition: all 0.2s ease-in-out;
+}
+
+.confirmation-actions :deep(.tip-button:hover > .visual-style) {
+  background-color: hsla(0, 0%, 25%, 0.8);
+  border-color: hsla(0, 0%, 40%, 0.6);
+  opacity: 1;
+  transform: scale(1.05);
 }
