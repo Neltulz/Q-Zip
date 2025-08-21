@@ -246,6 +246,11 @@
             {{ zoomText }}
           </CustomButton>
         </div>
+        
+        <!-- Custom Window Controls for Linux -->
+        <div v-if="shouldShowCustomWindowControls()" class="custom-window-controls-container" style="grid-row:1">
+          <CustomWindowControls />
+        </div>
       </div>
     </div>
   </teleport>
@@ -262,6 +267,8 @@ import InfoTooltip from "@/components/InfoTooltipContainer.vue";
 import { useResetManager } from "@/composables/useResetManager";
 import { useModalsStore } from "@/stores/modalsStore";
 import type { ModalOptions } from "@/types/modal";
+import { shouldShowCustomWindowControls } from "@/utils/platformUtils";
+import CustomWindowControls from "@/components/CustomWindowControls.vue";
 const themeStore = useThemeStore();
 const navStore = useNavigationStore();
 const layoutStore = useLayoutStore();
@@ -645,7 +652,7 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
 }
 [data-tauri-decorum-tb] {
   /* Turn the native toolbar container into a 3-column grid:
-     1fr = main title area, 2nd column = zoom indicator, 3rd column = native window controls */
+     1fr = main title area, 2nd column = zoom indicator, 3rd column = window controls */
   display: grid !important;
   grid-auto-flow: column !important;
   grid-template-columns: 1fr auto auto !important;
@@ -662,6 +669,12 @@ body:has(.modal-wrapper.modal-open) .center-nav-btns {
 /* Place the zoom indicator into the middle column if present. */
 [data-tauri-decorum-tb] > .titlebar-zoom-indicator {
   grid-column: 2;
+  justify-self: end;
+}
+
+/* Place custom window controls into the third column on Linux */
+[data-tauri-decorum-tb] > .custom-window-controls-container {
+  grid-column: 3;
   justify-self: end;
 }
 /* Ensure our #title-bar (Vue root) occupies the main area */

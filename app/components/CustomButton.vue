@@ -10,6 +10,9 @@
   Now exposes a ref to its internal `.visual-style` div for precise
   positioning of other elements like tooltips.
   Supports built-in tooltip functionality with keyboard shortcut display.
+  
+  IMPORTANT: For detailed usage instructions and styling guidelines,
+  see: app/components/custom-button-comp/custom-button-usage.md
 -->
 <!-- #endregion -->
 <!-- #region template -->

@@ -523,7 +523,3 @@ const handleDropdownClosed = () => {
 For a complete working example with comprehensive orphaned tooltip management, see:
 - **FileTableLoadingOverlay.vue** - Full implementation with dropdown monitoring, tooltip state reset, and DOM validation
 
-description:
-globs:
-alwaysApply: false
----

@@ -34,6 +34,7 @@ import { zoomIn, zoomOut, resetZoom, setFileTableZoomFactor, getFileTableZoomFac
 import { enableSelectionLock, disableSelectionLock } from "@/composables/useSelectionLock";
 import { useKeyboardLogger } from "@/composables/useKeyboardLogger";
 import { useDebugStore } from "@/stores/debugStore";
+import { logGlobalEvent } from "@/utils/loggers";
 provideScrollContainer();
 const layoutStore = useLayoutStore();
 const userPreferencesStore = useUserPreferencesStore();
@@ -56,6 +57,47 @@ const handleGlobalKeyDown = (event: KeyboardEvent): void => {
   if (event.ctrlKey && event.altKey && event.shiftKey && event.key.toLowerCase() === "b") {
     event.preventDefault();
     debugStore.toggleDebugPopup();
+  }
+  
+  // Global refresh shortcuts
+  if (event.ctrlKey || event.metaKey) {
+    // Ctrl + F5 - always refreshes the browser
+    if (event.key === "F5") {
+      event.preventDefault();
+      
+      logGlobalEvent("App", "Ctrl+F5: Global browser refresh triggered");
+      
+      // Check if we're in development mode (localhost)
+      if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+        // In development mode, reload the page
+        logGlobalEvent("App", "Ctrl+F5: Reloading page in development mode");
+        window.location.reload();
+      } else {
+        // In production mode, we might want to restart the Tauri app
+        // For now, just reload the page
+        logGlobalEvent("App", "Ctrl+F5: Reloading page in production mode");
+        window.location.reload();
+      }
+    }
+    
+    // Ctrl + Shift + R - hard refresh (clears cache if possible)
+    if (event.shiftKey && event.key.toLowerCase() === "r") {
+      event.preventDefault();
+      
+      logGlobalEvent("App", "Ctrl+Shift+R: Hard refresh triggered");
+      
+      // Check if we're in development mode (localhost)
+      if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+        // In development mode, try to clear cache and reload
+        logGlobalEvent("App", "Ctrl+Shift+R: Hard refresh in development mode");
+        // Force reload from server (bypass cache)
+        window.location.reload(true);
+      } else {
+        // In production mode, just reload the page
+        logGlobalEvent("App", "Ctrl+Shift+R: Hard refresh in production mode");
+        window.location.reload();
+      }
+    }
   }
 };
 onBeforeMount((): void => {

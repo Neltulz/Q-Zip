@@ -67,11 +67,13 @@
     > .center-nav-btns {
       display: flex;
       grid-column: 1 / span all;
-      /* removed grid-row so it no longer participates in the grid flow */
-      inset-inline: 0; /* logical left/right 0 */
+      grid-row: 1;
+      justify-content: center;
       justify-self: center;
-      /* Make the center nav buttons fixed so they remain centered in the viewport */
-      position: fixed;
+      /* Use absolute positioning relative to the title bar container instead of fixed */
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
       transition: opacity 500ms ease;
       z-index: 100;
 

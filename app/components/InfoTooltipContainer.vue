@@ -37,7 +37,7 @@
   />
   
   IMPORTANT: For proper implementation patterns and usage guidelines,
-  AI assistants should reference: .cursor/rules/info-tooltip-usage.mdc
+  see: app/components/info-tooltip-comp/info-tooltip-usage.md
 -->
 <template>
   <teleport to="body">

@@ -2166,8 +2166,8 @@ const handleKeyDown = (event: KeyboardEvent) => {
     }
   }
   
-  // Handle F5 refresh shortcut
-  if (event.key === 'F5') {
+  // Handle F5 refresh shortcut (only if not Ctrl+F5, which is handled globally)
+  if (event.key === 'F5' && !(event.ctrlKey || event.metaKey)) {
     event.preventDefault();
     logFocus("FileTable", "F5: Refreshing files", {
       jobId: props.jobId
@@ -2175,6 +2175,18 @@ const handleKeyDown = (event: KeyboardEvent) => {
     handleRefreshFiles();
     return;
   }
+  
+  // Handle Ctrl+R refresh shortcut (only if not Ctrl+Shift+R, which is handled globally)
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'r' && !event.shiftKey) {
+    event.preventDefault();
+    logFocus("FileTable", "Ctrl+R: Refreshing files", {
+      jobId: props.jobId
+    });
+    handleRefreshFiles();
+    return;
+  }
+  
+  // Note: Ctrl+F5 and Ctrl+Shift+R are handled globally in app.vue to refresh the entire browser
   
   // Handle Delete key for removing selected files
   if (event.key === 'Delete') {
