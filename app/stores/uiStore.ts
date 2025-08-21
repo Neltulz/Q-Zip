@@ -4,6 +4,7 @@ import { defineStore } from "pinia";
 import { reactive, ref, type Ref } from "vue";
 import { useJobsStore, type FileItem } from "@/stores/jobsStore";
 import { useClipboardStore } from "./clipboardStore";
+import { DEBUG, debugConfig } from "@/utils/debugConfig";
 export type JobSelectorOrientation = "horizontal" | "vertical";
 export type PanelWidth = string;
 export type NotificationType = "success" | "warning" | "error" | "info";
@@ -220,13 +221,16 @@ export const useUiStore = defineStore(
         timeoutId: null,
         isRemoving: false,
       };
-      console.log(`[uiStore] addNotification called:`, {
-        id,
-        title: newNotification.title,
-        messagesCount: newNotification.messages.length,
-        currentNotificationsCount: notifications.value.length,
-        queueLength: notificationQueue.value.length
-      });
+      // Debug logging for notifications
+      if (DEBUG && debugConfig.logNotifications) {
+        console.log(`[uiStore] addNotification called:`, {
+          id,
+          title: newNotification.title,
+          messagesCount: newNotification.messages.length,
+          currentNotificationsCount: notifications.value.length,
+          queueLength: notificationQueue.value.length
+        });
+      }
       // If no notifications are currently displayed, show this one immediately
       if (notifications.value.length === 0) {
         // Add a small delay for the initial notification to ensure smooth fade-in
@@ -235,20 +239,24 @@ export const useUiStore = defineStore(
             removeNotification(id);
           }, duration);
           notifications.value.push(newNotification);
-          console.log(`[uiStore] Added notification to display:`, {
-            id,
-            title: newNotification.title,
-            notificationsCount: notifications.value.length
-          });
+          if (DEBUG && debugConfig.logNotifications) {
+            console.log(`[uiStore] Added notification to display:`, {
+              id,
+              title: newNotification.title,
+              notificationsCount: notifications.value.length
+            });
+          }
         }, 100); // Small delay for smooth initial fade-in
       } else {
         // Otherwise, add to queue
         notificationQueue.value.push(newNotification);
-        console.log(`[uiStore] Added notification to queue:`, {
-          id,
-          title: newNotification.title,
-          queueLength: notificationQueue.value.length
-        });
+        if (DEBUG && debugConfig.logNotifications) {
+          console.log(`[uiStore] Added notification to queue:`, {
+            id,
+            title: newNotification.title,
+            queueLength: notificationQueue.value.length
+          });
+        }
       }
     }
     function removeNotification(id: number): void {

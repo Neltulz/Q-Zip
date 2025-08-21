@@ -245,13 +245,13 @@ const confirmCancelButtonTooltipVisible = ref(false);
 
 // Debug: Watch for when the dropdown ref is set
 watch(cancelDropdownRef, (newRef) => {
-  console.log(`[FileTableLoadingOverlay] Dropdown ref changed:`, newRef);
+  logLoading("FileTableLoadingOverlay", `Dropdown ref changed`, newRef);
   if (newRef) {
-    console.log(`[FileTableLoadingOverlay] Dropdown ref set:`, !!newRef);
+    logLoading("FileTableLoadingOverlay", `Dropdown ref set`, !!newRef);
   } else {
     // Dropdown ref is null, but don't call resetAllTooltipState() to avoid circular dependency
     // The resetAllTooltipState() function itself sets the ref to null
-    console.log(`[FileTableLoadingOverlay] Dropdown ref is null`);
+    logLoading("FileTableLoadingOverlay", `Dropdown ref is null`);
   }
 });
 const removeScannedItems = ref(true); // Default to true to maintain current behavior
@@ -335,20 +335,17 @@ watch(
 
 const handlePauseClick = () => {
   const startTime = performance.now();
-  console.log(`[FileTableLoadingOverlay] PAUSE BUTTON CLICKED at ${startTime.toFixed(2)}ms - current state: ${props.isPaused ? 'paused' : 'playing'}`);
-  logLoading("FileTableLoadingOverlay", `Pause button clicked at ${startTime.toFixed(2)}ms - current state: ${props.isPaused ? 'paused' : 'playing'}`);
+  logLoading("FileTableLoadingOverlay", `PAUSE BUTTON CLICKED at ${startTime.toFixed(2)}ms - current state: ${props.isPaused ? 'paused' : 'playing'}`);
   
   // Immediate response for better UX
   emit("pause", !props.isPaused);
   
   const endTime = performance.now();
   const responseTime = endTime - startTime;
-  console.log(`[FileTableLoadingOverlay] Pause event emitted in ${responseTime.toFixed(2)}ms - new state: ${!props.isPaused ? 'paused' : 'playing'}`);
   logLoading("FileTableLoadingOverlay", `Pause event emitted in ${responseTime.toFixed(2)}ms - new state: ${!props.isPaused ? 'paused' : 'playing'}`);
 };
 
 const handleDropdownOpened = () => {
-  console.log(`[FileTableLoadingOverlay] Dropdown opened event received`);
   logLoading("FileTableLoadingOverlay", `Dropdown opened event received at ${performance.now().toFixed(2)}ms`);
   
   // Pause the scanning when dropdown opens
@@ -363,7 +360,6 @@ const handleDropdownOpened = () => {
 };
 
 const handleDropdownClosed = () => {
-  console.log(`[FileTableLoadingOverlay] Dropdown closed event received`);
   logLoading("FileTableLoadingOverlay", `Dropdown closed event received at ${performance.now().toFixed(2)}ms`);
   
   // Stop monitoring since the dropdown is now fully closed
@@ -392,12 +388,12 @@ const startDropdownCloseMonitoring = () => {
     const dropdownContent = document.querySelector('[data-belongs-to="cancel-dropdown"]');
     if (!dropdownContent) {
       // Dropdown content is not in DOM, assume it's closed
-      console.log(`[FileTableLoadingOverlay] Dropdown content not found in DOM, assuming closed`);
+      logLoading("FileTableLoadingOverlay", `Dropdown content not found in DOM, assuming closed`);
       stopDropdownCloseMonitoring();
       return;
     }
     
-    console.log(`[FileTableLoadingOverlay] Dropdown still open, content found:`, !!dropdownContent);
+    logLoading("FileTableLoadingOverlay", `Dropdown still open, content found`, !!dropdownContent);
   }, 100);
 };
 
@@ -413,7 +409,7 @@ const stopDropdownCloseMonitoring = () => {
     checkForOrphanedTooltips();
     
     // Resume scanning if we weren't paused before
-    console.log(`[FileTableLoadingOverlay] Was paused before: ${wasPausedBeforeCancel.value}`);
+    logLoading("FileTableLoadingOverlay", `Was paused before`, wasPausedBeforeCancel.value);
     if (!wasPausedBeforeCancel.value) {
       logLoading("FileTableLoadingOverlay", `Auto-resuming scanning after cancel dialog closed at ${performance.now().toFixed(2)}ms`);
       emit("pause", false);
@@ -488,7 +484,7 @@ const checkForOrphanedTooltips = () => {
   const hasInvalidRefs = !areTooltipRefsValid();
   
   if (hasNullTargets || hasInvalidRefs) {
-    console.log(`[FileTableLoadingOverlay] Invalid tooltip targets detected, resetting all tooltip state`);
+    logLoading("FileTableLoadingOverlay", `Invalid tooltip targets detected, resetting all tooltip state`);
     resetAllTooltipState();
   }
 

@@ -1,13 +1,16 @@
 // plugins/suppressDecorumLogs.client.ts
 // 
 /**
- * Plugin to suppress DECORUM log messages from tauri-plugin-decorum
+ * Plugin to control DECORUM log messages from tauri-plugin-decorum
  * These messages are harmless but can be noisy during development
+ * When decorumMessages is false, messages are suppressed
+ * When decorumMessages is true, messages are shown
  */
 
 export default defineNuxtPlugin(() => {
   // Only run on client side
   if (process.client) {
+    // Apply console override immediately to catch early DECORUM messages
     // Store original console methods
     const originalLog = console.log;
     const originalWarn = console.warn;
@@ -21,15 +24,20 @@ export default defineNuxtPlugin(() => {
         const globalObj = (window as any);
         if (globalObj.__QZIP_DEBUG_GET) {
           const config = globalObj.__QZIP_DEBUG_GET();
-          if (!config.suppressDecorumLogs) {
-            return false;
+          // When decorumMessages is false, we should suppress DECORUM messages
+          if (!config.decorumMessages) {
+            return typeof message === 'string' && message.includes('DECORUM');
           }
+        } else {
+          // If debug system isn't loaded yet, default to suppressing DECORUM messages
+          // This prevents DECORUM messages from showing before the debug system is ready
+          return typeof message === 'string' && message.includes('DECORUM');
         }
       } catch (e) {
         // If we can't get the config, default to suppressing (safer)
-        return true;
+        return typeof message === 'string' && message.includes('DECORUM');
       }
-      return typeof message === 'string' && message.includes('DECORUM');
+      return false; // Don't suppress if option is enabled or unavailable
     };
 
     // Override console.log
@@ -59,7 +67,22 @@ export default defineNuxtPlugin(() => {
       originalError.apply(console, args);
     };
 
-    // Log that the filter is loaded (will be suppressed if DECORUM suppression is on)
-    console.log('%c🔇 DECORUM log filter loaded', 'background: #9c27b0; color: white; padding: 2px 4px; border-radius: 3px;');
+    // Log that the filter is loaded (only if debug logging is enabled)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const globalObj = (window as any);
+      if (globalObj.__QZIP_DEBUG_GET) {
+        const config = globalObj.__QZIP_DEBUG_GET();
+        // Only log if any debug logging is enabled
+        const hasAnyLoggingEnabled = Object.entries(config).some(([key, value]) =>
+          (key.startsWith('log') || key === 'decorumMessages') && value === true
+        );
+        if (hasAnyLoggingEnabled) {
+          console.log('%c🔇 DECORUM log filter loaded', 'background: #9c27b0; color: white; padding: 2px 4px; border-radius: 3px;');
+        }
+      }
+    } catch (e) {
+      // If we can't check debug state, don't log anything
+    }
   }
 });

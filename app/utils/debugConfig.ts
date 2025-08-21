@@ -20,6 +20,7 @@
  *    - __QZIP_DEBUG_SET(key, value) - Set individual option
  *    - __QZIP_DEBUG_LIST()          - List all available options
  *    - __QZIP_DEBUG_STORE()         - Show store access instructions
+ *    - __QZIP_DEBUG_STATUS()        - Show current active/inactive options
  *
  * 2. Direct Store Access (in browser console):
  *    // Method A: Using the store composable
@@ -47,8 +48,8 @@ export const debugConfig: Record<string, boolean> = {
   // All values will be set by the store via syncDebugConfig()
   // This prevents having two sources of truth and potential conflicts.
 
-  // Special flag for suppressing DECORUM messages
-  suppressDecorumLogs: true, // Default to true to reduce noise
+  // Special flag for showing DECORUM messages
+  decorumMessages: false, // Default to false to reduce noise
   // Special flag for FileTable activation events
   logFileTableActivation: false, // Default to false to reduce noise
   // Special flag for trace events
@@ -64,7 +65,7 @@ const originalDebugConfig: Record<string, boolean> = {};
 export const setAllLoggingEnabled = (enabled: boolean) => {
   DEBUG = enabled;
   Object.keys(debugConfig).forEach((k) => {
-    if (k.startsWith('log') || k === 'suppressDecorumLogs') {
+    if (k.startsWith('log') || k === 'decorumMessages') {
       // @ts-ignore - dynamic assignment to flags
       debugConfig[k] = enabled;
     }
@@ -75,7 +76,7 @@ export const setAllLoggingEnabled = (enabled: boolean) => {
 export const resetDebugConfig = () => {
   // Reset to original values if they exist, otherwise set to false
   Object.keys(debugConfig).forEach((k) => {
-    if (k.startsWith('log') || k === 'suppressDecorumLogs') {
+    if (k.startsWith('log') || k === 'decorumMessages') {
       // @ts-ignore - dynamic assignment to flags
       debugConfig[k] = originalDebugConfig[k] === undefined ? false : (originalDebugConfig[k] as boolean);
     }
@@ -87,7 +88,7 @@ export const resetDebugConfig = () => {
 // This is the primary way debugConfig gets updated - store is now the source of truth
 export const syncDebugConfig = (storeConfig: Record<string, boolean>) => {
   Object.keys(storeConfig).forEach((k) => {
-    if (k.startsWith('log') || k === 'suppressDecorumLogs') {
+    if (k.startsWith('log') || k === 'decorumMessages') {
       // @ts-ignore - dynamic assignment to flags
       debugConfig[k] = storeConfig[k];
       // Also store in originalDebugConfig for reset functionality
@@ -97,7 +98,7 @@ export const syncDebugConfig = (storeConfig: Record<string, boolean>) => {
 
   // Update the master DEBUG flag based on whether any logging is enabled
   const hasAnyLoggingEnabled = Object.entries(storeConfig).some(([key, value]) =>
-    (key.startsWith('log') || key === 'suppressDecorumLogs') && value === true
+    (key.startsWith('log') || key === 'decorumMessages') && value === true
   );
   DEBUG = hasAnyLoggingEnabled;
 };
@@ -111,13 +112,13 @@ const getDebugConfig = () => ({ ...debugConfig });
 
 // Helper to set individual debug options via console
 const setDebugOption = (key: string, value: boolean) => {
-  if ((key.startsWith('log') || key === 'suppressDecorumLogs') && key in debugConfig) {
+  if ((key.startsWith('log') || key === 'decorumMessages') && key in debugConfig) {
     // @ts-ignore - dynamic assignment to flags
     debugConfig[key] = value;
 
     // Update the master DEBUG flag based on whether any logging is enabled
     const hasAnyLoggingEnabled = Object.entries(debugConfig).some(([k, v]) =>
-      (k.startsWith('log') || k === 'suppressDecorumLogs') && v === true
+      (k.startsWith('log') || k === 'decorumMessages') && v === true
     );
     DEBUG = hasAnyLoggingEnabled;
 
@@ -133,6 +134,100 @@ const listDebugOptions = () => {
   Object.entries(debugConfig).forEach(([key, value]) => {
     console.log(`  ${key}: ${value}`);
   });
+};
+
+// Helper to show current debug options status
+const showDebugStatus = () => {
+  // Check if any debug logging is enabled before showing detailed status
+  const hasAnyLoggingEnabled = Object.entries(debugConfig).some(([key, value]) =>
+    (key.startsWith('log') || key === 'decorumMessages') && value === true
+  );
+
+  // Always show basic status, but only show detailed status if logging is enabled
+  if (!hasAnyLoggingEnabled) {
+    console.log('%c🔧 All debug options are currently disabled. Enable some options in the debug popup to see detailed status.', 'background: #9e9e9e; color: white; padding: 2px 4px; border-radius: 3px;');
+
+    // Show the status anyway, but in a condensed format
+    console.log('%c🔧 Current Debug Options Status (All Disabled):', 'background: #2196f3; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+
+    // Define the exact order as they appear in the logging tab
+    const debugOptionOrder = [
+      'logComponentMounts',
+      'logRefUpdates',
+      'logRenderingEvents',
+      'logClicksAndInputs',
+      'logHoverEvents',
+      'logKeyboardEvents',
+      'logUIInteractivity',
+      'logUIEvents',
+      'logDropdownEvents',
+      'logTooltipEvents',
+      'logLoadingEvents',
+      'logFileSelection',
+      'logDragAndDrop',
+      'logDragDropFailsafe',
+      'logDualProgress',
+      'logStoreActions',
+      'logComposableManagerEvents',
+      'logNotifications',
+      'logTraceEvents',
+      'logMissingPropWarnings',
+      'logComponentAttributes',
+      'logVueWarnings',
+      'decorumMessages',
+      'logFileTableActivation'
+    ];
+
+    // Show all options as disabled
+    debugOptionOrder.forEach(option => {
+      console.log(`%c✗ ${option}`, 'color: #f44336; font-weight: bold;');
+    });
+
+    console.log(`%c🔧 Master DEBUG flag: ${DEBUG}`, 'background: #9c27b0; color: white; padding: 2px 6px; border-radius: 3px;');
+    console.log(''); // Empty line for readability
+    return;
+  }
+
+  // Define the exact order as they appear in the logging tab
+  const debugOptionOrder = [
+    'logComponentMounts',
+    'logRefUpdates',
+    'logRenderingEvents',
+    'logClicksAndInputs',
+    'logHoverEvents',
+    'logKeyboardEvents',
+    'logUIInteractivity',
+    'logUIEvents',
+    'logDropdownEvents',
+    'logTooltipEvents',
+    'logLoadingEvents',
+    'logFileSelection',
+    'logDragAndDrop',
+    'logDragDropFailsafe',
+    'logDualProgress',
+    'logStoreActions',
+    'logComposableManagerEvents',
+    'logNotifications',
+    'logTraceEvents',
+    'logMissingPropWarnings',
+    'logComponentAttributes',
+    'logVueWarnings',
+    'decorumMessages',
+    'logFileTableActivation'
+  ];
+
+  // Log the status
+  console.log('%c🔧 Current Debug Options Status:', 'background: #2196f3; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+
+  debugOptionOrder.forEach(option => {
+    const isActive = debugConfig[option];
+    const symbol = isActive ? '✓' : '✗';
+    const color = isActive ? '#4caf50' : '#f44336';
+    console.log(`%c${symbol} ${option}`, `color: ${color}; font-weight: bold;`);
+  });
+
+  console.log(`%c🔧 Master DEBUG flag: ${DEBUG}`, 'background: #9c27b0; color: white; padding: 2px 6px; border-radius: 3px;');
+  console.log(''); // Empty line for readability
 };
 
 // Helper to get Pinia store access instructions
@@ -166,14 +261,91 @@ try {
   globalObj.__QZIP_DEBUG_SET = setDebugOption;
   globalObj.__QZIP_DEBUG_LIST = listDebugOptions;
   globalObj.__QZIP_DEBUG_STORE = getStoreAccess;
+  globalObj.__QZIP_DEBUG_STATUS = showDebugStatus;
 
+  // Add store status function to global scope
+  globalObj.__QZIP_DEBUG_STORE_STATUS = () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).__QZIP_DEBUG_STORE_INSTANCE) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).__QZIP_DEBUG_STORE_INSTANCE.showDebugStatus();
+      } else {
+        console.log('%c⚠️ Debug store not available yet, using config status instead', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+        showDebugStatus();
+      }
+    } catch (e) {
+      console.log('%c⚠️ Error accessing debug store, using config status instead', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+      showDebugStatus();
+    }
+  };
+
+  // Add force refresh function to global scope
+  globalObj.__QZIP_DEBUG_FORCE_REFRESH = () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).__QZIP_DEBUG_STORE_INSTANCE) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).__QZIP_DEBUG_STORE_INSTANCE.forceRefresh();
+      } else {
+        console.log('%c⚠️ Debug store not available yet', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+      }
+    } catch (e) {
+      console.log('%c⚠️ Error accessing debug store', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+    }
+  };
+
+  // Add dimension management functions to global scope
+  globalObj.__QZIP_DEBUG_RESET_DIMENSIONS = () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).__QZIP_DEBUG_STORE_INSTANCE) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).__QZIP_DEBUG_STORE_INSTANCE.resetDebugPopupDimensions();
+        console.log('%c🔧 Debug popup dimensions reset to defaults', 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;');
+      } else {
+        console.log('%c⚠️ Debug store not available yet', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+      }
+    } catch (e) {
+      console.log('%c⚠️ Error accessing debug store', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+    }
+  };
+
+  globalObj.__QZIP_DEBUG_GET_DIMENSIONS = () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).__QZIP_DEBUG_STORE_INSTANCE) {
+        const store = (window as any).__QZIP_DEBUG_STORE_INSTANCE;
+        console.log('%c📏 Debug popup dimensions:', 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;');
+        console.log('  Position:', store.debugPopupPosition);
+        console.log('  Dimensions:', store.debugPopupDimensions);
+        return { position: store.debugPopupPosition, dimensions: store.debugPopupDimensions };
+      } else {
+        console.log('%c⚠️ Debug store not available yet', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+        return null;
+      }
+    } catch (e) {
+      console.log('%c⚠️ Error accessing debug store', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+      return null;
+    }
+  };
+
+  // Always show debug helpers info, regardless of logging state
   console.log('%c🔧 Debug helpers loaded! Available commands:', 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;');
   console.log('  __QZIP_DEBUG(true/false)     - Enable/disable all logging');
   console.log('  __QZIP_DEBUG_GET()           - Get current debug config');
   console.log('  __QZIP_DEBUG_SET(key, value) - Set individual option');
   console.log('  __QZIP_DEBUG_LIST()          - List all available options');
   console.log('  __QZIP_DEBUG_STORE()         - Show store access instructions');
-  console.log('  __QZIP_DEBUG_SET("suppressDecorumLogs", false) - Show DECORUM messages');
+  console.log('  __QZIP_DEBUG_STATUS()        - Show current active/inactive options');
+  console.log('  __QZIP_DEBUG_STORE_STATUS()  - Show store debug options status');
+  console.log('  __QZIP_DEBUG_FORCE_REFRESH() - Force refresh store state');
+  console.log('  __QZIP_DEBUG_GET_DIMENSIONS() - Get debug popup position & dimensions');
+  console.log('  __QZIP_DEBUG_RESET_DIMENSIONS() - Reset popup to default size');
+  console.log('  __QZIP_DEBUG_SET("decorumMessages", true) - Show DECORUM messages');
+
+  // Note: Debug status will be shown by the debug store during initialization
+  // to avoid duplicate logging at startup
 
   // Enable verbose logging automatically only in development builds
   // DISABLED: Set to false to reduce console noise during development

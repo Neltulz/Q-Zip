@@ -19,9 +19,33 @@ import { useThemeStore, type Theme } from "@/stores/themeStore";
 import { watch } from "vue";
 export default defineNuxtPlugin((_nuxtApp) => {
   const themeStore = useThemeStore();
-  console.log(`[themePlugin] Initial theme from store: ${themeStore.theme}`);
+
+  // Check if debug logging is enabled before logging theme info
+  const isDebugEnabled = () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const globalObj = (window as any);
+      if (globalObj.__QZIP_DEBUG_GET) {
+        const config = globalObj.__QZIP_DEBUG_GET();
+        // Only log if any debug logging is enabled
+        return Object.entries(config).some(([key, value]) =>
+          (key.startsWith('log') || key === 'decorumMessages') && value === true
+        );
+      }
+    } catch (e) {
+      // If we can't check debug state, don't log
+    }
+    return false;
+  };
+
+  if (isDebugEnabled()) {
+    console.log(`[themePlugin] Initial theme from store: ${themeStore.theme}`);
+  }
+
   const applyTheme = (theme: Theme): void => {
-    console.log(`[themePlugin] Applying theme: ${theme}`);
+    if (isDebugEnabled()) {
+      console.log(`[themePlugin] Applying theme: ${theme}`);
+    }
     const htmlElement = document.documentElement;
     // Remove any existing theme-related styles or classes
     htmlElement.removeAttribute("style");

@@ -1,7 +1,7 @@
 // stores/debugStore.ts
 // 
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, watch, computed } from "vue";
 import { debugConfig, setAllLoggingEnabled, syncDebugConfig, resetDebugConfig } from "~/utils/debugConfig";
 
 export interface DebugOptions {
@@ -29,7 +29,7 @@ export interface DebugOptions {
   logTooltipEvents: boolean;
   logTraceEvents: boolean;
   // Special options
-  suppressDecorumLogs: boolean;
+  decorumMessages: boolean;
   logFileTableActivation: boolean;
 }
 
@@ -37,6 +37,65 @@ export interface DebugPosition {
   x: number;
   y: number;
 }
+
+export interface DebugDimensions {
+  width: number;
+  height: number;
+}
+
+// Helper function to log current debug options status
+const logDebugOptionsStatus = (options: DebugOptions) => {
+  // Check if any debug logging is enabled before showing status
+  const hasAnyLoggingEnabled = Object.entries(options).some(([key, value]) =>
+    (key.startsWith('log') || key === 'decorumMessages') && value === true
+  );
+
+  // Define the exact order as they appear in the logging tab
+  const debugOptionOrder = [
+    'logComponentMounts',
+    'logRefUpdates',
+    'logRenderingEvents',
+    'logClicksAndInputs',
+    'logHoverEvents',
+    'logKeyboardEvents',
+    'logUIInteractivity',
+    'logUIEvents',
+    'logDropdownEvents',
+    'logTooltipEvents',
+    'logLoadingEvents',
+    'logFileSelection',
+    'logDragAndDrop',
+    'logDragDropFailsafe',
+    'logDualProgress',
+    'logStoreActions',
+    'logComposableManagerEvents',
+    'logNotifications',
+    'logTraceEvents',
+    'logMissingPropWarnings',
+    'logComponentAttributes',
+    'logVueWarnings',
+    'decorumMessages',
+    'logFileTableActivation'
+  ];
+
+  // Always show status, but with different messaging based on whether any logging is enabled
+  if (!hasAnyLoggingEnabled) {
+    console.log('%c🔧 All debug options are currently disabled. Enable some options in the debug popup to see detailed status.', 'background: #9e9e9e; color: white; padding: 2px 4px; border-radius: 3px;');
+    console.log('%c🔧 Debug Options Status at Startup (All Disabled):', 'background: #2196f3; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+  } else {
+    console.log('%c🔧 Debug Options Status at Startup:', 'background: #2196f3; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+  }
+
+  debugOptionOrder.forEach(option => {
+    const isActive = options[option as keyof DebugOptions];
+    const symbol = isActive ? '✓' : '✗';
+    const color = isActive ? '#4caf50' : '#f44336';
+    console.log(`%c${symbol} ${option}`, `color: ${color}; font-weight: bold;`);
+  });
+
+  console.log('%c💡 Use Ctrl+Alt+Shift+D to open debug popup or __QZIP_DEBUG_STORE() for console access', 'background: #9c27b0; color: white; padding: 2px 6px; border-radius: 3px;');
+  console.log(''); // Empty line for readability
+};
 
 export const useDebugStore = defineStore(
   "debug",
@@ -55,6 +114,12 @@ export const useDebugStore = defineStore(
     const debugPopupPosition = ref<DebugPosition>({
       x: 20, // Default to left side
       y: window.innerHeight - 520, // Above the debug button
+    });
+
+    // Debug popup dimensions
+    const debugPopupDimensions = ref<DebugDimensions>({
+      width: 500, // Default width
+      height: 500, // Default height
     });
 
     // Debug button position (at bottom, draggable)
@@ -92,12 +157,35 @@ export const useDebugStore = defineStore(
       logTooltipEvents: true,
       logTraceEvents: false,
       // Special options
-      suppressDecorumLogs: true,
+      decorumMessages: false,
       logFileTableActivation: false,
     });
 
-    // Sync to debugConfig on store initialization
-    syncDebugConfig(debugOptions.value);
+    // Computed property to ensure store is properly initialized
+    const isStoreInitialized = computed(() => {
+      return Object.keys(debugOptions.value).length > 0;
+    });
+
+    // Watch for changes to debugOptions and sync to debugConfig
+    // This ensures debugConfig stays in sync with the store, including after rehydration
+    watch(debugOptions, (newOptions) => {
+      syncDebugConfig(newOptions);
+    }, { deep: true, immediate: true });
+
+    // Watch for store initialization and log status
+    watch(isStoreInitialized, (initialized) => {
+      if (initialized) {
+        // Small delay to ensure persistence rehydration is complete
+        setTimeout(() => {
+          logDebugOptionsStatus(debugOptions.value);
+        }, 50);
+      }
+    }, { immediate: true });
+
+    // Force a sync after a longer delay to ensure persistence is fully loaded
+    setTimeout(() => {
+      syncDebugConfig(debugOptions.value);
+    }, 200);
 
     // Toggle debug popup visibility
     const toggleDebugPopup = () => {
@@ -148,7 +236,7 @@ export const useDebugStore = defineStore(
         logTooltipEvents: true,
         logTraceEvents: false,
         // Special options
-        suppressDecorumLogs: true,
+        decorumMessages: false,
         logFileTableActivation: false,
       };
 
@@ -156,9 +244,30 @@ export const useDebugStore = defineStore(
       syncDebugConfig(debugOptions.value);
     };
 
+    // Reset debug popup dimensions to defaults
+    const resetDebugPopupDimensions = () => {
+      const oldDimensions = { ...debugPopupDimensions.value };
+      debugPopupDimensions.value = {
+        width: 500,
+        height: 500,
+      };
+
+      // Log the reset
+      console.log(`%c🔧 Debug popup dimensions reset: ${oldDimensions.width}x${oldDimensions.height} → 500x500`, 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+    };
+
     // Update debug popup position
     const updateDebugPopupPosition = (position: DebugPosition) => {
       debugPopupPosition.value = position;
+    };
+
+    // Update debug popup dimensions
+    const updateDebugPopupDimensions = (dimensions: DebugDimensions) => {
+      const oldDimensions = { ...debugPopupDimensions.value };
+      debugPopupDimensions.value = dimensions;
+
+      // Log the change
+      console.log(`%c🔧 Debug popup dimensions changed: ${oldDimensions.width}x${oldDimensions.height} → ${dimensions.width}x${dimensions.height}`, 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;');
     };
 
     // Update debug button position
@@ -171,24 +280,133 @@ export const useDebugStore = defineStore(
       activeDebugTab.value = tabId;
     };
 
+    // Show current debug options status
+    const showDebugStatus = () => {
+      // Check if any debug logging is enabled before showing detailed status
+      const hasAnyLoggingEnabled = Object.entries(debugOptions.value).some(([key, value]) =>
+        (key.startsWith('log') || key === 'decorumMessages') && value === true
+      );
+
+      // Always show basic status, but only show detailed status if logging is enabled
+      if (!hasAnyLoggingEnabled) {
+        console.log('%c🔧 All debug options are currently disabled. Enable some options in the debug popup to see detailed status.', 'background: #9e9e9e; color: white; padding: 2px 4px; border-radius: 3px;');
+
+        // Show the status anyway, but in a condensed format
+        console.log('%c🔧 Current Debug Options Status (All Disabled):', 'background: #2196f3; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+
+        // Define the exact order as they appear in the logging tab
+        const debugOptionOrder = [
+          'logComponentMounts',
+          'logRefUpdates',
+          'logRenderingEvents',
+          'logClicksAndInputs',
+          'logHoverEvents',
+          'logKeyboardEvents',
+          'logUIInteractivity',
+          'logUIEvents',
+          'logDropdownEvents',
+          'logTooltipEvents',
+          'logLoadingEvents',
+          'logFileSelection',
+          'logDragAndDrop',
+          'logDragDropFailsafe',
+          'logDualProgress',
+          'logStoreActions',
+          'logComposableManagerEvents',
+          'logNotifications',
+          'logTraceEvents',
+          'logMissingPropWarnings',
+          'logComponentAttributes',
+          'logVueWarnings',
+          'decorumMessages',
+          'logFileTableActivation'
+        ];
+
+        // Show all options as disabled
+        debugOptionOrder.forEach(option => {
+          console.log(`%c✗ ${option}`, 'color: #f44336; font-weight: bold;');
+        });
+
+        console.log('%c💡 Use Ctrl+Alt+Shift+D to open debug popup or __QZIP_DEBUG_STORE() for console access', 'background: #9c27b0; color: white; padding: 2px 6px; border-radius: 3px;');
+        console.log('%c📏 Debug popup position:', 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;', debugPopupPosition.value);
+        console.log('%c📏 Debug popup dimensions:', 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;', debugPopupDimensions.value);
+        console.log(''); // Empty line for readability
+        return;
+      }
+
+      // Define the exact order as they appear in the logging tab
+      const debugOptionOrder = [
+        'logComponentMounts',
+        'logRefUpdates',
+        'logRenderingEvents',
+        'logClicksAndInputs',
+        'logHoverEvents',
+        'logKeyboardEvents',
+        'logUIInteractivity',
+        'logUIEvents',
+        'logDropdownEvents',
+        'logTooltipEvents',
+        'logLoadingEvents',
+        'logFileSelection',
+        'logDragAndDrop',
+        'logDragDropFailsafe',
+        'logDualProgress',
+        'logStoreActions',
+        'logComposableManagerEvents',
+        'logNotifications',
+        'logTraceEvents',
+        'logMissingPropWarnings',
+        'logComponentAttributes',
+        'logVueWarnings',
+        'decorumMessages',
+        'logFileTableActivation'
+      ];
+
+      // Log the status
+      console.log('%c🔧 Current Debug Options Status:', 'background: #2196f3; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+
+      debugOptionOrder.forEach(option => {
+        const isActive = debugOptions.value[option as keyof DebugOptions];
+        const symbol = isActive ? '✓' : '✗';
+        const color = isActive ? '#4caf50' : '#f44336';
+        console.log(`%c${symbol} ${option}`, `color: ${color}; font-weight: bold;`);
+      });
+
+      console.log('%c💡 Use Ctrl+Alt+Shift+D to open debug popup or __QZIP_DEBUG_STORE() for console access', 'background: #9c27b0; color: white; padding: 2px 6px; border-radius: 3px;');
+      console.log('%c📏 Debug popup position:', 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;', debugPopupPosition.value);
+      console.log('%c📏 Debug popup dimensions:', 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;', debugPopupDimensions.value);
+      console.log(''); // Empty line for readability
+    };
+
+    // Force refresh the store state and sync with debugConfig
+    const forceRefresh = () => {
+      console.log('%c🔄 Force refreshing debug store state', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+      syncDebugConfig(debugOptions.value);
+      showDebugStatus();
+    };
+
     // Create store instance and make it globally accessible
     const storeInstance = {
       isDebugPopupVisible,
       debugPopupPosition,
+      debugPopupDimensions,
       debugButtonPosition,
       activeDebugTab,
       debugOptions,
+      isStoreInitialized,
       toggleDebugPopup,
       updateDebugOption,
       resetDebugOptions,
+      resetDebugPopupDimensions,
       updateDebugPopupPosition,
+      updateDebugPopupDimensions,
       updateDebugButtonPosition,
       updateActiveDebugTab,
+      showDebugStatus,
+      forceRefresh,
     };
 
-    // Initialize debugConfig with store values on creation
-    // This ensures debugConfig reflects the store's state (including persisted values)
-    syncDebugConfig(debugOptions.value);
+    // Store is now fully initialized with persisted values
 
     // Make store globally accessible for console debugging
     try {

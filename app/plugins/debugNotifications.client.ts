@@ -4,8 +4,36 @@
 export default defineNuxtPlugin(() => {
   // Only run on client side
   if (process.server) return;
+
+  // Check if debug logging is enabled before proceeding
+  const isDebugEnabled = () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const globalObj = (window as any);
+      if (globalObj.__QZIP_DEBUG_GET) {
+        const config = globalObj.__QZIP_DEBUG_GET();
+        // Only run if any debug logging is enabled
+        return Object.entries(config).some(([key, value]) =>
+          (key.startsWith('log') || key === 'decorumMessages') && value === true
+        );
+      }
+    } catch (e) {
+      // If we can't check debug state, don't run
+    }
+    return false;
+  };
+
+  // Only proceed if debug logging is enabled
+  if (!isDebugEnabled()) {
+    return;
+  }
   // Function to debug the notification element
   const debugNotificationElement = () => {
+    // Only proceed if debug logging is enabled
+    if (!isDebugEnabled()) {
+      return;
+    }
+
     // Find the element with aria-label="Notifications (F8)"
     const notificationElement = document.querySelector('[aria-label="Notifications (F8)"]');
     if (notificationElement) {
@@ -38,14 +66,18 @@ export default defineNuxtPlugin(() => {
         if (node.nodeType === Node.ELEMENT_NODE) {
           const element = node as Element;
           if (element.getAttribute('aria-label') === 'Notifications (F8)') {
-            console.log('Notification element added dynamically:', element);
-            console.trace('Stack trace when element was added:');
+            if (isDebugEnabled()) {
+              console.log('Notification element added dynamically:', element);
+              console.trace('Stack trace when element was added:');
+            }
           }
           // Also check children
           const childNotification = element.querySelector('[aria-label="Notifications (F8)"]');
           if (childNotification) {
-            console.log('Notification element found in added node:', childNotification);
-            console.trace('Stack trace when parent was added:');
+            if (isDebugEnabled()) {
+              console.log('Notification element found in added node:', childNotification);
+              console.trace('Stack trace when parent was added:');
+            }
           }
         }
       });

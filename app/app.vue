@@ -7,8 +7,8 @@
     <TitleBar />
     <ModalContainer />
     <NotificationContainer />
-    <DebugPopup />
-    <DebugButton />
+      <DebugPopup />
+  <DebugButton />
     <Transition name="layout-fade" mode="out-in">
       <!--
         Wrap NuxtLayout in a div with a key to ensure a single root element
@@ -54,10 +54,10 @@ const handleGlobalKeyDown = (event: KeyboardEvent): void => {
   }
   
   // Debug popup keyboard shortcut: Ctrl + Alt + Shift + B (for "Bug")
-  if (event.ctrlKey && event.altKey && event.shiftKey && event.key.toLowerCase() === "b") {
-    event.preventDefault();
-    debugStore.toggleDebugPopup();
-  }
+  // if (event.ctrlKey && event.altKey && event.shiftKey && event.key.toLowerCase() === "b") {
+  //   event.preventDefault();
+  //   debugStore.toggleDebugPopup();
+  // }
   
   // Global refresh shortcuts
   if (event.ctrlKey || event.metaKey) {

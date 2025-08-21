@@ -34,6 +34,7 @@
 // @preserve
 import { defineStore } from "pinia";
 import { computed, ref, type Ref } from "vue";
+import { DEBUG, debugConfig } from "@/utils/debugConfig";
 export type Theme = "light" | "dark" | "system";
 export const useThemeStore = defineStore(
   "theme",
@@ -50,7 +51,9 @@ export const useThemeStore = defineStore(
     });
     // Actions
     function setTheme(newTheme: Theme): void {
-      console.log(`[themeStore] Setting theme to: ${newTheme}`);
+      if (DEBUG && debugConfig.logUIEvents) {
+        console.log(`[themeStore] Setting theme to: ${newTheme}`);
+      }
       theme.value = newTheme;
     }
     function resetTheme(): void {
