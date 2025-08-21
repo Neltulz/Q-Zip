@@ -1,8 +1,8 @@
 /* Debug popup container - <div class="debug-popup"> */
 .debug-popup {
   backdrop-filter: blur(16px);
-  background: var(--bg-primary); /* --bg-primary defined in styles.css */
-  border: 2px solid var(--border-color); /* --border-color defined in styles.css */
+  background: var(--bg-primary); /* --bg-primary defined in global.css */
+  border: 2px solid var(--border-color); /* --border-color defined in global.css */
   border-radius: 12px;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
   display: grid;
@@ -24,8 +24,8 @@
 /* Debug popup header - <div class="debug-popup-header"> */
 .debug-popup-header {
   align-items: center;
-  background: var(--bg-secondary); /* --bg-secondary defined in styles.css */
-  border-block-end: 1px solid var(--border-color); /* --border-color defined in styles.css */
+  background: var(--bg-secondary); /* --bg-secondary defined in global.css */
+  border-block-end: 1px solid var(--border-color); /* --border-color defined in global.css */
   display: flex;
   justify-content: space-between;
   padding-block: 4px; /* Logical property for vertical padding */
@@ -37,7 +37,7 @@
 /* Debug popup title - <h3 class="debug-popup-title"> */
 .debug-popup-title {
   align-items: center;
-  color: var(--text-primary); /* --text-primary defined in styles.css */
+  color: var(--text-primary); /* --text-primary defined in global.css */
   display: flex;
   font-size: 14px;
   font-weight: 600;
@@ -47,16 +47,16 @@
 
 /* Debug icon - <Icon name="mdi:bug" class="debug-icon"> */
 .debug-icon {
-  color: var(--accent-color); /* --accent-color defined in styles.css */
+  color: var(--accent-color); /* --accent-color defined in global.css */
 }
 
 /* Close button - <CustomButton class="close-button"> */
 .close-button {
   flex-grow: 0;
   flex-shrink: 0;
-  height: var(--min-tch-tgt); /* --min-tch-tgt defined in styles.css */
-  min-width: var(--min-tch-tgt); /* --min-tch-tgt defined in styles.css */
-  width: var(--min-tch-tgt); /* --min-tch-tgt defined in styles.css */
+  height: var(--min-tch-tgt); /* --min-tch-tgt defined in global.css */
+  min-width: var(--min-tch-tgt); /* --min-tch-tgt defined in global.css */
+  width: var(--min-tch-tgt); /* --min-tch-tgt defined in global.css */
 }
 
 /* Debug popup content - <div class="debug-popup-content"> */
@@ -79,7 +79,7 @@
 
 /* Debug tab navigation - <div class="debug-tab-nav"> */
 .debug-tab-nav {
-  border-inline-end: 1px solid var(--border-color); /* --border-color defined in styles.css */
+  border-inline-end: 1px solid var(--border-color); /* --border-color defined in global.css */
   display: flex;
   flex-direction: column;
   margin-inline-end: 12px; /* Logical property for right margin */
@@ -92,7 +92,7 @@
   background: transparent;
   border: none;
   border-inline-end: 2px solid transparent; /* Logical property for right border */
-  color: var(--text-secondary); /* --text-secondary defined in styles.css */
+  color: var(--text-secondary); /* --text-secondary defined in global.css */
   cursor: pointer;
   display: flex;
   font-size: 13px;
@@ -107,15 +107,15 @@
 
 /* Debug tab button hover state */
 .debug-tab-button:hover {
-  background: var(--bg-secondary); /* --bg-secondary defined in styles.css */
-  color: var(--text-primary); /* --text-primary defined in styles.css */
+  background: var(--bg-secondary); /* --bg-secondary defined in global.css */
+  color: var(--text-primary); /* --text-primary defined in global.css */
 }
 
 /* Debug tab button active state */
 .debug-tab-button.active {
-  background: var(--bg-secondary); /* --bg-secondary defined in styles.css */
-  border-inline-end-color: var(--accent-color); /* --accent-color defined in styles.css */
-  color: var(--accent-color); /* --accent-color defined in styles.css */
+  background: var(--bg-secondary); /* --bg-secondary defined in global.css */
+  border-inline-end-color: var(--accent-color); /* --accent-color defined in global.css */
+  color: var(--accent-color); /* --accent-color defined in global.css */
 }
 
 /* Debug tab icon - <Icon class="debug-tab-icon"> */
@@ -144,7 +144,7 @@
 
 /* Debug tab panel - <div class="debug-tab-panel"> */
 .debug-tab-panel {
-  padding: 0;
+  padding: 0 16px 0 0; /* Add right padding to prevent overlap with scrollbar */
 }
 
 /* Debug logging controls - <div class="debug-logging-controls"> */
@@ -153,19 +153,19 @@
   gap: 8px;
   margin-block-end: 16px; /* Logical property for bottom margin */
   padding-block-end: 12px; /* Logical property for bottom padding */
-  border-block-end: 1px solid var(--border-color); /* --border-color defined in styles.css */
+  border-block-end: 1px solid var(--border-color); /* --border-color defined in global.css */
 }
 
 /* Debug section container - <div class="debug-section"> */
 .debug-section {
   margin-block-end: 20px; /* Logical property for bottom margin */
   padding-block-end: 16px; /* Logical property for bottom padding */
-  border-block-end: 1px solid var(--border-color); /* --border-color defined in styles.css */
+  border-block-end: 1px solid var(--border-color); /* --border-color defined in global.css */
 }
 
 /* Debug section title - <h4 class="debug-section-title"> */
 .debug-section-title {
-  color: var(--accent-color); /* --accent-color defined in styles.css */
+  color: var(--accent-color); /* --accent-color defined in global.css */
   font-size: 13px;
   font-weight: 600;
   margin-block-end: 12px; /* Logical property for bottom margin */
@@ -179,12 +179,44 @@
   margin-block-end: 8px; /* Logical property for bottom margin */
 }
 
+/* Debug option content wrapper - <div class="debug-option-content"> */
+.debug-option-content {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start; /* Change from space-between to flex-start */
+  width: 100%;
+}
+
+/* Debug info icon wrapper - <div class="debug-info-icon-wrapper"> */
+.debug-info-icon-wrapper {
+  align-items: center;
+  color: var(--text-secondary); /* --text-secondary defined in global.css */
+  cursor: help;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+/* Debug info icon wrapper hover state */
+.debug-info-icon-wrapper:hover {
+  color: var(--accent-color); /* --accent-color defined in global.css */
+  opacity: 1;
+}
+
+/* Debug info icon - <Icon class="debug-info-icon"> */
+.debug-info-icon {
+  font-size: 16px;
+}
+
 /* Custom styling for USwitch components in debug popup */
 .debug-option :deep(.u-switch) {
   justify-content: space-between;
   width: 100%;
   align-items: center;
-  /* Override specific styles.css button properties that interfere */
+  /* Override specific global.css button properties that interfere */
   min-height: auto !important;
   min-width: auto !important;
   outline: none !important;
@@ -205,7 +237,7 @@
 
 /* Debug divider - <hr class="debug-divider"> */
 .debug-divider {
-  background: var(--border-color); /* --border-color defined in styles.css */
+  background: var(--border-color); /* --border-color defined in global.css */
   border: none;
   height: 1px;
   margin-block: 4px; /* Logical property for vertical margin */

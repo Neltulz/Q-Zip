@@ -1,28 +1,32 @@
 /* Debug button container - <div class="debug-button"> */
 .debug-button {
   align-items: center;
-  background: var(--bg-primary); /* --bg-primary defined in styles.css */
-  border: 2px solid var(--border-color); /* --border-color defined in styles.css */
+  background: transparent; /* Transparent background like Nuxt button */
+  border: 2px solid var(--brdr-clr-lite); /* Light grey border like Nuxt button */
   border-block-end: 0;
   border-radius: 50% 50% 0 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow like Nuxt button */
   display: flex;
-  height: var(--min-tch-tgt); /* --min-tch-tgt defined in styles.css */
+  height: var(--min-tch-tgt); /* --min-tch-tgt defined in global.css */
   inset-block-end: 0; /* Logical property for bottom */
   inset-inline-start: 20px; /* Logical property for left */
   justify-content: center;
   position: fixed;
   transition: all 0.2s ease;
   user-select: none;
-  width: var(--min-tch-tgt); /* --min-tch-tgt defined in styles.css */
+  width: var(--min-tch-tgt); /* --min-tch-tgt defined in global.css */
   z-index: 9998;
 
   /* Debug button hover state */
   &:hover {
-    background: var(--bg-secondary); /* --bg-secondary defined in styles.css */
-    border-color: var(--accent-color); /* --accent-color defined in styles.css */
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-    transform: scale(1.05);
+    background: transparent; /* Keep transparent background */
+    border-color: var(--accent-color); /* Blue border on hover */
+    border-radius: 50%; /* Full circle on hover - all corners rounded */
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.15),
+      0 0 20px rgba(0, 123, 255, 0.4); /* Blue glow effect */
+    cursor: pointer; /* Finger cursor on hover */
+    transform: scale(1.05) translateY(-8px); /* Scale up and move up 8px */
   }
 
   /* Debug button active/dragging state */
@@ -32,7 +36,7 @@
 
   /* Debug button icon - <Icon name="mdi:bug" class="debug-button-icon"> */
   .debug-button-icon {
-    color: var(--accent-color); /* --accent-color defined in styles.css */
+    color: var(--txt-clr-dark); /* Light grey icon color like Nuxt button */
     font-size: 24px;
     pointer-events: none; /* Don't block underlying controls */
   }

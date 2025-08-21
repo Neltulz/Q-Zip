@@ -3,6 +3,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed, type Ref } from 'vue'; // Import ref and computed for Composition API style
 import type { FileItem } from '@/types/types'; // Assuming you have a FileItem type in src/types/types.ts
+import { logStoreAction } from '~/utils/loggers';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface ClipboardState {
   clipboard: FileItem[];
@@ -21,7 +22,7 @@ export const useClipboardStore = defineStore('clipboard', () => {
    * @param jobId The ID of the job from which the files are copied.
    */
   function copy(files: FileItem[], jobId: number) {
-    console.log(`[clipboardStore] Copying ${files.length} files from job ${jobId}. Files:`, files.map(f => f.name)); // Added log
+    logStoreAction('clipboardStore', `Copying ${files.length} files from job ${jobId}`, files.map(f => f.name));
     clipboard.value = [...files];
     isCut.value = false;
     sourceJobId.value = jobId;
@@ -32,7 +33,7 @@ export const useClipboardStore = defineStore('clipboard', () => {
    * @param jobId The ID of the job from which the files are cut.
    */
   function cut(files: FileItem[], jobId: number) {
-    console.log(`[clipboardStore] Cutting ${files.length} files from job ${jobId}. Files:`, files.map(f => f.name)); // Added log
+    logStoreAction('clipboardStore', `Cutting ${files.length} files from job ${jobId}`, files.map(f => f.name));
     clipboard.value = [...files];
     isCut.value = true;
     sourceJobId.value = jobId;
@@ -41,7 +42,7 @@ export const useClipboardStore = defineStore('clipboard', () => {
    * Clears the clipboard.
    */
   function clear() {
-    console.log(`[clipboardStore] Clearing clipboard.`); // Added log
+    logStoreAction('clipboardStore', 'Clearing clipboard');
     clipboard.value = [];
     isCut.value = false;
     sourceJobId.value = null;

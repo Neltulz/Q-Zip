@@ -146,8 +146,8 @@ export const logFailsafe = (callerName: string, message: string, data?: unknown)
 // --- Logger for Tracing Events ---
 const traceStyle: string = `${baseStyle} background-color: #f44336;`; // Red
 export const logTrace = (callerName: string, message: string): void => {
-  // Always log traces if the master DEBUG switch is on.
-  if (DEBUG) {
+  // Log traces if the trace events debug option is enabled
+  if (DEBUG && debugConfig.logTraceEvents) {
     console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, traceStyle);
     console.trace("Trace"); // Add a stack trace for detailed debugging
   }

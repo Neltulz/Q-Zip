@@ -213,14 +213,8 @@ const selectedJobHandler = (ev: Event) => {
     const e = ev as CustomEvent<{ oldId: number | null; newId: number }>;
     const { oldId, newId } = e.detail;
     // Log incoming selected-job-changed event
-    try {
-      const { logGlobalEvent } = require("@/utils/loggers");
+    if (DEBUG && debugConfig.logUIEvents) {
       logGlobalEvent("JobArea", `selected-job-changed received`, { oldId, newId, activeJobId: activeJob.value?.id });
-    } catch (e) {
-      // fallback logging
-      if (DEBUG && debugConfig.logUIEvents) {
-        logGlobalEvent("JobArea", "selectedJobHandler", { oldId, newId, activeJobId: activeJob.value?.id });
-      }
     }
     // If this component was the previously selected job, deactivate its table
     if (activeJob.value && oldId !== null && activeJob.value.id === oldId) {
@@ -387,15 +381,11 @@ const showJobContextMenu = (event: MouseEvent) => {
 const handleKeyDown = (event: KeyboardEvent) => {
   if (!activeJob.value || !fileTableRef.value) return;
   const isShortcutKey = (event.ctrlKey || event.metaKey) && ["a", "c", "x", "v"].includes(event.key);
-  if (isShortcutKey || event.key === "Delete") {
+  if (isShortcutKey) {
     event.preventDefault();
   }
   if ((event.ctrlKey || event.metaKey) && event.key === "a") {
     fileTableRef.value.toggleAll();
-  } else if (event.key === "Delete") {
-    if (selectedFilePaths.value.length > 0) {
-      confirmRemoveFiles(selectedFilePaths.value);
-    }
   } else if ((event.ctrlKey || event.metaKey) && event.key === "c") {
     if (selectedFilePaths.value.length > 0) {
       const filesToCopy: FileItem[] = selectedFilePaths.value
@@ -452,6 +442,13 @@ const getFileNamesFromPaths = (paths: string[], sourceJobId: number | null): str
   return paths.map((path: string) => allFiles.find((file) => file.path === path)?.name).filter(Boolean) as string[];
 };
 const confirmRemoveFiles = (paths: string | string[]) => {
+  // Add debugging to track duplicate calls
+  logStoreAction("JobArea", "confirmRemoveFiles called", { 
+    pathsCount: Array.isArray(paths) ? paths.length : 1,
+    paths: Array.isArray(paths) ? paths : [paths],
+    stackTrace: new Error().stack
+  });
+
   const pathsToRemove: string[] = getPathsForAction(paths);
   const itemsToProcess: FileItem[] = getFileItemsFromPaths(pathsToRemove, activeJob.value?.id ?? null);
   const modalOptions: ModalOptions = {
@@ -490,8 +487,7 @@ const openOperationConfirmModal = (
   sourceJobId: number | null
 ) => {
   // Add logging to debug the issue
-  try {
-    const { logStoreAction } = require("@/utils/loggers");
+  if (DEBUG && debugConfig.logStoreActions) {
     logStoreAction("JobArea", "openOperationConfirmModal called", { 
       operation,
       filesCount: files.length,
@@ -500,16 +496,6 @@ const openOperationConfirmModal = (
       sourceJobId,
       sourceJobIdType: typeof sourceJobId
     });
-  } catch (e) {
-    if (DEBUG && debugConfig.logStoreActions) {
-      logStoreAction("JobArea", "openOperationConfirmModal", { 
-        operation,
-        filesCount: files.length,
-        targetJobId, 
-        targetJobIdType: typeof targetJobId,
-        sourceJobId 
-      });
-    }
   }
   const targetJob = jobsStore.jobs.find((j) => j.id === targetJobId);
   let itemsToProcess: FileItem[] = [];
@@ -529,22 +515,13 @@ const openOperationConfirmModal = (
   const opString = operation === "move" ? "Move" : "Copy";
   const targetName = targetJobId === "new-job" ? "a new job" : `Job ${targetJobId}`;
   // Add logging for the targetName construction
-  try {
-    const { logStoreAction } = require("@/utils/loggers");
+  if (DEBUG && debugConfig.logStoreActions) {
     logStoreAction("JobArea", "targetName constructed", { 
       targetJobId, 
       targetJobIdType: typeof targetJobId,
       targetName,
       targetNameType: typeof targetName
     });
-  } catch (e) {
-    if (DEBUG && debugConfig.logStoreActions) {
-      logStoreAction("JobArea", "targetName", { 
-        targetJobId, 
-        targetJobIdType: typeof targetJobId,
-        targetName 
-      });
-    }
   }
   const modalOptions: ModalOptions = {
     icon: operation === "move" ? "mdi:arrow-right" : "mdi:content-copy",
@@ -593,8 +570,7 @@ const openOperationConfirmModal = (
 const confirmMoveFiles = (payload: FileOperationPayload | ContextMenuFileOperationPayload): void => {
   const { targetJobId } = payload;
   // Add logging to debug the issue
-  try {
-    const { logStoreAction } = require("@/utils/loggers");
+  if (DEBUG && debugConfig.logStoreActions) {
     logStoreAction("JobArea", "confirmMoveFiles received payload", { 
       payload,
       targetJobId, 
@@ -602,14 +578,6 @@ const confirmMoveFiles = (payload: FileOperationPayload | ContextMenuFileOperati
       hasFiles: "files" in payload,
       hasRightClickedPath: "rightClickedPath" in payload
     });
-  } catch (e) {
-    if (DEBUG && debugConfig.logStoreActions) {
-      logStoreAction("JobArea", "confirmMoveFiles", { 
-        payload,
-        targetJobId, 
-        targetJobIdType: typeof targetJobId 
-      });
-    }
   }
   let pathsToMove = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath || "");
   // If only one path was passed but the user currently has a multi-selection that includes
@@ -632,8 +600,7 @@ const confirmMoveToNewJob = (paths: string | string[]): void => {
 const confirmCopyFiles = (payload: FileOperationPayload | ContextMenuFileOperationPayload): void => {
   const { targetJobId } = payload;
   // Add logging to debug the issue
-  try {
-    const { logStoreAction } = require("@/utils/loggers");
+  if (DEBUG && debugConfig.logStoreActions) {
     logStoreAction("JobArea", "confirmCopyFiles received payload", { 
       payload,
       targetJobId, 
@@ -641,14 +608,6 @@ const confirmCopyFiles = (payload: FileOperationPayload | ContextMenuFileOperati
       hasFiles: "files" in payload,
       hasRightClickedPath: "rightClickedPath" in payload
     });
-  } catch (e) {
-    if (DEBUG && debugConfig.logStoreActions) {
-      logStoreAction("JobArea", "confirmCopyFiles", { 
-        payload,
-        targetJobId, 
-        targetJobIdType: typeof targetJobId 
-      });
-    }
   }
   let pathsToCopy = "files" in payload ? payload.files : getPathsForAction(payload.rightClickedPath || "");
   if (pathsToCopy.length === 1 && selectedFilePaths.value.length > 1 && pathsToCopy[0] && selectedFilePaths.value.includes(pathsToCopy[0])) {

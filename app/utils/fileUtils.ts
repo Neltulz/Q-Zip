@@ -12,6 +12,7 @@
 import { stat, readDir } from "@tauri-apps/plugin-fs";
 import { basename, dirname, join } from "@tauri-apps/api/path";
 import type { FileItem } from "@/types/types";
+import { logTrace } from '~/utils/loggers';
 // Global cancellation and pause flags - will be set by the jobsStore
 let isCancelled = false;
 let isPaused = false;
@@ -59,7 +60,7 @@ async function getDirectoryContents(path: string, depth: number = 0): Promise<{
         while (isPaused && !isCancelled) {
           // Only log the first pause detection to avoid flooding
           if (!pauseLogged) {
-            console.log(`[fileUtils] PAUSE DETECTED in getDirectoryContents - Waiting for resume at ${performance.now().toFixed(2)}ms (item ${i}/${entries.length}, depth ${depth})`);
+            logTrace('fileUtils', `PAUSE DETECTED in getDirectoryContents - Waiting for resume at ${performance.now().toFixed(2)}ms (item ${i}/${entries.length}, depth ${depth})`);
             pauseLogged = true;
           }
           await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before checking again
@@ -80,10 +81,19 @@ async function getDirectoryContents(path: string, depth: number = 0): Promise<{
           progressCallback(i + 1, entries.length, `Scanning folder: ${entry.name}`);
         }
         // Recursively get contents of the subdirectory.
-        const subDirContents = await getDirectoryContents(entryPath, depth + 1);
-        recursiveFiles += subDirContents.filesTotal;
-        recursiveFolders += subDirContents.foldersTotal;
-        recursiveSize += subDirContents.totalSize;
+        try {
+          const subDirContents = await getDirectoryContents(entryPath, depth + 1);
+          recursiveFiles += subDirContents.filesTotal;
+          recursiveFolders += subDirContents.foldersTotal;
+          recursiveSize += subDirContents.totalSize;
+        } catch (subDirError) {
+          // Handle subdirectory access errors gracefully
+          if (subDirError instanceof Error && subDirError.message === "Operation cancelled") {
+            throw subDirError; // Re-throw cancellation errors
+          }
+          console.warn(`[fileUtils] Skipping subdirectory ${entryPath} due to access error:`, subDirError);
+          // Continue processing other entries
+        }
       } else {
         topLevelFiles++;
         recursiveFiles++;
@@ -92,16 +102,43 @@ async function getDirectoryContents(path: string, depth: number = 0): Promise<{
           progressCallback(i + 1, entries.length, `Scanning file: ${entry.name}`);
         }
         // For files, get their stats to add to the total size.
-        const fileStat = await stat(entryPath);
-        recursiveSize += fileStat.size;
+        try {
+          const fileStat = await stat(entryPath);
+          recursiveSize += fileStat.size;
+        } catch (fileError) {
+          // Handle individual file access errors gracefully
+          if (fileError instanceof Error && fileError.message === "Operation cancelled") {
+            throw fileError; // Re-throw cancellation errors
+          }
+          console.warn(`[fileUtils] Skipping file ${entryPath} due to access error:`, fileError);
+          // Continue processing other entries
+        }
       }
     }
   } catch (error) {
     if (error instanceof Error && error.message === "Operation cancelled") {
       throw error; // Re-throw cancellation errors
     }
+
+    // Handle different types of file access errors more gracefully
+    let errorMessage = "Unknown error";
+    let isPermissionError = false;
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      // Check for common permission-related error patterns
+      isPermissionError = errorMessage.includes("forbidden") ||
+        errorMessage.includes("permission") ||
+        errorMessage.includes("access denied") ||
+        errorMessage.includes("denied");
+    }
+
     // Log errors but allow the function to return what it has gathered so far.
-    console.error(`[fileUtils] Could not read directory ${path}:`, error);
+    if (isPermissionError) {
+      console.warn(`[fileUtils] Permission denied accessing directory ${path}: ${errorMessage}`);
+    } else {
+      console.error(`[fileUtils] Could not read directory ${path}:`, error);
+    }
   }
   return {
     files: topLevelFiles,
@@ -167,7 +204,25 @@ export async function getFileDetails(path: string): Promise<FileItem | null> {
     if (error instanceof Error && error.message === "Operation cancelled") {
       throw error; // Re-throw cancellation errors
     }
-    console.error(`[fileUtils] Error getting details for ${path}:`, error);
+
+    // Handle different types of file access errors more gracefully
+    let errorMessage = "Unknown error";
+    let isPermissionError = false;
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      // Check for common permission-related error patterns
+      isPermissionError = errorMessage.includes("forbidden") ||
+        errorMessage.includes("permission") ||
+        errorMessage.includes("access denied") ||
+        errorMessage.includes("denied");
+    }
+
+    if (isPermissionError) {
+      console.warn(`[fileUtils] Permission denied getting details for ${path}: ${errorMessage}`);
+    } else {
+      console.error(`[fileUtils] Error getting details for ${path}:`, error);
+    }
     return null;
   }
 }

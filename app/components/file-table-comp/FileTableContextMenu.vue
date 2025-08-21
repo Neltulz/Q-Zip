@@ -219,6 +219,7 @@ import DropdownMenu from "../DropdownMenu.vue";
 import CustomButton from "../CustomButton.vue";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
+import { logStoreAction } from "@/utils/loggers";
 const props = defineProps<{
   file: FileItem;
   jobId: number;
@@ -287,23 +288,13 @@ const moveFileFromContext = (targetJobId: number, pathOrPaths: string | string[]
     ? props.selectedFiles
     : [pathOrPaths];
   // Add logging to debug the issue
-  try {
-    const { logStoreAction } = require("@/utils/loggers");
-    logStoreAction("FileTableContextMenu", "moveFileFromContext called", { 
-      targetJobId, 
-      targetJobIdType: typeof targetJobId,
-      pathOrPaths, 
-      paths,
-      selectedFiles: props.selectedFiles 
-    });
-  } catch (e) {
-    console.log("FileTableContextMenu.moveFileFromContext", { 
-      targetJobId, 
-      targetJobIdType: typeof targetJobId,
-      pathOrPaths, 
-      paths 
-    });
-  }
+  logStoreAction("FileTableContextMenu", "moveFileFromContext called", { 
+    targetJobId, 
+    targetJobIdType: typeof targetJobId,
+    pathOrPaths, 
+    paths,
+    selectedFiles: props.selectedFiles 
+  });
   emit("move-files", { targetJobId, rightClickedPath: pathOrPaths });
 };
 const moveFileToNewJobFromContext = (pathOrPaths: string | string[]): void => {
@@ -321,23 +312,13 @@ const copyFileFromContext = (targetJobId: number, pathOrPaths: string | string[]
     ? props.selectedFiles
     : [pathOrPaths];
   // Add logging to debug the issue
-  try {
-    const { logStoreAction } = require("@/utils/loggers");
-    logStoreAction("FileTableContextMenu", "copyFileFromContext called", { 
-      targetJobId, 
-      targetJobIdType: typeof targetJobId,
-      pathOrPaths, 
-      paths,
-      selectedFiles: props.selectedFiles 
-    });
-  } catch (e) {
-    console.log("FileTableContextMenu.copyFileFromContext", { 
-      targetJobId, 
-      targetJobIdType: typeof targetJobId,
-      pathOrPaths, 
-      paths 
-    });
-  }
+  logStoreAction("FileTableContextMenu", "copyFileFromContext called", { 
+    targetJobId, 
+    targetJobIdType: typeof targetJobId,
+    pathOrPaths, 
+    paths,
+    selectedFiles: props.selectedFiles 
+  });
   emit("copy-files", { targetJobId, rightClickedPath: pathOrPaths });
 };
 const copyFileToNewJobFromContext = (pathOrPaths: string | string[]): void => {

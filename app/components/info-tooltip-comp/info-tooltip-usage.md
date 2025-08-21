@@ -42,6 +42,7 @@ const handleButtonMouseLeave = () => {
 - **For CustomButton components:** Use `buttonRef?.visualStyleRef`
 - **For DropdownMenu components:** Use `dropdownRef?.$el`
 - **For regular HTML elements:** Use the element directly
+- **For Icon components:** Wrap in a div container and reference the wrapper (see Icon Components section)
 
 #### 6. Add InfoTooltip Component
 ```vue
@@ -522,4 +523,91 @@ const handleDropdownClosed = () => {
 ### Reference Implementation
 For a complete working example with comprehensive orphaned tooltip management, see:
 - **FileTableLoadingOverlay.vue** - Full implementation with dropdown monitoring, tooltip state reset, and DOM validation
+
+## Icon Components and Special Cases
+
+### Icon Component Target Resolution
+**Problem:** Nuxt Icon components (`<Icon>`) return Vue component proxies instead of DOM elements, causing InfoTooltip target resolution to fail.
+
+**Solution:** Wrap Icon components in a div container and reference the wrapper:
+
+```vue
+<template>
+  <!-- ❌ WRONG - Don't reference Icon components directly -->
+  <Icon
+    ref="iconRef"
+    name="mdi:information-outline"
+    @mouseenter="handleIconMouseEnter"
+    @mouseleave="handleIconMouseLeave"
+  />
+  
+  <!-- ✅ CORRECT - Wrap Icon in div container -->
+  <div
+    ref="iconWrapperRef"
+    class="icon-wrapper"
+    @mouseenter="handleIconMouseEnter"
+    @mouseleave="handleIconMouseLeave"
+  >
+    <Icon
+      name="mdi:information-outline"
+      class="info-icon"
+    />
+  </div>
+  
+  <!-- Use the wrapper as the target -->
+  <InfoTooltip
+    :visible="tooltipManager.activeTooltipId.value === 'icon-tooltip'"
+    :content="{ text: 'Icon tooltip text' }"
+    :target="iconWrapperRef"
+    placement="right"
+  />
+</template>
+```
+
+### Tooltips in Scrollable Containers
+**Problem:** Placing InfoTooltip components inside OverlayScrollbarsComponent or other scrollable containers causes positioning issues due to coordinate system conflicts.
+
+**Solution:** Always place InfoTooltip components **outside** the scrollable container:
+
+```vue
+<template>
+  <div class="container">
+    <!-- Scrollable content area -->
+    <OverlayScrollbarsComponent class="scrollable-area">
+      <div class="content">
+        <!-- Target elements go here -->
+        <div
+          ref="targetElementRef"
+          @mouseenter="handleMouseEnter"
+          @mouseleave="handleMouseLeave"
+        >
+          Content with tooltip
+        </div>
+      </div>
+    </OverlayScrollbarsComponent>
+    
+    <!-- ✅ CORRECT - Tooltips placed OUTSIDE scrollable container -->
+    <InfoTooltip
+      :visible="tooltipManager.activeTooltipId.value === 'target-tooltip'"
+      :content="{ text: 'Tooltip text' }"
+      :target="targetElementRef"
+      placement="right"
+    />
+  </div>
+</template>
+```
+
+**Why this works:** Tooltips use `teleport to="body"` internally, but the positioning calculation needs the target element to be in the global coordinate system, not affected by scroll container transforms.
+
+### Preventing Scrollbar Overlap
+When using tooltips near scrollbars, add appropriate padding to prevent content from overlapping:
+
+```css
+/* Add padding to prevent tooltip targets from appearing beneath scrollbars */
+.scrollable-content {
+  padding-right: 16px; /* Adjust based on scrollbar width */
+}
+```
+
+**Example Implementation:** See `DebugPopup.vue` for a complete example of Icon component tooltips in a scrollable container with proper positioning.
 

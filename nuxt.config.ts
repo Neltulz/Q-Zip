@@ -30,7 +30,7 @@ export default defineNuxtConfig({
   // Disable Nuxt's default page system as custom routing is handled in default.vue
   pages: false,
   css: [
-    '~/assets/css/styles.css',
+    '~/assets/css/global.css',
     'overlayscrollbars/styles/overlayscrollbars.css',
     '~/assets/css/overlay-scrollbar.css',
   ],

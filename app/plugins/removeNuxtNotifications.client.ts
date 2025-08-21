@@ -2,24 +2,32 @@
 // 
 // This plugin removes Nuxt UI's notification container from the DOM
 // since we have our own custom notification system
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin(async () => {
   // Only run on client side
   if (process.server) return;
+
+  // Import debug utilities
+  const { DEBUG, debugConfig } = await import('~/utils/debugConfig');
+
   // Function to remove the notification element
   const removeNotificationElement = () => {
     // Find the element with aria-label="Notifications (F8)"
     const notificationElement = document.querySelector('[aria-label="Notifications (F8)"]');
     if (notificationElement) {
       notificationElement.remove();
-      console.log('Removed Nuxt UI notification element from DOM');
+      if (DEBUG && debugConfig.logNotifications) {
+        console.log('Removed Nuxt UI notification element from DOM');
+      }
     }
   };
+
   // Remove immediately if DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', removeNotificationElement);
   } else {
     removeNotificationElement();
   }
+
   // Also watch for dynamic additions (in case it gets added later)
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -28,23 +36,29 @@ export default defineNuxtPlugin(() => {
           const element = node as Element;
           if (element.getAttribute('aria-label') === 'Notifications (F8)') {
             element.remove();
-            console.log('Removed dynamically added Nuxt UI notification element');
+            if (DEBUG && debugConfig.logNotifications) {
+              console.log('Removed dynamically added Nuxt UI notification element');
+            }
           }
           // Also check children
           const childNotification = element.querySelector('[aria-label="Notifications (F8)"]');
           if (childNotification) {
             childNotification.remove();
-            console.log('Removed Nuxt UI notification element from added node');
+            if (DEBUG && debugConfig.logNotifications) {
+              console.log('Removed Nuxt UI notification element from added node');
+            }
           }
         }
       });
     });
   });
+
   // Start observing
   observer.observe(document.body, {
     childList: true,
     subtree: true,
   });
+
   // Also try to prevent it from being created in the first place
   // by overriding the createElement method temporarily
   const originalCreateElement = document.createElement;
@@ -56,7 +70,9 @@ export default defineNuxtPlugin(() => {
       setTimeout(() => {
         if (element.getAttribute('aria-label') === 'Notifications (F8)') {
           element.remove();
-          console.log('Prevented Nuxt UI notification element from being created');
+          if (DEBUG && debugConfig.logNotifications) {
+            console.log('Prevented Nuxt UI notification element from being created');
+          }
         }
       }, 0);
     }

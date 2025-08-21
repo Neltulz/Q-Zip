@@ -1421,6 +1421,13 @@ const stopDragScroll = () => {
 };
 // --- MISSING FUNCTIONS THAT WERE ACCIDENTALLY REMOVED ---
 const removeSelectedFiles = (): void => {
+  // Add debugging to track when this is called
+  logFocus("FileTable", "removeSelectedFiles called", {
+    jobId: props.jobId,
+    actionItemsCount: actionItems.value.length,
+    actionItems: actionItems.value,
+    stackTrace: new Error().stack
+  });
   emit("remove-files", actionItems.value);
 };
 const moveToJob = (targetJobId: number): void => {
@@ -1724,14 +1731,8 @@ onMounted(() => {
       const root = fileTableCompRef.value as HTMLElement | null;
       if (root) {
         // Log initial classes
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const { logLifecycle } = require("@/utils/loggers");
+        if (DEBUG && debugConfig.logComponentMounts) {
           logLifecycle("FileTable", `root initial classes: ${Array.from(root.classList).join(" ")}`);
-        } catch (e) {
-          if (DEBUG && debugConfig.logComponentMounts) {
-            logLifecycle("FileTable", `root initial classes: ${root.className}`);
-          }
         }
         fileTableClassObserver = new MutationObserver((muts) => {
           for (const m of muts) {
@@ -1841,7 +1842,7 @@ onMounted(() => {
     // This prevents the file table from becoming inactive when context menus close
     if (props.jobId !== jobsStore.selectedJobId) {
       logFocus("FileTable", "outsideHandler: deactivating (not selected job)");
-      isActive.value = false;
+      setActive(false);
     } else {
       logFocus("FileTable", "outsideHandler: keeping active (selected job)");
     }
@@ -1886,29 +1887,32 @@ const setActive = (val: boolean) => {
       logFocus("FileTable", "setActive ignored - activation not allowed");
       return;
     }
+    
+    // Prevent redundant state changes
+    if (isActive.value === !!val) {
+      logFocus("FileTable", `setActive ignored - already ${val ? 'active' : 'inactive'}`, {
+        jobId: props.jobId,
+        currentIsActive: isActive.value,
+        requestedValue: val
+      });
+      return;
+    }
+    
     const prev = isActive.value;
     isActive.value = !!val;
-    logFocus("FileTable", `setActive completed -> ${isActive.value} (was ${prev})`, {
+    logFocus("FileTable", `FileTable ${isActive.value ? 'activated' : 'deactivated'} for job ${props.jobId} (was ${prev ? 'active' : 'inactive'})`, {
       jobId: props.jobId,
       previousValue: prev,
       newValue: isActive.value
     });
     // log lifecycle/state change
-    try {
-      // prefer logLifecycle (component state changes)
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { logLifecycle } = require("@/utils/loggers");
-      logLifecycle("FileTable", `setActive called -> ${isActive.value} (was ${prev})`, {
+    if (DEBUG && debugConfig.logFileTableActivation) {
+      logLifecycle("FileTable", `FileTable ${isActive.value ? 'activated' : 'deactivated'} for job ${props.jobId} (was ${prev ? 'active' : 'inactive'})`, {
         jobId: props.jobId,
       });
-    } catch (e) {
-      // fallback logging
-      if (DEBUG && debugConfig.logComponentMounts) {
-        logLifecycle("FileTable", `setActive: job=${props.jobId} -> ${isActive.value} (was ${prev})`);
-      }
     }
   } catch (err) {
-    logFocus("FileTable", `setActive error: ${err}`, { error: err });
+    logFocus("FileTable", `FileTable activation error for job ${props.jobId}: ${err}`, { error: err });
     // ignore
   }
 };

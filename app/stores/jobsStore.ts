@@ -10,7 +10,7 @@ import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";
 import { getFileDetails, setCancellationFlag, setPauseFlag, setProgressCallback as setFileUtilsProgressCallback } from "@/utils/fileUtils";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
-import { logStoreAction, logDualProgress } from "@/utils/loggers";
+import { logStoreAction, logDualProgress, logTrace } from "@/utils/loggers";
 import type { FileItem } from "@/types/types";
 // Type definitions are now exported to be available across the application.
 export interface CompressionSettings {
@@ -135,14 +135,14 @@ export const useJobsStore = defineStore(
         const newJobId = addJob();
         selectJob(newJobId);
         if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Initialized with first job and selected it.`);
+          logStoreAction('jobsStore', 'Initialized with first job and selected it');
         }
       } else if (!selectedJobId.value || !jobs.value.some(j => j.id === selectedJobId.value)) {
         if (jobs.value[0]) {
           selectJob(jobs.value[0].id);
         }
         if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Selected job was invalid. Defaulting to first job.`);
+          logStoreAction('jobsStore', 'Selected job was invalid. Defaulting to first job');
         }
       }
     }
@@ -154,7 +154,7 @@ export const useJobsStore = defineStore(
         settings: {},
       });
       if (DEBUG && debugConfig.logStoreActions) {
-        console.log(`Added job with ID: ${newId}`);
+        logStoreAction('jobsStore', `Added job with ID: ${newId}`);
       }
       return newId;
     }
@@ -174,28 +174,28 @@ export const useJobsStore = defineStore(
     }
     function pauseCurrentOperation(): void {
       const pauseTime = performance.now();
-      console.log(`[jobsStore] PAUSE OPERATION CALLED at ${pauseTime.toFixed(2)}ms for job ${currentOperationJobId}`);
-      console.log(`[jobsStore] Current state: currentOperationJobId=${currentOperationJobId}, isOperationPaused=${isOperationPaused}`);
+      logTrace('jobsStore', `PAUSE OPERATION CALLED at ${pauseTime.toFixed(2)}ms for job ${currentOperationJobId}`);
+      logTrace('jobsStore', `Current state: currentOperationJobId=${currentOperationJobId}, isOperationPaused=${isOperationPaused}`);
       if (currentOperationJobId !== null) {
         isOperationPaused = true;
         setPauseFlag(true); // Set the flag in fileUtils
-        console.log(`[jobsStore] Pause state set: isOperationPaused=${isOperationPaused}`);
+        logTrace('jobsStore', `Pause state set: isOperationPaused=${isOperationPaused}`);
         logStoreAction("jobsStore", `Pausing current operation for job ${currentOperationJobId} at ${new Date().toISOString()}`);
       } else {
-        console.log(`[jobsStore] WARNING: No current operation to pause (currentOperationJobId is null)`);
+        logTrace('jobsStore', `WARNING: No current operation to pause (currentOperationJobId is null)`);
       }
     }
     function resumeCurrentOperation(): void {
       const resumeTime = performance.now();
-      console.log(`[jobsStore] RESUME OPERATION CALLED at ${resumeTime.toFixed(2)}ms for job ${currentOperationJobId}`);
-      console.log(`[jobsStore] Current state: currentOperationJobId=${currentOperationJobId}, isOperationPaused=${isOperationPaused}`);
+      logTrace('jobsStore', `RESUME OPERATION CALLED at ${resumeTime.toFixed(2)}ms for job ${currentOperationJobId}`);
+      logTrace('jobsStore', `Current state: currentOperationJobId=${currentOperationJobId}, isOperationPaused=${isOperationPaused}`);
       if (currentOperationJobId !== null) {
         isOperationPaused = false;
         setPauseFlag(false); // Clear the flag in fileUtils
-        console.log(`[jobsStore] Resume state set: isOperationPaused=${isOperationPaused}`);
+        logTrace('jobsStore', `Resume state set: isOperationPaused=${isOperationPaused}`);
         logStoreAction("jobsStore", `Resuming current operation for job ${currentOperationJobId} at ${new Date().toISOString()}`);
       } else {
-        console.log(`[jobsStore] WARNING: No current operation to resume (currentOperationJobId is null)`);
+        logTrace('jobsStore', `WARNING: No current operation to resume (currentOperationJobId is null)`);
       }
     }
     function setProgressCallbackInternal(callback: ((current: number, total: number, message: string, overallCurrent?: number, overallTotal?: number, overallMessage?: string) => void) | null): void {
@@ -250,7 +250,7 @@ export const useJobsStore = defineStore(
         if (i % 1 === 0 || i === newPaths.length - 1) {
           // Reduced logging - only log every 100 items or on the last item
           if (i % 100 === 0 || i === newPaths.length - 1) {
-            console.log(`[jobsStore] PAUSE CHECK at item ${i}/${newPaths.length} - isOperationPaused=${isOperationPaused}, currentOperationCancelled=${currentOperationCancelled}`);
+            logTrace('jobsStore', `PAUSE CHECK at item ${i}/${newPaths.length} - isOperationPaused=${isOperationPaused}, currentOperationCancelled=${currentOperationCancelled}`);
           }
           if (currentOperationCancelled) {
             const cancelTime = performance.now();
@@ -284,7 +284,7 @@ export const useJobsStore = defineStore(
           while (isOperationPaused && !currentOperationCancelled) {
             // Only log the first pause detection to avoid flooding
             if (!pauseLogged) {
-              console.log(`[jobsStore] PAUSE DETECTED - Waiting for resume at ${performance.now().toFixed(2)}ms (item ${i}/${newPaths.length})`);
+              logTrace('jobsStore', `PAUSE DETECTED - Waiting for resume at ${performance.now().toFixed(2)}ms (item ${i}/${newPaths.length})`);
               logStoreAction("jobsStore", `PAUSE DETECTED - Waiting for resume at ${performance.now().toFixed(2)}ms (item ${i}/${newPaths.length})`);
               pauseLogged = true;
             }
@@ -404,7 +404,7 @@ export const useJobsStore = defineStore(
           // Use spread operator to ensure reactivity by creating a new array reference
           job.files = [...job.files, ...newFiles];
           if (DEBUG && debugConfig.logStoreActions) {
-            console.log(`Added ${newFiles.length} files from clipboard to job ${jobId}`);
+            logStoreAction('jobsStore', `Added ${newFiles.length} files from clipboard to job ${jobId}`);
           }
         }
       }
@@ -417,7 +417,7 @@ export const useJobsStore = defineStore(
         addJob();
         selectJob(jobs.value[0]?.id ?? null);
         if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Removed all jobs and added a new one`);
+          logStoreAction('jobsStore', 'Removed all jobs and added a new one');
         }
         return;
       }
@@ -443,7 +443,7 @@ export const useJobsStore = defineStore(
           }
         }
         if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Removed jobs: ${idsToRemove}, new selectedJobId: ${selectedJobId.value}`);
+          logStoreAction('jobsStore', `Removed jobs: ${idsToRemove}, new selectedJobId: ${selectedJobId.value}`);
         }
       }
     }
@@ -452,7 +452,7 @@ export const useJobsStore = defineStore(
       addJob();
       selectJob(jobs.value[0]?.id ?? null);
       if (DEBUG && debugConfig.logStoreActions) {
-        console.log(`Removed all jobs and reset to one job`);
+        logStoreAction('jobsStore', 'Removed all jobs and reset to one job');
       }
     }
     function resetJobs(): void {
@@ -460,13 +460,13 @@ export const useJobsStore = defineStore(
       addJob();
       selectJob(jobs.value[0]?.id ?? null);
       if (DEBUG && debugConfig.logStoreActions) {
-        console.log(`Reset jobs store to initial state`);
+        logStoreAction('jobsStore', 'Reset jobs store to initial state');
       }
     }
     function resetGlobalSettings(): void {
       globalSettings.value = { ...defaultGlobalSettings };
       if (DEBUG && debugConfig.logStoreActions) {
-        console.log("Reset global settings to default");
+        logStoreAction('jobsStore', 'Reset global settings to default');
       }
     }
     function removeFilesFromJob(jobId: number, paths: string[]): void {
@@ -475,14 +475,14 @@ export const useJobsStore = defineStore(
         const pathsToRemove = new Set(paths);
         job.files = job.files.filter((file) => !pathsToRemove.has(file.path));
         if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Removed ${paths.length} files from job ${jobId}`);
+          logStoreAction('jobsStore', `Removed ${paths.length} files from job ${jobId}`);
         }
       }
     }
     function selectJob(jobId: number | null): void {
       selectedJobId.value = jobId;
       if (DEBUG && debugConfig.logStoreActions) {
-        console.log(`Selected job ID: ${jobId}`);
+        logStoreAction('jobsStore', `Selected job ID: ${jobId}`);
       }
     }
     function updateGlobalSettings(newSettings: Partial<CompressionSettings>): void {
@@ -504,7 +504,7 @@ export const useJobsStore = defineStore(
         targetJob.files = [...targetJob.files, ...newFilesForTarget];
         sourceJob.files = sourceJob.files.filter((f) => !filePaths.includes(f.path));
         if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Moved ${filesToMove.length} files from job ${sourceJobId} to job ${targetJobId}`);
+          logStoreAction('jobsStore', `Moved ${filesToMove.length} files from job ${sourceJobId} to job ${targetJobId}`);
         }
       }
     }
@@ -517,7 +517,7 @@ export const useJobsStore = defineStore(
         // Use spread operator to ensure reactivity by creating new array references
         targetJob.files = [...targetJob.files, ...newFilesForTarget];
         if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Copied ${filesToCopy.length} files from job ${sourceJobId} to job ${targetJobId}`);
+          logStoreAction('jobsStore', `Copied ${filesToCopy.length} files from job ${sourceJobId} to job ${targetJobId}`);
         }
       }
     }
@@ -533,7 +533,7 @@ export const useJobsStore = defineStore(
         jobs.value.splice(toIndex, 0, jobToMove);
       }
       if (DEBUG && debugConfig.logStoreActions) {
-        console.log(`Moved job from index ${fromIndex} to ${toIndex}`);
+        logStoreAction('jobsStore', `Moved job from index ${fromIndex} to ${toIndex}`);
       }
     }
     function clearJob(jobId: number): void {
@@ -544,7 +544,7 @@ export const useJobsStore = defineStore(
         // Reset job-specific settings to empty object (will inherit from global settings)
         job.settings = {};
         if (DEBUG && debugConfig.logStoreActions) {
-          console.log(`Cleared job ${jobId}: removed all files and reset settings`);
+          logStoreAction('jobsStore', `Cleared job ${jobId}: removed all files and reset settings`);
         }
       }
     }
@@ -558,7 +558,7 @@ export const useJobsStore = defineStore(
       // FIX: Use nullish coalescing operator `??` to ensure type is `number | null`.
       selectJob(newJobIds[0] ?? null);
       if (DEBUG && debugConfig.logStoreActions) {
-        console.log(`Created ${newJobIds.length} new jobs from paths.`);
+        logStoreAction('jobsStore', `Created ${newJobIds.length} new jobs from paths`);
       }
     }
 

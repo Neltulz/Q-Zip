@@ -14,8 +14,8 @@
   align-items: flex-start;
   backdrop-filter: blur(10px);
   background-color: hsla(0, 0%, 15%, 0.95);
-  border: 1px solid var(--brdr-clr-liter); /* --brdr-clr-liter defined in styles.css */
-  border-radius: var(--brdr-rad-smal); /* --brdr-rad-smal defined in styles.css */
+  border: 1px solid var(--brdr-clr-liter); /* --brdr-clr-liter defined in global.css */
+  border-radius: var(--brdr-rad-smal); /* --brdr-rad-smal defined in global.css */
   block-size: auto;
   box-shadow: 0 2px 15px hsla(0, 0%, 0%, 0.5);
   display: flex;
@@ -41,7 +41,7 @@
     /* Arrow path element - <path> */
     path {
       fill: hsla(0, 0%, 15%, 0.95);
-      stroke: var(--brdr-clr-liter); /* --brdr-clr-liter defined in styles.css */
+      stroke: var(--brdr-clr-liter); /* --brdr-clr-liter defined in global.css */
       stroke-width: 1px;
       vector-effect: non-scaling-stroke; /* Ensure the path is centered within the SVG */
     }
@@ -65,7 +65,7 @@
   /* Content container - <div class="tooltip-content"> */
   .tooltip-content {
     align-items: flex-start;
-    color: var(--txt-clr-liter); /* --txt-clr-liter defined in styles.css */
+    color: var(--txt-clr-liter); /* --txt-clr-liter defined in global.css */
     display: flex;
     flex-direction: column;
     font-size: 1em;
@@ -88,7 +88,7 @@
       /* Icon in text content - <Icon class="tooltip-icon"> */
       .tooltip-icon {
         block-size: 16px;
-        color: var(--txt-clr-liter); /* --txt-clr-liter defined in styles.css */
+        color: var(--txt-clr-liter); /* --txt-clr-liter defined in global.css */
         flex-shrink: 0;
         inline-size: 16px;
       }
@@ -102,7 +102,7 @@
     /* Horizontal rule separator - <hr> */
     hr {
       border: none;
-      border-block-start: 1px solid var(--brdr-clr); /* --brdr-clr defined in styles.css */
+      border-block-start: 1px solid var(--brdr-clr); /* --brdr-clr defined in global.css */
       margin-block: 6px;
       margin-inline: 0;
     }
@@ -137,7 +137,7 @@
 
           /* Reason text in list - <span class="reason"> */
           .reason {
-            color: var(--txt-clr-dark); /* --txt-clr-dark defined in styles.css */
+            color: var(--txt-clr-dark); /* --txt-clr-dark defined in global.css */
             font-style: italic;
             white-space: nowrap;
           }
@@ -169,7 +169,7 @@
       /* Keyboard icon - <Icon class="keyboard-icon"> */
       .keyboard-icon {
         block-size: var(--keyboard-icon-size);
-        color: var(--blu-lite); /* --blu-lite defined in styles.css */
+        color: var(--blu-lite); /* --blu-lite defined in global.css */
         flex-shrink: 0;
         inline-size: var(--keyboard-icon-size);
         margin-inline-end: var(--keyboard-icon-margin);
@@ -177,7 +177,7 @@
 
       /* Keyboard shortcut action text - <span class="keyboard-action-text"> */
       .keyboard-action-text {
-        color: var(--txt-clr-dark); /* --txt-clr-dark defined in styles.css */
+        color: var(--txt-clr-dark); /* --txt-clr-dark defined in global.css */
         font-size: var(--keyboard-font-size);
         font-weight: 400;
         text-align: end;
@@ -186,7 +186,7 @@
 
       /* Keyboard shortcut key text - <span class="keyboard-key-text"> */
       .keyboard-key-text {
-        color: var(--blu-lite); /* --blu-lite defined in styles.css */
+        color: var(--blu-lite); /* --blu-lite defined in global.css */
         font-size: var(--keyboard-font-size);
         font-weight: 500;
         display: flex;
@@ -216,7 +216,7 @@
       .plus-symbol {
         background: none;
         border: none;
-        color: var(--blu-lite); /* --blu-lite defined in styles.css */
+        color: var(--blu-lite); /* --blu-lite defined in global.css */
         padding: 0;
         margin-inline: var(--keyboard-plus-margin);
       }

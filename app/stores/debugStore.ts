@@ -27,6 +27,10 @@ export interface DebugOptions {
   logKeyboardEvents: boolean;
   logHoverEvents: boolean;
   logTooltipEvents: boolean;
+  logTraceEvents: boolean;
+  // Special options
+  suppressDecorumLogs: boolean;
+  logFileTableActivation: boolean;
 }
 
 export interface DebugPosition {
@@ -37,6 +41,13 @@ export interface DebugPosition {
 export const useDebugStore = defineStore(
   "debug",
   () => {
+    // Make store globally accessible for console debugging
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__QZIP_DEBUG_STORE_INSTANCE = null; // Will be set when store is created
+    } catch (e) {
+      // ignore if window not available
+    }
     // Debug popup visibility - hidden by default
     const isDebugPopupVisible = ref(false);
 
@@ -52,31 +63,41 @@ export const useDebugStore = defineStore(
       y: window.innerHeight - 34, // At bottom (34px = --min-tch-tgt)
     });
 
-    // Debug options
+    // Active tab in debug popup - persists across hot reloads
+    const activeDebugTab = ref('general');
+
+    // Debug options - store is now the single source of truth
     const debugOptions = ref<DebugOptions>({
-      // Initialize logging options from debugConfig
-      logComponentMounts: debugConfig.logComponentMounts ?? false,
-      logRefUpdates: debugConfig.logRefUpdates ?? false,
-      logClicksAndInputs: debugConfig.logClicksAndInputs ?? true,
-      logStoreActions: debugConfig.logStoreActions ?? false,
-      logDropdownEvents: debugConfig.logDropdownEvents ?? true,
-      logUIEvents: debugConfig.logUIEvents ?? true,
-      logDragAndDrop: debugConfig.logDragAndDrop ?? false,
-      logComposableManagerEvents: debugConfig.logComposableManagerEvents ?? true,
-      logMissingPropWarnings: debugConfig.logMissingPropWarnings ?? true,
-      logFileSelection: debugConfig.logFileSelection ?? false,
-      logDragDropFailsafe: debugConfig.logDragDropFailsafe ?? false,
-      logNotifications: debugConfig.logNotifications ?? false,
-      logLoadingEvents: debugConfig.logLoadingEvents ?? true,
-      logDualProgress: debugConfig.logDualProgress ?? false,
-      logRenderingEvents: debugConfig.logRenderingEvents ?? false,
-      logUIInteractivity: debugConfig.logUIInteractivity ?? true,
-      logComponentAttributes: debugConfig.logComponentAttributes ?? false,
-      logVueWarnings: debugConfig.logVueWarnings ?? false,
-      logKeyboardEvents: debugConfig.logKeyboardEvents ?? false,
-      logHoverEvents: debugConfig.logHoverEvents ?? true,
-      logTooltipEvents: debugConfig.logTooltipEvents ?? true,
+      // Default values (previously in debugConfig.ts)
+      logComponentMounts: false,
+      logRefUpdates: false,
+      logClicksAndInputs: true,
+      logStoreActions: false,
+      logDropdownEvents: true,
+      logUIEvents: true,
+      logDragAndDrop: false,
+      logComposableManagerEvents: true,
+      logMissingPropWarnings: true,
+      logFileSelection: false,
+      logDragDropFailsafe: false,
+      logNotifications: false,
+      logLoadingEvents: true,
+      logDualProgress: false,
+      logRenderingEvents: false,
+      logUIInteractivity: true,
+      logComponentAttributes: false,
+      logVueWarnings: false,
+      logKeyboardEvents: false,
+      logHoverEvents: true,
+      logTooltipEvents: true,
+      logTraceEvents: false,
+      // Special options
+      suppressDecorumLogs: true,
+      logFileTableActivation: false,
     });
+
+    // Sync to debugConfig on store initialization
+    syncDebugConfig(debugOptions.value);
 
     // Toggle debug popup visibility
     const toggleDebugPopup = () => {
@@ -88,11 +109,14 @@ export const useDebugStore = defineStore(
       key: K,
       value: DebugOptions[K]
     ) => {
+      const oldValue = debugOptions.value[key];
       debugOptions.value[key] = value;
 
-      // Handle verbose logging toggle
+      // Log the change
+      console.log(`%c🔧 Debug option changed: ${key} = ${oldValue} → ${value}`, 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;');
+
+      // Sync to debugConfig for immediate runtime effect
       if (key.startsWith('log')) {
-        // Update debugConfig when individual logging options change
         syncDebugConfig(debugOptions.value);
       }
     };
@@ -100,7 +124,7 @@ export const useDebugStore = defineStore(
     // Reset all debug options to defaults
     const resetDebugOptions = () => {
       debugOptions.value = {
-        // Reset logging options to debugConfig defaults
+        // Reset to store's built-in defaults
         logComponentMounts: false,
         logRefUpdates: false,
         logClicksAndInputs: true,
@@ -122,10 +146,14 @@ export const useDebugStore = defineStore(
         logKeyboardEvents: false,
         logHoverEvents: true,
         logTooltipEvents: true,
+        logTraceEvents: false,
+        // Special options
+        suppressDecorumLogs: true,
+        logFileTableActivation: false,
       };
 
-      // Reset debugConfig to defaults
-      resetDebugConfig();
+      // Sync reset to debugConfig
+      syncDebugConfig(debugOptions.value);
     };
 
     // Update debug popup position
@@ -138,17 +166,39 @@ export const useDebugStore = defineStore(
       debugButtonPosition.value = position;
     };
 
-    return {
+    // Update active debug tab
+    const updateActiveDebugTab = (tabId: string) => {
+      activeDebugTab.value = tabId;
+    };
+
+    // Create store instance and make it globally accessible
+    const storeInstance = {
       isDebugPopupVisible,
       debugPopupPosition,
       debugButtonPosition,
+      activeDebugTab,
       debugOptions,
       toggleDebugPopup,
       updateDebugOption,
       resetDebugOptions,
       updateDebugPopupPosition,
       updateDebugButtonPosition,
+      updateActiveDebugTab,
     };
+
+    // Initialize debugConfig with store values on creation
+    // This ensures debugConfig reflects the store's state (including persisted values)
+    syncDebugConfig(debugOptions.value);
+
+    // Make store globally accessible for console debugging
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__QZIP_DEBUG_STORE_INSTANCE = storeInstance;
+    } catch (e) {
+      // ignore if window not available
+    }
+
+    return storeInstance;
   },
   {
     persist: true,
