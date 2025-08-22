@@ -141,39 +141,46 @@
                       <!-- Tooltips for remove job confirmation buttons -->
                       <InfoTooltip
                         :visible="getCancelRemoveJobTooltipVisible(job.id)"
-                        :content="{ text: 'Cancel the removal', inlineHotKey: { keys: ['ESC'], position: 'end' } } as ExtendedTooltipContent"
+                        :content="{ text: 'Cancel the removal' }"
                         :target="cancelRemoveJobBtnRefs.get(job.id)?.visualStyleRef"
                         placement="bottom"
+                        hotkey-size="small"
+                        keyboardShortcut="ESC"
                       />
                       <InfoTooltip
                         :visible="getTipTooltipVisible(job.id)"
                         :target="tipButtonRefs.get(job.id)?.visualStyleRef"
                         placement="bottom"
+                        hotkey-size="small"
                       >
                         <div class="info-line tooltip-text-content">
                           <span>Hold </span>
-                          <HotKey :keys="['SHIFT']" :disabled="false" :show-icon="false" size="medium" />
+                          <HotKey :keys="['SHIFT']" :disabled="false" :show-icon="false" size="small" />
                           <span> when clicking </span>
-                          <HotKey :keys="['X']" :disabled="false" :show-icon="false" size="medium" />
+                          <HotKey :keys="['X']" :disabled="false" :show-icon="false" size="small" />
                           <span> or press </span>
-                          <HotKey :keys="['CTRL', 'SHIFT', 'DEL']" :disabled="false" :show-icon="false" size="medium" />
+                          <HotKey :keys="['CTRL', 'SHIFT', 'DEL']" :disabled="false" :show-icon="false" size="small" />
                           <span> to bypass confirmation</span>
                         </div>
                       </InfoTooltip>
                       <InfoTooltip
                         :visible="getConfirmRemoveJobTooltipVisible(job.id)"
-                        :content="{ text: 'Confirm job removal', inlineHotKey: { keys: ['ENTER'], position: 'end' } } as ExtendedTooltipContent"
+                        :content="{ text: 'Confirm job removal' }"
                         :target="confirmRemoveJobBtnRefs.get(job.id)?.visualStyleRef"
                         placement="bottom"
+                        hotkey-size="small"
+                        keyboardShortcut="ENTER"
                       />
                     </div>
                   </template>
                               </DropdownMenu>
                <InfoTooltip
                  :visible="tooltipManager.activeTooltipId.value === 'remove-job-' + job.id"
-                 :content="{ text: 'Remove Job', inlineHotKey: { keys: ['SHIFT', 'DEL'], position: 'end' } } as ExtendedTooltipContent"
+                 :content="{ text: 'Remove Job' }"
                  :target="removeJobDropdownRefs.get(job.id)?.$el"
                  placement="bottom"
+                 hotkey-size="small"
+                 keyboardShortcut="Shift+Del"
                />
              </div>
           </CustomButton>
@@ -346,6 +353,7 @@
           :target="addJobButtonRef?.visualStyleRef"
           placement="bottom"
           :debug-force-visible="false"
+          hotkey-size="small"
         />
       </div>
       <div class="job-selector-btns-end">
@@ -404,6 +412,7 @@
           :content="{ text: 'Job Selector Options' }"
           :target="extraOptionsTarget"
           placement="bottom"
+          hotkey-size="small"
         />
       </div>
     </div>
@@ -636,6 +645,9 @@ const setDragActionMenuRef = (jobId: number | "new-job", el: Element | Component
 const setRemoveJobMenuRef = (jobId: number, el: Element | ComponentPublicInstance | null) => {
   if (el) {
     removeJobDropdownRefs.value.set(jobId, el as InstanceType<typeof DropdownMenu>);
+    if (DEBUG && debugConfig.logRefUpdates) {
+      logManagerAction("JobSelectorArea", `Set remove job dropdown ref for jobId: ${jobId}`);
+    }
   }
 };
 
@@ -658,6 +670,12 @@ const setTipButtonRef = (jobId: number, el: Element | ComponentPublicInstance | 
 };
 
 onBeforeUpdate(() => {
+  if (DEBUG && debugConfig.logRefUpdates) {
+    logManagerAction("JobSelectorArea", `onBeforeUpdate: Clearing refs`, {
+      jobButtonRefs: Array.from(jobButtonRefs.value.keys()),
+      removeJobDropdownRefs: Array.from(removeJobDropdownRefs.value.keys())
+    } as any);
+  }
   jobButtonRefs.value.clear();
   jobContextMenuRefs.value.clear();
   dragActionDropdownRefs.value.clear();
@@ -671,6 +689,19 @@ onBeforeUpdate(() => {
     // tipButtonTooltipVisible.value.clear();
 });
 const handleKeyDown = (event: KeyboardEvent) => {
+  if (DEBUG && debugConfig.logUIInteractivity) {
+    logUI("JobSelectorArea", `Keydown event detected`, {
+      key: event.key,
+      ctrlKey: event.ctrlKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+      selectedJobId: jobsStore.selectedJobId,
+      jobsCount: jobsList.value.length,
+      defaultPrevented: event.defaultPrevented
+    });
+  }
+  
   if (event.ctrlKey && event.key.toLowerCase() === "t") {
     event.preventDefault();
     addJob();
@@ -731,6 +762,9 @@ const handleKeyDown = (event: KeyboardEvent) => {
   
   // Add Shift+Delete shortcut for opening the remove job dropdown for the currently selected job
   if (event.shiftKey && event.key === "Delete" && jobsStore.selectedJobId !== null) {
+    if (DEBUG && debugConfig.logUIInteractivity) {
+      logUI("JobSelectorArea", `SHIFT+DEL combination detected for job ${jobsStore.selectedJobId}`);
+    }
     // If there's only 1 job, clear it instead of removing
     if (jobsList.value.length <= 1) {
       event.preventDefault();
@@ -744,14 +778,34 @@ const handleKeyDown = (event: KeyboardEvent) => {
     
     event.preventDefault();
     const selectedJobId = jobsStore.selectedJobId;
+    if (DEBUG && debugConfig.logUIInteractivity) {
+      logUI("JobSelectorArea", `SHIFT+DEL detected, attempting to open remove dropdown for job ${selectedJobId}`);
+      logUI("JobSelectorArea", `Available remove job dropdown refs:`, Array.from(removeJobDropdownRefs.value.keys()));
+    }
     const removeJobDropdown = removeJobDropdownRefs.value.get(selectedJobId);
     if (removeJobDropdown) {
-      removeJobDropdown.openDropdown();
+      if (DEBUG && debugConfig.logUIInteractivity) {
+        logUI("JobSelectorArea", `Found remove job dropdown for job ${selectedJobId}, opening dropdown`);
+      }
+      try {
+        removeJobDropdown.openDropdown();
+      } catch (error) {
+        if (DEBUG && debugConfig.logUIInteractivity) {
+          logUI("JobSelectorArea", `Error opening dropdown for job ${selectedJobId}:`, error);
+        }
+      }
+    } else {
+      if (DEBUG && debugConfig.logUIInteractivity) {
+        logUI("JobSelectorArea", `No remove job dropdown found for job ${selectedJobId}`);
+      }
     }
   }
   
   // Add Ctrl+Shift+Delete shortcut for force removing the currently selected job (bypass confirmation)
   if (event.ctrlKey && event.shiftKey && event.key === "Delete" && jobsStore.selectedJobId !== null) {
+    if (DEBUG && debugConfig.logUIInteractivity) {
+      logUI("JobSelectorArea", `CTRL+SHIFT+DEL combination detected for job ${jobsStore.selectedJobId}`);
+    }
     // If there's only 1 job, clear it instead of removing
     if (jobsList.value.length <= 1) {
       event.preventDefault();
@@ -803,6 +857,11 @@ const handleKeyDown = (event: KeyboardEvent) => {
 onMounted(() => {
   jobsStore.initialize();
   window.addEventListener("keydown", handleKeyDown);
+  
+  // Ensure the component can receive keyboard events by making it focusable
+  if (DEBUG && debugConfig.logUIInteractivity) {
+    logUI("JobSelectorArea", "Component mounted, added keydown listener");
+  }
 });
 watch(
   jobsList,
