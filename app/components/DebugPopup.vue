@@ -57,8 +57,83 @@
           <div class="debug-tab-content">
             <!-- General Tab -->
             <div v-if="activeTab === 'general'" class="debug-tab-panel">
-              <div class="debug-empty-content">
-                <p>General tab content will be added here in the future</p>
+              <div class="debug-general-content">
+                <OverlayScrollbarsComponent
+                  :options="{
+                    scrollbars: {
+                      visibility: 'auto',
+                      autoHide: 'move',
+                      autoHideSuspend: true,
+                      theme: currentTheme,
+                    },
+                  }"
+                  defer
+                >
+                  <div class="debug-general-scrollable-content">
+                    <div class="debug-general-options">
+                      <!-- Opacity Controls -->
+                      <div class="debug-option-group">
+                        <h3>Opacity Controls</h3>
+                        
+                        <!-- Main Opacity Slider -->
+                        <div class="debug-opacity-control">
+                          <label class="debug-opacity-label">
+                            <span>Main Opacity</span>
+                            <span class="debug-opacity-value">{{ Math.round(debugStore.debugOptions.debugPopupOpacity * 100) }}%</span>
+                          </label>
+                          <USlider
+                            :model-value="debugStore.debugOptions.debugPopupOpacity"
+                            :min="0.05"
+                            :max="1"
+                            :step="0.05"
+                            @update:model-value="(value) => debugStore.updateDebugOption('debugPopupOpacity', value)"
+                          />
+                        </div>
+
+                        <!-- Secondary Opacity Switch -->
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.enableSecondaryOpacity"
+                            @update:model-value="(value) => debugStore.updateDebugOption('enableSecondaryOpacity', value)"
+                          />
+                          <span>Enable Secondary Opacity</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['enableSecondaryOpacity'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('enableSecondaryOpacity', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
+
+                        <!-- Secondary Opacity Slider (only shown when enabled) -->
+                        <div v-if="debugStore.debugOptions.enableSecondaryOpacity" class="debug-opacity-control">
+                          <label class="debug-opacity-label">
+                            <span>Secondary Opacity</span>
+                            <span class="debug-opacity-value">{{ Math.round(debugStore.debugOptions.debugPopupSecondaryOpacity * 100) }}%</span>
+                          </label>
+                          <USlider
+                            :model-value="debugStore.debugOptions.debugPopupSecondaryOpacity"
+                            :min="0.1"
+                            :max="1"
+                            :step="0.05"
+                            @update:model-value="(value) => debugStore.updateDebugOption('debugPopupSecondaryOpacity', value)"
+                          />
+                          <div class="debug-opacity-preview">
+                            <span>Preview: {{ Math.round(debugStore.secondaryOpacity * 100) }}% while moving</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Other General Options -->
+                      <div class="debug-option-group">
+                        <h3>Other Options</h3>
+                        <p class="debug-placeholder-text">Additional general options will be added here in the future</p>
+                      </div>
+                    </div>
+                  </div>
+                </OverlayScrollbarsComponent>
               </div>
             </div>
             
@@ -759,6 +834,10 @@ const debugOptionTooltips = {
   preventTooltipClosing: {
     text: "Prevents tooltips from closing once they become active. Useful for debugging tooltip positioning and behavior.",
     example: "Tooltips will stay visible until this option is disabled"
+  },
+  enableSecondaryOpacity: {
+    text: "Enables a secondary opacity level that applies while dragging the debug popup window. The final opacity is calculated as: Main Opacity × Secondary Opacity.",
+    example: "50% main × 50% secondary = 25% while moving"
   }
 };
 
@@ -830,6 +909,7 @@ const popupStyle = computed(() => ({
   transform: `translate(${debugStore.debugPopupPosition.x}px, ${debugStore.debugPopupPosition.y}px)`,
   width: `${debugStore.debugPopupDimensions.width}px`,
   height: `${debugStore.debugPopupDimensions.height}px`,
+  opacity: isDragging.value ? debugStore.secondaryOpacity : debugStore.currentOpacity,
 }));
 
 // Start drag operation

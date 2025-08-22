@@ -32,6 +32,10 @@ export interface DebugOptions {
   decorumMessages: boolean;
   logFileTableActivation: boolean;
   preventTooltipClosing: boolean;
+  // Opacity controls
+  debugPopupOpacity: number;
+  debugPopupSecondaryOpacity: number;
+  enableSecondaryOpacity: boolean;
 }
 
 export interface DebugPosition {
@@ -162,6 +166,10 @@ export const useDebugStore = defineStore(
       decorumMessages: false,
       logFileTableActivation: false,
       preventTooltipClosing: false,
+      // Opacity controls
+      debugPopupOpacity: 1,
+      debugPopupSecondaryOpacity: 0.7,
+      enableSecondaryOpacity: false,
     });
 
     // Computed property to ensure store is properly initialized
@@ -169,10 +177,26 @@ export const useDebugStore = defineStore(
       return Object.keys(debugOptions.value).length > 0;
     });
 
+    // Computed properties for opacity calculations
+    const currentOpacity = computed(() => {
+      return debugOptions.value.debugPopupOpacity;
+    });
+
+    const secondaryOpacity = computed(() => {
+      if (!debugOptions.value.enableSecondaryOpacity) {
+        return debugOptions.value.debugPopupOpacity;
+      }
+      return debugOptions.value.debugPopupOpacity * debugOptions.value.debugPopupSecondaryOpacity;
+    });
+
     // Watch for changes to debugOptions and sync to debugConfig
     // This ensures debugConfig stays in sync with the store, including after rehydration
     watch(debugOptions, (newOptions) => {
-      syncDebugConfig(newOptions);
+      // Extract only boolean properties for debugConfig sync
+      const booleanOptions = Object.fromEntries(
+        Object.entries(newOptions).filter(([_, value]) => typeof value === 'boolean')
+      ) as Record<string, boolean>;
+      syncDebugConfig(booleanOptions);
     }, { deep: true, immediate: true });
 
     // Watch for store initialization and log status
@@ -187,7 +211,11 @@ export const useDebugStore = defineStore(
 
     // Force a sync after a longer delay to ensure persistence is fully loaded
     setTimeout(() => {
-      syncDebugConfig(debugOptions.value);
+      // Extract only boolean properties for debugConfig sync
+      const booleanOptions = Object.fromEntries(
+        Object.entries(debugOptions.value).filter(([_, value]) => typeof value === 'boolean')
+      ) as Record<string, boolean>;
+      syncDebugConfig(booleanOptions);
     }, 200);
 
     // Toggle debug popup visibility
@@ -201,14 +229,28 @@ export const useDebugStore = defineStore(
       value: DebugOptions[K]
     ) => {
       const oldValue = debugOptions.value[key];
-      debugOptions.value[key] = value;
+
+      // Apply constraints for opacity values
+      if (key === 'debugPopupOpacity') {
+        const numValue = value as number;
+        debugOptions.value[key] = Math.max(0.05, Math.min(1, numValue)) as DebugOptions[K];
+      } else if (key === 'debugPopupSecondaryOpacity') {
+        const numValue = value as number;
+        debugOptions.value[key] = Math.max(0.1, Math.min(1, numValue)) as DebugOptions[K];
+      } else {
+        debugOptions.value[key] = value;
+      }
 
       // Log the change
-      console.log(`%c🔧 Debug option changed: ${key} = ${oldValue} → ${value}`, 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;');
+      console.log(`%c🔧 Debug option changed: ${key} = ${oldValue} → ${debugOptions.value[key]}`, 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;');
 
       // Sync to debugConfig for immediate runtime effect
       if (key.startsWith('log')) {
-        syncDebugConfig(debugOptions.value);
+        // Extract only boolean properties for debugConfig sync
+        const booleanOptions = Object.fromEntries(
+          Object.entries(debugOptions.value).filter(([_, value]) => typeof value === 'boolean')
+        ) as Record<string, boolean>;
+        syncDebugConfig(booleanOptions);
       }
     };
 
@@ -242,10 +284,18 @@ export const useDebugStore = defineStore(
         decorumMessages: false,
         logFileTableActivation: false,
         preventTooltipClosing: false,
+        // Opacity controls
+        debugPopupOpacity: 1,
+        debugPopupSecondaryOpacity: 0.7,
+        enableSecondaryOpacity: false,
       };
 
       // Sync reset to debugConfig
-      syncDebugConfig(debugOptions.value);
+      // Extract only boolean properties for debugConfig sync
+      const booleanOptions = Object.fromEntries(
+        Object.entries(debugOptions.value).filter(([_, value]) => typeof value === 'boolean')
+      ) as Record<string, boolean>;
+      syncDebugConfig(booleanOptions);
     };
 
     // Reset debug popup dimensions to defaults
@@ -385,7 +435,11 @@ export const useDebugStore = defineStore(
     // Force refresh the store state and sync with debugConfig
     const forceRefresh = () => {
       console.log('%c🔄 Force refreshing debug store state', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
-      syncDebugConfig(debugOptions.value);
+      // Extract only boolean properties for debugConfig sync
+      const booleanOptions = Object.fromEntries(
+        Object.entries(debugOptions.value).filter(([_, value]) => typeof value === 'boolean')
+      ) as Record<string, boolean>;
+      syncDebugConfig(booleanOptions);
       showDebugStatus();
     };
 
@@ -398,6 +452,8 @@ export const useDebugStore = defineStore(
       activeDebugTab,
       debugOptions,
       isStoreInitialized,
+      currentOpacity,
+      secondaryOpacity,
       toggleDebugPopup,
       updateDebugOption,
       resetDebugOptions,
