@@ -173,7 +173,7 @@
             title="Return to Welcome Screen"
             :disabled="isWelcomeLayout"
             @click="handleNavToWelcome"
-            @mouseenter="showCenterTooltip('Return to the welcome screen', 'nav-to-welcome')"
+            @mouseenter="(event) => showCenterTooltip('Return to the welcome screen', 'nav-to-welcome', event)"
             @mouseleave="hideCenterTooltip"
           />
           <div class="btn-group">
@@ -187,7 +187,7 @@
               :class="{ active: navStore.activePage === 'JobSetup' }"
               :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('JobSetup')"
-              @mouseenter="showCenterTooltip('Add or remove jobs for archive creation.', 'nav-to-job-setup')"
+              @mouseenter="(event) => showCenterTooltip('Add or remove jobs for archive creation.', 'nav-to-job-setup', event)"
               @mouseleave="hideCenterTooltip"
             >
               Job Setup
@@ -203,7 +203,7 @@
               :class="{ active: navStore.activePage === 'JobQueue' }"
               :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('JobQueue')"
-              @mouseenter="showCenterTooltip('View summary of archives queued for creation.', 'nav-to-job-queue')"
+              @mouseenter="(event) => showCenterTooltip('View summary of archives queued for creation.', 'nav-to-job-queue', event)"
               @mouseleave="hideCenterTooltip"
             >
               Job Queue
@@ -219,7 +219,7 @@
               :class="{ active: navStore.activePage === 'Progress' }"
               :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('Progress')"
-              @mouseenter="showCenterTooltip('View archive creation progress.', 'nav-to-progress')"
+              @mouseenter="(event) => showCenterTooltip('View archive creation progress.', 'nav-to-progress', event)"
               @mouseleave="hideCenterTooltip"
             >
               Progress
@@ -233,6 +233,8 @@
           :target="debugForceCenterTarget || centerTooltipTarget"
           placement="bottom"
           :debugForceVisible="!!debugForceJobQueue"
+          :keyboardShortcut="centerTooltipKeyboardShortcut"
+          hotkey-size="small"
         />
         <!-- Custom Zoom Indicator Button (hidden by default) -->
         <div v-if="showZoomIndicator" class="titlebar-zoom-indicator" style="grid-row:1">
@@ -263,7 +265,7 @@ import { useNavigationStore } from "@/stores/navigationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useUserPreferencesStore } from "@/stores/userPreferencesStore";
 import { useDropdownManager } from "@/composables/dropdownManager";
-import InfoTooltip from "@/components/InfoTooltipContainer.vue";
+import InfoTooltip from "@/components/InfoTooltip.vue";
 import { useResetManager } from "@/composables/useResetManager";
 import { useModalsStore } from "@/stores/modalsStore";
 import type { ModalOptions } from "@/types/modal";
@@ -325,6 +327,22 @@ const centerTooltipTarget = computed(() => {
 });
 // Helper reactive to store the last hovered center button's data-name
 const centerTooltipNameCandidate = ref('');
+
+// Keyboard shortcuts for center nav buttons
+const centerTooltipKeyboardShortcut = computed(() => {
+  switch (centerTooltipNameCandidate.value) {
+    case 'nav-to-welcome':
+      return 'HOME';
+    case 'nav-to-job-setup':
+      return 'F1';
+    case 'nav-to-job-queue':
+      return 'F2';
+    case 'nav-to-progress':
+      return 'F3';
+    default:
+      return '';
+  }
+});
 // Use the shared tooltip manager (same used by JobSelectorArea) so center
 // nav button tooltips get the same delayed show/hide behavior and don't
 // unmount/remount when switching between adjacent buttons.
@@ -347,7 +365,7 @@ const centerTooltipIsActive = computed(() => {
   if (debugForceJobQueue.value && centerTooltipText.value && centerTooltipText.value.toLowerCase().includes('job queue')) return true;
   return false;
 });
-const showCenterTooltip = (text: string, dataName: string) => {
+const showCenterTooltip = (text: string, dataName: string, event: MouseEvent) => {
   // suppress native title immediately to avoid OS/browser tooltip
   try {
     const el = document.querySelector(`[data-name='${dataName}']`) as HTMLElement | null;
@@ -360,7 +378,8 @@ const showCenterTooltip = (text: string, dataName: string) => {
   }
   centerTooltipText.value = text;
   centerTooltipNameCandidate.value = dataName;
-  tooltipManager.showTooltip(dataName);
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip(dataName, originElement);
 };
 const hideCenterTooltip = () => {
   // restore original title if we removed it earlier (but don't immediately hide UI)
@@ -598,6 +617,38 @@ const handleExit = (): void => {
   dropdownManager.closeAllDropdowns("Exiting app");
   getCurrentWindow().close();
 };
+
+// Keyboard shortcuts for center navigation
+const handleKeyDown = (event: KeyboardEvent) => {
+  // Only handle shortcuts when not in welcome layout
+  if (isWelcomeLayout.value) return;
+  
+  // HOME key for welcome screen
+  if (event.key === 'Home') {
+    event.preventDefault();
+    handleNavToWelcome();
+    return;
+  }
+  
+  // F1-F3 keys for navigation
+  if (event.key === 'F1') {
+    event.preventDefault();
+    navStore.setActivePage('JobSetup');
+    return;
+  }
+  
+  if (event.key === 'F2') {
+    event.preventDefault();
+    navStore.setActivePage('JobQueue');
+    return;
+  }
+  
+  if (event.key === 'F3') {
+    event.preventDefault();
+    navStore.setActivePage('Progress');
+    return;
+  }
+};
 // Zoom indicator state
 import { ref as vueRef, onMounted as vueOnMounted, onUnmounted as vueOnUnmounted } from "vue";
 import { resetZoom } from "@/composables/useZoom";
@@ -619,6 +670,10 @@ vueOnMounted(() => {
     const e = ev as CustomEvent<number>;
     updateZoomIndicator(e.detail);
   });
+  
+  // Add keyboard event listener for navigation shortcuts
+  window.addEventListener("keydown", handleKeyDown);
+  
   // compute position for zoom indicator so it sits left of native window controls
   // We no longer compute --titlebar-zoom-right; the zoom indicator uses the middle grid column.
 });
@@ -627,6 +682,10 @@ vueOnUnmounted(() => {
     const e = ev as CustomEvent<number>;
     updateZoomIndicator(e.detail);
   });
+  
+  // Remove keyboard event listener
+  window.removeEventListener("keydown", handleKeyDown);
+  
   window.removeEventListener('resize', () => {});
 });
 </script>
