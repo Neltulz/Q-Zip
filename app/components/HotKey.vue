@@ -155,7 +155,7 @@ watch(() => props.disabled, (newDisabled) => {
   --keyboard-plus-margin: 1px;
   
   align-items: center;
-  display: flex;
+  display: inline-flex;
   gap: 8px;
   font-family: monospace;
   white-space: nowrap;

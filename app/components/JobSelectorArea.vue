@@ -147,10 +147,19 @@
                       />
                       <InfoTooltip
                         :visible="getTipTooltipVisible(job.id)"
-                        :content="{ text: 'Hold Shift when clicking X or press Ctrl+Shift+Del to bypass confirmation', inlineHotKey: { keys: ['CTRL', 'SHIFT', 'DEL'], position: 'inline' } } as ExtendedTooltipContent"
                         :target="tipButtonRefs.get(job.id)?.visualStyleRef"
                         placement="bottom"
-                      />
+                      >
+                        <div class="info-line tooltip-text-content">
+                          <span>Hold </span>
+                          <HotKey :keys="['SHIFT']" :disabled="false" :show-icon="false" size="medium" />
+                          <span> when clicking </span>
+                          <HotKey :keys="['X']" :disabled="false" :show-icon="false" size="medium" />
+                          <span> or press </span>
+                          <HotKey :keys="['CTRL', 'SHIFT', 'DEL']" :disabled="false" :show-icon="false" size="medium" />
+                          <span> to bypass confirmation</span>
+                        </div>
+                      </InfoTooltip>
                       <InfoTooltip
                         :visible="getConfirmRemoveJobTooltipVisible(job.id)"
                         :content="{ text: 'Confirm job removal', inlineHotKey: { keys: ['ENTER'], position: 'end' } } as ExtendedTooltipContent"
@@ -414,7 +423,7 @@ import { useDragDropStore } from "@/stores/dragDropStore";
 import type { ModalOptions } from "@/types/modal";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import CustomButton from "./CustomButton.vue";
-import InfoTooltip from "./InfoTooltipContainer.vue";
+import InfoTooltip from "./InfoTooltip.vue";
 
 import { useScrollContainer } from "@/composables/useScrollContainer";
 import { useTooltipManager } from "@/composables/useTooltipManager";
@@ -424,7 +433,7 @@ import { logDragDropEvent, logUI, logManagerAction, logNotification, logGlobalEv
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 
 // Extended type for InfoTooltip content with inline HotKey support
-type ExtendedTooltipContent = { text: string; icon?: string; inlineHotKey?: { keys: string[]; position: 'start' | 'end' | 'inline' } };
+type ExtendedTooltipContent = { text: string; icon?: string; inlineHotKey?: { keys: string[]; position: 'start' | 'end' | 'inline' }; inlineHotKeys?: { keys: string[]; position: 'start' | 'end' | 'inline'; text: string }[]; useMultipleHotKeys?: boolean };
 
 interface ScrollableOverlayScrollbars extends OverlayScrollbars {
   scroll: (destination: { x?: string | number; y?: string | number }, duration?: number) => void;

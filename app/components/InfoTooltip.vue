@@ -44,7 +44,7 @@
   see: app/components/info-tooltip-comp/info-tooltip-usage.md
 -->
 <template>
-  <teleport to="body">
+  <teleport to="#tooltip-container">
     <Transition
       name="tooltip-fade"
       appear
@@ -64,90 +64,121 @@
         @mouseenter="(event) => emit('mouseenter', event)"
         @mouseleave="(event) => emit('mouseleave', event)"
       >
-                          <div class="tooltip-content">
-           <!-- Display structured notification details -->
-           <template v-if="'filePaths' in content">
-             <div v-if="(content as NotificationMessageDetails).sourceJobId" class="info-line"><strong>Source:</strong> Job {{ (content as NotificationMessageDetails).sourceJobId }}</div>
-             <div v-if="(content as NotificationMessageDetails).destinationJobId" class="info-line">
-               <strong>Destination:</strong> Job {{ (content as NotificationMessageDetails).destinationJobId }}
-             </div>
-             <hr v-if="(content as NotificationMessageDetails).sourceJobId || (content as NotificationMessageDetails).destinationJobId" />
-             <div v-if="(content as NotificationMessageDetails).filePaths && (content as NotificationMessageDetails).filePaths.length > 0" class="file-list-container">
-               <strong>Affected Items:</strong>
-               <ul class="file-list">
-                 <li v-for="path in (content as NotificationMessageDetails).filePaths" :key="path">
-                   <span class="file-name">{{ getFileName(path) }}</span>
-                   <span v-if="(content as NotificationMessageDetails).reasons && (content as NotificationMessageDetails).reasons?.[path]" class="reason"> - {{ (content as NotificationMessageDetails).reasons?.[path] }} </span>
-                 </li>
-               </ul>
-             </div>
-           </template>
-           
-                       <!-- Multi-line keyboard shortcuts (like Add Files/Folders) -->
-            <template v-else-if="keyboardShortcut && keyboardShortcutLines.length > 1">
-              <div 
-                v-for="(shortcut, index) in keyboardShortcutLines" 
-                :key="index"
-                class="info-line keyboard-shortcut-line"
-              >
-                <span class="keyboard-action-text">{{ getActionText(shortcut) }}</span>
-                <HotKey :keys="getShortcutParts(getShortcutKey(shortcut))" :disabled="isTargetDisabled" :size="hotkeySize" />
+        <div class="tooltip-content">
+          <!-- Use slot if provided, otherwise fall back to content-based rendering -->
+          <template v-if="hasSlotContent">
+            <slot />
+          </template>
+          
+          <!-- Display structured notification details -->
+          <template v-else-if="'filePaths' in content">
+              <div v-if="(content as NotificationMessageDetails).sourceJobId" class="info-line"><strong>Source:</strong> Job {{ (content as NotificationMessageDetails).sourceJobId }}</div>
+              <div v-if="(content as NotificationMessageDetails).destinationJobId" class="info-line">
+                <strong>Destination:</strong> Job {{ (content as NotificationMessageDetails).destinationJobId }}
+              </div>
+              <hr v-if="(content as NotificationMessageDetails).sourceJobId || (content as NotificationMessageDetails).destinationJobId" />
+              <div v-if="(content as NotificationMessageDetails).filePaths && (content as NotificationMessageDetails).filePaths.length > 0" class="file-list-container">
+                <strong>Affected Items:</strong>
+                <ul class="file-list">
+                  <li v-for="path in (content as NotificationMessageDetails).filePaths" :key="path">
+                    <span class="file-name">{{ getFileName(path) }}</span>
+                    <span v-if="(content as NotificationMessageDetails).reasons && (content as NotificationMessageDetails).reasons?.[path]" class="reason"> - {{ (content as NotificationMessageDetails).reasons?.[path] }} </span>
+                  </li>
+                </ul>
               </div>
             </template>
-           
-                                   <!-- Single keyboard shortcut (like Refresh, Remove, etc.) -->
-             <template v-else-if="keyboardShortcut && keyboardShortcutLines.length === 1">
-               <div class="info-line tooltip-text-content">
-                 <span>{{ content.text }}</span>
-               </div>
-               <div class="info-line keyboard-shortcut-line">
-                 <span class="keyboard-action-text">{{ getActionName(content.text) }}</span>
-                 <HotKey :keys="getShortcutParts(keyboardShortcut)" :disabled="isTargetDisabled" :size="hotkeySize" />
+            
+                        <!-- Multi-line keyboard shortcuts (like Add Files/Folders) -->
+             <template v-else-if="keyboardShortcut && keyboardShortcutLines.length > 1">
+               <div 
+                 v-for="(shortcut, index) in keyboardShortcutLines" 
+                 :key="index"
+                 class="info-line keyboard-shortcut-line"
+               >
+                 <span class="keyboard-action-text">{{ getActionText(shortcut) }}</span>
+                 <HotKey :keys="getShortcutParts(getShortcutKey(shortcut))" :disabled="isTargetDisabled" :size="hotkeySize" />
                </div>
              </template>
-           
-           <!-- Simple text content with icon -->
-           <template v-else-if="'text' in content && !('filePaths' in content) && content.icon">
-             <div class="info-line tooltip-text-content">
-               <Icon :name="content.icon" class="tooltip-icon" />
-               <span>{{ content.text }}</span>
-             </div>
-           </template>
-           
-           <!-- Simple text content with inline HotKey -->
-           <template v-else-if="'text' in content && !('filePaths' in content) && content.inlineHotKey">
-             <div class="info-line tooltip-text-content">
-               <template v-if="content.inlineHotKey.position === 'start'">
-                 <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-                 <span>{{ content.text }}</span>
-               </template>
-               <template v-else-if="content.inlineHotKey.position === 'end'">
-                 <span>{{ content.text }}</span>
-                 <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-               </template>
-               <template v-else-if="content.inlineHotKey.position === 'inline'">
-                 <span>{{ getTextBeforeHotKey(content.text) }}</span>
-                 <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-                 <span>{{ getTextAfterHotKey(content.text) }}</span>
-               </template>
-             </div>
-           </template>
-           
-           <!-- Simple text content (legacy parsing) -->
-           <template v-else-if="parsedContent">
-             <div class="info-line tooltip-text-content">
-               <span>{{ parsedContent.mainText }}</span>
-               <span v-if="parsedContent.shortcut" class="shortcut-key-text">{{ parsedContent.shortcut }}</span>
-             </div>
-           </template>
-           
-           <!-- Simple text content without icon or shortcuts -->
-           <template v-else-if="'text' in content && !('filePaths' in content)">
-             <div class="info-line tooltip-text-content">
-               <span>{{ content.text }}</span>
-             </div>
-           </template>
-         </div>
+            
+                                    <!-- Single keyboard shortcut (like Refresh, Remove, etc.) -->
+              <template v-else-if="keyboardShortcut && keyboardShortcutLines.length === 1">
+                <div class="info-line tooltip-text-content">
+                  <span>{{ content.text }}</span>
+                </div>
+                <div class="info-line keyboard-shortcut-line">
+                  <span class="keyboard-action-text">{{ getActionName(content.text) }}</span>
+                  <HotKey :keys="getShortcutParts(keyboardShortcut)" :disabled="isTargetDisabled" :size="hotkeySize" />
+                </div>
+              </template>
+            
+            <!-- Simple text content with icon -->
+            <template v-else-if="'text' in content && !('filePaths' in content) && content.icon">
+              <div class="info-line tooltip-text-content">
+                <Icon :name="content.icon" class="tooltip-icon" />
+                <span>{{ content.text }}</span>
+              </div>
+            </template>
+            
+            <!-- Simple text content with inline HotKey -->
+            <template v-else-if="'text' in content && !('filePaths' in content) && content.inlineHotKey">
+              <div class="info-line tooltip-text-content">
+                <template v-if="content.inlineHotKey.position === 'start'">
+                  <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+                  <span>{{ content.text }}</span>
+                </template>
+                <template v-else-if="content.inlineHotKey.position === 'end'">
+                  <span>{{ content.text }}</span>
+                  <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+                </template>
+                <template v-else-if="content.inlineHotKey.position === 'inline'">
+                  <span>{{ getTextBeforeHotKey(content.text) }}</span>
+                  <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+                  <span>{{ getTextAfterHotKey(content.text) }}</span>
+                </template>
+              </div>
+            </template>
+            
+            <!-- Simple text content with multiple inline HotKeys -->
+            <template v-else-if="'text' in content && !('filePaths' in content) && content.inlineHotKeys">
+              <div class="info-line tooltip-text-content">
+                <span>Hold </span>
+                <HotKey :keys="['SHIFT']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+                <span> when clicking </span>
+                <HotKey :keys="['X']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+                <span> or press </span>
+                <HotKey :keys="['CTRL', 'SHIFT', 'DEL']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+                <span> to bypass confirmation</span>
+              </div>
+            </template>
+            
+            <!-- Simple text content with useMultipleHotKeys flag -->
+            <template v-else-if="'text' in content && !('filePaths' in content) && content.useMultipleHotKeys">
+              <div class="info-line tooltip-text-content">
+                <span>Hold </span>
+                <HotKey :keys="['SHIFT']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+                <span> when clicking </span>
+                <HotKey :keys="['X']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+                <span> or press </span>
+                <HotKey :keys="['CTRL', 'SHIFT', 'DEL']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+                <span> to bypass confirmation</span>
+              </div>
+            </template>
+            
+            <!-- Simple text content (legacy parsing) -->
+            <template v-else-if="parsedContent">
+              <div class="info-line tooltip-text-content">
+                <span>{{ parsedContent.mainText }}</span>
+                <span v-if="parsedContent.shortcut" class="shortcut-key-text">{{ parsedContent.shortcut }}</span>
+              </div>
+            </template>
+            
+            <!-- Simple text content without icon or shortcuts -->
+            <template v-else-if="'text' in content && !('filePaths' in content)">
+              <div class="info-line tooltip-text-content">
+                <span>{{ content.text }}</span>
+              </div>
+            </template>
+          </div>
         <!-- Use an inline SVG for a perfect, styleable arrow -->
         <svg ref="arrowRef" class="tooltip-arrow" :data-side="side" :style="arrowStyle" viewBox="0 0 16 9">
           <path d="M 0 0 L 8 8 L 16 0" />
@@ -158,7 +189,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, toRef, watch, nextTick, onUnmounted, type PropType } from "vue";
+import { ref, computed, toRef, watch, nextTick, onUnmounted, type PropType, useSlots } from "vue";
 import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
@@ -166,58 +197,34 @@ import { logUI, logRendering, logTooltip } from "@/utils/loggers";
 import { useDebugStore } from "@/stores/debugStore";
 import HotKey from "@/components/HotKey.vue";
 // Allow a simple text property for more generic tooltips
-type TooltipContent = NotificationMessageDetails | { text: string; icon?: string; inlineHotKey?: { keys: string[]; position: 'start' | 'end' | 'inline' } };
+type TooltipContent = NotificationMessageDetails | { text: string; icon?: string; inlineHotKey?: { keys: string[]; position: 'start' | 'end' | 'inline' }; inlineHotKeys?: { keys: string[]; position: 'start' | 'end' | 'inline'; text: string }[]; useMultipleHotKeys?: boolean };
+
+// Props interface to make content optional
+interface InfoTooltipProps {
+  visible: boolean;
+  content?: TooltipContent;
+  target?: MaybeElement;
+  debugForceVisible?: boolean;
+  interactive?: boolean;
+  allowFlipToTop?: boolean;
+  placement?: "top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end";
+  fallbackPlacements?: ("top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end")[];
+  keyboardShortcut?: string;
+  hotkeySize?: "small" | "medium" | "large";
+}
 
 const debugStore = useDebugStore();
 
-const props = defineProps({
-  visible: {
-    type: Boolean,
-    required: true,
-  },
-  content: {
-    type: Object as PropType<TooltipContent>,
-    required: true,
-  },
-  target: {
-    type: Object as PropType<MaybeElement>,
-    default: null,
-  },
-  debugForceVisible: {
-    type: Boolean,
-    default: false,
-  },
-  // When true the tooltip allows pointer interactions (e.g., clickable links).
-  // Default false so tooltips don't block underlying controls.
-  interactive: {
-    type: Boolean,
-    default: false,
-  },
-  // When false, avoid flipping the tooltip to any `top-*` placement. Useful
-  // for controls pinned to the top edge where we always want the tooltip
-  // to appear below the target.
-  allowFlipToTop: {
-    type: Boolean,
-    default: true,
-  },
-  placement: {
-    type: String as PropType<"top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end">,
-    default: "top",
-  },
-  fallbackPlacements: {
-    type: Array as PropType<("top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end")[]>,
-    default: () => [],
-  },
-  // Optional keyboard shortcut to display with icon
-  keyboardShortcut: {
-    type: String,
-    default: "",
-  },
-  // Size for HotKey components within the tooltip
-  hotkeySize: {
-    type: String as PropType<"small" | "medium" | "large">,
-    default: "medium",
-  },
+const props = withDefaults(defineProps<InfoTooltipProps>(), {
+  content: () => ({ text: '' }),
+  target: null,
+  debugForceVisible: false,
+  interactive: false,
+  allowFlipToTop: true,
+  placement: "top",
+  fallbackPlacements: () => [],
+  keyboardShortcut: "",
+  hotkeySize: "medium",
 });
 // Define emits for mouse events
 const emit = defineEmits<{
@@ -235,6 +242,15 @@ const shouldRender = computed(() => {
 const isDebugMode = computed(() => {
   return props.visible && !props.interactive;
 });
+
+const slots = useSlots();
+
+// Track slot availability
+const hasSlotContent = computed(() => {
+  return !!slots.default;
+});
+
+
 // Resolve the provided `target` prop to the "best" DOM element to anchor to.
 // If a CustomButton (or its wrapper) is passed, prefer its internal
 // `.visual-style` element when available so tooltips anchor to the visible surface.
@@ -791,6 +807,8 @@ const getTextAfterHotKey = (text: string) => {
   
   return '';
 };
+
+
 </script>
 
 <style scoped>

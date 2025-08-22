@@ -17,7 +17,7 @@ export default defineNuxtPlugin(() => {
         width: 100%;
         height: 100%;
         pointer-events: none;
-        z-index: 10000;
+        z-index: 999999;
         isolation: isolate;
       `;
       document.body.appendChild(tooltipContainer);
