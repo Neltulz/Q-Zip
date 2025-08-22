@@ -113,7 +113,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logComponentMounts', value)"
                           />
                           <span>Component Mounts</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logComponentMounts'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logComponentMounts')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -123,7 +128,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logRefUpdates', value)"
                           />
                           <span>Ref Updates</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logRefUpdates'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logRefUpdates')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -133,7 +143,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logRenderingEvents', value)"
                           />
                           <span>Rendering Events</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logRenderingEvents'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logRenderingEvents')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -148,7 +163,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logClicksAndInputs', value)"
                           />
                           <span>Clicks & Inputs</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logClicksAndInputs'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logClicksAndInputs')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -158,7 +178,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logHoverEvents', value)"
                           />
                           <span>Hover Events</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logHoverEvents'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logHoverEvents')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -168,7 +193,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logKeyboardEvents', value)"
                           />
                           <span>Keyboard Events</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logKeyboardEvents'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logKeyboardEvents')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -178,7 +208,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logUIInteractivity', value)"
                           />
                           <span>UI Interactivity</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logUIInteractivity'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logUIInteractivity')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -193,7 +228,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logUIEvents', value)"
                           />
                           <span>UI Events</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logUIEvents'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logUIEvents')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -203,7 +243,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logDropdownEvents', value)"
                           />
                           <span>Dropdown Events</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logDropdownEvents'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logDropdownEvents')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -213,7 +258,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logTooltipEvents', value)"
                           />
                           <span>Tooltip Events</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logTooltipEvents'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logTooltipEvents')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -228,7 +278,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logFileSelection', value)"
                           />
                           <span>File Selection</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logFileSelection'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logFileSelection')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -238,7 +293,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logDragAndDrop', value)"
                           />
                           <span>Drag & Drop</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logDragAndDrop'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logDragAndDrop')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -248,7 +308,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logDragDropFailsafe', value)"
                           />
                           <span>Drag & Drop Failsafe</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logDragDropFailsafe'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logDragDropFailsafe')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -263,7 +328,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logStoreActions', value)"
                           />
                           <span>Store Actions</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logStoreActions'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logStoreActions')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -273,7 +343,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logComposableManagerEvents', value)"
                           />
                           <span>Composable Manager Events</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logComposableManagerEvents'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logComposableManagerEvents')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -288,7 +363,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logLoadingEvents', value)"
                           />
                           <span>Loading Events</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logLoadingEvents'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logLoadingEvents')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -298,7 +378,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logDualProgress', value)"
                           />
                           <span>Dual Progress</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logDualProgress'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logDualProgress')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -308,7 +393,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logNotifications', value)"
                           />
                           <span>Notifications</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logNotifications'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logNotifications')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -318,7 +408,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logTraceEvents', value)"
                           />
                           <span>Trace Events</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logTraceEvents'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logTraceEvents')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -333,7 +428,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logMissingPropWarnings', value)"
                           />
                           <span>Missing Prop Warnings</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logMissingPropWarnings'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logMissingPropWarnings')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -343,7 +443,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logComponentAttributes', value)"
                           />
                           <span>Component Attributes</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logComponentAttributes'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logComponentAttributes')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -353,7 +458,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logVueWarnings', value)"
                           />
                           <span>Vue Warnings</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logVueWarnings'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logVueWarnings')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -368,7 +478,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('decorumMessages', value)"
                           />
                           <span>Decorum Messages</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['decorumMessages'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('decorumMessages')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -378,7 +493,12 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('logFileTableActivation', value)"
                           />
                           <span>FileTable Activation</span>
-                          <div class="debug-info-icon-wrapper">
+                          <div 
+                            :ref="(el) => infoIconRefs['logFileTableActivation'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="handleInfoIconMouseEnter('logFileTableActivation')"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
@@ -444,19 +564,34 @@
       </div>
     </div>
   </Transition>
+
+  <!-- InfoTooltip components for debug options -->
+  <InfoTooltip
+    v-for="(tooltip, optionKey) in debugOptionTooltips"
+    :key="`debug-option-${optionKey}`"
+    :visible="tooltipManager.activeTooltipId.value === `debug-option-${optionKey}`"
+    :content="{ 
+      text: `${tooltip.text}\n\nExample: ${tooltip.example}` 
+    }"
+    :target="infoIconRefs[optionKey]"
+    placement="right"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useDebugStore } from "@/stores/debugStore";
 import { useThemeStore } from "@/stores/themeStore";
+import { useTooltipManager } from "@/composables/useTooltipManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import CustomButton from "./CustomButton.vue";
+import InfoTooltip from "./InfoTooltip.vue";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 
 // Initialize stores and composables
 const debugStore = useDebugStore();
 const themeStore = useThemeStore();
+const tooltipManager = useTooltipManager();
 const popupRef = ref<HTMLElement | null>(null);
 
 // Tab state - use store for persistence across hot reloads
@@ -466,7 +601,7 @@ const activeTab = computed({
 });
 
 // Current theme for scrollbars
-const currentTheme = computed(() => themeStore.isEffectiveDark ? 'os-theme-dark' : 'os-theme-light');
+const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
 
 // Tab definitions
 const tabs = [
@@ -486,6 +621,109 @@ const tabs = [
     icon: 'mdi:tooltip-text'
   }
 ];
+
+// Tooltip content for debug options
+const debugOptionTooltips = {
+  logComponentMounts: {
+    text: "Logs when Vue components are mounted and unmounted. Useful for tracking component lifecycle.",
+    example: "🔧 [ComponentName] Component mounted"
+  },
+  logRefUpdates: {
+    text: "Logs when template refs are updated or changed. Helps debug ref-related issues.",
+    example: "🔧 [ComponentName] Ref updated: refName"
+  },
+  logRenderingEvents: {
+    text: "Logs rendering-related events like template updates and re-renders.",
+    example: "🔧 [ComponentName] Component re-rendered"
+  },
+  logClicksAndInputs: {
+    text: "Logs user clicks, button presses, and input interactions.",
+    example: "🔧 [ComponentName] Button clicked: action"
+  },
+  logHoverEvents: {
+    text: "Logs mouse hover events (mouseenter/mouseleave) on interactive elements.",
+    example: "🔧 [ComponentName] Hover event: mouseenter"
+  },
+  logKeyboardEvents: {
+    text: "Logs keyboard events like key presses and shortcuts.",
+    example: "🔧 [ComponentName] Keyboard event: keydown"
+  },
+  logUIInteractivity: {
+    text: "Logs UI interaction events like focus changes and selection updates.",
+    example: "🔧 [ComponentName] UI interaction: focus"
+  },
+  logUIEvents: {
+    text: "Logs general UI events and transitions.",
+    example: "🔧 [ComponentName] UI event: transition"
+  },
+  logDropdownEvents: {
+    text: "Logs dropdown menu open/close events and interactions.",
+    example: "🔧 [ComponentName] Dropdown opened"
+  },
+  logTooltipEvents: {
+    text: "Logs tooltip show/hide events and positioning updates.",
+    example: "🔧 [ComponentName] Tooltip shown"
+  },
+  logFileSelection: {
+    text: "Logs file selection changes and multi-select operations.",
+    example: "🔧 [ComponentName] File selected: filename"
+  },
+  logDragAndDrop: {
+    text: "Logs drag and drop operations including drag start, drop, and cancel events.",
+    example: "🔧 [ComponentName] Drag started: files"
+  },
+  logDragDropFailsafe: {
+    text: "Logs drag and drop failsafe operations and error handling.",
+    example: "🔧 [ComponentName] Drag failsafe: timeout"
+  },
+  logStoreActions: {
+    text: "Logs Pinia store actions and state changes.",
+    example: "🔧 [StoreName] Action called: actionName"
+  },
+  logComposableManagerEvents: {
+    text: "Logs composable manager events and lifecycle operations.",
+    example: "🔧 [ManagerName] Manager event: eventType"
+  },
+  logLoadingEvents: {
+    text: "Logs loading states, progress updates, and async operations.",
+    example: "🔧 [ComponentName] Loading started"
+  },
+  logDualProgress: {
+    text: "Logs dual progress tracking for operations with multiple progress indicators.",
+    example: "🔧 [ComponentName] Dual progress: 50% / 75%"
+  },
+  logNotifications: {
+    text: "Logs notification events and user feedback messages.",
+    example: "🔧 [ComponentName] Notification shown: message"
+  },
+  logTraceEvents: {
+    text: "Logs detailed trace events with stack traces for debugging complex issues.",
+    example: "🔧 [ComponentName] Trace event with stack"
+  },
+  logMissingPropWarnings: {
+    text: "Logs warnings when required props are missing from components.",
+    example: "⚠️ [ComponentName] Missing prop: propName"
+  },
+  logComponentAttributes: {
+    text: "Logs component attribute issues and validation problems.",
+    example: "🔧 [ComponentName] Attribute issue: attrName"
+  },
+  logVueWarnings: {
+    text: "Logs Vue.js warnings and deprecation notices.",
+    example: "⚠️ [Vue] Warning: message"
+  },
+  decorumMessages: {
+    text: "Shows DECORUM framework messages and internal communications.",
+    example: "🔧 [Decorum] Message: content"
+  },
+  logFileTableActivation: {
+    text: "Logs FileTable activation events and focus management.",
+    example: "🔧 [FileTable] Activated: jobId"
+  }
+};
+
+// Refs for info icon wrappers
+const infoIconRefs = ref<Record<string, HTMLElement | null>>({});
 
 // Drag state
 const isDragging = ref(false);
@@ -512,6 +750,15 @@ const uncheckAllLoggingOptions = () => {
 
 const showDebugStatus = () => {
   debugStore.showDebugStatus();
+};
+
+// Tooltip event handlers
+const handleInfoIconMouseEnter = (optionKey: string) => {
+  tooltipManager.showTooltip(`debug-option-${optionKey}`);
+};
+
+const handleInfoIconMouseLeave = () => {
+  tooltipManager.hideTooltip();
 };
 
 // Computed popup style
