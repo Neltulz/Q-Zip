@@ -56,9 +56,10 @@
         ref="floatingRef"
         class="info-tooltip"
         :class="{ 
-          interactive: interactive, 
+          interactive: interactive || debugStore.debugOptions.forceTooltipInteractive, 
           'simple-tooltip': !!parsedContent,
-          'disabled-target': isTargetDisabled
+          'disabled-target': isTargetDisabled,
+          'debug-high-z-index': debugStore.debugOptions.increaseTooltipZIndex
         }"
         :style="floatingStyles"
         @mouseenter="(event) => emit('mouseenter', event)"

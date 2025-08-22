@@ -1,10 +1,10 @@
 /* Debug popup container - <div class="debug-popup"> */
 .debug-popup {
-  backdrop-filter: blur(16px);
-  background: var(--bg-primary); /* --bg-primary defined in global.css */
+  /* Backdrop blur will be set dynamically via inline styles */
+  /* Background is transparent to allow backdrop blur to show through */
   border: 2px solid var(--border-color); /* --border-color defined in global.css */
   border-radius: 12px;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8);
   display: grid;
   grid-template-rows: auto 1fr;
   inset-block-start: 0; /* Logical property for top */
@@ -16,29 +16,32 @@
   overflow: hidden;
   position: fixed;
   resize: both;
-  transition: opacity 0.2s ease;
+  transition: backdrop-filter 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
   z-index: 9999;
+  /* Ensure backdrop-filter can be applied */
+  backdrop-filter: blur(0px); /* Default fallback */
 
   /* Debug popup header - <div class="debug-popup-header"> */
   .debug-popup-header {
     align-items: center;
-    background: var(--bg-secondary); /* --bg-secondary defined in global.css */
+    /* Background will be set dynamically via inline styles */
     border-block-end: 1px solid var(--border-color); /* --border-color defined in global.css */
     display: flex;
     justify-content: space-between;
-    padding-block: 4px; /* Logical property for vertical padding */
-    padding-inline: 12px; /* Logical property for horizontal padding */
+    padding-block: 2px; /* Reduced vertical padding */
+    padding-inline: 8px; /* Reduced horizontal padding */
     position: relative;
     user-select: none;
+    transition: background-color 0.4s ease, border-bottom-color 0.4s ease, opacity 0.4s ease;
 
     /* Debug popup title - <h3 class="debug-popup-title"> */
     .debug-popup-title {
       align-items: center;
       color: var(--text-primary); /* --text-primary defined in global.css */
       display: flex;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      gap: 6px;
+      gap: 4px;
       margin: 0;
 
       /* Debug icon - <Icon name="mdi:bug" class="debug-icon"> */
@@ -51,9 +54,9 @@
     .close-button {
       flex-grow: 0;
       flex-shrink: 0;
-      height: var(--min-tch-tgt); /* --min-tch-tgt defined in global.css */
-      min-width: var(--min-tch-tgt); /* --min-tch-tgt defined in global.css */
-      width: var(--min-tch-tgt); /* --min-tch-tgt defined in global.css */
+      height: 24px;
+      min-width: 24px;
+      width: 24px;
     }
   }
 
@@ -63,7 +66,10 @@
     flex-direction: column;
     justify-content: space-between;
     min-height: 0;
-    padding: 8px;
+    max-width: 100%;
+    padding: 4px;
+    /* Background will be set dynamically via inline styles */
+    transition: background-color 0.4s ease, opacity 0.4s ease;
 
     /* Debug tabs container - <div class="debug-tabs"> */
     .debug-tabs {
@@ -71,15 +77,20 @@
       flex: 1;
       flex-direction: row;
       min-height: 0;
+      max-width: 100%;
       overflow: hidden;
 
-      /* Debug tab navigation - <div class="debug-tab-nav"> */
-      .debug-tab-nav {
-        border-inline-end: 1px solid var(--border-color); /* --border-color defined in global.css */
-        display: flex;
-        flex-direction: column;
-        margin-inline-end: 12px; /* Logical property for right margin */
-        min-width: 120px;
+              /* Debug tab navigation - <div class="debug-tab-nav"> */
+        .debug-tab-nav {
+          border-inline-end: 1px solid; /* Border color will be set dynamically */
+          display: flex;
+          flex-direction: column;
+          flex-shrink: 0;
+          margin-inline-end: 6px; /* Reduced right margin */
+          max-width: 110px;
+          min-width: 110px;
+          width: 110px;
+          transition: border-right-color 0.4s ease;
 
         /* Debug tab button - <button class="debug-tab-button"> */
         .debug-tab-button {
@@ -90,11 +101,12 @@
           color: var(--text-secondary); /* --text-secondary defined in global.css */
           cursor: pointer;
           display: flex;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 500;
-          gap: 6px;
-          padding-block: 8px; /* Logical property for vertical padding */
-          padding-inline: 12px; /* Logical property for horizontal padding */
+          gap: 4px;
+          max-width: 100%;
+          padding-block: 6px; /* Reduced vertical padding */
+          padding-inline: 8px; /* Reduced horizontal padding */
           text-align: start; /* Logical property for left alignment */
           transition: all 0.2s ease;
           width: 100%;
@@ -114,12 +126,18 @@
 
           /* Debug tab icon - <Icon class="debug-tab-icon"> */
           .debug-tab-icon {
-            font-size: 14px;
+            flex-shrink: 0;
+            font-size: 16px;
           }
 
           /* Debug tab text - <span class="debug-tab-text"> */
           .debug-tab-text {
-            font-size: 13px;
+            flex: 1;
+            font-size: 12px;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
           }
         }
       }
@@ -128,12 +146,14 @@
       .debug-tab-content {
         flex: 1;
         min-height: 0;
+        max-width: 100%;
         overflow: hidden;
 
         /* Debug tab panel - <div class="debug-tab-panel"> */
         .debug-tab-panel {
           height: 100%;
           min-height: 0;
+          max-width: 100%;
           overflow: hidden;
           padding: 0;
 
@@ -145,6 +165,7 @@
             font-style: italic;
             height: 100%;
             justify-content: center;
+            max-width: 100%;
             text-align: center;
 
             p {
@@ -156,31 +177,35 @@
           .debug-tooltips-content {
             display: grid;
             grid-template-rows: 1fr;
-            gap: 8px;
+            gap: 6px;
             height: 100%;
             min-height: 0;
+            max-width: 100%;
             overflow: hidden;
-            padding: 8px;
+            padding: 6px;
 
-            /* Debug tooltips scrollable content - <div class="debug-tooltips-scrollable-content"> */
-            .debug-tooltips-scrollable-content {
-              flex: 1; /* Use flex instead of fixed height */
-              min-height: 0; /* Allow shrinking */
-              overflow: hidden; /* Let OverlayScrollbarsComponent handle scrolling */
-              padding-block-end: 4px; /* Reduced bottom padding for scroll space */
+                          /* Debug tooltips scrollable content - <div class="debug-tooltips-scrollable-content"> */
+              .debug-tooltips-scrollable-content {
+                flex: 1; /* Use flex instead of fixed height */
+                min-height: 0; /* Allow shrinking */
+                max-width: 100%;
+                overflow: hidden; /* Let OverlayScrollbarsComponent handle scrolling */
+                padding-block-end: 3px; /* Reduced bottom padding for scroll space */
+                padding-inline: 6px; /* Reduced left and right gutters */
 
               /* Debug tooltips options - <div class="debug-tooltips-options"> */
               .debug-tooltips-options {
                 display: flex;
                 flex-direction: column;
-                gap: 8px;
+                gap: 6px;
+                max-width: 100%;
 
                 /* Debug option group - <div class="debug-option-group"> */
                 .debug-option-group {
                   display: flex;
                   flex-direction: column;
-                  gap: 4px;
-                  margin-block-start: 8px; /* Add top margin to all groups */
+                  gap: 3px;
+                  margin-block-start: 6px; /* Reduced top margin to all groups */
 
                   /* Remove top margin from first group */
                   &:first-child {
@@ -190,7 +215,7 @@
                   /* Debug option group title - <h3> */
                   h3 {
                     color: var(--accent-color); /* --accent-color defined in global.css */
-                    font-size: 13px;
+                    font-size: 12px;
                     font-weight: 600;
                     margin: 0;
                     text-transform: uppercase;
@@ -202,7 +227,7 @@
                     align-items: center;
                     cursor: pointer;
                     display: flex;
-                    gap: 6px;
+                    gap: 4px;
                     justify-content: flex-start;
                     width: 100%;
 
@@ -280,21 +305,22 @@
               flex: 1;
               min-height: 0;
               overflow: hidden;
-              padding-block-end: 4px;
+              padding-block-end: 3px;
+              padding-inline: 6px; /* Reduced left and right gutters */
 
               /* Debug general options - <div class="debug-general-options"> */
               .debug-general-options {
                 display: flex;
                 flex-direction: column;
-                gap: 8px;
+                gap: 6px;
 
                 /* Debug option group - <div class="debug-option-group"> */
                 .debug-option-group {
                   align-items: start;
                   display: flex;
                   flex-direction: column;
-                  gap: 8px;
-                  margin-block-start: 8px;
+                  gap: 6px;
+                  margin-block-start: 6px;
 
                   /* Remove top margin from first group */
                   &:first-child {
@@ -315,7 +341,7 @@
                   .debug-opacity-control {
                     display: flex;
                     flex-direction: column;
-                    gap: 6px;
+                    gap: 4px;
                     width: 100%;
 
                     /* Debug opacity label - <label class="debug-opacity-label"> */
@@ -323,7 +349,7 @@
                       align-items: center;
                       color: var(--text-primary); /* --text-primary defined in global.css */
                       display: flex;
-                      font-size: 13px;
+                      font-size: 12px;
                       font-weight: 500;
                       justify-content: space-between;
                       width: 100%;
@@ -332,16 +358,16 @@
                       .debug-opacity-value {
                         color: var(--accent-color); /* --accent-color defined in global.css */
                         font-weight: 600;
-                        font-size: 12px;
+                        font-size: 11px;
                       }
                     }
 
                     /* Debug opacity preview - <div class="debug-opacity-preview"> */
                     .debug-opacity-preview {
                       color: var(--text-secondary); /* --text-secondary defined in global.css */
-                      font-size: 11px;
+                      font-size: 10px;
                       font-style: italic;
-                      margin-block-start: 2px;
+                      margin-block-start: 1px;
                     }
 
                     /* Custom styling for USlider components in debug popup */
@@ -443,7 +469,7 @@
                   /* Debug placeholder text - <p class="debug-placeholder-text"> */
                   .debug-placeholder-text {
                     color: var(--text-secondary); /* --text-secondary defined in global.css */
-                    font-size: 12px;
+                    font-size: 11px;
                     font-style: italic;
                     margin: 0;
                   }
@@ -456,32 +482,37 @@
           .debug-logging-content {
             display: grid;
             grid-template-rows: auto 1fr auto;
-            gap: 8px;
+            gap: 6px;
             height: 100%;
             min-height: 0;
+            max-width: 100%;
             overflow: hidden;
 
             /* Debug logging header - <div class="debug-logging-header"> */
             .debug-logging-header {
               border-block-end: 1px solid var(--border-color); /* --border-color defined in global.css */
               display: flex;
-              gap: 8px;
               justify-content: flex-start;
-              padding-block-end: 8px;
+              max-width: 100%;
+              padding-block-end: 3px;
+              overflow: hidden;
             }
 
                           /* Debug logging scrollable content - <div class="debug-logging-scrollable-content"> */
               .debug-logging-scrollable-content {
                 flex: 1; /* Use flex instead of fixed height */
                 min-height: 0; /* Allow shrinking */
+                max-width: 100%;
                 overflow: hidden; /* Let OverlayScrollbarsComponent handle scrolling */
-                padding-block-end: 4px; /* Reduced bottom padding for scroll space */
+                padding-block-end: 3px; /* Reduced bottom padding for scroll space */
+                padding-inline: 6px; /* Reduced left and right gutters */
 
               /* Debug logging options - <div class="debug-logging-options"> */
               .debug-logging-options {
                 display: flex;
                 flex-direction: column;
-                gap: 8px;
+                gap: 6px;
+                max-width: 100%;
 
                 /* Debug option group - <div class="debug-option-group"> */
                 .debug-option-group {
@@ -574,13 +605,34 @@
               }
             }
 
-            /* Debug logging actions - <div class="debug-logging-actions"> */
-            .debug-logging-actions {
-              border-block-start: 1px solid var(--border-color); /* --border-color defined in global.css */
-              display: flex;
-              gap: 8px;
-              justify-content: flex-start;
-              padding-block-start: 8px;
+                            /* Debug logging actions - <div class="debug-logging-actions"> */
+                .debug-logging-actions {
+                  border-block-start: 1px solid var(--border-color); /* --border-color defined in global.css */
+                  display: flex;
+                  flex-wrap: wrap;
+                  justify-content: flex-start;
+                  max-width: 100%;
+                  padding-block-start: 3px;
+              
+              /* Button pair container - <div class="button-pair"> */
+              .button-pair {
+                display: flex;
+                flex: 1;
+                min-width: 240px; /* Ensures 2 buttons fit */
+              }
+              
+              /* CustomButton styling within the flex container */
+              :deep(.custom-button) {
+                flex: 1;
+                min-width: 100px;
+                max-width: 100%;
+                height: auto;
+                min-height: 24px;
+                
+                /* Ensure consistent button sizing across all layouts */
+                justify-content: center;
+                text-align: center;
+              }
             }
           }
         }

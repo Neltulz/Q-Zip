@@ -11,18 +11,24 @@
   - Positioned in the top-right corner of the screen
 -->
 <template>
-  <Transition name="debug-popup-fade" appear>
-    <div
-      v-if="debugStore.isDebugPopupVisible"
-      ref="popupRef"
-      class="debug-popup"
-      :style="popupStyle"
-      data-component-name="DebugPopup"
-    >
-      <div 
-        class="debug-popup-header"
-        @mousedown="startDrag"
-      >
+  <teleport to="body">
+    <Transition name="debug-popup-fade" appear>
+              <div
+          v-if="debugStore.isDebugPopupVisible"
+          ref="popupRef"
+          class="debug-popup"
+          :style="{ ...popupStyle, ...borderStyle }"
+          data-component-name="DebugPopup"
+          @mousedown="handlePopupMouseDown"
+          @focus="handlePopupFocus"
+          @blur="handlePopupBlur"
+          tabindex="0"
+        >
+              <div 
+          class="debug-popup-header"
+          :style="headerStyle"
+          @mousedown="startDrag"
+        >
         <h3 class="debug-popup-title">
           <Icon name="mdi:bug" class="debug-icon" />
           Debug Options
@@ -32,15 +38,15 @@
           class="close-button"
           data-name="close-debug-popup-btn"
           first-icon-name="mdi:close"
-          :first-icon-size="18"
+          :first-icon-size="16"
           @click="debugStore.toggleDebugPopup"
         />
       </div>
       
-      <div class="debug-popup-content">
-        <div class="debug-tabs">
-          <!-- Tab Navigation -->
-          <div class="debug-tab-nav">
+      <div class="debug-popup-content" :style="contentStyle">
+                  <div class="debug-tabs">
+            <!-- Tab Navigation -->
+            <div class="debug-tab-nav" :style="tabNavStyle">
             <button
               v-for="tab in tabs"
               :key="tab.id"
@@ -68,6 +74,7 @@
                     },
                   }"
                   defer
+                  class="debug-scrollbar-with-gutters"
                 >
                   <div class="debug-general-scrollable-content">
                     <div class="debug-general-options">
@@ -75,10 +82,10 @@
                       <div class="debug-option-group">
                         <h3>Opacity Controls</h3>
                         
-                        <!-- Main Opacity Slider -->
+                        <!-- Primary Opacity Slider -->
                         <div class="debug-opacity-control">
                           <label class="debug-opacity-label">
-                            <span>Main Opacity</span>
+                            <span>Primary Opacity</span>
                             <span class="debug-opacity-value">{{ Math.round(debugStore.debugOptions.debugPopupOpacity * 100) }}%</span>
                           </label>
                           <USlider
@@ -90,32 +97,30 @@
                           />
                         </div>
 
-                        <!-- Secondary Opacity Switch -->
-                        <label class="debug-option">
-                          <USwitch
-                            :model-value="debugStore.debugOptions.enableSecondaryOpacity"
-                            @update:model-value="(value) => debugStore.updateDebugOption('enableSecondaryOpacity', value)"
-                          />
-                          <span>Enable Secondary Opacity</span>
-                          <div 
-                            :ref="(el) => infoIconRefs['enableSecondaryOpacity'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
-                            @mouseenter="(event) => handleInfoIconMouseEnter('enableSecondaryOpacity', event)"
-                            @mouseleave="handleInfoIconMouseLeave"
-                          >
-                            <Icon name="mdi:information" class="debug-info-icon" />
-                          </div>
-                        </label>
-
-                        <!-- Secondary Opacity Slider (only shown when enabled) -->
-                        <div v-if="debugStore.debugOptions.enableSecondaryOpacity" class="debug-opacity-control">
+                        <!-- Secondary Opacity Slider -->
+                        <div class="debug-opacity-control">
                           <label class="debug-opacity-label">
                             <span>Secondary Opacity</span>
+                            <span class="debug-opacity-value">{{ Math.round(debugStore.debugOptions.debugPopupInteriorOpacity * 100) }}%</span>
+                          </label>
+                          <USlider
+                            :model-value="debugStore.debugOptions.debugPopupInteriorOpacity"
+                            :min="0.05"
+                            :max="1"
+                            :step="0.05"
+                            @update:model-value="(value) => debugStore.updateDebugOption('debugPopupInteriorOpacity', value)"
+                          />
+                        </div>
+
+                        <!-- Drag Opacity Slider -->
+                        <div class="debug-opacity-control">
+                          <label class="debug-opacity-label">
+                            <span>Drag Opacity</span>
                             <span class="debug-opacity-value">{{ Math.round(debugStore.debugOptions.debugPopupSecondaryOpacity * 100) }}%</span>
                           </label>
                           <USlider
                             :model-value="debugStore.debugOptions.debugPopupSecondaryOpacity"
-                            :min="0.1"
+                            :min="0.05"
                             :max="1"
                             :step="0.05"
                             @update:model-value="(value) => debugStore.updateDebugOption('debugPopupSecondaryOpacity', value)"
@@ -124,6 +129,43 @@
                             <span>Preview: {{ Math.round(debugStore.secondaryOpacity * 100) }}% while moving</span>
                           </div>
                         </div>
+                      </div>
+
+                      <!-- Backdrop Blur Controls -->
+                      <div class="debug-option-group">
+                        <h3>Backdrop Blur</h3>
+                        
+                        <!-- Backdrop Blur Slider -->
+                        <div class="debug-opacity-control">
+                          <label class="debug-opacity-label">
+                            <span>Backdrop Blur</span>
+                            <span class="debug-opacity-value">{{ Math.round(debugStore.debugOptions.backdropBlur) }}px</span>
+                          </label>
+                          <USlider
+                            :model-value="debugStore.debugOptions.backdropBlur"
+                            :min="0"
+                            :max="20"
+                            :step="1"
+                            @update:model-value="(value) => debugStore.updateDebugOption('backdropBlur', value)"
+                          />
+                        </div>
+
+                        <!-- Disable Backdrop Blur During Drag Switch -->
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.disableBackdropBlurOnDrag"
+                            @update:model-value="(value) => debugStore.updateDebugOption('disableBackdropBlurOnDrag', value)"
+                          />
+                          <span>Disable Blur During Drag</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['disableBackdropBlurOnDrag'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('disableBackdropBlurOnDrag', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
                       </div>
 
                       <!-- Other General Options -->
@@ -147,7 +189,7 @@
                     button-style-class="trans-btn"
                     data-name="enable-all-logging-btn"
                     first-icon-name="mdi:check-all"
-                    :first-icon-size="20"
+                    :first-icon-size="16"
                     @click="checkAllLoggingOptions"
                   >
                     Enable All
@@ -157,7 +199,7 @@
                     button-style-class="trans-btn"
                     data-name="disable-all-logging-btn"
                     first-icon-name="mdi:close-box-multiple"
-                    :first-icon-size="20"
+                    :first-icon-size="16"
                     @click="uncheckAllLoggingOptions"
                   >
                     Disable All
@@ -176,6 +218,7 @@
                   }"
                   defer
                   :events="{ scroll: handleScroll }"
+                  class="debug-scrollbar-with-gutters"
                 >
                   <div class="debug-logging-scrollable-content">
                     <!-- Logging Options Grid -->
@@ -585,46 +628,50 @@
 
                 <!-- Bottom Action Buttons -->
                 <div class="debug-logging-actions">
-                  <CustomButton
-                    btn-theme="info"
-                    button-style-class="trans-btn"
-                    data-name="show-debug-status-btn"
-                    first-icon-name="mdi:information"
-                    :first-icon-size="20"
-                    @click="showDebugStatus"
-                  >
-                    Show Status
-                  </CustomButton>
-                  <CustomButton
-                    btn-theme="warning"
-                    button-style-class="trans-btn"
-                    data-name="refresh-debug-btn"
-                    first-icon-name="mdi:refresh"
-                    :first-icon-size="20"
-                    @click="debugStore.forceRefresh"
-                  >
-                    Refresh
-                  </CustomButton>
-                  <CustomButton
-                    btn-theme="danger"
-                    button-style-class="trans-btn"
-                    data-name="reset-debug-btn"
-                    first-icon-name="mdi:restore"
-                    :first-icon-size="20"
-                    @click="debugStore.resetDebugOptions"
-                  >
-                    Reset
-                  </CustomButton>
-                  <CustomButton
-                    btn-theme="default"
-                    button-style-class="trans-btn"
-                    data-name="reset-dimensions-btn"
-                    first-icon-name="mdi:resize"
-                    :first-icon-size="20"
-                    @click="debugStore.resetDebugPopupDimensions"
-                  >
-                    Reset Size
-                  </CustomButton>
+                  <div class="button-pair">
+                    <CustomButton
+                      btn-theme="info"
+                      button-style-class="trans-btn"
+                      data-name="show-debug-status-btn"
+                      first-icon-name="mdi:information"
+                      :first-icon-size="16"
+                      @click="showDebugStatus"
+                    >
+                      Show Status
+                    </CustomButton>
+                    <CustomButton
+                      btn-theme="warning"
+                      button-style-class="trans-btn"
+                      data-name="refresh-debug-btn"
+                      first-icon-name="mdi:refresh"
+                      :first-icon-size="16"
+                      @click="debugStore.forceRefresh"
+                    >
+                      Refresh
+                    </CustomButton>
+                  </div>
+                  <div class="button-pair">
+                    <CustomButton
+                      btn-theme="danger"
+                      button-style-class="trans-btn"
+                      data-name="reset-debug-btn"
+                      first-icon-name="mdi:restore"
+                      :first-icon-size="16"
+                      @click="debugStore.resetDebugOptions"
+                    >
+                      Reset
+                    </CustomButton>
+                    <CustomButton
+                      btn-theme="default"
+                      button-style-class="trans-btn"
+                      data-name="reset-dimensions-btn"
+                      first-icon-name="mdi:resize"
+                      :first-icon-size="16"
+                      @click="debugStore.resetDebugPopupDimensions"
+                    >
+                      Reset Size
+                    </CustomButton>
+                  </div>
                 </div>
               </div>
             </div>
@@ -642,6 +689,7 @@
                     },
                   }"
                   defer
+                  class="debug-scrollbar-with-gutters"
                 >
                   <div class="debug-tooltips-scrollable-content">
                     <div class="debug-tooltips-options">
@@ -664,6 +712,55 @@
                           </div>
                         </label>
                       </div>
+
+                      <div class="debug-option-group">
+                        <h3>Tooltip Debugging</h3>
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.disableDropdownPointerEvents"
+                            @update:model-value="(value) => debugStore.updateDebugOption('disableDropdownPointerEvents', value)"
+                          />
+                          <span>Disable Dropdown Pointer Events</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['disableDropdownPointerEvents'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('disableDropdownPointerEvents', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.increaseTooltipZIndex"
+                            @update:model-value="(value) => debugStore.updateDebugOption('increaseTooltipZIndex', value)"
+                          />
+                          <span>Increase Tooltip Z-Index</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['increaseTooltipZIndex'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('increaseTooltipZIndex', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.forceTooltipInteractive"
+                            @update:model-value="(value) => debugStore.updateDebugOption('forceTooltipInteractive', value)"
+                          />
+                          <span>Force Tooltip Interactive</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['forceTooltipInteractive'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('forceTooltipInteractive', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </OverlayScrollbarsComponent>
@@ -672,8 +769,9 @@
           </div>
         </div>
       </div>
-    </div>
-  </Transition>
+      </div>
+    </Transition>
+  </teleport>
 
   <!-- InfoTooltip components for debug options -->
   <InfoTooltip
@@ -689,7 +787,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useDebugStore } from "@/stores/debugStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useTooltipManager } from "@/composables/useTooltipManager";
@@ -835,9 +933,33 @@ const debugOptionTooltips = {
     text: "Prevents tooltips from closing once they become active. Useful for debugging tooltip positioning and behavior.",
     example: "Tooltips will stay visible until this option is disabled"
   },
-  enableSecondaryOpacity: {
-    text: "Enables a secondary opacity level that applies while dragging the debug popup window. The final opacity is calculated as: Main Opacity × Secondary Opacity.",
-    example: "50% main × 50% secondary = 25% while moving"
+  debugPopupSecondaryOpacity: {
+    text: "Controls the opacity level that applies while dragging the debug popup window. This allows you to see through the popup while moving it.",
+    example: "50% drag opacity while moving the popup"
+  },
+  debugPopupInteriorOpacity: {
+    text: "Controls the opacity of all interior elements (buttons, sliders, text, etc.) within the debug popup. This affects the overall visibility of the content.",
+    example: "80% makes interior elements slightly transparent"
+  },
+  disableDropdownPointerEvents: {
+    text: "Disables pointer events on dropdown overlays to allow element selection in dev tools. This prevents dropdowns from blocking tooltip interaction.",
+    example: "Dropdown overlays become transparent to mouse events"
+  },
+  increaseTooltipZIndex: {
+    text: "Increases the z-index of tooltip containers and tooltips to appear above dropdown overlays and other UI elements.",
+    example: "Tooltips appear above dropdown menus and modals"
+  },
+  forceTooltipInteractive: {
+    text: "Forces tooltips to become interactive by disabling pointer-events: none. This allows tooltips to be selected in dev tools element picker.",
+    example: "Tooltips can be clicked and selected in dev tools"
+  },
+  backdropBlur: {
+    text: "Controls the backdrop blur intensity of the debug popup window. Higher values create more blur effect behind the popup.",
+    example: "10px blur creates a moderate blur effect"
+  },
+  disableBackdropBlurOnDrag: {
+    text: "Disables backdrop blur while dragging the debug popup window. This allows you to easily see what's behind the popup while moving it.",
+    example: "Blur is temporarily disabled while moving the popup"
   }
 };
 
@@ -849,6 +971,9 @@ const isDragging = ref(false);
 const dragStartX = ref(0);
 const dragStartY = ref(0);
 const dragStartPosition = ref({ x: 0, y: 0 });
+
+// Active state for the popup
+const isActive = ref(false);
 
 // Debug functions
 const checkAllLoggingOptions = () => {
@@ -890,6 +1015,28 @@ const handleScroll = () => {
   }
 };
 
+// Handle popup mouse down to activate
+const handlePopupMouseDown = () => {
+  isActive.value = true;
+};
+
+// Handle popup focus
+const handlePopupFocus = () => {
+  isActive.value = true;
+};
+
+// Handle popup blur
+const handlePopupBlur = () => {
+  isActive.value = false;
+};
+
+// Handle global click to deactivate popup when clicking outside
+const handleGlobalClick = (event: MouseEvent) => {
+  if (popupRef.value && !popupRef.value.contains(event.target as Node)) {
+    isActive.value = false;
+  }
+};
+
 // Handle keyboard events for debug shortcuts
 const handleKeyDown = (event: KeyboardEvent) => {
   // Ctrl+Alt+Shift+T to toggle Prevent Tooltip Closing
@@ -905,12 +1052,97 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 // Computed popup style
-const popupStyle = computed(() => ({
-  transform: `translate(${debugStore.debugPopupPosition.x}px, ${debugStore.debugPopupPosition.y}px)`,
-  width: `${debugStore.debugPopupDimensions.width}px`,
-  height: `${debugStore.debugPopupDimensions.height}px`,
-  opacity: isDragging.value ? debugStore.secondaryOpacity : debugStore.currentOpacity,
-}));
+const popupStyle = computed(() => {
+  // Calculate backdrop blur based on drag state and settings
+  let backdropBlurValue = debugStore.debugOptions.backdropBlur;
+  
+  // Disable blur during drag if the option is enabled
+  if (isDragging.value && debugStore.debugOptions.disableBackdropBlurOnDrag) {
+    backdropBlurValue = 0;
+  }
+  
+  // Calculate box shadow opacity and size based on drag state and focus
+  const primaryOpacity = debugStore.currentOpacity;
+  const dragOpacity = isDragging.value ? debugStore.debugOptions.debugPopupSecondaryOpacity : primaryOpacity;
+  const shadowOpacity = isDragging.value ? dragOpacity * 0.6 : 0.8; // 60% of drag opacity, or 80% when not dragging
+  
+  // Smaller shadow when not focused, larger when focused
+  const shadowBlur = isActive.value ? 48 : 24; // 48px when active, 24px when inactive
+  const shadowSpread = isActive.value ? 0 : 0; // Keep spread at 0 for both states
+  
+  const style = {
+    transform: `translate(${debugStore.debugPopupPosition.x}px, ${debugStore.debugPopupPosition.y}px)`,
+    width: `${debugStore.debugPopupDimensions.width}px`,
+    height: `${debugStore.debugPopupDimensions.height}px`,
+    backdropFilter: `blur(${backdropBlurValue}px)`,
+    boxShadow: `0 12px ${shadowBlur}px rgba(0, 0, 0, ${shadowOpacity})`,
+  };
+  
+  // Debug logging for backdrop blur
+  if (DEBUG && debugConfig.logUIEvents) {
+    console.log(`%c🔧 Debug popup backdrop blur: ${backdropBlurValue}px`, 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;');
+  }
+  
+  return style;
+});
+
+// Computed header style with opacity
+const headerStyle = computed(() => {
+  const primaryOpacity = debugStore.currentOpacity;
+  const interiorOpacity = debugStore.debugOptions.debugPopupInteriorOpacity;
+  const dragOpacity = isDragging.value ? debugStore.debugOptions.debugPopupSecondaryOpacity : primaryOpacity;
+  
+  return {
+    backgroundColor: `hsla(0, 0%, ${themeStore.isEffectiveDark ? '25%' : '70%'}, ${dragOpacity})`,
+    borderBottomColor: `hsla(0, 0%, ${themeStore.isEffectiveDark ? '25%' : '70%'}, ${dragOpacity})`,
+    opacity: isDragging.value ? dragOpacity : interiorOpacity,
+  };
+});
+
+// Computed content style with opacity
+const contentStyle = computed(() => {
+  const primaryOpacity = debugStore.currentOpacity;
+  const interiorOpacity = debugStore.debugOptions.debugPopupInteriorOpacity;
+  const dragOpacity = isDragging.value ? debugStore.debugOptions.debugPopupSecondaryOpacity : primaryOpacity;
+  
+  return {
+    backgroundColor: `hsla(0, 0%, ${themeStore.isEffectiveDark ? '9%' : '91%'}, ${dragOpacity})`,
+    opacity: isDragging.value ? dragOpacity : interiorOpacity,
+  };
+});
+
+// Computed tab navigation style with opacity
+const tabNavStyle = computed(() => {
+  const primaryOpacity = debugStore.currentOpacity;
+  const dragOpacity = isDragging.value ? debugStore.debugOptions.debugPopupSecondaryOpacity : primaryOpacity;
+  
+  return {
+    borderRightColor: `hsla(0, 0%, ${themeStore.isEffectiveDark ? '25%' : '70%'}, ${dragOpacity})`,
+  };
+});
+
+// Computed border style with opacity
+const borderStyle = computed(() => {
+  const primaryOpacity = debugStore.currentOpacity;
+  const dragOpacity = isDragging.value ? debugStore.debugOptions.debugPopupSecondaryOpacity : primaryOpacity;
+  
+  // Apply stronger drag opacity effect to border
+  const borderOpacity = isDragging.value ? dragOpacity * 0.5 : primaryOpacity;
+  
+  // Choose border color based on active state
+  let borderColor;
+  if (isActive.value) {
+    // Nice blue color when active
+    borderColor = `hsla(210, 100%, 60%, ${borderOpacity})`;
+  } else {
+    // Same gray as titlebar when inactive
+    borderColor = `hsla(0, 0%, ${themeStore.isEffectiveDark ? '25%' : '70%'}, ${borderOpacity})`;
+  }
+  
+  return {
+    borderColor: borderColor,
+  };
+});
 
 // Start drag operation
 const startDrag = (event: MouseEvent) => {
@@ -922,6 +1154,11 @@ const startDrag = (event: MouseEvent) => {
     x: debugStore.debugPopupPosition.x,
     y: debugStore.debugPopupPosition.y,
   };
+  
+  // Temporarily disconnect the ResizeObserver during drag to prevent interference
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
   
   document.addEventListener('mousemove', handleDrag);
   document.addEventListener('mouseup', stopDrag);
@@ -948,54 +1185,204 @@ const stopDrag = () => {
   isDragging.value = false;
   document.removeEventListener('mousemove', handleDrag);
   document.removeEventListener('mouseup', stopDrag);
+  
+  // Reconnect the ResizeObserver after drag is complete
+  nextTick(() => {
+    if (popupRef.value && resizeObserver) {
+      try {
+        resizeObserver.observe(popupRef.value);
+        if (DEBUG && debugConfig.logUIEvents) {
+          console.log(`%c🔧 ResizeObserver reconnected after drag`, 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+        }
+      } catch (error) {
+        if (DEBUG && debugConfig.logUIEvents) {
+          console.log(`%c🔧 Error reconnecting ResizeObserver:`, 'background: #f44336; color: white; padding: 2px 4px; border-radius: 3px;', error);
+        }
+      }
+    }
+  });
+  
+  // Capture the current dimensions immediately after drag ends
+  // This ensures any resize that happened during drag is saved
+  nextTick(() => {
+    if (popupRef.value) {
+      const rect = popupRef.value.getBoundingClientRect();
+      const currentWidth = Math.max(320, Math.min(800, rect.width));
+      const currentHeight = Math.max(300, Math.min(window.innerHeight * 0.8, rect.height));
+      
+      // Only update if dimensions are different from stored values
+      if (currentWidth !== debugStore.debugPopupDimensions.width || 
+          currentHeight !== debugStore.debugPopupDimensions.height) {
+        
+        debugStore.updateDebugPopupDimensions({
+          width: currentWidth,
+          height: currentHeight,
+        });
+        
+        if (DEBUG && debugConfig.logUIEvents) {
+          console.log(`%c🔧 Debug popup dimensions captured after drag: ${currentWidth}x${currentHeight}`, 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;');
+        }
+      }
+    }
+  });
 };
+
+// Handle mouse up events to capture final dimensions after resize
+const handleMouseUp = () => {
+  // Small delay to ensure the resize operation is complete
+  setTimeout(() => {
+    if (popupRef.value && !isDragging.value) {
+      const rect = popupRef.value.getBoundingClientRect();
+      const currentWidth = Math.max(320, Math.min(800, rect.width));
+      const currentHeight = Math.max(300, Math.min(window.innerHeight * 0.8, rect.height));
+      
+      // Only update if dimensions are different from stored values
+      if (currentWidth !== debugStore.debugPopupDimensions.width || 
+          currentHeight !== debugStore.debugPopupDimensions.height) {
+        
+        debugStore.updateDebugPopupDimensions({
+          width: currentWidth,
+          height: currentHeight,
+        });
+        
+        if (DEBUG && debugConfig.logUIEvents) {
+          console.log(`%c🔧 Debug popup dimensions captured after mouse up: ${currentWidth}x${currentHeight}`, 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;');
+        }
+      }
+    }
+  }, 50); // 50ms delay to ensure resize is complete
+};
+
+// Setup resize observer
+let resizeObserver: ResizeObserver | null = null;
+let isInitialResize = true; // Flag to prevent initial resize from overwriting persisted dimensions
+let resizeTimeout: NodeJS.Timeout | null = null; // For debouncing resize events
 
 // Handle resize events
 const handleResize = () => {
+  // Skip the initial resize event to prevent overwriting persisted dimensions
+  if (isInitialResize) {
+    return;
+  }
+  
   if (popupRef.value) {
     const rect = popupRef.value.getBoundingClientRect();
     const newWidth = Math.max(320, Math.min(800, rect.width));
     const newHeight = Math.max(300, Math.min(window.innerHeight * 0.8, rect.height));
     
-    // Only update if dimensions actually changed
+    // Only update if dimensions actually changed AND they're different from the stored values
+    // This prevents the initial resize event from overwriting persisted dimensions
     if (newWidth !== debugStore.debugPopupDimensions.width || 
         newHeight !== debugStore.debugPopupDimensions.height) {
-      debugStore.updateDebugPopupDimensions({
-        width: newWidth,
-        height: newHeight,
-      });
       
-      // Log the resize for debugging
-      if (DEBUG && debugConfig.logUIEvents) {
-        console.log(`%c🔧 Debug popup resized: ${newWidth}x${newHeight}`, 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;');
+      // Check if this is a significant change (more than 1px difference)
+      // This helps prevent minor rounding differences from triggering updates
+      const widthDiff = Math.abs(newWidth - debugStore.debugPopupDimensions.width);
+      const heightDiff = Math.abs(newHeight - debugStore.debugPopupDimensions.height);
+      
+      if (widthDiff > 1 || heightDiff > 1) {
+        debugStore.updateDebugPopupDimensions({
+          width: newWidth,
+          height: newHeight,
+        });
+        
+        // Log the resize for debugging
+        if (DEBUG && debugConfig.logUIEvents) {
+          console.log(`%c🔧 Debug popup resized: ${newWidth}x${newHeight}`, 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;');
+        }
       }
     }
+    
+    // Clear any existing timeout and set a new one to capture final dimensions
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout);
+    }
+    
+    // Debounce the final dimension capture to ensure we get the last resize event
+    resizeTimeout = setTimeout(() => {
+      if (popupRef.value) {
+        const finalRect = popupRef.value.getBoundingClientRect();
+        const finalWidth = Math.max(320, Math.min(800, finalRect.width));
+        const finalHeight = Math.max(300, Math.min(window.innerHeight * 0.8, finalRect.height));
+        
+        // Update with final dimensions to ensure accuracy
+        if (finalWidth !== debugStore.debugPopupDimensions.width || 
+            finalHeight !== debugStore.debugPopupDimensions.height) {
+          
+          debugStore.updateDebugPopupDimensions({
+            width: finalWidth,
+            height: finalHeight,
+          });
+          
+          if (DEBUG && debugConfig.logUIEvents) {
+            console.log(`%c🔧 Debug popup final dimensions captured: ${finalWidth}x${finalHeight}`, 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;');
+          }
+        }
+      }
+      resizeTimeout = null;
+    }, 100); // 100ms debounce
   }
 };
 
-// Setup resize observer
-let resizeObserver: ResizeObserver | null = null;
+// Watch for popup visibility changes to reset the initial resize flag
+watch(() => debugStore.isDebugPopupVisible, (isVisible) => {
+  if (isVisible) {
+    // Reset the flag when popup becomes visible
+    isInitialResize = true;
+    
+    // Log the persisted dimensions being applied
+    if (DEBUG && debugConfig.logUIEvents) {
+      console.log(`%c🔧 Debug popup opening with persisted dimensions: ${debugStore.debugPopupDimensions.width}x${debugStore.debugPopupDimensions.height}`, 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;');
+    }
+    
+    // Set up the ResizeObserver after the popup is rendered
+    nextTick(() => {
+      if (popupRef.value && !resizeObserver) {
+        resizeObserver = new ResizeObserver(handleResize);
+        resizeObserver.observe(popupRef.value);
+      }
+      
+      // Reset the initial resize flag after a short delay
+      setTimeout(() => {
+        isInitialResize = false;
+        if (DEBUG && debugConfig.logUIEvents) {
+          console.log(`%c🔧 Debug popup initial resize protection disabled`, 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+        }
+      }, 100);
+    });
+  }
+});
 
 onMounted(() => {
-  if (popupRef.value) {
-    resizeObserver = new ResizeObserver(handleResize);
-    resizeObserver.observe(popupRef.value);
-  }
-  
   // Add keyboard event listener for debug shortcuts
   window.addEventListener('keydown', handleKeyDown);
+  
+  // Add mouse event listener to capture final dimensions after resize
+  document.addEventListener('mouseup', handleMouseUp);
+  
+  // Add global click handler to deactivate popup when clicking outside
+  document.addEventListener('click', handleGlobalClick);
 });
 
 onUnmounted(() => {
   document.removeEventListener('mousemove', handleDrag);
   document.removeEventListener('mouseup', stopDrag);
+  document.removeEventListener('mouseup', handleMouseUp);
+  document.removeEventListener('click', handleGlobalClick);
   
   // Remove keyboard event listener
   window.removeEventListener('keydown', handleKeyDown);
   
+  // Clean up the ResizeObserver
   if (resizeObserver) {
     resizeObserver.disconnect();
     resizeObserver = null;
+  }
+  
+  // Clean up the resize timeout
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = null;
   }
 });
 </script>

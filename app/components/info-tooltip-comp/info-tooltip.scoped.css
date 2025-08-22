@@ -224,6 +224,11 @@
       }
     }
   }
+
+  /* Debug: High z-index for tooltip debugging - <div class="info-tooltip debug-high-z-index"> */
+  &.debug-high-z-index {
+    z-index: 9999999; /* Very high z-index to appear above dropdowns and modals */
+  }
 }
 
 

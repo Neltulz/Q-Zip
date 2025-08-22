@@ -537,6 +537,11 @@ fieldset {
     }
   }
 }
+/* Debug: Disable pointer events on dropdown overlays for tooltip debugging */
+.debug-disable-dropdown-pointer-events .dropdown-content {
+  pointer-events: none !important;
+}
+
 /* Utility: global "no selection" mode
    - Add the `no-select` class to the <body> element (e.g. <body class="no-select">)
      to disable text selection across the app.

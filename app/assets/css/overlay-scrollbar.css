@@ -19,3 +19,13 @@
   --os-handle-perpendicular-size-hover: 150%;
   --os-handle-perpendicular-size-active: 150%;
 }
+
+/* Debug popup scrollbars with gutters */
+.debug-scrollbar-with-gutters {
+  --os-padding: 8px;
+}
+
+/* Debug popup content with permanent gutters */
+.debug-scrollbar-with-gutters [data-overlayscrollbars-contents] {
+  padding-inline: 8px;
+}

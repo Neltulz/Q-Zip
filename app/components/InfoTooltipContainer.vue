@@ -51,7 +51,13 @@
         v-if="shouldRender"
         ref="floatingRef"
         class="info-tooltip"
-        :class="{ interactive: interactive, 'simple-tooltip': !!parsedContent, 'disabled-target': isTargetDisabled, [props.class]: props.class }"
+        :class="{ 
+          interactive: interactive || debugStore.debugOptions.forceTooltipInteractive, 
+          'simple-tooltip': !!parsedContent, 
+          'disabled-target': isTargetDisabled, 
+          'debug-high-z-index': debugStore.debugOptions.increaseTooltipZIndex,
+          [props.class]: props.class 
+        }"
         :style="floatingStyles"
         @mouseenter="(event) => emit('mouseenter', event)"
         @mouseleave="(event) => emit('mouseleave', event)"
@@ -103,9 +109,12 @@ import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
 import { logUI, logRendering } from "@/utils/loggers";
+import { useDebugStore } from "@/stores/debugStore";
 import HotKey from "@/components/HotKey.vue";
 // Allow a simple text property for more generic tooltips
 type TooltipContent = NotificationMessageDetails | { text: string; icon?: string };
+
+const debugStore = useDebugStore();
 const props = defineProps({
   visible: {
     type: Boolean,

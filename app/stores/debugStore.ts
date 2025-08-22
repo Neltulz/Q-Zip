@@ -36,6 +36,15 @@ export interface DebugOptions {
   debugPopupOpacity: number;
   debugPopupSecondaryOpacity: number;
   enableSecondaryOpacity: boolean;
+  // Tooltip debugging options
+  disableDropdownPointerEvents: boolean;
+  increaseTooltipZIndex: boolean;
+  forceTooltipInteractive: boolean;
+  // Backdrop blur controls
+  backdropBlur: number;
+  disableBackdropBlurOnDrag: boolean;
+  // Interior elements opacity
+  debugPopupInteriorOpacity: number;
 }
 
 export interface DebugPosition {
@@ -167,9 +176,18 @@ export const useDebugStore = defineStore(
       logFileTableActivation: false,
       preventTooltipClosing: false,
       // Opacity controls
-      debugPopupOpacity: 1,
-      debugPopupSecondaryOpacity: 0.7,
+      debugPopupOpacity: 0.75,
+      debugPopupSecondaryOpacity: 0.4,
       enableSecondaryOpacity: false,
+      // Tooltip debugging options
+      disableDropdownPointerEvents: false,
+      increaseTooltipZIndex: false,
+      forceTooltipInteractive: false,
+      // Backdrop blur controls
+      backdropBlur: 16,
+      disableBackdropBlurOnDrag: true,
+      // Interior elements opacity
+      debugPopupInteriorOpacity: 0.75,
     });
 
     // Computed property to ensure store is properly initialized
@@ -236,7 +254,10 @@ export const useDebugStore = defineStore(
         debugOptions.value[key] = Math.max(0.05, Math.min(1, numValue)) as DebugOptions[K];
       } else if (key === 'debugPopupSecondaryOpacity') {
         const numValue = value as number;
-        debugOptions.value[key] = Math.max(0.1, Math.min(1, numValue)) as DebugOptions[K];
+        debugOptions.value[key] = Math.max(0.05, Math.min(1, numValue)) as DebugOptions[K];
+      } else if (key === 'debugPopupInteriorOpacity') {
+        const numValue = value as number;
+        debugOptions.value[key] = Math.max(0.05, Math.min(1, numValue)) as DebugOptions[K];
       } else {
         debugOptions.value[key] = value;
       }
@@ -285,9 +306,18 @@ export const useDebugStore = defineStore(
         logFileTableActivation: false,
         preventTooltipClosing: false,
         // Opacity controls
-        debugPopupOpacity: 1,
-        debugPopupSecondaryOpacity: 0.7,
+        debugPopupOpacity: 0.75,
+        debugPopupSecondaryOpacity: 0.4,
         enableSecondaryOpacity: false,
+        // Tooltip debugging options
+        disableDropdownPointerEvents: false,
+        increaseTooltipZIndex: false,
+        forceTooltipInteractive: false,
+        // Backdrop blur controls
+        backdropBlur: 16,
+        disableBackdropBlurOnDrag: true,
+        // Interior elements opacity
+        debugPopupInteriorOpacity: 0.75,
       };
 
       // Sync reset to debugConfig
