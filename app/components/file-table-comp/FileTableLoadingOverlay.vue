@@ -67,7 +67,7 @@
         data-name="pause-loading-btn"
         :first-icon-name="isPaused ? 'mdi:play' : 'mdi:pause'"
         @click="handlePauseClick"
-        @mouseenter="handlePauseButtonMouseEnter"
+        @mouseenter="(event) => handlePauseButtonMouseEnter(event)"
         @mouseleave="handlePauseButtonMouseLeave"
       >
         {{ isPaused ? 'Resume' : 'Pause' }}
@@ -84,7 +84,7 @@
           last-icon-name=""
           @dropdown-opened="handleDropdownOpened"
           @dropdown-closed="handleDropdownClosed"
-          @mouseenter="handleCancelButtonMouseEnter"
+          @mouseenter="(event: MouseEvent) => handleCancelButtonMouseEnter(event)"
           @mouseleave="handleCancelButtonMouseLeave"
         >
         <template #button-content>
@@ -102,8 +102,8 @@
               first-icon-name="mdi:close"
               :first-icon-size="16"
               @click="cancelDropdownRef?.closeDropdown()"
-              @mouseenter="handleCloseButtonMouseEnter"
-              @mouseleave="handleCloseButtonMouseLeave"
+                        @mouseenter="(event: MouseEvent) => handleCloseButtonMouseEnter(event)"
+          @mouseleave="handleCloseButtonMouseLeave"
             />
             
             <!-- Main content -->
@@ -122,8 +122,8 @@
               <label 
                 ref="checkboxLabelRef"
                 class="checkbox-label"
-                @mouseenter="handleCheckboxMouseEnter"
-                @mouseleave="handleCheckboxMouseLeave"
+                            @mouseenter="(event: MouseEvent) => handleCheckboxMouseEnter(event)"
+            @mouseleave="handleCheckboxMouseLeave"
               >
                 <input 
                   ref="checkboxRef"
@@ -142,8 +142,8 @@
                 data-name="confirm-cancel-btn"
                 first-icon-name="mdi:stop"
                 @click="handleConfirmCancel"
-                @mouseenter="handleConfirmCancelButtonMouseEnter"
-                @mouseleave="handleConfirmCancelButtonMouseLeave"
+                            @mouseenter="(event: MouseEvent) => handleConfirmCancelButtonMouseEnter(event)"
+            @mouseleave="handleConfirmCancelButtonMouseLeave"
               >
                 Cancel Process
               </CustomButton>
@@ -155,39 +155,39 @@
     
     <!-- Tooltips -->
     <InfoTooltip
-      :visible="pauseTooltipVisible"
+      :visible="tooltipManager.activeTooltipId.value === 'pause-loading-btn'"
       :content="{ text: isPaused ? 'Resume scanning' : 'Pause scanning' }"
       :target="pauseButtonRef?.visualStyleRef"
       placement="bottom"
-      keyboard-shortcut="Space"
+      keyboardShortcut="Space"
     />
     <InfoTooltip
-      :visible="cancelTooltipVisible"
+      :visible="tooltipManager.activeTooltipId.value === 'cancel-loading-dropdown'"
       :content="{ text: 'Cancel scanning' }"
       :target="cancelDropdownRef?.$el"
       placement="bottom"
-      keyboard-shortcut="Esc"
+      keyboardShortcut="Esc"
     />
     <InfoTooltip
-      :visible="closeButtonTooltipVisible"
+      :visible="tooltipManager.activeTooltipId.value === 'close-cancel-dialog-btn'"
       :content="{ text: 'Close cancel dialog' }"
       :target="closeButtonRef?.visualStyleRef"
       placement="right"
-      keyboard-shortcut="Esc"
+      keyboardShortcut="Esc"
     />
     <InfoTooltip
-      :visible="checkboxTooltipVisible"
+      :visible="tooltipManager.activeTooltipId.value === 'remove-scanned-items-checkbox'"
       :content="{ text: 'Also remove already scanned items' }"
       :target="checkboxLabelRef"
       placement="right"
-      keyboard-shortcut="Space"
+      keyboardShortcut="Space"
     />
     <InfoTooltip
-      :visible="confirmCancelButtonTooltipVisible"
+      :visible="tooltipManager.activeTooltipId.value === 'confirm-cancel-btn'"
       :content="{ text: 'Confirm cancel process' }"
       :target="confirmCancelButtonRef?.visualStyleRef"
       placement="bottom"
-      keyboard-shortcut="Enter"
+      keyboardShortcut="Enter"
     />
   </div>
 </template>
@@ -204,6 +204,7 @@ import DoubleBounceLoadingAnim from "../loading-anim-comp/DoubleBounceLoadingAni
 import { logLoading, logDualProgress } from "@/utils/loggers";
 import { useOrphanedTooltipDetector } from "@/composables/useOrphanedTooltipDetector";
 import { useDropdownManager } from "@/composables/dropdownManager";
+import { useTooltipManager } from "@/composables/useTooltipManager";
 
 const props = defineProps<{
   currentItem?: number;
@@ -227,10 +228,14 @@ const cancelDropdownRef = ref<InstanceType<typeof DropdownMenu> | null>(null);
 // Orphaned tooltip detector for handling tooltips when dropdown closes unexpectedly
 const { checkMultipleTooltipTargets } = useOrphanedTooltipDetector();
 
+// Tooltip manager for consistent tooltip behavior
+const tooltipManager = useTooltipManager();
+
 // Tooltip state management
 const pauseButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
-const pauseTooltipVisible = ref(false);
-const cancelTooltipVisible = ref(false);
+// Remove local tooltip visibility state - use tooltipManager instead
+// const pauseTooltipVisible = ref(false);
+// const cancelTooltipVisible = ref(false);
 
 // New refs for cancel confirmation elements
 const closeButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
@@ -238,10 +243,10 @@ const checkboxRef = ref<HTMLInputElement | null>(null);
 const checkboxLabelRef = ref<HTMLLabelElement | null>(null);
 const confirmCancelButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
 
-// New tooltip visibility state
-const closeButtonTooltipVisible = ref(false);
-const checkboxTooltipVisible = ref(false);
-const confirmCancelButtonTooltipVisible = ref(false);
+// Remove local tooltip visibility state - use tooltipManager instead
+// const closeButtonTooltipVisible = ref(false);
+// const checkboxTooltipVisible = ref(false);
+// const confirmCancelButtonTooltipVisible = ref(false);
 
 // Debug: Watch for when the dropdown ref is set
 watch(cancelDropdownRef, (newRef) => {
@@ -419,11 +424,7 @@ const stopDropdownCloseMonitoring = () => {
 
 // Hide all tooltips to prevent orphaned tooltips when dropdown closes
 const hideAllTooltips = () => {
-  pauseTooltipVisible.value = false;
-  cancelTooltipVisible.value = false;
-  closeButtonTooltipVisible.value = false;
-  checkboxTooltipVisible.value = false;
-  confirmCancelButtonTooltipVisible.value = false;
+  tooltipManager.hideTooltipImmediately();
   
   // Reset tooltip refs to prevent orphaned tooltips
   resetTooltipRefs();
@@ -513,45 +514,50 @@ const handleConfirmCancel = () => {
   logLoading("FileTableLoadingOverlay", `Cancel event emitted in ${responseTime.toFixed(2)}ms`);
 };
 
-// Tooltip event handlers
-const handlePauseButtonMouseEnter = () => {
-  pauseTooltipVisible.value = true;
+// Tooltip event handlers - Updated to use tooltipManager with origin element
+const handlePauseButtonMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('pause-loading-btn', originElement);
 };
 
 const handlePauseButtonMouseLeave = () => {
-  pauseTooltipVisible.value = false;
+  tooltipManager.hideTooltip();
 };
 
-const handleCancelButtonMouseEnter = () => {
-  cancelTooltipVisible.value = true;
+const handleCancelButtonMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('cancel-loading-dropdown', originElement);
 };
 
 const handleCancelButtonMouseLeave = () => {
-  cancelTooltipVisible.value = false;
+  tooltipManager.hideTooltip();
 };
 
-const handleCloseButtonMouseEnter = () => {
-  closeButtonTooltipVisible.value = true;
+const handleCloseButtonMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('close-cancel-dialog-btn', originElement);
 };
 
 const handleCloseButtonMouseLeave = () => {
-  closeButtonTooltipVisible.value = false;
+  tooltipManager.hideTooltip();
 };
 
-const handleConfirmCancelButtonMouseEnter = () => {
-  confirmCancelButtonTooltipVisible.value = true;
+const handleConfirmCancelButtonMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('confirm-cancel-btn', originElement);
 };
 
 const handleConfirmCancelButtonMouseLeave = () => {
-  confirmCancelButtonTooltipVisible.value = false;
+  tooltipManager.hideTooltip();
 };
 
-const handleCheckboxMouseEnter = () => {
-  checkboxTooltipVisible.value = true;
+const handleCheckboxMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('remove-scanned-items-checkbox', originElement);
 };
 
 const handleCheckboxMouseLeave = () => {
-  checkboxTooltipVisible.value = false;
+  tooltipManager.hideTooltip();
 };
 
 // Get dropdown manager to check for other open dropdowns

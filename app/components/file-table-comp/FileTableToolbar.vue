@@ -15,7 +15,7 @@
           last-icon-name="mdi:chevron-down"
           :last-icon-size="20"
           :show-cancel-button="true"
-          @mouseenter="handleAddMouseEnter"
+          @mouseenter="(event) => handleAddMouseEnter(event)"
           @mouseleave="handleAddMouseLeave"
           @dropdown-opened="handleAddDropdownOpened"
         >
@@ -63,7 +63,7 @@ Add Folders: Ctrl+F"
           :first-icon-name="isRefreshing ? '' : 'mdi:refresh'"
           :first-icon-size="20"
           @click.stop="refreshFiles"
-          @mouseenter="handleRefreshMouseEnter"
+          @mouseenter="(event) => handleRefreshMouseEnter(event)"
           @mouseleave="handleRefreshMouseLeave"
         >
           <!-- Show loading animation when refreshing -->
@@ -94,7 +94,7 @@ Add Folders: Ctrl+F"
           first-icon-name="mdi:remove"
           :first-icon-size="20"
           @click.stop="removeSelectedFiles"
-          @mouseenter="handleRemoveMouseEnter"
+          @mouseenter="(event) => handleRemoveMouseEnter(event)"
           @mouseleave="handleRemoveMouseLeave"
         >
           Remove Selected
@@ -121,7 +121,7 @@ Add Folders: Ctrl+F"
           :last-icon-size="20"
           placement="bottom-start"
           :show-cancel-button="true"
-          @mouseenter="handleCopyMouseEnter"
+          @mouseenter="(event) => handleCopyMouseEnter(event)"
           @mouseleave="handleCopyMouseLeave"
           @dropdown-opened="handleCopyDropdownOpened"
         >
@@ -184,7 +184,7 @@ Add Folders: Ctrl+F"
           :last-icon-size="20"
           placement="bottom-start"
           :show-cancel-button="true"
-          @mouseenter="handleMoveMouseEnter"
+          @mouseenter="(event) => handleMoveMouseEnter(event)"
           @mouseleave="handleMoveMouseLeave"
           @dropdown-opened="handleMoveDropdownOpened"
         >
@@ -247,7 +247,7 @@ Add Folders: Ctrl+F"
           :last-icon-size="20"
           placement="bottom-end"
           :show-cancel-button="true"
-          @mouseenter="handleSettingsMouseEnter"
+          @mouseenter="(event) => handleSettingsMouseEnter(event)"
           @mouseleave="handleSettingsMouseLeave"
           @dropdown-opened="handleSettingsDropdownOpened"
         >
@@ -346,49 +346,55 @@ const copyDropdownRef = ref<any | null>(null);
 const moveDropdownRef = ref<any | null>(null);
 const settingsDropdownRef = ref<any | null>(null);
 
-// Tooltip mouse event handlers
-const handleAddMouseEnter = () => {
-  tooltipManager.showTooltip('add-files-dropdown');
+// Tooltip mouse event handlers - Updated to include origin element
+const handleAddMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('add-files-dropdown', originElement);
 };
 
 const handleAddMouseLeave = () => {
   tooltipManager.hideTooltip();
 };
 
-const handleRefreshMouseEnter = () => {
-  tooltipManager.showTooltip('refresh-files-btn');
+const handleRefreshMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('refresh-files-btn', originElement);
 };
 
 const handleRefreshMouseLeave = () => {
   tooltipManager.hideTooltip();
 };
 
-const handleRemoveMouseEnter = () => {
-  tooltipManager.showTooltip('remove-selected-files-btn');
+const handleRemoveMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('remove-selected-files-btn', originElement);
 };
 
 const handleRemoveMouseLeave = () => {
   tooltipManager.hideTooltip();
 };
 
-const handleCopyMouseEnter = () => {
-  tooltipManager.showTooltip('copy-to-job-dropdown');
+const handleCopyMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('copy-to-job-dropdown', originElement);
 };
 
 const handleCopyMouseLeave = () => {
   tooltipManager.hideTooltip();
 };
 
-const handleMoveMouseEnter = () => {
-  tooltipManager.showTooltip('move-to-job-dropdown');
+const handleMoveMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('move-to-job-dropdown', originElement);
 };
 
 const handleMoveMouseLeave = () => {
   tooltipManager.hideTooltip();
 };
 
-const handleSettingsMouseEnter = () => {
-  tooltipManager.showTooltip('file-table-settings-dropdown');
+const handleSettingsMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('file-table-settings-dropdown', originElement);
 };
 
 const handleSettingsMouseLeave = () => {

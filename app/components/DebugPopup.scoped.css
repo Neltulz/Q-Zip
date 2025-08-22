@@ -151,6 +151,121 @@
             }
           }
 
+          /* Debug tooltips content - <div class="debug-tooltips-content"> */
+          .debug-tooltips-content {
+            display: grid;
+            grid-template-rows: 1fr;
+            gap: 8px;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
+            padding: 8px;
+
+            /* Debug tooltips scrollable content - <div class="debug-tooltips-scrollable-content"> */
+            .debug-tooltips-scrollable-content {
+              flex: 1; /* Use flex instead of fixed height */
+              min-height: 0; /* Allow shrinking */
+              overflow: hidden; /* Let OverlayScrollbarsComponent handle scrolling */
+              padding-block-end: 4px; /* Reduced bottom padding for scroll space */
+
+              /* Debug tooltips options - <div class="debug-tooltips-options"> */
+              .debug-tooltips-options {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+
+                /* Debug option group - <div class="debug-option-group"> */
+                .debug-option-group {
+                  display: flex;
+                  flex-direction: column;
+                  gap: 4px;
+                  margin-block-start: 8px; /* Add top margin to all groups */
+
+                  /* Remove top margin from first group */
+                  &:first-child {
+                    margin-block-start: 0;
+                  }
+
+                  /* Debug option group title - <h3> */
+                  h3 {
+                    color: var(--accent-color); /* --accent-color defined in global.css */
+                    font-size: 13px;
+                    font-weight: 600;
+                    margin: 0;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                  }
+
+                  /* Debug option - <label class="debug-option"> */
+                  .debug-option {
+                    align-items: center;
+                    cursor: pointer;
+                    display: flex;
+                    gap: 6px;
+                    justify-content: flex-start;
+                    width: 100%;
+
+                    /* Debug option text - <span> */
+                    span {
+                      color: var(--text-primary); /* --text-primary defined in global.css */
+                      flex: 1;
+                      font-size: 13px;
+                    }
+
+                    /* Debug info icon wrapper - <div class="debug-info-icon-wrapper"> */
+                    .debug-info-icon-wrapper {
+                      align-items: center;
+                      color: var(--text-secondary); /* --text-secondary defined in global.css */
+                      cursor: help;
+                      display: flex;
+                      flex-shrink: 0;
+                      justify-content: center;
+                      opacity: 0.7;
+                      transition: all 0.2s ease;
+
+                      /* Debug info icon wrapper hover state */
+                      &:hover {
+                        color: var(--accent-color); /* --accent-color defined in global.css */
+                        opacity: 1;
+                      }
+
+                      /* Debug info icon - <Icon class="debug-info-icon"> */
+                      .debug-info-icon {
+                        font-size: 16px;
+                      }
+                    }
+
+                    /* Custom styling for USwitch components in debug popup */
+                    :deep(.u-switch) {
+                      align-items: center;
+                      display: flex;
+                      flex-shrink: 0;
+                      gap: 6px;
+                      min-height: auto !important;
+                      min-width: auto !important;
+                      outline: none !important;
+                      padding: 0 !important;
+                      width: auto;
+
+                      /* USwitch base - put switch on the left */
+                      .u-switch-base {
+                        flex-shrink: 0;
+                        order: 1;
+                      }
+
+                      /* USwitch wrapper - put text in the middle */
+                      .u-switch-wrapper {
+                        flex: 1;
+                        order: 2;
+                        text-align: start;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
           /* Debug logging content - <div class="debug-logging-content"> */
           .debug-logging-content {
             display: grid;

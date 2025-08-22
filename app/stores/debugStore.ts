@@ -31,6 +31,7 @@ export interface DebugOptions {
   // Special options
   decorumMessages: boolean;
   logFileTableActivation: boolean;
+  preventTooltipClosing: boolean;
 }
 
 export interface DebugPosition {
@@ -75,7 +76,8 @@ const logDebugOptionsStatus = (options: DebugOptions) => {
     'logComponentAttributes',
     'logVueWarnings',
     'decorumMessages',
-    'logFileTableActivation'
+    'logFileTableActivation',
+    'preventTooltipClosing'
   ];
 
   // Always show status, but with different messaging based on whether any logging is enabled
@@ -159,6 +161,7 @@ export const useDebugStore = defineStore(
       // Special options
       decorumMessages: false,
       logFileTableActivation: false,
+      preventTooltipClosing: false,
     });
 
     // Computed property to ensure store is properly initialized
@@ -238,6 +241,7 @@ export const useDebugStore = defineStore(
         // Special options
         decorumMessages: false,
         logFileTableActivation: false,
+        preventTooltipClosing: false,
       };
 
       // Sync reset to debugConfig

@@ -117,7 +117,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logComponentMounts'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logComponentMounts')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logComponentMounts', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -132,7 +132,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logRefUpdates'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logRefUpdates')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logRefUpdates', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -147,7 +147,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logRenderingEvents'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logRenderingEvents')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logRenderingEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -167,7 +167,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logClicksAndInputs'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logClicksAndInputs')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logClicksAndInputs', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -182,7 +182,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logHoverEvents'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logHoverEvents')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logHoverEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -197,7 +197,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logKeyboardEvents'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logKeyboardEvents')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logKeyboardEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -212,7 +212,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logUIInteractivity'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logUIInteractivity')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logUIInteractivity', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -232,7 +232,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logUIEvents'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logUIEvents')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logUIEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -247,7 +247,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logDropdownEvents'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logDropdownEvents')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logDropdownEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -262,7 +262,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logTooltipEvents'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logTooltipEvents')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logTooltipEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -282,7 +282,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logFileSelection'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logFileSelection')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logFileSelection', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -297,7 +297,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logDragAndDrop'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logDragAndDrop')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logDragAndDrop', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -312,7 +312,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logDragDropFailsafe'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logDragDropFailsafe')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logDragDropFailsafe', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -332,7 +332,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logStoreActions'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logStoreActions')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logStoreActions', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -347,7 +347,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logComposableManagerEvents'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logComposableManagerEvents')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logComposableManagerEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -367,7 +367,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logLoadingEvents'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logLoadingEvents')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logLoadingEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -382,7 +382,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logDualProgress'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logDualProgress')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logDualProgress', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -397,7 +397,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logNotifications'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logNotifications')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logNotifications', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -412,7 +412,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logTraceEvents'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logTraceEvents')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logTraceEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -432,7 +432,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logMissingPropWarnings'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logMissingPropWarnings')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logMissingPropWarnings', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -447,7 +447,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logComponentAttributes'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logComponentAttributes')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logComponentAttributes', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -462,7 +462,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logVueWarnings'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logVueWarnings')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logVueWarnings', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -482,7 +482,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['decorumMessages'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('decorumMessages')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('decorumMessages', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -497,7 +497,7 @@
                           <div 
                             :ref="(el) => infoIconRefs['logFileTableActivation'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
-                            @mouseenter="handleInfoIconMouseEnter('logFileTableActivation')"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logFileTableActivation', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -556,8 +556,41 @@
             
             <!-- InfoTooltips Tab -->
             <div v-if="activeTab === 'tooltips'" class="debug-tab-panel">
-              <div class="debug-empty-content">
-                <p>InfoTooltips tab content will be added here in the future</p>
+              <div class="debug-tooltips-content">
+                <OverlayScrollbarsComponent
+                  :options="{
+                    scrollbars: {
+                      visibility: 'auto',
+                      autoHide: 'move',
+                      autoHideSuspend: true,
+                      theme: currentTheme,
+                    },
+                  }"
+                  defer
+                >
+                  <div class="debug-tooltips-scrollable-content">
+                    <div class="debug-tooltips-options">
+                      <div class="debug-option-group">
+                        <h3>Tooltip Behavior</h3>
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.preventTooltipClosing"
+                            @update:model-value="(value) => debugStore.updateDebugOption('preventTooltipClosing', value)"
+                          />
+                          <span>Prevent Tooltip Closing</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['preventTooltipClosing'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('preventTooltipClosing', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </OverlayScrollbarsComponent>
               </div>
             </div>
           </div>
@@ -720,6 +753,10 @@ const debugOptionTooltips = {
   logFileTableActivation: {
     text: "Logs FileTable activation events and focus management.",
     example: "🔧 [FileTable] Activated: jobId"
+  },
+  preventTooltipClosing: {
+    text: "Prevents tooltips from closing once they become active. Useful for debugging tooltip positioning and behavior.",
+    example: "Tooltips will stay visible until this option is disabled"
   }
 };
 
@@ -754,8 +791,9 @@ const showDebugStatus = () => {
 };
 
 // Tooltip event handlers
-const handleInfoIconMouseEnter = (optionKey: string) => {
-  tooltipManager.showTooltip(`debug-option-${optionKey}`);
+const handleInfoIconMouseEnter = (optionKey: string, event?: MouseEvent) => {
+  const originElement = event?.currentTarget as HTMLElement;
+  tooltipManager.showTooltip(`debug-option-${optionKey}`, originElement);
 };
 
 const handleInfoIconMouseLeave = () => {
@@ -765,7 +803,8 @@ const handleInfoIconMouseLeave = () => {
 // Handle scroll events to hide tooltips when scrolling
 const handleScroll = () => {
   // Hide tooltips when scrolling to prevent positioning issues
-  if (tooltipManager.activeTooltipId.value) {
+  // But respect the preventTooltipClosing debug setting
+  if (tooltipManager.activeTooltipId.value && !debugStore.debugOptions.preventTooltipClosing) {
     tooltipManager.hideTooltipImmediately();
   }
 };

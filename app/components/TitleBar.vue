@@ -26,7 +26,7 @@
             :last-icon-size="24"
             placement="bottom-start"
             :show-cancel-button="true"
-            @mouseenter="showMainMenuTooltip"
+            @mouseenter="(event) => showMainMenuTooltip(event)"
             @mouseleave="hideMainMenuTooltip"
             @dropdown-opened="handleMainMenuDropdownOpened"
           >
@@ -155,7 +155,7 @@
             </template>
           </DropdownMenu>
           <InfoTooltip
-            :visible="mainMenuTooltipVisible && !isMainMenuActive"
+            :visible="tooltipManager.activeTooltipId.value === 'main-menu' && !isMainMenuActive"
             :content="{ text: 'Main Menu' }"
             :target="mainMenuTooltipTarget"
             placement="bottom-start"
@@ -280,11 +280,11 @@ const modalsStore = useModalsStore();
 const isWelcomeLayout = computed((): boolean => {
   return layoutStore.currentLayout === "welcome";
 });
-// Main Menu tooltip state
-const mainMenuTooltipVisible = ref(false);
+// Main Menu tooltip state - Updated to use tooltipManager
+// const mainMenuTooltipVisible = ref(false);
 const appMenuDropdownRef = ref<any | null>(null);
 // Center navigation tooltip state
-const centerTooltipVisible = ref(false);
+// const centerTooltipVisible = ref(false); // Removed - using tooltipManager instead
 const centerTooltipText = ref("");
 const navToWelcomeRef = ref<any | null>(null);
 const navToJobSetupRef = ref<any | null>(null);
@@ -453,21 +453,22 @@ const isMainMenuActive = computed(() => {
   const el = document.getElementById("app-menu");
   return !!(el && el.classList.contains("active"));
 });
-const showMainMenuTooltip = () => {
-  mainMenuTooltipVisible.value = true;
+const showMainMenuTooltip = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('main-menu', originElement);
 };
 const hideMainMenuTooltip = () => {
-  mainMenuTooltipVisible.value = false;
+  tooltipManager.hideTooltip();
 };
 
 // Dropdown opened event handler to hide associated tooltip immediately
 const handleMainMenuDropdownOpened = () => {
-  mainMenuTooltipVisible.value = false;
+  tooltipManager.hideTooltipImmediately();
 };
 
 // If the menu opens, ensure the tooltip is hidden
 watch(isMainMenuActive, (val) => {
-  if (val) mainMenuTooltipVisible.value = false;
+  if (val) tooltipManager.hideTooltip();
 });
 const setTheme = (theme: Theme): void => {
   themeStore.setTheme(theme);

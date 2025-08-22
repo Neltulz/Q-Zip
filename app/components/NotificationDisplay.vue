@@ -37,16 +37,16 @@
           name="mdi:information-outline"
           class="info-icon"
           size="16"
-          @mouseenter="handleIconMouseEnter(msg.details, $event)"
+          @mouseenter="(event) => handleIconMouseEnter(msg.details, event)"
           @mouseleave="handleIconMouseLeave"
         />
       </div>
     </div>
     <div class="popover__triangle" :style="triangleTransformStyle"></div>
     <InfoTooltip
-      :visible="tooltip.visible && !!tooltip.content"
-      :content="tooltip.content || { text: '' }"
-      :target="tooltip.targetElement"
+      :visible="tooltipManager.activeTooltipId.value === 'notification-details'"
+      :content="props.notification.details || { text: '' }"
+      :target="indicatorRef"
       :interactive="true"
       placement="right"
       :fallback-placements="['right-start', 'right-end', 'bottom-start', 'bottom-end']"
@@ -59,6 +59,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, type PropType, nextTick, type StyleValue, reactive } from "vue";
 import { useUiStore, type Notification, type NotificationType, type NotificationMessageDetails } from "@/stores/uiStore";
 import { useScrollContainer } from "@/composables/useScrollContainer";
+import { useTooltipManager } from "@/composables/useTooltipManager";
 import CustomButton from "./CustomButton.vue";
 import InfoTooltip from "./InfoTooltipContainer.vue";
 import { logUI, logNotification } from "@/utils/loggers";
@@ -70,6 +71,7 @@ const props = defineProps({
 });
 const uiStore = useUiStore();
 const { scrollContainer } = useScrollContainer();
+const tooltipManager = useTooltipManager();
 const popoverRef = ref<HTMLElement | null>(null);
 const indicatorRef = ref<HTMLElement | null>(null);
 const isVisible = ref(false);
@@ -79,15 +81,16 @@ const scrollTop = ref(0);
 let isUpdateThrottled = false;
 let remainingScaleX = 1;
 let hideTooltipTimeout: number | null = null;
-const tooltip = reactive<{
-  visible: boolean;
-  content: NotificationMessageDetails | null;
-  targetElement: HTMLElement | null;
-}>({
-  visible: false,
-  content: null,
-  targetElement: null,
-});
+// Remove local tooltip state - use tooltipManager instead
+// const tooltip = reactive<{
+//   visible: boolean;
+//   content: NotificationMessageDetails | null;
+//   targetElement: HTMLElement | null;
+// }>({
+//   visible: false,
+//   content: null,
+//   targetElement: null,
+// });
 // Track hover state for both notification and tooltip
 const isHovering = reactive({
   notification: false,
@@ -104,17 +107,12 @@ const handleIconMouseEnter = (details: NotificationMessageDetails, event: MouseE
   }
   pauseTimeout(); // Pause main notification timer
   logUI("NotificationDisplay", "Paused notification timeout");
-  // Only update content and target if they've changed to avoid re-renders
-  if (tooltip.content !== details) {
-    logUI("NotificationDisplay", "Updating tooltip content", { oldContent: tooltip.content, newContent: details });
-    tooltip.content = details;
-  }
-  if (tooltip.targetElement !== event.target) {
-    logUI("NotificationDisplay", "Updating tooltip target", { oldTarget: tooltip.targetElement, newTarget: event.target });
-    tooltip.targetElement = event.target as HTMLElement;
-  }
-  tooltip.visible = true;
-  logUI("NotificationDisplay", "Tooltip made visible", { visible: tooltip.visible, content: tooltip.content });
+  
+  // Use tooltipManager instead of local state
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('notification-details', originElement);
+  
+  logUI("NotificationDisplay", "Tooltip made visible via tooltipManager", { content: details });
 };
 const handleIconMouseLeave = () => {
   logUI("NotificationDisplay", "Icon mouse leave - scheduling tooltip hide");
@@ -129,7 +127,7 @@ const scheduleTooltipHide = () => {
   }
   hideTooltipTimeout = window.setTimeout(() => {
     logUI("NotificationDisplay", "Hide timeout fired - hiding tooltip");
-    tooltip.visible = false;
+    tooltipManager.hideTooltip();
     // Only resume timeout if user is not hovering over either element
     if (!isUserHovering.value) {
       logUI("NotificationDisplay", "Tooltip hidden, user not hovering - resuming notification timeout");

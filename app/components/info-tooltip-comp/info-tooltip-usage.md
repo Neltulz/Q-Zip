@@ -20,8 +20,9 @@ const tooltipManager = useTooltipManager();
 
 #### 3. Create Mouse Event Handlers
 ```typescript
-const handleButtonMouseEnter = () => {
-  tooltipManager.showTooltip('unique-tooltip-id');
+const handleButtonMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('unique-tooltip-id', originElement);
 };
 
 const handleButtonMouseLeave = () => {
@@ -29,14 +30,18 @@ const handleButtonMouseLeave = () => {
 };
 ```
 
+**⚠️ CRITICAL:** Always pass the `originElement` parameter to `showTooltip()` to prevent tooltips from closing immediately due to missing markers.
+
 #### 4. Add Event Listeners to Target Element
 ```vue
 <CustomButton
   ref="buttonRef"
-  @mouseenter="handleButtonMouseEnter"
+  @mouseenter="(event) => handleButtonMouseEnter(event)"
   @mouseleave="handleButtonMouseLeave"
 />
 ```
+
+**⚠️ CRITICAL:** Always pass the event object to the mouseenter handler to ensure the origin element is captured correctly.
 
 #### 5. Use Proper Target References
 - **For CustomButton components:** Use `buttonRef?.visualStyleRef`
@@ -64,7 +69,7 @@ const handleButtonMouseLeave = () => {
     <CustomButton
       ref="myButtonRef"
       button-style-class="trans-btn"
-      @mouseenter="handleMyButtonMouseEnter"
+      @mouseenter="(event) => handleMyButtonMouseEnter(event)"
       @mouseleave="handleMyButtonMouseLeave"
     >
       My Button
@@ -89,8 +94,9 @@ import InfoTooltip from "@/components/InfoTooltip.vue";
 const tooltipManager = useTooltipManager();
 const myButtonRef = ref<any | null>(null);
 
-const handleMyButtonMouseEnter = () => {
-  tooltipManager.showTooltip('my-button-tooltip');
+const handleMyButtonMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('my-button-tooltip', originElement);
 };
 
 const handleMyButtonMouseLeave = () => {
@@ -106,7 +112,7 @@ const handleMyButtonMouseLeave = () => {
     <DropdownMenu
       ref="myDropdownRef"
       button-style-class="trans-btn"
-      @mouseenter="handleMyDropdownMouseEnter"
+      @mouseenter="(event) => handleMyDropdownMouseEnter(event)"
       @mouseleave="handleMyDropdownMouseLeave"
       @dropdown-opened="handleMyDropdownOpened"
     >
@@ -132,8 +138,9 @@ import InfoTooltip from "@/components/InfoTooltip.vue";
 const tooltipManager = useTooltipManager();
 const myDropdownRef = ref<any | null>(null);
 
-const handleMyDropdownMouseEnter = () => {
-  tooltipManager.showTooltip('my-dropdown-tooltip');
+const handleMyDropdownMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('my-dropdown-tooltip', originElement);
 };
 
 const handleMyDropdownMouseLeave = () => {
@@ -170,6 +177,34 @@ const handleMyDropdownOpened = () => {
 
 ## Common Pitfalls to Avoid
 
+### ⚠️ CRITICAL: Origin Element Parameter Issue
+
+**Problem:** Tooltips closing immediately after appearing due to missing `data-tooltip-active` markers.
+
+**Root Cause:** When `showTooltip()` is called without the `originElement` parameter, the tooltip manager cannot add the required marker to track the tooltip's origin element. This causes the periodic check to immediately close the tooltip.
+
+**Symptoms:**
+- Tooltips appear briefly (240ms) then disappear
+- Console logs show: `"Origin element missing tooltip-active marker, closing tooltip"`
+- `hasOriginElement: false` in tooltip manager logs
+
+**Solution:** Always pass the origin element to `showTooltip()`:
+
+```typescript
+// ✅ CORRECT - Always capture and pass the origin element
+const handleMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('tooltip-id', originElement);
+};
+```
+
+```vue
+<!-- ✅ CORRECT - Always pass the event object -->
+@mouseenter="(event) => handleMouseEnter(event)"
+```
+
+**Why This Matters:** The tooltip manager uses the `data-tooltip-active` marker to track which element the tooltip belongs to. Without this marker, the periodic check assumes the tooltip is orphaned and closes it immediately.
+
 ### ❌ Don't Use Local State
 ```typescript
 // WRONG - Don't use local refs for tooltip visibility
@@ -178,6 +213,19 @@ const tooltipVisible = ref(false);
 const showTooltip = () => {
   tooltipVisible.value = true;
 };
+```
+
+### ❌ Don't Forget to Pass Origin Element
+```typescript
+// WRONG - Missing origin element causes tooltips to close immediately
+const handleMouseEnter = () => {
+  tooltipManager.showTooltip('tooltip-id'); // Missing originElement parameter
+};
+```
+
+```vue
+<!-- WRONG - Not passing event to handler -->
+@mouseenter="handleMouseEnter"
 ```
 
 ### ❌ Don't Use Wrong Target References
@@ -194,9 +242,15 @@ const showTooltip = () => {
 // CORRECT - Use tooltipManager for visibility control
 const tooltipManager = useTooltipManager();
 
-const handleMouseEnter = () => {
-  tooltipManager.showTooltip('unique-id');
+const handleMouseEnter = (event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('unique-id', originElement);
 };
+```
+
+```vue
+<!-- CORRECT - Pass event to handler -->
+@mouseenter="(event) => handleMouseEnter(event)"
 ```
 
 ## Reference Implementations
@@ -610,4 +664,64 @@ When using tooltips near scrollbars, add appropriate padding to prevent content 
 ```
 
 **Example Implementation:** See `DebugPopup.vue` for a complete example of Icon component tooltips in a scrollable container with proper positioning.
+
+## Troubleshooting
+
+### Tooltip Closes Immediately After Appearing
+
+**Problem:** Tooltip appears for ~240ms then disappears automatically.
+
+**Check These Common Issues:**
+
+1. **Missing Origin Element Parameter**
+   ```typescript
+   // ❌ WRONG - Missing originElement
+   tooltipManager.showTooltip('tooltip-id');
+   
+   // ✅ CORRECT - Include originElement
+   tooltipManager.showTooltip('tooltip-id', originElement);
+   ```
+
+2. **Event Not Passed to Handler**
+   ```vue
+   <!-- ❌ WRONG - Event not passed -->
+   @mouseenter="handleMouseEnter"
+   
+   <!-- ✅ CORRECT - Event passed -->
+   @mouseenter="(event) => handleMouseEnter(event)"
+   ```
+
+3. **Handler Not Capturing Event**
+   ```typescript
+   // ❌ WRONG - No event parameter
+   const handleMouseEnter = () => {
+     tooltipManager.showTooltip('tooltip-id');
+   };
+   
+   // ✅ CORRECT - Event parameter captured
+   const handleMouseEnter = (event: MouseEvent) => {
+     const originElement = event.currentTarget as HTMLElement;
+     tooltipManager.showTooltip('tooltip-id', originElement);
+   };
+   ```
+
+**Debug Steps:**
+1. Check browser console for: `"Origin element missing tooltip-active marker, closing tooltip"`
+2. Look for `hasOriginElement: false` in tooltip manager logs
+3. Verify the `@mouseenter` handler is passing the event object
+4. Confirm the handler is extracting `originElement` from `event.currentTarget`
+
+### Tooltip Not Appearing at All
+
+**Check These Issues:**
+1. **Wrong Target Reference** - Ensure you're using the correct target (e.g., `buttonRef?.visualStyleRef` for CustomButton)
+2. **Visibility Condition** - Verify the `:visible` prop is correctly checking `tooltipManager.activeTooltipId.value`
+3. **Tooltip ID Mismatch** - Ensure the ID passed to `showTooltip()` matches the ID checked in the `:visible` prop
+
+### Tooltip Positioning Issues
+
+**Check These Issues:**
+1. **Target Element Not Found** - Ensure the target element exists in the DOM when the tooltip becomes visible
+2. **Scrollable Container** - Place tooltips outside scrollable containers (see Icon Components section)
+3. **Z-index Conflicts** - Ensure no other elements have higher z-index values
 

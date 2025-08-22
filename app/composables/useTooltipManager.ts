@@ -10,6 +10,9 @@ const activeTooltipId: Ref<string | null> = ref(null);
 let showTimer: ReturnType<typeof setTimeout> | null = null;
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
 let crossfadeTimer: ReturnType<typeof setTimeout> | null = null;
+let preventClosingCheckTimer: ReturnType<typeof setInterval> | null = null;
+// Store the origin element for the active tooltip to handle Vue re-renders
+let activeOriginElement: HTMLElement | null = null;
 // Match the visual timing used by InfoTooltip transitions for consistency
 const SHOW_DELAY = 240; // ms (enter transition)
 const HIDE_DELAY = 420; // ms (leave transition)
@@ -21,14 +24,133 @@ const CROSSFade_DELAY = 120;
  * mimicking native OS tooltip behavior.
  */
 export function useTooltipManager() {
-  const showTooltip = (tooltipId: string) => {
+  const debugStore = useDebugStore();
+
+  // Start periodic check for preventTooltipClosing setting changes
+  const startPreventClosingCheck = () => {
+    if (preventClosingCheckTimer) {
+      clearInterval(preventClosingCheckTimer);
+    }
+
+    preventClosingCheckTimer = setInterval(() => {
+      // Only check if preventTooltipClosing is disabled and we have an active tooltip
+      if (isAnyTooltipVisible.value && !debugStore.debugOptions.preventTooltipClosing) {
+        // Find the origin element that should have the tooltip-active class
+        const originElement = document.querySelector(`[data-tooltip-active="${activeTooltipId.value}"]`);
+
+        // If the origin element doesn't have the tooltip-active marker, try to re-add it first
+        if (!originElement && !showTimer) {
+          // Try to re-add the marker if the element was recreated
+          const markerReAdded = reAddTooltipActiveMarker();
+
+          if (!markerReAdded) {
+            logTooltip("TooltipManager", `Origin element missing tooltip-active marker, closing tooltip`, {
+              activeTooltipId: activeTooltipId.value,
+              preventTooltipClosing: debugStore.debugOptions.preventTooltipClosing,
+              hasShowTimer: !!showTimer,
+              activeOriginElement: !!activeOriginElement
+            });
+
+            // Clear any pending timers
+            if (showTimer) {
+              clearTimeout(showTimer);
+              showTimer = null;
+            }
+            if (hideTimer) {
+              clearTimeout(hideTimer);
+              hideTimer = null;
+            }
+            if (crossfadeTimer) {
+              clearTimeout(crossfadeTimer);
+              crossfadeTimer = null;
+            }
+
+            // Remove tooltip-active marker from origin element
+            removeTooltipActiveMarker(activeTooltipId.value);
+
+            // Hide the tooltip immediately
+            activeTooltipId.value = null;
+            isAnyTooltipVisible.value = false;
+
+            // Stop periodic check since no tooltips are visible
+            stopPreventClosingCheck();
+          }
+        }
+      }
+    }, 100); // Check every 100ms
+  };
+
+  // Stop periodic check
+  const stopPreventClosingCheck = () => {
+    if (preventClosingCheckTimer) {
+      clearInterval(preventClosingCheckTimer);
+      preventClosingCheckTimer = null;
+    }
+  };
+
+  // Add tooltip-active marker to origin element
+  const addTooltipActiveMarker = (tooltipId: string, originElement: HTMLElement) => {
+    originElement.setAttribute('data-tooltip-active', tooltipId);
+    activeOriginElement = originElement;
+    logTooltip("TooltipManager", `Added tooltip-active marker to origin element`, {
+      tooltipId,
+      originElement: originElement.tagName,
+      originElementClassName: originElement.className
+    });
+  };
+
+  // Remove tooltip-active marker from origin element
+  const removeTooltipActiveMarker = (tooltipId: string) => {
+    const originElement = document.querySelector(`[data-tooltip-active="${tooltipId}"]`);
+    if (originElement) {
+      originElement.removeAttribute('data-tooltip-active');
+      logTooltip("TooltipManager", `Removed tooltip-active marker from origin element`, {
+        tooltipId,
+        originElement: originElement.tagName,
+        originElementClassName: originElement.className
+      });
+    }
+    activeOriginElement = null;
+  };
+
+  // Re-add tooltip-active marker if element was recreated
+  const reAddTooltipActiveMarker = () => {
+    if (activeTooltipId.value && activeOriginElement) {
+      // Check if the element still exists in the DOM
+      if (document.contains(activeOriginElement)) {
+        // Element still exists, re-add the marker
+        activeOriginElement.setAttribute('data-tooltip-active', activeTooltipId.value);
+        logTooltip("TooltipManager", `Re-added tooltip-active marker to origin element`, {
+          tooltipId: activeTooltipId.value,
+          originElement: activeOriginElement.tagName,
+          originElementClassName: activeOriginElement.className
+        });
+        return true;
+      } else {
+        // Element was removed from DOM, clear the reference
+        logTooltip("TooltipManager", `Origin element was removed from DOM, clearing reference`, {
+          tooltipId: activeTooltipId.value
+        });
+        activeOriginElement = null;
+        return false;
+      }
+    }
+    logTooltip("TooltipManager", `Cannot re-add marker: no active tooltip or origin element`, {
+      activeTooltipId: activeTooltipId.value,
+      hasActiveOriginElement: !!activeOriginElement
+    });
+    return false;
+  };
+
+  const showTooltip = (tooltipId: string, originElement?: HTMLElement) => {
     logTooltip("TooltipManager", `showTooltip called for ${tooltipId}`, {
       tooltipId,
       currentActiveId: activeTooltipId.value,
       isAnyTooltipVisible: isAnyTooltipVisible.value,
       hasHideTimer: !!hideTimer,
       hasShowTimer: !!showTimer,
-      hasCrossfadeTimer: !!crossfadeTimer
+      hasCrossfadeTimer: !!crossfadeTimer,
+      hasOriginElement: !!originElement
     });
 
     // If we are moving from one tooltip to another, cancel the hide timer
@@ -72,6 +194,14 @@ export function useTooltipManager() {
         activeTooltipId.value = tooltipId;
         isAnyTooltipVisible.value = true;
         crossfadeTimer = null;
+
+        // Add tooltip-active marker to origin element if provided
+        if (originElement) {
+          addTooltipActiveMarker(tooltipId, originElement);
+        }
+
+        // Start periodic check for preventTooltipClosing setting changes
+        startPreventClosingCheck();
       }, CROSSFade_DELAY);
       return;
     }
@@ -83,6 +213,14 @@ export function useTooltipManager() {
         activeTooltipId.value = tooltipId;
         isAnyTooltipVisible.value = true;
         showTimer = null;
+
+        // Add tooltip-active marker to origin element if provided
+        if (originElement) {
+          addTooltipActiveMarker(tooltipId, originElement);
+        }
+
+        // Start periodic check for preventTooltipClosing setting changes
+        startPreventClosingCheck();
       }, SHOW_DELAY);
     } else {
       logTooltip("TooltipManager", `Show timer already exists for ${tooltipId}, no action needed`);
@@ -90,6 +228,16 @@ export function useTooltipManager() {
   };
   const hideTooltip = () => {
     const debugStore = useDebugStore();
+
+    // Check if tooltip closing is prevented by debug setting
+    if (debugStore.debugOptions.preventTooltipClosing && isAnyTooltipVisible.value) {
+      logTooltip("TooltipManager", `hideTooltip prevented by debug setting`, {
+        currentActiveId: activeTooltipId.value,
+        isAnyTooltipVisible: isAnyTooltipVisible.value,
+        preventTooltipClosing: debugStore.debugOptions.preventTooltipClosing
+      });
+      return; // Don't hide the tooltip
+    }
 
     logTooltip("TooltipManager", `hideTooltip called`, {
       currentActiveId: activeTooltipId.value,
@@ -109,9 +257,18 @@ export function useTooltipManager() {
       logTooltip("TooltipManager", `Starting hide timer (${HIDE_DELAY}ms delay)`);
       hideTimer = setTimeout(() => {
         logTooltip("TooltipManager", `Hide timer complete, hiding all tooltips`);
+
+        // Remove tooltip-active marker from origin element
+        if (activeTooltipId.value) {
+          removeTooltipActiveMarker(activeTooltipId.value);
+        }
+
         activeTooltipId.value = null;
         isAnyTooltipVisible.value = false;
         hideTimer = null;
+
+        // Stop periodic check since no tooltips are visible
+        stopPreventClosingCheck();
       }, HIDE_DELAY);
     } else {
       logTooltip("TooltipManager", `Hide timer already exists, no action needed`);
@@ -120,6 +277,17 @@ export function useTooltipManager() {
 
   const hideTooltipImmediately = () => {
     const debugStore = useDebugStore();
+
+    // Check if tooltip closing is prevented by debug setting
+    if (debugStore.debugOptions.preventTooltipClosing && isAnyTooltipVisible.value) {
+      logTooltip("TooltipManager", `hideTooltipImmediately prevented by debug setting`, {
+        currentActiveId: activeTooltipId.value,
+        isAnyTooltipVisible: isAnyTooltipVisible.value,
+        preventTooltipClosing: debugStore.debugOptions.preventTooltipClosing,
+        stackTrace: new Error().stack
+      });
+      return; // Don't hide the tooltip
+    }
 
     logTooltip("TooltipManager", `hideTooltipImmediately called`, {
       currentActiveId: activeTooltipId.value,
@@ -148,8 +316,17 @@ export function useTooltipManager() {
 
     // Hide immediately without any delay
     logTooltip("TooltipManager", `Hiding tooltip immediately`);
+
+    // Remove tooltip-active marker from origin element
+    if (activeTooltipId.value) {
+      removeTooltipActiveMarker(activeTooltipId.value);
+    }
+
     activeTooltipId.value = null;
     isAnyTooltipVisible.value = false;
+
+    // Stop periodic check since no tooltips are visible
+    stopPreventClosingCheck();
   };
 
   /**
@@ -257,5 +434,9 @@ export function useTooltipManager() {
     hideTooltip,
     hideTooltipImmediately,
     checkAndHideOrphanedTooltip,
+    startPreventClosingCheck,
+    stopPreventClosingCheck,
+    addTooltipActiveMarker,
+    removeTooltipActiveMarker,
   };
 }

@@ -47,7 +47,7 @@
             @dragover.prevent="handleDragOver"
             @dragleave="handleDragLeave"
             @drop.prevent="handleJobTabDrop($event, job.id)"
-            @mouseenter="handleJobMouseEnter(job.id)"
+                            @mouseenter="(event) => handleJobMouseEnter(job.id, event)"
             @mouseleave="handleJobMouseLeave"
           >
             <span class="job-sel-icon">
@@ -67,7 +67,7 @@
                   placement="bottom-center"
                   :show-cancel-button="false"
                   :on-button-click="(event) => handleRemoveJobClick(event, job.id)"
-                  @mouseenter="handleRemoveJobButtonMouseEnter(job.id)"
+                  @mouseenter="(event: MouseEvent) => handleRemoveJobButtonMouseEnter(job.id, event)"
                   @mouseleave="handleRemoveJobButtonMouseLeave"
                   @dropdown-opened="handleRemoveJobDropdownOpened(job.id)"
                   @action-button-activated="handleActionButtonActivated"
@@ -102,7 +102,7 @@
                         first-icon-name="mdi:lightbulb-outline"
                         :first-icon-size="20"
                         justify="center"
-                        @mouseenter="showTipTooltip(job.id)"
+                        @mouseenter="(event) => showTipTooltip(job.id, event)"
                         @mouseleave="hideTipTooltip(job.id)"
                       />
                       <CustomButton
@@ -113,7 +113,7 @@
                         :first-icon-size="20"
                         justify="end"
                         @mouseup="close"
-                        @mouseenter="showCancelRemoveJobTooltip(job.id)"
+                        @mouseenter="(event) => showCancelRemoveJobTooltip(job.id, event)"
                         @mouseleave="hideCancelRemoveJobTooltip(job.id)"
                       >
                         Cancel
@@ -132,7 +132,7 @@
                             close();
                           }
                         "
-                        @mouseenter="showConfirmRemoveJobTooltip(job.id)"
+                        @mouseenter="(event) => showConfirmRemoveJobTooltip(job.id, event)"
                         @mouseleave="hideConfirmRemoveJobTooltip(job.id)"
                       >
                         Remove Job
@@ -278,7 +278,7 @@
     <div class="job-selector-btn-wrapper">
       <div
         class="job-selector-btns-start"
-        @mouseenter="handleAddJobMouseEnter()"
+                    @mouseenter="(event) => handleAddJobMouseEnter(event)"
         @mouseleave="handleAddJobMouseLeave"
       >
         <CustomButton
@@ -352,7 +352,7 @@
            :last-icon-size="24"
            placement="bottom-end"
            :show-cancel-button="true"
-           @mouseenter="handleExtraOptionsMouseEnter()"
+                       @mouseenter="(event: MouseEvent) => handleExtraOptionsMouseEnter(event)"
            @mouseleave="handleExtraOptionsMouseLeave"
            @dropdown-opened="handleExtraOptionsDropdownOpened"
          >
@@ -450,47 +450,50 @@ const pendingDropSourceJobId = ref<number | null>(null);
 const jobNotificationStates = ref<Map<number | "new-job", NotificationType>>(new Map());
 const addJobButtonRef = ref<InstanceType<typeof CustomButton> | null>(null);
 
-// Job-specific tooltip visibility states
-const cancelRemoveJobTooltipVisible = ref(new Map<number, boolean>());
-const confirmRemoveJobTooltipVisible = ref(new Map<number, boolean>());
-const tipButtonTooltipVisible = ref(new Map<number, boolean>());
+// Job-specific tooltip visibility states - Updated to use tooltipManager
+// const cancelRemoveJobTooltipVisible = ref(new Map<number, boolean>());
+// const confirmRemoveJobTooltipVisible = ref(new Map<number, boolean>());
+// const tipButtonTooltipVisible = ref(new Map<number, boolean>());
 
-// Function to get tooltip visibility for a job
+// Function to get tooltip visibility for a job - Updated to use tooltipManager
 const getCancelRemoveJobTooltipVisible = (jobId: number) => {
-  return cancelRemoveJobTooltipVisible.value.get(jobId) || false;
+  return tooltipManager.activeTooltipId.value === `cancel-remove-job-${jobId}`;
 };
 
 const getConfirmRemoveJobTooltipVisible = (jobId: number) => {
-  return confirmRemoveJobTooltipVisible.value.get(jobId) || false;
+  return tooltipManager.activeTooltipId.value === `confirm-remove-job-${jobId}`;
 };
 
 const getTipTooltipVisible = (jobId: number) => {
-  return tipButtonTooltipVisible.value.get(jobId) || false;
+  return tooltipManager.activeTooltipId.value === `tip-remove-job-${jobId}`;
 };
 
-// Function to show/hide tooltips for a job
-const showCancelRemoveJobTooltip = (jobId: number) => {
-  cancelRemoveJobTooltipVisible.value.set(jobId, true);
+// Function to show/hide tooltips for a job - Updated to use tooltipManager with origin element
+const showCancelRemoveJobTooltip = (jobId: number, event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip(`cancel-remove-job-${jobId}`, originElement);
 };
 
 const hideCancelRemoveJobTooltip = (jobId: number) => {
-  cancelRemoveJobTooltipVisible.value.set(jobId, false);
+  tooltipManager.hideTooltip();
 };
 
-const showConfirmRemoveJobTooltip = (jobId: number) => {
-  confirmRemoveJobTooltipVisible.value.set(jobId, true);
+const showConfirmRemoveJobTooltip = (jobId: number, event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip(`confirm-remove-job-${jobId}`, originElement);
 };
 
 const hideConfirmRemoveJobTooltip = (jobId: number) => {
-  confirmRemoveJobTooltipVisible.value.set(jobId, false);
+  tooltipManager.hideTooltip();
 };
 
-const showTipTooltip = (jobId: number) => {
-  tipButtonTooltipVisible.value.set(jobId, true);
+const showTipTooltip = (jobId: number, event: MouseEvent) => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip(`tip-remove-job-${jobId}`, originElement);
 };
 
 const hideTipTooltip = (jobId: number) => {
-  tipButtonTooltipVisible.value.set(jobId, false);
+  tooltipManager.hideTooltip();
 };
 
 // Job-specific refs for remove job confirmation buttons
@@ -652,9 +655,10 @@ onBeforeUpdate(() => {
   cancelRemoveJobBtnRefs.value.clear();
   confirmRemoveJobBtnRefs.value.clear();
   tipButtonRefs.value.clear();
-  cancelRemoveJobTooltipVisible.value.clear();
-  confirmRemoveJobTooltipVisible.value.clear();
-  tipButtonTooltipVisible.value.clear();
+      // Removed local tooltip state cleanup - now handled by tooltipManager
+    // cancelRemoveJobTooltipVisible.value.clear();
+    // confirmRemoveJobTooltipVisible.value.clear();
+    // tipButtonTooltipVisible.value.clear();
 });
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.ctrlKey && event.key.toLowerCase() === "t") {
@@ -1045,9 +1049,10 @@ const openOperationConfirmModal = (
     }
   );
 };
-const handleJobMouseEnter = (jobId: number): void => {
+const handleJobMouseEnter = (jobId: number, event: MouseEvent): void => {
   logHover("JobSelectorArea", `Job mouse enter for job ${jobId}`, { jobId });
-  tooltipManager.showTooltip('job-' + jobId);
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('job-' + jobId, originElement);
 };
 const handleJobMouseLeave = (event?: MouseEvent): void => {
   logHover("JobSelectorArea", `Job mouse leave`, { 
@@ -1076,8 +1081,9 @@ const handleJobMouseLeave = (event?: MouseEvent): void => {
   logHover("JobSelectorArea", `Hiding tooltip - mouse left job selector button`, { relatedTarget, currentTarget });
   tooltipManager.hideTooltip();
 };
-const handleAddJobMouseEnter = (): void => {
-  tooltipManager.showTooltip('add-job');
+const handleAddJobMouseEnter = (event: MouseEvent): void => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('add-job', originElement);
 };
 const handleAddJobMouseLeave = (event?: MouseEvent): void => {
   // If no event provided, hide the tooltip
@@ -1098,8 +1104,9 @@ const handleAddJobMouseLeave = (event?: MouseEvent): void => {
   tooltipManager.hideTooltip();
 };
 
-const handleExtraOptionsMouseEnter = (): void => {
-  tooltipManager.showTooltip('job-selector-options');
+const handleExtraOptionsMouseEnter = (event: MouseEvent): void => {
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('job-selector-options', originElement);
 };
 
 const handleExtraOptionsMouseLeave = (event?: MouseEvent): void => {
@@ -1126,9 +1133,10 @@ const handleExtraOptionsDropdownOpened = (): void => {
   tooltipManager.hideTooltipImmediately();
 };
 
-const handleRemoveJobButtonMouseEnter = (jobId: number): void => {
+const handleRemoveJobButtonMouseEnter = (jobId: number, event: MouseEvent): void => {
   logHover("JobSelectorArea", `Remove job button mouse enter for job ${jobId}`, { jobId });
-  tooltipManager.showTooltip('remove-job-' + jobId);
+  const originElement = event.currentTarget as HTMLElement;
+  tooltipManager.showTooltip('remove-job-' + jobId, originElement);
 };
 
 const handleRemoveJobButtonMouseLeave = (event?: MouseEvent): void => {
