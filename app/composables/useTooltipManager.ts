@@ -150,8 +150,19 @@ export function useTooltipManager() {
       hasHideTimer: !!hideTimer,
       hasShowTimer: !!showTimer,
       hasCrossfadeTimer: !!crossfadeTimer,
-      hasOriginElement: !!originElement
+      hasOriginElement: !!originElement,
+      preventTooltipClosing: debugStore.debugOptions.preventTooltipClosing
     });
+
+    // If preventTooltipClosing is enabled and we already have a visible tooltip, don't switch
+    if (debugStore.debugOptions.preventTooltipClosing && isAnyTooltipVisible.value && activeTooltipId.value !== tooltipId) {
+      logTooltip("TooltipManager", `Tooltip switching prevented by debug setting`, {
+        requestedTooltipId: tooltipId,
+        currentActiveId: activeTooltipId.value,
+        preventTooltipClosing: debugStore.debugOptions.preventTooltipClosing
+      });
+      return; // Don't switch tooltips
+    }
 
     // If we are moving from one tooltip to another, cancel the hide timer
     if (hideTimer) {
@@ -162,7 +173,8 @@ export function useTooltipManager() {
 
     // Priority logic: if there's a pending show timer and we're trying to show a "remove-job-" tooltip,
     // cancel the pending timer and show the remove-job tooltip immediately
-    if (showTimer && tooltipId.startsWith('remove-job-')) {
+    // UNLESS preventTooltipClosing is enabled
+    if (showTimer && tooltipId.startsWith('remove-job-') && !debugStore.debugOptions.preventTooltipClosing) {
       logTooltip("TooltipManager", `Priority override: canceling pending tooltip for remove-job tooltip ${tooltipId}`);
       clearTimeout(showTimer);
       showTimer = null;
@@ -170,7 +182,8 @@ export function useTooltipManager() {
 
     // If a tooltip is already visible, perform a short crossfade so the
     // tooltip fades out and the new one fades in instead of an abrupt swap.
-    if (isAnyTooltipVisible.value) {
+    // UNLESS preventTooltipClosing is enabled
+    if (isAnyTooltipVisible.value && !debugStore.debugOptions.preventTooltipClosing) {
       if (showTimer) {
         logTooltip("TooltipManager", `Clearing show timer for ${tooltipId}`);
         clearTimeout(showTimer);

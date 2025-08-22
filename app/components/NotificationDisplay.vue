@@ -32,27 +32,27 @@
       <div v-for="(msg, index) in notification.messages" :key="index" class="message-line">
         <Icon :name="getIconForType(msg.type)" :class="`icon-${msg.type}`" size="18" />
         <p :class="`text-${msg.type}`">{{ msg.text }}</p>
-        <Icon
-          v-if="msg.details && msg.details.filePaths && msg.details.filePaths.length > 0"
-          name="mdi:information-outline"
-          class="info-icon"
-          size="16"
-          @mouseenter="(event) => handleIconMouseEnter(msg.details, event)"
-          @mouseleave="handleIconMouseLeave"
-        />
+                 <Icon
+           v-if="msg.details && msg.details.filePaths && msg.details.filePaths.length > 0"
+           name="mdi:information-outline"
+           class="info-icon"
+           size="16"
+           @mouseenter="(event) => handleIconMouseEnter(msg.details!, event)"
+           @mouseleave="handleIconMouseLeave"
+         />
       </div>
     </div>
     <div class="popover__triangle" :style="triangleTransformStyle"></div>
-    <InfoTooltip
-      :visible="tooltipManager.activeTooltipId.value === 'notification-details'"
-      :content="props.notification.details || { text: '' }"
-      :target="indicatorRef"
-      :interactive="true"
-      placement="right"
-      :fallback-placements="['right-start', 'right-end', 'bottom-start', 'bottom-end']"
-      @mouseenter="handleTooltipMouseEnter"
-      @mouseleave="handleTooltipMouseLeave"
-    />
+         <InfoTooltip
+       :visible="tooltipManager.activeTooltipId.value === 'notification-details'"
+       :content="notificationDetails || { text: '' }"
+       :target="activeInfoIconRef"
+       :interactive="true"
+       placement="right"
+       :fallback-placements="['right-start', 'right-end', 'bottom-start', 'bottom-end']"
+       @mouseenter="handleTooltipMouseEnter"
+       @mouseleave="handleTooltipMouseLeave"
+     />
   </div>
 </template>
 <script setup lang="ts">
@@ -60,6 +60,7 @@ import { ref, computed, onMounted, onUnmounted, watch, type PropType, nextTick, 
 import { useUiStore, type Notification, type NotificationType, type NotificationMessageDetails } from "@/stores/uiStore";
 import { useScrollContainer } from "@/composables/useScrollContainer";
 import { useTooltipManager } from "@/composables/useTooltipManager";
+import { useDebugStore } from "@/stores/debugStore";
 import CustomButton from "./CustomButton.vue";
 import InfoTooltip from "./InfoTooltipContainer.vue";
 import { logUI, logNotification } from "@/utils/loggers";
@@ -72,8 +73,10 @@ const props = defineProps({
 const uiStore = useUiStore();
 const { scrollContainer } = useScrollContainer();
 const tooltipManager = useTooltipManager();
+const debugStore = useDebugStore();
 const popoverRef = ref<HTMLElement | null>(null);
 const indicatorRef = ref<HTMLElement | null>(null);
+const activeInfoIconRef = ref<HTMLElement | null>(null);
 const isVisible = ref(false);
 const isClipped = ref(false);
 const scrollLeft = ref(0);
@@ -98,6 +101,15 @@ const isHovering = reactive({
 });
 // Computed to check if user is hovering over either element
 const isUserHovering = computed(() => isHovering.notification || isHovering.tooltip);
+
+// Computed to get notification details from messages
+const notificationDetails = computed(() => {
+  // Find the first message that has details with file paths
+  const messageWithDetails = props.notification.messages.find(msg => 
+    msg.details && msg.details.filePaths && msg.details.filePaths.length > 0
+  );
+  return messageWithDetails?.details || null;
+});
 // --- FEAT: Improved tooltip hover logic ---
 const handleIconMouseEnter = (details: NotificationMessageDetails, event: MouseEvent) => {
   logUI("NotificationDisplay", "Icon mouse enter", { details, target: event.target });
@@ -108,18 +120,31 @@ const handleIconMouseEnter = (details: NotificationMessageDetails, event: MouseE
   pauseTimeout(); // Pause main notification timer
   logUI("NotificationDisplay", "Paused notification timeout");
   
+  // Set the active info icon ref for tooltip positioning
+  activeInfoIconRef.value = event.currentTarget as HTMLElement;
+  
   // Use tooltipManager instead of local state
   const originElement = event.currentTarget as HTMLElement;
   tooltipManager.showTooltip('notification-details', originElement);
   
-  logUI("NotificationDisplay", "Tooltip made visible via tooltipManager", { content: details });
+  logUI("NotificationDisplay", "Tooltip made visible via tooltipManager", { content: notificationDetails.value });
 };
 const handleIconMouseLeave = () => {
   logUI("NotificationDisplay", "Icon mouse leave - scheduling tooltip hide");
   // Give user time to move from icon to tooltip
   scheduleTooltipHide();
+  // Don't clear activeInfoIconRef here - let the tooltip hide timeout handle it
+  // This allows the tooltip to stay positioned correctly while the user moves to it
 };
 const scheduleTooltipHide = () => {
+  // Check if tooltip closing is prevented by debug setting
+  if (debugStore.debugOptions.preventTooltipClosing) {
+    logUI("NotificationDisplay", "Tooltip hide prevented by debug setting", {
+      preventTooltipClosing: debugStore.debugOptions.preventTooltipClosing
+    });
+    return; // Don't schedule hide timeout
+  }
+
   logUI("NotificationDisplay", "Scheduling tooltip hide", { currentTimeout: hideTooltipTimeout });
   if (hideTooltipTimeout) {
     logUI("NotificationDisplay", "Clearing existing hide timeout");
@@ -128,6 +153,8 @@ const scheduleTooltipHide = () => {
   hideTooltipTimeout = window.setTimeout(() => {
     logUI("NotificationDisplay", "Hide timeout fired - hiding tooltip");
     tooltipManager.hideTooltip();
+    // Clear the active info icon ref when tooltip is hidden
+    activeInfoIconRef.value = null;
     // Only resume timeout if user is not hovering over either element
     if (!isUserHovering.value) {
       logUI("NotificationDisplay", "Tooltip hidden, user not hovering - resuming notification timeout");
@@ -153,6 +180,8 @@ const handleTooltipMouseLeave = () => {
   isHovering.tooltip = false;
   // Schedule tooltip hide
   scheduleTooltipHide();
+  // Clear the active info icon ref when leaving tooltip
+  activeInfoIconRef.value = null;
   // Don't resume timeout here - let the hide timeout handle it
   // This allows moving from tooltip to notification without resuming
   logUI("NotificationDisplay", "User left tooltip - keeping timeout paused until hide");
@@ -346,7 +375,7 @@ const handlePopoverMouseEnter = () => {
 };
 const handlePopoverMouseLeave = () => {
   logUI("NotificationDisplay", "Popover mouse leave", { 
-    tooltipVisible: tooltip.visible,
+    tooltipVisible: tooltipManager.activeTooltipId.value === 'notification-details',
     isHoveringTooltip: isHovering.tooltip 
   });
   isHovering.notification = false;
@@ -374,13 +403,15 @@ onUnmounted(() => {
     scrollContainer.value.removeEventListener("scroll", handleScroll);
   }
   if (hideTooltipTimeout) clearTimeout(hideTooltipTimeout);
-  // Clean up tooltip state
-  tooltip.visible = false;
-  tooltip.content = null;
-  tooltip.targetElement = null;
+  // Clean up tooltip state - now handled by tooltipManager
+  // tooltip.visible = false;
+  // tooltip.content = null;
+  // tooltip.targetElement = null;
   // Reset hover state
   isHovering.notification = false;
   isHovering.tooltip = false;
+  // Clear active info icon ref
+  activeInfoIconRef.value = null;
 });
 watch(scrollContainer, (newContainer, oldContainer) => {
   if (oldContainer) oldContainer.removeEventListener("scroll", handleScroll);
