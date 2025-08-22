@@ -100,6 +100,7 @@
                     },
                   }"
                   defer
+                  :events="{ scroll: handleScroll }"
                 >
                   <div class="debug-logging-scrollable-content">
                     <!-- Logging Options Grid -->
@@ -759,6 +760,14 @@ const handleInfoIconMouseEnter = (optionKey: string) => {
 
 const handleInfoIconMouseLeave = () => {
   tooltipManager.hideTooltip();
+};
+
+// Handle scroll events to hide tooltips when scrolling
+const handleScroll = () => {
+  // Hide tooltips when scrolling to prevent positioning issues
+  if (tooltipManager.activeTooltipId.value) {
+    tooltipManager.hideTooltipImmediately();
+  }
 };
 
 // Computed popup style
