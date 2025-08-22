@@ -144,12 +144,12 @@ watch(() => props.disabled, (newDisabled) => {
   /* CSS Variables for keyboard shortcut styling */
   --keyboard-icon-size: 16px;
   --keyboard-icon-margin: 4px;
-  --keyboard-font-size: 0.9em;
-  --keyboard-keycap-font-size: 1em;
+  --keyboard-font-size: 1rem;
+  --keyboard-keycap-font-size: 1rem;
   --keyboard-keycap-padding-block: 1px;
   --keyboard-keycap-padding-inline: 3px;
   --keyboard-keycap-border-radius: 3px;
-  --keyboard-keycap-min-width: 1.2em;
+  --keyboard-keycap-min-width: 1.2rem;
   --keyboard-keycap-line-height: 1.1;
   --keyboard-gap: 1px;
   --keyboard-plus-margin: 1px;
@@ -209,23 +209,25 @@ watch(() => props.disabled, (newDisabled) => {
 
 /* Size variants */
 .hot-key.size-small {
-  --keyboard-icon-size: 12px;
-  --keyboard-font-size: 0.8em;
-  --keyboard-keycap-font-size: 0.9em;
+  --keyboard-icon-size: 14px;
+  --keyboard-font-size: 0.9rem;
+  --keyboard-keycap-font-size: 0.9rem;
   --keyboard-keycap-padding-block: 0px;
   --keyboard-keycap-padding-inline: 2px;
-  --keyboard-keycap-min-width: 1em;
+  --keyboard-keycap-min-width: 1rem;
   gap: 4px;
 }
 
 .hot-key.size-medium {
-  /* Default values already set above */
+  --keyboard-icon-size: 18px;
+  --keyboard-font-size: 1rem;
+  --keyboard-keycap-font-size: 1rem;
 }
 
 .hot-key.size-large {
-  --keyboard-icon-size: 20px;
-  --keyboard-font-size: 1em;
-  --keyboard-keycap-font-size: 1.1em;
+  --keyboard-icon-size: 24px;
+  --keyboard-font-size: 1.1rem;
+  --keyboard-keycap-font-size: 1.1rem;
   --keyboard-keycap-padding-block: 2px;
   --keyboard-keycap-padding-inline: 4px;
   --keyboard-keycap-min-width: 1.4em;

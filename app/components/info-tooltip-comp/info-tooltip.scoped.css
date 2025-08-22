@@ -99,6 +99,22 @@
       margin-block-end: 4px;
     }
 
+    /* Inline HotKey styling within tooltip text */
+    .tooltip-text-content {
+      /* Ensure proper alignment when HotKey components are inline */
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.25em;
+      
+      /* HotKey component styling within tooltip */
+      .hot-key {
+        display: inline-flex;
+        align-items: center;
+        margin-inline: 0.25em;
+        vertical-align: middle;
+      }
+    }
+
     /* Horizontal rule separator - <hr> */
     hr {
       border: none;

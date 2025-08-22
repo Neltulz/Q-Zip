@@ -50,6 +50,7 @@
           placement="bottom"
           keyboardShortcut="Add Files: Ctrl+O
 Add Folders: Ctrl+F"
+          hotkey-size="small"
         />
       </div>
 
@@ -80,6 +81,7 @@ Add Folders: Ctrl+F"
           :target="refreshButtonRef?.visualStyleRef"
           placement="bottom"
           keyboardShortcut="F5"
+          hotkey-size="small"
         />
       </div>
 
@@ -105,6 +107,7 @@ Add Folders: Ctrl+F"
           :target="removeButtonRef?.visualStyleRef"
           placement="bottom"
           keyboardShortcut="Del"
+          hotkey-size="small"
         />
       </div>
 
@@ -168,6 +171,7 @@ Add Folders: Ctrl+F"
           :target="copyDropdownRef?.$el"
           placement="bottom"
           keyboardShortcut="Ctrl+Shift+C"
+          hotkey-size="small"
         />
       </div>
 
@@ -231,6 +235,7 @@ Add Folders: Ctrl+F"
           :target="moveDropdownRef?.$el"
           placement="bottom"
           keyboardShortcut="Ctrl+Shift+M"
+          hotkey-size="small"
         />
       </div>
     </template>
@@ -292,6 +297,7 @@ Add Folders: Ctrl+F"
           :target="settingsDropdownRef?.$el"
           placement="bottom"
           keyboardShortcut="Ctrl+,"
+          hotkey-size="small"
         />
       </div>
     </template>

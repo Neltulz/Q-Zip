@@ -91,7 +91,7 @@
                 class="info-line keyboard-shortcut-line"
               >
                 <span class="keyboard-action-text">{{ getActionText(shortcut) }}</span>
-                <HotKey :keys="getShortcutParts(getShortcutKey(shortcut))" :disabled="isTargetDisabled" />
+                <HotKey :keys="getShortcutParts(getShortcutKey(shortcut))" :disabled="isTargetDisabled" :size="hotkeySize" />
               </div>
             </template>
            
@@ -102,7 +102,7 @@
                </div>
                <div class="info-line keyboard-shortcut-line">
                  <span class="keyboard-action-text">{{ getActionName(content.text) }}</span>
-                 <HotKey :keys="getShortcutParts(keyboardShortcut)" :disabled="isTargetDisabled" />
+                 <HotKey :keys="getShortcutParts(keyboardShortcut)" :disabled="isTargetDisabled" :size="hotkeySize" />
                </div>
              </template>
            
@@ -111,6 +111,25 @@
              <div class="info-line tooltip-text-content">
                <Icon :name="content.icon" class="tooltip-icon" />
                <span>{{ content.text }}</span>
+             </div>
+           </template>
+           
+           <!-- Simple text content with inline HotKey -->
+           <template v-else-if="'text' in content && !('filePaths' in content) && content.inlineHotKey">
+             <div class="info-line tooltip-text-content">
+               <template v-if="content.inlineHotKey.position === 'start'">
+                 <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+                 <span>{{ content.text }}</span>
+               </template>
+               <template v-else-if="content.inlineHotKey.position === 'end'">
+                 <span>{{ content.text }}</span>
+                 <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+               </template>
+               <template v-else-if="content.inlineHotKey.position === 'inline'">
+                 <span>{{ getTextBeforeHotKey(content.text) }}</span>
+                 <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
+                 <span>{{ getTextAfterHotKey(content.text) }}</span>
+               </template>
              </div>
            </template>
            
@@ -147,7 +166,7 @@ import { logUI, logRendering, logTooltip } from "@/utils/loggers";
 import { useDebugStore } from "@/stores/debugStore";
 import HotKey from "@/components/HotKey.vue";
 // Allow a simple text property for more generic tooltips
-type TooltipContent = NotificationMessageDetails | { text: string; icon?: string };
+type TooltipContent = NotificationMessageDetails | { text: string; icon?: string; inlineHotKey?: { keys: string[]; position: 'start' | 'end' | 'inline' } };
 
 const debugStore = useDebugStore();
 
@@ -193,6 +212,11 @@ const props = defineProps({
   keyboardShortcut: {
     type: String,
     default: "",
+  },
+  // Size for HotKey components within the tooltip
+  hotkeySize: {
+    type: String as PropType<"small" | "medium" | "large">,
+    default: "medium",
   },
 });
 // Define emits for mouse events
@@ -709,6 +733,63 @@ const getShortcutParts = (shortcut: string) => {
     .filter(part => part.length > 0); // Remove empty parts
   
   return parts;
+};
+
+// Helper functions for inline HotKey text splitting
+const getTextBeforeHotKey = (text: string) => {
+  // Look for common patterns like "press Ctrl+Shift+Del" or "Ctrl+Shift+Del to"
+  const patterns = [
+    /^(.*?)\s+press\s+/i,
+    /^(.*?)\s+Ctrl\+Shift\+Del\s+to\s+/i,
+    /^(.*?)\s+Ctrl\+T\s+to\s+/i,
+    /^(.*?)\s+Shift\+Del\s+to\s+/i,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+  
+  // Default: return text before the last occurrence of common shortcut patterns
+  const shortcutPatterns = ['Ctrl+Shift+Del', 'Ctrl+T', 'Shift+Del', 'Ctrl+C', 'Ctrl+V'];
+  for (const shortcut of shortcutPatterns) {
+    const index = text.indexOf(shortcut);
+    if (index !== -1) {
+      return text.substring(0, index).trim();
+    }
+  }
+  
+  return text;
+};
+
+const getTextAfterHotKey = (text: string) => {
+  // Look for common patterns and return text after the shortcut
+  const patterns = [
+    /press\s+Ctrl\+Shift\+Del\s+to\s+(.*)/i,
+    /Ctrl\+Shift\+Del\s+to\s+(.*)/i,
+    /Ctrl\+T\s+to\s+(.*)/i,
+    /Shift\+Del\s+to\s+(.*)/i,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+  
+  // Default: return text after the last occurrence of common shortcut patterns
+  const shortcutPatterns = ['Ctrl+Shift+Del', 'Ctrl+T', 'Shift+Del', 'Ctrl+C', 'Ctrl+V'];
+  for (const shortcut of shortcutPatterns) {
+    const index = text.indexOf(shortcut);
+    if (index !== -1) {
+      return text.substring(index + shortcut.length).trim();
+    }
+  }
+  
+  return '';
 };
 </script>
 

@@ -45,7 +45,7 @@
     </div>
     <!-- Keyboard shortcut text -->
     <div v-if="props.shortcutText" class="shortcut-text">
-      <HotKey :keys="getShortcutParts(props.shortcutText)" :show-icon="false" />
+      <HotKey :keys="getShortcutParts(props.shortcutText)" :show-icon="false" size="small" />
     </div>
     <div v-if="props.lastIconName" class="icon-placeholder last-icon" :style="lastIconPlaceholderStyle">
       <Icon :name="props.lastIconName" :size="String(props.lastIconSize ?? 20)" />

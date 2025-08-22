@@ -578,6 +578,7 @@
                             @update:model-value="(value) => debugStore.updateDebugOption('preventTooltipClosing', value)"
                           />
                           <span>Prevent Tooltip Closing</span>
+                          <HotKey :keys="['CTRL', 'ALT', 'SHIFT', 'T']" size="small" :show-icon="false" />
                           <div 
                             :ref="(el) => infoIconRefs['preventTooltipClosing'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
@@ -620,6 +621,7 @@ import { useTooltipManager } from "@/composables/useTooltipManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import CustomButton from "./CustomButton.vue";
 import InfoTooltip from "./InfoTooltip.vue";
+import HotKey from "./HotKey.vue";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 
 // Initialize stores and composables
@@ -809,6 +811,20 @@ const handleScroll = () => {
   }
 };
 
+// Handle keyboard events for debug shortcuts
+const handleKeyDown = (event: KeyboardEvent) => {
+  // Ctrl+Alt+Shift+T to toggle Prevent Tooltip Closing
+  if (event.ctrlKey && event.altKey && event.shiftKey && event.key.toLowerCase() === 't') {
+    event.preventDefault();
+    const currentValue = debugStore.debugOptions.preventTooltipClosing;
+    debugStore.updateDebugOption('preventTooltipClosing', !currentValue);
+    
+    if (DEBUG && debugConfig.logUIInteractivity) {
+      console.log(`%c🔧 Prevent Tooltip Closing toggled: ${!currentValue}`, 'background: #ff9800; color: white; padding: 2px 4px; border-radius: 3px;');
+    }
+  }
+};
+
 // Computed popup style
 const popupStyle = computed(() => ({
   transform: `translate(${debugStore.debugPopupPosition.x}px, ${debugStore.debugPopupPosition.y}px)`,
@@ -885,11 +901,17 @@ onMounted(() => {
     resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(popupRef.value);
   }
+  
+  // Add keyboard event listener for debug shortcuts
+  window.addEventListener('keydown', handleKeyDown);
 });
 
 onUnmounted(() => {
   document.removeEventListener('mousemove', handleDrag);
   document.removeEventListener('mouseup', stopDrag);
+  
+  // Remove keyboard event listener
+  window.removeEventListener('keydown', handleKeyDown);
   
   if (resizeObserver) {
     resizeObserver.disconnect();

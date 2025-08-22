@@ -141,33 +141,30 @@
                       <!-- Tooltips for remove job confirmation buttons -->
                       <InfoTooltip
                         :visible="getCancelRemoveJobTooltipVisible(job.id)"
-                        :content="{ text: 'Cancel the removal' }"
+                        :content="{ text: 'Cancel the removal', inlineHotKey: { keys: ['ESC'], position: 'end' } } as ExtendedTooltipContent"
                         :target="cancelRemoveJobBtnRefs.get(job.id)?.visualStyleRef"
                         placement="bottom"
-                        keyboardShortcut="Esc"
                       />
                       <InfoTooltip
                         :visible="getTipTooltipVisible(job.id)"
-                        :content="{ text: 'Hold Shift when clicking X or press Ctrl+Shift+Del to bypass confirmation' }"
+                        :content="{ text: 'Hold Shift when clicking X or press Ctrl+Shift+Del to bypass confirmation', inlineHotKey: { keys: ['CTRL', 'SHIFT', 'DEL'], position: 'inline' } } as ExtendedTooltipContent"
                         :target="tipButtonRefs.get(job.id)?.visualStyleRef"
                         placement="bottom"
                       />
                       <InfoTooltip
                         :visible="getConfirmRemoveJobTooltipVisible(job.id)"
-                        :content="{ text: 'Confirm job removal' }"
+                        :content="{ text: 'Confirm job removal', inlineHotKey: { keys: ['ENTER'], position: 'end' } } as ExtendedTooltipContent"
                         :target="confirmRemoveJobBtnRefs.get(job.id)?.visualStyleRef"
                         placement="bottom"
-                        keyboardShortcut="Enter"
                       />
                     </div>
                   </template>
                               </DropdownMenu>
                <InfoTooltip
                  :visible="tooltipManager.activeTooltipId.value === 'remove-job-' + job.id"
-                 :content="{ text: 'Remove Job' }"
+                 :content="{ text: 'Remove Job', inlineHotKey: { keys: ['SHIFT', 'DEL'], position: 'end' } } as ExtendedTooltipContent"
                  :target="removeJobDropdownRefs.get(job.id)?.$el"
                  placement="bottom"
-                 keyboardShortcut="Shift+Del"
                />
              </div>
           </CustomButton>
@@ -336,7 +333,7 @@
         </DropdownMenu>
         <InfoTooltip
           :visible="tooltipManager.activeTooltipId.value === 'add-job'"
-          :content="{ text: 'Create New Job (Ctrl+T)' }"
+          :content="{ text: 'Create New Job', inlineHotKey: { keys: ['CTRL', 'T'], position: 'end' } } as ExtendedTooltipContent"
           :target="addJobButtonRef?.visualStyleRef"
           placement="bottom"
           :debug-force-visible="false"
@@ -425,6 +422,10 @@ import { useDropdownManager } from "@/composables/dropdownManager";
 import { useButtonTooltip } from "@/composables/useButtonTooltip";
 import { logDragDropEvent, logUI, logManagerAction, logNotification, logGlobalEvent, logHover, logTooltip } from "@/utils/loggers";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
+
+// Extended type for InfoTooltip content with inline HotKey support
+type ExtendedTooltipContent = { text: string; icon?: string; inlineHotKey?: { keys: string[]; position: 'start' | 'end' | 'inline' } };
+
 interface ScrollableOverlayScrollbars extends OverlayScrollbars {
   scroll: (destination: { x?: string | number; y?: string | number }, duration?: number) => void;
 }
