@@ -43,15 +43,19 @@
             </CustomButton>
           </template>
         </DropdownMenu>
-        <InfoTooltip
-          :visible="tooltipManager.activeTooltipId.value === 'add-files-dropdown'"
-          :content="{ text: 'Add files or folders to this job' }"
-          :target="addDropdownRef?.$el"
-          placement="bottom"
-          keyboardShortcut="Add Files: Ctrl+O
+        <!-- Only render tooltip when target exists -->
+        <template v-if="addDropdownRef?.$el">
+          <InfoTooltip
+            tooltip-id="add-files-dropdown"
+            :visible="tooltipManager.activeTooltipId.value === 'add-files-dropdown'"
+            :content="{ text: 'Add files or folders to this job' }"
+            :target="addDropdownRef.$el"
+            placement="bottom"
+            keyboardShortcut="Add Files: Ctrl+O
 Add Folders: Ctrl+F"
-          hotkey-size="small"
-        />
+            hotkey-size="small"
+          />
+        </template>
       </div>
 
       <!-- Refresh Button -->
@@ -75,14 +79,18 @@ Add Folders: Ctrl+F"
           </template>
           Refresh
         </CustomButton>
-        <InfoTooltip
-          :visible="tooltipManager.activeTooltipId.value === 'refresh-files-btn'"
-          :content="{ text: 'Refresh the item list' }"
-          :target="refreshButtonRef?.visualStyleRef"
-          placement="bottom"
-          keyboardShortcut="F5"
-          hotkey-size="small"
-        />
+        <!-- Only render tooltip when target exists -->
+        <template v-if="refreshButtonRef?.visualStyleRef">
+          <InfoTooltip
+            tooltip-id="refresh-files-btn"
+            :visible="tooltipManager.activeTooltipId.value === 'refresh-files-btn'"
+            :content="{ text: 'Refresh the item list' }"
+            :target="refreshButtonRef.visualStyleRef"
+            placement="bottom"
+            keyboardShortcut="F5"
+            hotkey-size="small"
+          />
+        </template>
       </div>
 
       <!-- Remove Selected Button -->
@@ -101,14 +109,18 @@ Add Folders: Ctrl+F"
         >
           Remove Selected
         </CustomButton>
-        <InfoTooltip
-          :visible="tooltipManager.activeTooltipId.value === 'remove-selected-files-btn'"
-          :content="{ text: 'Remove selected items from this job' }"
-          :target="removeButtonRef?.visualStyleRef"
-          placement="bottom"
-          keyboardShortcut="Del"
-          hotkey-size="small"
-        />
+        <!-- Only render tooltip when target exists -->
+        <template v-if="removeButtonRef?.visualStyleRef">
+          <InfoTooltip
+            tooltip-id="remove-selected-files-btn"
+            :visible="tooltipManager.activeTooltipId.value === 'remove-selected-files-btn'"
+            :content="{ text: 'Remove selected items from this job' }"
+            :target="removeButtonRef.visualStyleRef"
+            placement="bottom"
+            keyboardShortcut="Del"
+            hotkey-size="small"
+          />
+        </template>
       </div>
 
       <!-- Copy to Job Dropdown -->
@@ -165,14 +177,18 @@ Add Folders: Ctrl+F"
             </CustomButton>
           </template>
         </DropdownMenu>
-        <InfoTooltip
-          :visible="tooltipManager.activeTooltipId.value === 'copy-to-job-dropdown'"
-          :content="{ text: 'Copy selected items to another job' }"
-          :target="copyDropdownRef?.$el"
-          placement="bottom"
-          keyboardShortcut="Ctrl+Shift+C"
-          hotkey-size="small"
-        />
+        <!-- Only render tooltip when target exists -->
+        <template v-if="copyDropdownRef?.$el">
+          <InfoTooltip
+            tooltip-id="copy-to-job-dropdown"
+            :visible="tooltipManager.activeTooltipId.value === 'copy-to-job-dropdown'"
+            :content="{ text: 'Copy selected items to another job' }"
+            :target="copyDropdownRef.$el"
+            placement="bottom"
+            keyboardShortcut="Ctrl+Shift+C"
+            hotkey-size="small"
+          />
+        </template>
       </div>
 
       <!-- Move to Job Dropdown -->
@@ -229,14 +245,18 @@ Add Folders: Ctrl+F"
             </CustomButton>
           </template>
         </DropdownMenu>
-        <InfoTooltip
-          :visible="tooltipManager.activeTooltipId.value === 'move-to-job-dropdown'"
-          :content="{ text: 'Move selected items to another job' }"
-          :target="moveDropdownRef?.$el"
-          placement="bottom"
-          keyboardShortcut="Ctrl+Shift+M"
-          hotkey-size="small"
-        />
+        <!-- Only render tooltip when target exists -->
+        <template v-if="moveDropdownRef?.$el">
+          <InfoTooltip
+            tooltip-id="move-to-job-dropdown"
+            :visible="tooltipManager.activeTooltipId.value === 'move-to-job-dropdown'"
+            :content="{ text: 'Move selected items to another job' }"
+            :target="moveDropdownRef.$el"
+            placement="bottom"
+            keyboardShortcut="Ctrl+Shift+M"
+            hotkey-size="small"
+          />
+        </template>
       </div>
     </template>
     <template #end>
@@ -291,14 +311,18 @@ Add Folders: Ctrl+F"
             </CustomButton>
           </template>
         </DropdownMenu>
-        <InfoTooltip
-          :visible="tooltipManager.activeTooltipId.value === 'file-table-settings-dropdown'"
-          :content="{ text: 'File table display settings' }"
-          :target="settingsDropdownRef?.$el"
-          placement="bottom"
-          keyboardShortcut="Ctrl+,"
-          hotkey-size="small"
-        />
+        <!-- Only render tooltip when target exists -->
+        <template v-if="settingsDropdownRef?.$el">
+          <InfoTooltip
+            tooltip-id="file-table-settings-dropdown"
+            :visible="tooltipManager.activeTooltipId.value === 'file-table-settings-dropdown'"
+            :content="{ text: 'File table display settings' }"
+            :target="settingsDropdownRef.$el"
+            placement="bottom-end"
+            keyboardShortcut="Ctrl+,"
+            hotkey-size="small"
+          />
+        </template>
       </div>
     </template>
   </ToolBar>

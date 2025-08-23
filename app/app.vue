@@ -8,6 +8,7 @@
     <ModalContainer />
     <NotificationContainer />
       <DebugPopup />
+    <InfoTooltipContainer />
   <DebugButton />
     <Transition name="layout-fade" mode="out-in">
       <!--
@@ -29,6 +30,7 @@ import { useJobsStore } from "@/stores/jobsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
 import { useUiStore } from "@/stores/uiStore";
 import NotificationContainer from "@/components/NotificationContainer.vue";
+import InfoTooltipContainer from "@/components/InfoTooltipContainer.vue";
 import { provideScrollContainer } from "@/composables/useScrollContainer";
 import { zoomIn, zoomOut, resetZoom, setFileTableZoomFactor, getFileTableZoomFactor, getZoomFactor, setZoomFactor } from "@/composables/useZoom";
 import { enableSelectionLock, disableSelectionLock } from "@/composables/useSelectionLock";

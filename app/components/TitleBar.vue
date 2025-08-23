@@ -228,6 +228,7 @@
         </div>
         <!-- Center nav tooltip (single instance used for all center buttons) -->
         <InfoTooltip
+          :tooltip-id="centerTooltipNameCandidate"
           :visible="!!(centerTooltipIsActive || (debugForceJobQueue && centerTooltipText && centerTooltipText.toLowerCase().includes('job queue')))"
           :content="{ text: centerTooltipText || (debugForceJobQueue ? 'Job Queue' : '') }"
           :target="debugForceCenterTarget || centerTooltipTarget"

@@ -32,6 +32,11 @@ export interface DebugOptions {
   decorumMessages: boolean;
   logFileTableActivation: boolean;
   preventTooltipClosing: boolean;
+  // Tooltip debugging options
+  logTooltipCreation: boolean;
+  logTooltipTargetResolution: boolean;
+  logTooltipVisibilityChanges: boolean;
+  logTooltipOrphanedDetection: boolean;
   // Opacity controls
   debugPopupOpacity: number;
   debugPopupSecondaryOpacity: number;
@@ -90,7 +95,11 @@ const logDebugOptionsStatus = (options: DebugOptions) => {
     'logVueWarnings',
     'decorumMessages',
     'logFileTableActivation',
-    'preventTooltipClosing'
+    'preventTooltipClosing',
+    'logTooltipCreation',
+    'logTooltipTargetResolution',
+    'logTooltipVisibilityChanges',
+    'logTooltipOrphanedDetection'
   ];
 
   // Always show status, but with different messaging based on whether any logging is enabled
@@ -175,6 +184,11 @@ export const useDebugStore = defineStore(
       decorumMessages: false,
       logFileTableActivation: false,
       preventTooltipClosing: false,
+      // Tooltip debugging options
+      logTooltipCreation: false,
+      logTooltipTargetResolution: false,
+      logTooltipVisibilityChanges: false,
+      logTooltipOrphanedDetection: false,
       // Opacity controls
       debugPopupOpacity: 0.75,
       debugPopupSecondaryOpacity: 0.4,
@@ -305,6 +319,11 @@ export const useDebugStore = defineStore(
         decorumMessages: false,
         logFileTableActivation: false,
         preventTooltipClosing: false,
+        // Tooltip debugging options
+        logTooltipCreation: false,
+        logTooltipTargetResolution: false,
+        logTooltipVisibilityChanges: false,
+        logTooltipOrphanedDetection: false,
         // Opacity controls
         debugPopupOpacity: 0.75,
         debugPopupSecondaryOpacity: 0.4,
@@ -403,7 +422,12 @@ export const useDebugStore = defineStore(
           'logComponentAttributes',
           'logVueWarnings',
           'decorumMessages',
-          'logFileTableActivation'
+          'logFileTableActivation',
+          'preventTooltipClosing',
+          'logTooltipCreation',
+          'logTooltipTargetResolution',
+          'logTooltipVisibilityChanges',
+          'logTooltipOrphanedDetection'
         ];
 
         // Show all options as disabled
@@ -443,7 +467,12 @@ export const useDebugStore = defineStore(
         'logComponentAttributes',
         'logVueWarnings',
         'decorumMessages',
-        'logFileTableActivation'
+        'logFileTableActivation',
+        'preventTooltipClosing',
+        'logTooltipCreation',
+        'logTooltipTargetResolution',
+        'logTooltipVisibilityChanges',
+        'logTooltipOrphanedDetection'
       ];
 
       // Log the status

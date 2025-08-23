@@ -44,15 +44,16 @@
     </div>
     <div class="popover__triangle" :style="triangleTransformStyle"></div>
          <InfoTooltip
-       :visible="tooltipManager.activeTooltipId.value === 'notification-details'"
-       :content="notificationDetails || { text: '' }"
-       :target="activeInfoIconRef"
-       :interactive="true"
-       placement="right"
-       :fallback-placements="['right-start', 'right-end', 'bottom-start', 'bottom-end']"
-       @mouseenter="handleTooltipMouseEnter"
-       @mouseleave="handleTooltipMouseLeave"
-     />
+      tooltip-id="notification-details"
+      :visible="tooltipManager.activeTooltipId.value === 'notification-details'"
+      :content="notificationDetails || { text: '' }"
+      :target="activeInfoIconRef"
+      :interactive="true"
+      placement="right"
+      :fallback-placements="['right-start', 'right-end', 'bottom-start', 'bottom-end']"
+      @mouseenter="handleTooltipMouseEnter"
+      @mouseleave="handleTooltipMouseLeave"
+    />
   </div>
 </template>
 <script setup lang="ts">

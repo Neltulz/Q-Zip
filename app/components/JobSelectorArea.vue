@@ -138,50 +138,63 @@
                         Remove Job
                       </CustomButton>
                       
-                      <!-- Tooltips for remove job confirmation buttons -->
-                      <InfoTooltip
-                        :visible="getCancelRemoveJobTooltipVisible(job.id)"
-                        :content="{ text: 'Cancel the removal' }"
-                        :target="cancelRemoveJobBtnRefs.get(job.id)?.visualStyleRef"
-                        placement="bottom"
-                        hotkey-size="small"
-                        keyboardShortcut="ESC"
-                      />
-                      <InfoTooltip
-                        :visible="getTipTooltipVisible(job.id)"
-                        :target="tipButtonRefs.get(job.id)?.visualStyleRef"
-                        placement="bottom"
-                        hotkey-size="small"
-                      >
-                        <div class="info-line tooltip-text-content">
-                          <span>Hold </span>
-                          <HotKey :keys="['SHIFT']" :disabled="false" :show-icon="false" size="small" />
-                          <span> when clicking </span>
-                          <HotKey :keys="['X']" :disabled="false" :show-icon="false" size="small" />
-                          <span> or press </span>
-                          <HotKey :keys="['CTRL', 'SHIFT', 'DEL']" :disabled="false" :show-icon="false" size="small" />
-                          <span> to bypass confirmation</span>
-                        </div>
-                      </InfoTooltip>
-                      <InfoTooltip
-                        :visible="getConfirmRemoveJobTooltipVisible(job.id)"
-                        :content="{ text: 'Confirm job removal' }"
-                        :target="confirmRemoveJobBtnRefs.get(job.id)?.visualStyleRef"
-                        placement="bottom"
-                        hotkey-size="small"
-                        keyboardShortcut="ENTER"
-                      />
+                      <!-- Tooltips for remove job confirmation buttons - only render when targets exist -->
+                      <template v-if="cancelRemoveJobBtnRefs.get(job.id)?.visualStyleRef">
+                        <InfoTooltip
+                          :tooltip-id="`cancel-remove-job-${job.id}`"
+                          :visible="getCancelRemoveJobTooltipVisible(job.id)"
+                          :content="{ text: 'Cancel the removal' }"
+                          :target="cancelRemoveJobBtnRefs.get(job.id)?.visualStyleRef"
+                          placement="bottom"
+                          hotkey-size="small"
+                          keyboardShortcut="ESC"
+                        />
+                      </template>
+                      <template v-if="tipButtonRefs.get(job.id)?.visualStyleRef">
+                        <InfoTooltip
+                          :tooltip-id="`tip-remove-job-${job.id}`"
+                          :visible="getTipTooltipVisible(job.id)"
+                          :target="tipButtonRefs.get(job.id)?.visualStyleRef"
+                          placement="bottom"
+                          hotkey-size="small"
+                        >
+                          <div class="info-line tooltip-text-content">
+                            <span>Hold </span>
+                            <HotKey :keys="['SHIFT']" :disabled="false" :show-icon="false" size="small" />
+                            <span> when clicking </span>
+                            <HotKey :keys="['X']" :disabled="false" :show-icon="false" size="small" />
+                            <span> or press </span>
+                            <HotKey :keys="['CTRL', 'SHIFT', 'DEL']" :disabled="false" :show-icon="false" size="small" />
+                            <span> to bypass confirmation</span>
+                          </div>
+                        </InfoTooltip>
+                      </template>
+                      <template v-if="confirmRemoveJobBtnRefs.get(job.id)?.visualStyleRef">
+                        <InfoTooltip
+                          :tooltip-id="`confirm-remove-job-${job.id}`"
+                          :visible="getConfirmRemoveJobTooltipVisible(job.id)"
+                          :content="{ text: 'Confirm job removal' }"
+                          :target="confirmRemoveJobBtnRefs.get(job.id)?.visualStyleRef"
+                          placement="bottom"
+                          hotkey-size="small"
+                          keyboardShortcut="ENTER"
+                        />
+                      </template>
                     </div>
                   </template>
                               </DropdownMenu>
-               <InfoTooltip
-                 :visible="tooltipManager.activeTooltipId.value === 'remove-job-' + job.id"
-                 :content="{ text: 'Remove Job' }"
-                 :target="removeJobDropdownRefs.get(job.id)?.$el"
-                 placement="bottom"
-                 hotkey-size="small"
-                 keyboardShortcut="Shift+Del"
-               />
+               <!-- Only render remove job tooltip when target exists -->
+               <template v-if="removeJobDropdownRefs.get(job.id)?.$el">
+                 <InfoTooltip
+                   :tooltip-id="`remove-job-${job.id}`"
+                   :visible="tooltipManager.activeTooltipId.value === 'remove-job-' + job.id"
+                   :content="{ text: 'Remove Job' }"
+                   :target="removeJobDropdownRefs.get(job.id)?.$el"
+                   placement="bottom"
+                   hotkey-size="small"
+                   keyboardShortcut="Shift+Del"
+                 />
+               </template>
              </div>
           </CustomButton>
           <!-- Context Menu for each job tab -->
@@ -347,14 +360,18 @@
             </CustomButton>
           </template>
         </DropdownMenu>
-        <InfoTooltip
-          :visible="tooltipManager.activeTooltipId.value === 'add-job'"
-          :content="{ text: 'Create New Job', inlineHotKey: { keys: ['CTRL', 'T'], position: 'end' } } as ExtendedTooltipContent"
-          :target="addJobButtonRef?.visualStyleRef"
-          placement="bottom"
-          :debug-force-visible="false"
-          hotkey-size="small"
-        />
+        <!-- Only render add job tooltip when target exists -->
+        <template v-if="addJobButtonRef?.visualStyleRef">
+          <InfoTooltip
+            tooltip-id="add-job"
+            :visible="tooltipManager.activeTooltipId.value === 'add-job'"
+            :content="{ text: 'Create New Job', inlineHotKey: { keys: ['CTRL', 'T'], position: 'end' } } as ExtendedTooltipContent"
+            :target="addJobButtonRef.visualStyleRef"
+            placement="bottom"
+            :debug-force-visible="false"
+            hotkey-size="small"
+          />
+        </template>
       </div>
       <div class="job-selector-btns-end">
                  <DropdownMenu
@@ -407,13 +424,17 @@
              </CustomButton>
            </template>
          </DropdownMenu>
-        <InfoTooltip
-          :visible="tooltipManager.activeTooltipId.value === 'job-selector-options'"
-          :content="{ text: 'Job Selector Options' }"
-          :target="extraOptionsTarget"
-          placement="bottom"
-          hotkey-size="small"
-        />
+        <!-- Only render job selector options tooltip when target exists -->
+        <template v-if="extraOptionsTarget">
+          <InfoTooltip
+            tooltip-id="job-selector-options"
+            :visible="tooltipManager.activeTooltipId.value === 'job-selector-options'"
+            :content="{ text: 'Job Selector Options' }"
+            :target="extraOptionsTarget"
+            placement="bottom"
+            hotkey-size="small"
+          />
+        </template>
       </div>
     </div>
 

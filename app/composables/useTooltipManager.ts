@@ -11,6 +11,8 @@ let showTimer: ReturnType<typeof setTimeout> | null = null;
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
 let crossfadeTimer: ReturnType<typeof setTimeout> | null = null;
 let preventClosingCheckTimer: ReturnType<typeof setInterval> | null = null;
+// Pending tooltip id for a scheduled show timer (prevents duplicate scheduled shows)
+let pendingShowTooltipId: string | null = null;
 // Store the origin element for the active tooltip to handle Vue re-renders
 let activeOriginElement: HTMLElement | null = null;
 // Match the visual timing used by InfoTooltip transitions for consistency
@@ -19,6 +21,12 @@ const HIDE_DELAY = 420; // ms (leave transition)
 // Short delay used when switching between adjacent tooltips so we get a
 // natural fade-out / fade-in crossfade rather than an immediate swap.
 const CROSSFade_DELAY = 120;
+// Descriptor registry for global tooltip container
+const tooltipDescriptors: Map<string, any> = new Map();
+const containerRegistered = ref(false) as Ref<boolean>;
+// Descriptor TTL (ms) to coalesce rapid register/unregister churn
+const DESCRIPTOR_TTL = 300; // ms
+const pendingDescriptorTTL: Map<string, ReturnType<typeof setTimeout>> = new Map();
 /**
  * A composable to manage the visibility of tooltips with delays,
  * mimicking native OS tooltip behavior.
@@ -142,6 +150,68 @@ export function useTooltipManager() {
     return false;
   };
 
+  // Container registration API
+  const registerContainer = () => {
+    containerRegistered.value = true;
+    logTooltip("TooltipManager", `Tooltip container registered`);
+  };
+
+  const unregisterContainer = () => {
+    containerRegistered.value = false;
+    logTooltip("TooltipManager", `Tooltip container unregistered`);
+  };
+
+  // Descriptor registration API
+  const registerTooltipDescriptor = (id: string, descriptor: any) => {
+    if (!id) return;
+    // If there is a pending TTL unregister for this id, cancel it and keep the descriptor
+    const pending = pendingDescriptorTTL.get(id);
+    if (pending) {
+      clearTimeout(pending);
+      pendingDescriptorTTL.delete(id);
+      logTooltip("TooltipManager", `Cancelled pending TTL-unregister for descriptor ${id}`);
+    }
+
+    // If we already have a descriptor and the new one doesn't contain a resolved target
+    // (common during unmounts / dropdown transitions), keep the existing target so the
+    // global container doesn't lose its reference and drop positioning to 0,0.
+    const existing = tooltipDescriptors.get(id) as any | undefined;
+    if (existing && (!descriptor.target || descriptor.target == null)) {
+      descriptor.target = existing.target;
+      // Preserve other existing properties if missing on the new descriptor
+      descriptor.component = descriptor.component ?? existing.component;
+      descriptor.props = descriptor.props ?? existing.props;
+      descriptor.text = descriptor.text ?? existing.text;
+    }
+
+    tooltipDescriptors.set(id, descriptor);
+    logTooltip("TooltipManager", `Registered tooltip descriptor ${id}`);
+  };
+
+  const unregisterTooltipDescriptor = (id: string) => {
+    if (!id) return;
+    // Start a TTL before actually removing the descriptor so rapid
+    // mount/unmount cycles (common during dropdown transitions) are coalesced.
+    if (pendingDescriptorTTL.has(id)) {
+      // Already waiting to unregister; nothing to do
+      logTooltip("TooltipManager", `Unregister already pending for ${id}`);
+      return;
+    }
+
+    const handle = setTimeout(() => {
+      tooltipDescriptors.delete(id);
+      pendingDescriptorTTL.delete(id);
+      logTooltip("TooltipManager", `TTL expired: Unregistered tooltip descriptor ${id}`);
+    }, DESCRIPTOR_TTL);
+
+    pendingDescriptorTTL.set(id, handle);
+    logTooltip("TooltipManager", `Scheduled TTL-unregister for tooltip descriptor ${id} (${DESCRIPTOR_TTL}ms)`);
+  };
+
+  const getTooltipDescriptor = (id: string) => {
+    return tooltipDescriptors.get(id) || null;
+  };
+
   const showTooltip = (tooltipId: string, originElement?: HTMLElement) => {
     logTooltip("TooltipManager", `showTooltip called for ${tooltipId}`, {
       tooltipId,
@@ -153,6 +223,18 @@ export function useTooltipManager() {
       hasOriginElement: !!originElement,
       preventTooltipClosing: debugStore.debugOptions.preventTooltipClosing
     });
+
+    // If already showing this tooltip, nothing to do
+    if (isAnyTooltipVisible.value && activeTooltipId.value === tooltipId) {
+      logTooltip("TooltipManager", `Already visible: ${tooltipId}, ignoring show request`);
+      return;
+    }
+
+    // If a show is already scheduled for this tooltip id, ignore duplicate requests
+    if (showTimer && pendingShowTooltipId === tooltipId) {
+      logTooltip("TooltipManager", `Show already scheduled for ${tooltipId}, skipping duplicate request`);
+      return;
+    }
 
     // If preventTooltipClosing is enabled and we already have a visible tooltip, don't switch
     if (debugStore.debugOptions.preventTooltipClosing && isAnyTooltipVisible.value && activeTooltipId.value !== tooltipId) {
@@ -218,26 +300,33 @@ export function useTooltipManager() {
       }, CROSSFade_DELAY);
       return;
     }
+
     // If no tooltip is visible, start a timer to show this one.
-    if (!showTimer) {
-      logTooltip("TooltipManager", `Starting show timer for ${tooltipId} (${SHOW_DELAY}ms delay)`);
-      showTimer = setTimeout(() => {
-        logTooltip("TooltipManager", `Show timer complete, setting active tooltip to ${tooltipId}`);
-        activeTooltipId.value = tooltipId;
-        isAnyTooltipVisible.value = true;
-        showTimer = null;
-
-        // Add tooltip-active marker to origin element if provided
-        if (originElement) {
-          addTooltipActiveMarker(tooltipId, originElement);
-        }
-
-        // Start periodic check for preventTooltipClosing setting changes
-        startPreventClosingCheck();
-      }, SHOW_DELAY);
-    } else {
-      logTooltip("TooltipManager", `Show timer already exists for ${tooltipId}, no action needed`);
+    // Clear any existing show timer to prevent multiple timers from running
+    if (showTimer) {
+      logTooltip("TooltipManager", `Clearing existing show timer for ${tooltipId}`);
+      clearTimeout(showTimer);
+      showTimer = null;
+      pendingShowTooltipId = null;
     }
+
+    logTooltip("TooltipManager", `Starting show timer for ${tooltipId} (${SHOW_DELAY}ms delay)`);
+    pendingShowTooltipId = tooltipId;
+    showTimer = setTimeout(() => {
+      logTooltip("TooltipManager", `Show timer complete, setting active tooltip to ${tooltipId}`);
+      activeTooltipId.value = tooltipId;
+      isAnyTooltipVisible.value = true;
+      showTimer = null;
+      pendingShowTooltipId = null;
+
+      // Add tooltip-active marker to origin element if provided
+      if (originElement) {
+        addTooltipActiveMarker(tooltipId, originElement);
+      }
+
+      // Start periodic check for preventTooltipClosing setting changes
+      startPreventClosingCheck();
+    }, SHOW_DELAY);
   };
   const hideTooltip = () => {
     const debugStore = useDebugStore();
@@ -264,6 +353,7 @@ export function useTooltipManager() {
       logTooltip("TooltipManager", `Clearing show timer`);
       clearTimeout(showTimer);
       showTimer = null;
+      pendingShowTooltipId = null;
     }
     // Start a brief hide timer to see if the user moves to another tooltip
     if (!hideTimer) {
@@ -315,6 +405,7 @@ export function useTooltipManager() {
       logTooltip("TooltipManager", `Clearing show timer for immediate hide`);
       clearTimeout(showTimer);
       showTimer = null;
+      pendingShowTooltipId = null;
     }
     if (hideTimer) {
       logTooltip("TooltipManager", `Clearing hide timer for immediate hide`);
@@ -451,5 +542,11 @@ export function useTooltipManager() {
     stopPreventClosingCheck,
     addTooltipActiveMarker,
     removeTooltipActiveMarker,
+    registerContainer,
+    unregisterContainer,
+    registerTooltipDescriptor,
+    unregisterTooltipDescriptor,
+    getTooltipDescriptor,
+    containerRegistered,
   };
 }

@@ -622,6 +622,71 @@
                           </div>
                         </label>
                       </div>
+
+                      <!-- Tooltip Debugging -->
+                      <div class="debug-option-group">
+                        <h3>Tooltip Debugging</h3>
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.logTooltipCreation"
+                            @update:model-value="(value) => debugStore.updateDebugOption('logTooltipCreation', value)"
+                          />
+                          <span>Tooltip Creation</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['logTooltipCreation'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logTooltipCreation', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.logTooltipTargetResolution"
+                            @update:model-value="(value) => debugStore.updateDebugOption('logTooltipTargetResolution', value)"
+                          />
+                          <span>Tooltip Target Resolution</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['logTooltipTargetResolution'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logTooltipTargetResolution', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.logTooltipVisibilityChanges"
+                            @update:model-value="(value) => debugStore.updateDebugOption('logTooltipVisibilityChanges', value)"
+                          />
+                          <span>Tooltip Visibility Changes</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['logTooltipVisibilityChanges'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logTooltipVisibilityChanges', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.logTooltipOrphanedDetection"
+                            @update:model-value="(value) => debugStore.updateDebugOption('logTooltipOrphanedDetection', value)"
+                          />
+                          <span>Tooltip Orphaned Detection</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['logTooltipOrphanedDetection'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logTooltipOrphanedDetection', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </OverlayScrollbarsComponent>
@@ -928,6 +993,22 @@ const debugOptionTooltips = {
   logFileTableActivation: {
     text: "Logs FileTable activation events and focus management.",
     example: "🔧 [FileTable] Activated: jobId"
+  },
+  logTooltipCreation: {
+    text: "Logs when InfoTooltip components are created, mounted, and unmounted. Helps track duplicate tooltip instances.",
+    example: "🔧 [InfoTooltip] Component created for tooltip-id"
+  },
+  logTooltipTargetResolution: {
+    text: "Logs detailed information about how tooltip targets are resolved and validated.",
+    example: "🔧 [InfoTooltip] Target resolved: element details"
+  },
+  logTooltipVisibilityChanges: {
+    text: "Logs all tooltip visibility state changes including show/hide transitions.",
+    example: "🔧 [InfoTooltip] Visibility changed: true/false"
+  },
+  logTooltipOrphanedDetection: {
+    text: "Logs orphaned tooltip detection and cleanup operations.",
+    example: "🔧 [InfoTooltip] Orphaned tooltip detected: cleanup details"
   },
   preventTooltipClosing: {
     text: "Prevents tooltips from closing once they become active. Useful for debugging tooltip positioning and behavior.",

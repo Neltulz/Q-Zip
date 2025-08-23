@@ -44,159 +44,20 @@
   see: app/components/info-tooltip-comp/info-tooltip-usage.md
 -->
 <template>
-  <teleport to="#tooltip-container">
-    <Transition
-      name="tooltip-fade"
-      appear
-      @enter="onEnter"
-      @leave="onLeave"
-    >
-      <div
-        v-if="shouldRender"
-        ref="floatingRef"
-        class="info-tooltip"
-        :class="{ 
-          interactive: interactive || debugStore.debugOptions.forceTooltipInteractive, 
-          'simple-tooltip': !!parsedContent,
-          'disabled-target': isTargetDisabled,
-          'debug-high-z-index': debugStore.debugOptions.increaseTooltipZIndex
-        }"
-        :style="floatingStyles"
-        @mouseenter="(event) => emit('mouseenter', event)"
-        @mouseleave="(event) => emit('mouseleave', event)"
-      >
-        <div class="tooltip-content">
-          <!-- Use slot if provided, otherwise fall back to content-based rendering -->
-          <template v-if="hasSlotContent">
-            <slot />
-          </template>
-          
-          <!-- Display structured notification details -->
-          <template v-else-if="'filePaths' in content">
-              <div v-if="(content as NotificationMessageDetails).sourceJobId" class="info-line"><strong>Source:</strong> Job {{ (content as NotificationMessageDetails).sourceJobId }}</div>
-              <div v-if="(content as NotificationMessageDetails).destinationJobId" class="info-line">
-                <strong>Destination:</strong> Job {{ (content as NotificationMessageDetails).destinationJobId }}
-              </div>
-              <hr v-if="(content as NotificationMessageDetails).sourceJobId || (content as NotificationMessageDetails).destinationJobId" />
-              <div v-if="(content as NotificationMessageDetails).filePaths && (content as NotificationMessageDetails).filePaths.length > 0" class="file-list-container">
-                <strong>Affected Items:</strong>
-                <ul class="file-list">
-                  <li v-for="path in (content as NotificationMessageDetails).filePaths" :key="path">
-                    <span class="file-name">{{ getFileName(path) }}</span>
-                    <span v-if="(content as NotificationMessageDetails).reasons && (content as NotificationMessageDetails).reasons?.[path]" class="reason"> - {{ (content as NotificationMessageDetails).reasons?.[path] }} </span>
-                  </li>
-                </ul>
-              </div>
-            </template>
-            
-                        <!-- Multi-line keyboard shortcuts (like Add Files/Folders) -->
-             <template v-else-if="keyboardShortcut && keyboardShortcutLines.length > 1">
-               <div 
-                 v-for="(shortcut, index) in keyboardShortcutLines" 
-                 :key="index"
-                 class="info-line keyboard-shortcut-line"
-               >
-                 <span class="keyboard-action-text">{{ getActionText(shortcut) }}</span>
-                 <HotKey :keys="getShortcutParts(getShortcutKey(shortcut))" :disabled="isTargetDisabled" :size="hotkeySize" />
-               </div>
-             </template>
-            
-                                    <!-- Single keyboard shortcut (like Refresh, Remove, etc.) -->
-              <template v-else-if="keyboardShortcut && keyboardShortcutLines.length === 1">
-                <div class="info-line tooltip-text-content">
-                  <span>{{ content.text }}</span>
-                </div>
-                <div class="info-line keyboard-shortcut-line">
-                  <span class="keyboard-action-text">{{ getActionName(content.text) }}</span>
-                  <HotKey :keys="getShortcutParts(keyboardShortcut)" :disabled="isTargetDisabled" :size="hotkeySize" />
-                </div>
-              </template>
-            
-            <!-- Simple text content with icon -->
-            <template v-else-if="'text' in content && !('filePaths' in content) && content.icon">
-              <div class="info-line tooltip-text-content">
-                <Icon :name="content.icon" class="tooltip-icon" />
-                <span>{{ content.text }}</span>
-              </div>
-            </template>
-            
-            <!-- Simple text content with inline HotKey -->
-            <template v-else-if="'text' in content && !('filePaths' in content) && content.inlineHotKey">
-              <div class="info-line tooltip-text-content">
-                <template v-if="content.inlineHotKey.position === 'start'">
-                  <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-                  <span>{{ content.text }}</span>
-                </template>
-                <template v-else-if="content.inlineHotKey.position === 'end'">
-                  <span>{{ content.text }}</span>
-                  <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-                </template>
-                <template v-else-if="content.inlineHotKey.position === 'inline'">
-                  <span>{{ getTextBeforeHotKey(content.text) }}</span>
-                  <HotKey :keys="content.inlineHotKey.keys" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-                  <span>{{ getTextAfterHotKey(content.text) }}</span>
-                </template>
-              </div>
-            </template>
-            
-            <!-- Simple text content with multiple inline HotKeys -->
-            <template v-else-if="'text' in content && !('filePaths' in content) && content.inlineHotKeys">
-              <div class="info-line tooltip-text-content">
-                <span>Hold </span>
-                <HotKey :keys="['SHIFT']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-                <span> when clicking </span>
-                <HotKey :keys="['X']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-                <span> or press </span>
-                <HotKey :keys="['CTRL', 'SHIFT', 'DEL']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-                <span> to bypass confirmation</span>
-              </div>
-            </template>
-            
-            <!-- Simple text content with useMultipleHotKeys flag -->
-            <template v-else-if="'text' in content && !('filePaths' in content) && content.useMultipleHotKeys">
-              <div class="info-line tooltip-text-content">
-                <span>Hold </span>
-                <HotKey :keys="['SHIFT']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-                <span> when clicking </span>
-                <HotKey :keys="['X']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-                <span> or press </span>
-                <HotKey :keys="['CTRL', 'SHIFT', 'DEL']" :disabled="isTargetDisabled" :show-icon="false" :size="hotkeySize" />
-                <span> to bypass confirmation</span>
-              </div>
-            </template>
-            
-            <!-- Simple text content (legacy parsing) -->
-            <template v-else-if="parsedContent">
-              <div class="info-line tooltip-text-content">
-                <span>{{ parsedContent.mainText }}</span>
-                <span v-if="parsedContent.shortcut" class="shortcut-key-text">{{ parsedContent.shortcut }}</span>
-              </div>
-            </template>
-            
-            <!-- Simple text content without icon or shortcuts -->
-            <template v-else-if="'text' in content && !('filePaths' in content)">
-              <div class="info-line tooltip-text-content">
-                <span>{{ content.text }}</span>
-              </div>
-            </template>
-          </div>
-        <!-- Use an inline SVG for a perfect, styleable arrow -->
-        <svg ref="arrowRef" class="tooltip-arrow" :data-side="side" :style="arrowStyle" viewBox="0 0 16 9">
-          <path d="M 0 0 L 8 8 L 16 0" />
-        </svg>
-      </div>
-    </Transition>
-  </teleport>
+  <!-- Descriptor-only. Actual tooltip DOM is rendered by InfoTooltipContainer -->
+  <div style="display:none;" />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, toRef, watch, nextTick, onUnmounted, type PropType, useSlots } from "vue";
+import { ref, computed, toRef, watch, nextTick, onUnmounted, type PropType, useSlots, defineComponent } from "vue";
 import type { NotificationMessageDetails } from "@/stores/uiStore";
 import { useFloating, autoUpdate, offset, flip, shift, arrow } from "@floating-ui/vue";
 import type { MaybeElement } from "@vueuse/core";
 import { logUI, logRendering, logTooltip } from "@/utils/loggers";
 import { useDebugStore } from "@/stores/debugStore";
 import HotKey from "@/components/HotKey.vue";
+import { useTooltipManager } from "@/composables/useTooltipManager";
+import { onMounted } from "vue";
 // Allow a simple text property for more generic tooltips
 type TooltipContent = NotificationMessageDetails | { text: string; icon?: string; inlineHotKey?: { keys: string[]; position: 'start' | 'end' | 'inline' }; inlineHotKeys?: { keys: string[]; position: 'start' | 'end' | 'inline'; text: string }[]; useMultipleHotKeys?: boolean };
 
@@ -212,6 +73,7 @@ interface InfoTooltipProps {
   fallbackPlacements?: ("top" | "bottom" | "left" | "right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "left-start" | "left-end" | "right-start" | "right-end")[];
   keyboardShortcut?: string;
   hotkeySize?: "small" | "medium" | "large";
+  tooltipId?: string; // NEW
 }
 
 const debugStore = useDebugStore();
@@ -256,18 +118,33 @@ const hasSlotContent = computed(() => {
 // If a CustomButton (or its wrapper) is passed, prefer its internal
 // `.visual-style` element when available so tooltips anchor to the visible surface.
 const resolvedTarget = computed(() => {
+  // Avoid resolving target unless the tooltip will actually render
+  if (!shouldRender.value) return null;
+
   const raw = (props as any).target;
   if (!raw) {
     // Only log when tooltip is visible to avoid spam
     if (props.visible || props.debugForceVisible) {
-      logTooltip("InfoTooltip", "No target provided", { target: props.target });
+      if (debugStore.debugOptions.logTooltipTargetResolution) {
+        logTooltip("InfoTooltip", "No target provided", { target: props.target });
+      }
     }
     return null;
   }
   
+  // Log tooltip target resolution if enabled
+  if (debugStore.debugOptions.logTooltipTargetResolution && (props.visible || props.debugForceVisible)) {
+    logTooltip("InfoTooltip", "Target resolution started", { 
+      raw, 
+      target: props.target,
+      visible: props.visible,
+      debugForceVisible: props.debugForceVisible
+    });
+  }
+
   // Unwrap refs if necessary
   const maybe = raw && (raw.value !== undefined ? raw.value : raw);
-  
+
   // If a component instance exposing `visualStyleRef` was passed, use that
   if (maybe && typeof maybe === "object") {
     // Component proxy exposing a ref
@@ -278,31 +155,56 @@ const resolvedTarget = computed(() => {
         try {
           const el = vsRef();
           if (el instanceof Element) {
-            logTooltip("InfoTooltip", "Resolved target via function", { element: el, target: props.target });
+            if (debugStore.debugOptions.logTooltipTargetResolution) {
+              logTooltip("InfoTooltip", "Resolved target via function", { element: el, target: props.target });
+            }
             return el;
           }
         } catch (e) {
-          logTooltip("InfoTooltip", "Error calling visual style function", { error: e, target: props.target });
+          if (debugStore.debugOptions.logTooltipTargetResolution) {
+            logTooltip("InfoTooltip", "Error calling visual style function", { error: e, target: props.target });
+          }
         }
       } else if (vsRef.value instanceof Element) {
-        logTooltip("InfoTooltip", "Resolved target via ref value", { element: vsRef.value, target: props.target });
+        if (debugStore.debugOptions.logTooltipTargetResolution) {
+          logTooltip("InfoTooltip", "Resolved target via ref value", { element: vsRef.value, target: props.target });
+        }
         return vsRef.value;
       }
     }
   }
   
-  // If an Element was passed, prefer its `.visual-style` child when present
+  // If an Element was passed, prefer its clickable ancestor (button/.custom-button/.options-btn)
+  // when available. This anchors tooltips to the visible/clickable surface rather
+  // than internal visual styling elements, which can be zero-sized or transient.
   if (maybe instanceof Element) {
     const inner = (maybe as Element).querySelector?.(".visual-style");
     if (inner) {
-      logTooltip("InfoTooltip", "Resolved target via .visual-style child", { element: inner, parent: maybe, target: props.target });
+      try {
+        const ancestor = inner.closest('button, .custom-button, .options-btn');
+        if (ancestor instanceof Element) {
+          if (debugStore.debugOptions.logTooltipTargetResolution) {
+            logTooltip("InfoTooltip", "Resolved target via ancestor (preferred)", { element: ancestor, original: inner, target: props.target });
+          }
+          return ancestor as Element;
+        }
+      } catch (e) {
+        /* ignore */
+      }
+      if (debugStore.debugOptions.logTooltipTargetResolution) {
+        logTooltip("InfoTooltip", "Resolved target via .visual-style child (no clickable ancestor found)", { element: inner, parent: maybe, target: props.target });
+      }
       return inner as Element;
     }
-    logTooltip("InfoTooltip", "Resolved target directly as Element", { element: maybe, target: props.target });
+    if (debugStore.debugOptions.logTooltipTargetResolution) {
+      logTooltip("InfoTooltip", "Resolved target directly as Element (no .visual-style)", { element: maybe, target: props.target });
+    }
     return maybe as Element;
   }
   
-  logTooltip("InfoTooltip", "Could not resolve target", { raw, maybe, target: props.target });
+  if (debugStore.debugOptions.logTooltipTargetResolution) {
+    logTooltip("InfoTooltip", "Could not resolve target", { raw, maybe, target: props.target });
+  }
   return null;
 });
 
@@ -315,30 +217,30 @@ const isTargetDisabled = computed(() => {
   // This ensures the computed property updates when the target's state changes
   const targetElement = target as HTMLElement;
   
-  // Log disabled state detection for debugging
-  if (props.visible || props.debugForceVisible) {
-    const hasDisabledAttr = targetElement.hasAttribute('disabled');
-    const hasDisabledClass = targetElement.classList.contains('disabled');
-    const isButtonDisabled = targetElement instanceof HTMLButtonElement && targetElement.disabled;
-    const disabledButton = targetElement.closest('button[disabled], .disabled');
-    const ariaDisabled = targetElement.getAttribute('aria-disabled') === 'true';
-    const computedStyle = window.getComputedStyle(targetElement);
-    const pointerEventsNone = computedStyle.pointerEvents === 'none';
-    
-    logTooltip("InfoTooltip", "Disabled state detection", {
-      target: targetElement,
-      targetTagName: targetElement.tagName,
-      targetClassName: targetElement.className,
-      hasDisabledAttr,
-      hasDisabledClass,
-      isButtonDisabled,
-      disabledButton: disabledButton ? disabledButton.tagName + '.' + disabledButton.className : null,
-      ariaDisabled,
-      pointerEvents: computedStyle.pointerEvents,
-      pointerEventsNone,
-      isDisabled: hasDisabledAttr || hasDisabledClass || isButtonDisabled || !!disabledButton || ariaDisabled || pointerEventsNone
-    });
-  }
+      // Log disabled state detection for debugging
+    if ((props.visible || props.debugForceVisible) && debugStore.debugOptions.logTooltipTargetResolution) {
+      const hasDisabledAttr = targetElement.hasAttribute('disabled');
+      const hasDisabledClass = targetElement.classList.contains('disabled');
+      const isButtonDisabled = targetElement instanceof HTMLButtonElement && targetElement.disabled;
+      const disabledButton = targetElement.closest('button[disabled], .disabled');
+      const ariaDisabled = targetElement.getAttribute('aria-disabled') === 'true';
+      const computedStyle = window.getComputedStyle(targetElement);
+      const pointerEventsNone = computedStyle.pointerEvents === 'none';
+      
+      logTooltip("InfoTooltip", "Disabled state detection", {
+        target: targetElement,
+        targetTagName: targetElement.tagName,
+        targetClassName: targetElement.className,
+        hasDisabledAttr,
+        hasDisabledClass,
+        isButtonDisabled,
+        disabledButton: disabledButton ? disabledButton.tagName + '.' + disabledButton.className : null,
+        ariaDisabled,
+        pointerEvents: computedStyle.pointerEvents,
+        pointerEventsNone,
+        isDisabled: hasDisabledAttr || hasDisabledClass || isButtonDisabled || !!disabledButton || ariaDisabled || pointerEventsNone
+      });
+    }
   
   // Check if the target element itself is disabled
   if (targetElement.hasAttribute('disabled')) return true;
@@ -378,39 +280,50 @@ const onLeave = (el: Element) => {
   }
 };
 // Debug: when visible, optionally log resolved target and rect to help diagnose placement
+// Watch shouldRender to control target resolution logging and orphan checks
 watch(
-  () => props.visible,
-  (v) => {
-    logTooltip("InfoTooltip", `Visibility changed to ${v}`, { 
-      visible: v, 
-      interactive: props.interactive,
-      content: props.content,
-      placement: props.placement
-    });
-    if (v) {
+  () => shouldRender.value,
+  (rendering) => {
+    if (debugStore.debugOptions.logTooltipVisibilityChanges) {
+      logTooltip("InfoTooltip", `shouldRender changed to ${rendering}`, { 
+        shouldRender: rendering, 
+        interactive: props.interactive,
+        content: props.content,
+        placement: props.placement
+      });
+    }
+
+    if (rendering) {
       try {
         const el = resolvedTarget.value as Element | null;
         if (el) {
-          logTooltip("InfoTooltip", "Resolved target element", { 
-            element: el, 
-            rect: el.getBoundingClientRect(),
-            placement: props.placement,
-            fallbackPlacements: props.fallbackPlacements,
-            target: props.target
-          });
+          if (debugStore.debugOptions.logTooltipTargetResolution) {
+            logTooltip("InfoTooltip", "Resolved target element", { 
+              element: el, 
+              rect: el.getBoundingClientRect(),
+              placement: props.placement,
+              fallbackPlacements: props.fallbackPlacements,
+              target: props.target
+            });
+          }
         } else {
-          logTooltip("InfoTooltip", "No resolved target", { target: props.target });
+          if (debugStore.debugOptions.logTooltipTargetResolution) {
+            logTooltip("InfoTooltip", "No resolved target", { target: props.target });
+          }
         }
       } catch (e) {
-        logTooltip("InfoTooltip", "Error resolving target", { error: e, target: props.target });
+        if (debugStore.debugOptions.logTooltipTargetResolution) {
+          logTooltip("InfoTooltip", "Error resolving target", { error: e, target: props.target });
+        }
       }
     } else {
-      // Log when tooltip becomes invisible to track potential orphaned state
-      logTooltip("InfoTooltip", "Tooltip became invisible", {
-        wasVisible: true,
-        content: props.content,
-        target: props.target
-      });
+      if (debugStore.debugOptions.logTooltipVisibilityChanges) {
+        logTooltip("InfoTooltip", "Tooltip became invisible (shouldRender false)", {
+          wasVisible: true,
+          content: props.content,
+          target: props.target
+        });
+      }
     }
   }
 );
@@ -433,7 +346,7 @@ watch(
 let orphanedCheckInterval: number | null = null;
 
 watch(
-  () => props.visible,
+  () => shouldRender.value,
   (isVisible) => {
     if (isVisible) {
       // Start periodic checks for orphaned tooltips
@@ -442,12 +355,14 @@ watch(
         if (target) {
           // Check if target is still in DOM
           if (!document.contains(target)) {
-            logTooltip("InfoTooltip", "ORPHANED TOOLTIP DETECTED: Target no longer in DOM", {
-              target: target,
-              targetTagName: target.tagName,
-              targetClassName: target.className,
-              content: props.content
-            });
+            if (debugStore.debugOptions.logTooltipOrphanedDetection) {
+              logTooltip("InfoTooltip", "ORPHANED TOOLTIP DETECTED: Target no longer in DOM", {
+                target: target,
+                targetTagName: target.tagName,
+                targetClassName: target.className,
+                content: props.content
+              });
+            }
           }
           
           // Check if target is hidden
@@ -458,15 +373,17 @@ watch(
                           target.offsetParent === null;
           
           if (isHidden) {
-            logTooltip("InfoTooltip", "ORPHANED TOOLTIP DETECTED: Target is hidden", {
-              target: target,
-              targetTagName: target.tagName,
-              rect: { width: rect.width, height: rect.height },
-              display: target.style.display,
-              visibility: target.style.visibility,
-              offsetParent: target.offsetParent,
-              content: props.content
-            });
+            if (debugStore.debugOptions.logTooltipOrphanedDetection) {
+              logTooltip("InfoTooltip", "ORPHANED TOOLTIP DETECTED: Target is hidden", {
+                target: target,
+                targetTagName: target.tagName,
+                rect: { width: rect.width, height: rect.height },
+                display: target.style.display,
+                visibility: target.style.visibility,
+                offsetParent: target.offsetParent,
+                content: props.content
+              });
+            }
           }
           
           // Check if target is inside a closing dropdown
@@ -478,29 +395,33 @@ watch(
             const hasContentReadyClass = dropdownContent.classList.contains('content-ready');
             
             if (!hasPointerEvents || !hasOpacity || !hasContentReadyClass) {
-              logTooltip("InfoTooltip", "ORPHANED TOOLTIP DETECTED: Target in closing dropdown", {
-                target: target,
-                targetTagName: target.tagName,
-                dropdownContent: dropdownContent.getAttribute('data-belongs-to'),
-                pointerEvents: computedStyle.pointerEvents,
-                opacity: computedStyle.opacity,
-                hasContentReadyClass,
-                content: props.content
-              });
+              if (debugStore.debugOptions.logTooltipOrphanedDetection) {
+                logTooltip("InfoTooltip", "ORPHANED TOOLTIP DETECTED: Target in closing dropdown", {
+                  target: target,
+                  targetTagName: target.tagName,
+                  dropdownContent: dropdownContent.getAttribute('data-belongs-to'),
+                  pointerEvents: computedStyle.pointerEvents,
+                  opacity: computedStyle.opacity,
+                  hasContentReadyClass,
+                  content: props.content
+                });
+              }
             }
           }
         }
         // Removed the else clause that was logging "No resolved target" when target is null
         // This was causing unnecessary orphaned tooltip detection logs
-      }, 1000); // Check every second
+      }, 500); // Check every 500ms
     } else {
       // Stop periodic checks when tooltip becomes invisible
       if (orphanedCheckInterval) {
         clearInterval(orphanedCheckInterval);
         orphanedCheckInterval = null;
-        logTooltip("InfoTooltip", "Stopped orphaned tooltip checks", {
-          content: props.content
-        });
+        if (debugStore.debugOptions.logTooltipOrphanedDetection) {
+          logTooltip("InfoTooltip", "Stopped orphaned tooltip checks", {
+            content: props.content
+          });
+        }
       }
     }
   }
@@ -511,7 +432,9 @@ onUnmounted(() => {
   if (orphanedCheckInterval) {
     clearInterval(orphanedCheckInterval);
     orphanedCheckInterval = null;
-    logTooltip("InfoTooltip", "Cleaned up orphaned tooltip checks on unmount");
+    if (debugStore.debugOptions.logTooltipOrphanedDetection) {
+      logTooltip("InfoTooltip", "Cleaned up orphaned tooltip checks on unmount");
+    }
   }
 });
 
@@ -522,7 +445,9 @@ watch(
     if (!newTarget && orphanedCheckInterval) {
       clearInterval(orphanedCheckInterval);
       orphanedCheckInterval = null;
-      logTooltip("InfoTooltip", "Stopped orphaned tooltip checks due to null target");
+      if (debugStore.debugOptions.logTooltipOrphanedDetection) {
+        logTooltip("InfoTooltip", "Stopped orphaned tooltip checks due to null target");
+      }
     }
   }
 );
@@ -809,7 +734,180 @@ const getTextAfterHotKey = (text: string) => {
   return '';
 };
 
+// Log tooltip creation if enabled
+// Helper to build descriptor from props
+const buildDescriptor = () => {
+  const hasDefaultSlot = !!slots.default;
+  let componentDef: any = null;
+  if (hasDefaultSlot) {
+    // Create a lightweight wrapper component that renders the original slot
+    componentDef = defineComponent({
+      name: 'InfoTooltipSlotWrapper',
+      setup() {
+        return () => (slots.default ? slots.default() : null);
+      },
+    });
+  }
 
+  // Determine the best anchor element for the global container. If the
+  // resolved target is present but has a zero-sized rect (common for
+  // inner styling elements), prefer the nearest ancestor button / clickable
+  // element so Floating UI can compute positions correctly.
+  const determineTarget = (): Element | null => {
+    const resolved = resolvedTarget.value as Element | null;
+    const raw = (props as any).target;
+    const maybe = resolved || (raw && (raw.value !== undefined ? raw.value : raw)) || null;
+    try {
+      if (maybe instanceof Element) {
+        const rect = maybe.getBoundingClientRect();
+        if ((rect.width === 0 && rect.height === 0) || rect.width < 2) {
+          // Look for a sensible clickable ancestor
+          const ancestor = maybe.closest('button, .custom-button, .options-btn');
+          if (ancestor instanceof Element) {
+            if (debugStore.debugOptions.logTooltipTargetResolution) {
+              logTooltip('InfoTooltip', 'Falling back to ancestor button for descriptor target', { original: maybe, ancestor });
+            }
+            return ancestor as Element;
+          }
+        }
+        return maybe as Element;
+      }
+    } catch (e) {
+      /* ignore and fallback to raw */
+    }
+    return null;
+  };
+
+  return {
+    id: (props as any).tooltipId,
+    text: (props.content as any)?.text || null,
+    component: componentDef,
+    props: {
+      content: props.content,
+      keyboardShortcut: props.keyboardShortcut,
+      hotkeySize: props.hotkeySize,
+      placement: props.placement,
+      interactive: props.interactive,
+      disabled: false,
+    },
+    target: determineTarget(),
+  };
+};
+
+const { registerTooltipDescriptor, unregisterTooltipDescriptor } = useTooltipManager();
+const registeredId = ref<string | null>(null);
+
+onMounted(() => {
+  if (debugStore.debugOptions.logTooltipCreation) {
+    logTooltip("InfoTooltip", "Component created", { 
+      content: props.content,
+      target: props.target,
+      placement: props.placement,
+      visible: props.visible,
+      debugForceVisible: props.debugForceVisible,
+      tooltipId: (props as any).tooltipId || null
+    });
+  }
+
+  // Register descriptor with global container if tooltipId provided
+  const id = (props as any).tooltipId;
+  if (id) {
+    registerTooltipDescriptor(id, buildDescriptor());
+    registeredId.value = id;
+  }
+});
+
+// Unregister on unmount
+onUnmounted(() => {
+  if (debugStore.debugOptions.logTooltipCreation) {
+    logTooltip("InfoTooltip", "Component unmounted", { 
+      content: props.content,
+      target: props.target,
+      tooltipId: (props as any).tooltipId || null
+    });
+  }
+  const id = registeredId.value ?? (props as any).tooltipId;
+  if (id) {
+    unregisterTooltipDescriptor(id);
+  }
+});
+
+// Re-register descriptor if tooltipId prop changes at runtime
+watch(
+  () => (props as any).tooltipId,
+  (newId, oldId) => {
+    if (oldId && oldId !== newId) {
+      unregisterTooltipDescriptor(oldId);
+      registeredId.value = null;
+    }
+    if (newId) {
+      registerTooltipDescriptor(newId, buildDescriptor());
+      registeredId.value = newId;
+    }
+  }
+);
+
+// Re-register descriptor when the resolved target element changes.
+// This ensures the global container receives a concrete Element (not null or a ref)
+// and triggers positioning updates when the element becomes available.
+// Debounced re-registration when resolvedTarget changes. This prevents rapid
+// mount/unmount cycles (e.g., dropdown open/close) from churning descriptors
+// and causing positioning to fall back to 0,0.
+let _registrationTimer: number | null = null;
+const DEBOUNCE_MS = 120;
+watch(
+  () => resolvedTarget.value,
+  (newTarget, oldTarget) => {
+    const id = registeredId.value ?? (props as any).tooltipId;
+    if (!id) return;
+    if (_registrationTimer) {
+      clearTimeout(_registrationTimer);
+      _registrationTimer = null;
+    }
+
+    // If newTarget is an Element and appears zero-sized, wait briefly for it
+    // to stabilise before registering. If it's a stable clickable ancestor,
+    // register immediately.
+    try {
+      const el = newTarget as Element | null;
+      if (el instanceof Element) {
+        const r = el.getBoundingClientRect();
+        const looksZero = (r.width === 0 && r.height === 0) || r.width < 2;
+        if (looksZero) {
+          if (debugStore.debugOptions.logTooltipTargetResolution) {
+            logTooltip('InfoTooltip', 'Debouncing descriptor registration for zero-sized target', { tooltipId: id, newTarget: el });
+          }
+          _registrationTimer = window.setTimeout(() => {
+            registerTooltipDescriptor(id, buildDescriptor());
+            _registrationTimer = null;
+            if (debugStore.debugOptions.logTooltipTargetResolution) {
+              logTooltip('InfoTooltip', 'Debounced descriptor registration complete', { tooltipId: id });
+            }
+          }, DEBOUNCE_MS) as unknown as number;
+          return;
+        }
+      }
+    } catch (e) {
+      /* ignore measurement errors */
+    }
+
+    // Otherwise register immediately
+    if (debugStore.debugOptions.logTooltipTargetResolution) {
+      logTooltip('InfoTooltip', 'Re-registering descriptor due to resolvedTarget change', { tooltipId: id, newTarget, oldTarget });
+    }
+    registerTooltipDescriptor(id, buildDescriptor());
+  }
+);
+
+// Clear any pending timer on unmount to avoid stray callbacks
+onUnmounted(() => {
+  if (_registrationTimer) {
+    clearTimeout(_registrationTimer);
+    _registrationTimer = null;
+  }
+});
+
+// Make InfoTooltip a descriptor-only component: render nothing (container will render actual DOM)
 </script>
 
 <style scoped>
