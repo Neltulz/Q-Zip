@@ -11,9 +11,18 @@
   closes all dropdown menus when a theme is selected or the app is exited.
 -->
 <template>
-  <teleport to="[data-tauri-decorum-tb]">
-    <div id="title-bar" data-component-name="TitleBar" @contextmenu.prevent>
+  <teleport :to="useDecorum ? '[data-tauri-decorum-tb]' : 'body'">
+    <div id="title-bar" :class="{ 'host-body': !useDecorum, 'debug-drag-highlight': debugStore.debugOptions.showTitlebarHighlight }" data-component-name="TitleBar" @contextmenu.prevent @dblclick="onTitleBarDblClick">
+      <!-- Dedicated drag region when not using Decorum (must be pointer-active and draggable) -->
+      <div
+        v-if="!useDecorum"
+        class="titlebar-drag-region"
+        @mousedown="onDragRegionMouseDown"
+        @mousemove="onDragRegionMouseMove"
+        @mouseup="onDragRegionMouseUp"
+      />
       <div class="header-content">
+        <div v-if="!useDecorum && debugStore.debugOptions.showTitlebarHighlight" class="titlebar-debug-overlay" :style="titlebarHighlightStyle" />
         <div class="dropdown-and-app-title-wrapper">
           <DropdownMenu
             id="app-menu"
@@ -26,7 +35,7 @@
             :last-icon-size="24"
             placement="bottom-start"
             :show-cancel-button="true"
-            @mouseenter="(event) => showMainMenuTooltip(event)"
+            @mouseenter="showMainMenuTooltip"
             @mouseleave="hideMainMenuTooltip"
             @dropdown-opened="handleMainMenuDropdownOpened"
           >
@@ -173,7 +182,7 @@
             title="Return to Welcome Screen"
             :disabled="isWelcomeLayout"
             @click="handleNavToWelcome"
-            @mouseenter="(event) => showCenterTooltip('Return to the welcome screen', 'nav-to-welcome', event)"
+            @mouseenter="onNavToWelcomeMouseEnter"
             @mouseleave="hideCenterTooltip"
           />
           <div class="btn-group">
@@ -187,7 +196,7 @@
               :class="{ active: navStore.activePage === 'JobSetup' }"
               :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('JobSetup')"
-              @mouseenter="(event) => showCenterTooltip('Add or remove jobs for archive creation.', 'nav-to-job-setup', event)"
+              @mouseenter="onNavToJobSetupMouseEnter"
               @mouseleave="hideCenterTooltip"
             >
               Job Setup
@@ -203,7 +212,7 @@
               :class="{ active: navStore.activePage === 'JobQueue' }"
               :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('JobQueue')"
-              @mouseenter="(event) => showCenterTooltip('View summary of archives queued for creation.', 'nav-to-job-queue', event)"
+              @mouseenter="onNavToJobQueueMouseEnter"
               @mouseleave="hideCenterTooltip"
             >
               Job Queue
@@ -219,7 +228,7 @@
               :class="{ active: navStore.activePage === 'Progress' }"
               :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('Progress')"
-              @mouseenter="(event) => showCenterTooltip('View archive creation progress.', 'nav-to-progress', event)"
+              @mouseenter="onNavToProgressMouseEnter"
               @mouseleave="hideCenterTooltip"
             >
               Progress
@@ -259,8 +268,10 @@
   </teleport>
 </template>
 <script lang="ts" setup>
+import { shouldUseDecorum } from '@/utils/platformUtils';
+const useDecorum = shouldUseDecorum();
 import { computed, ref, watch } from "vue";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+// getCurrentWindow already imported below where needed; remove duplicate import
 import { useThemeStore, type Theme } from "@/stores/themeStore";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
@@ -271,7 +282,9 @@ import { useResetManager } from "@/composables/useResetManager";
 import { useModalsStore } from "@/stores/modalsStore";
 import type { ModalOptions } from "@/types/modal";
 import { shouldShowCustomWindowControls } from "@/utils/platformUtils";
+import { useDebugStore } from '@/stores/debugStore';
 import CustomWindowControls from "@/components/CustomWindowControls.vue";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 const themeStore = useThemeStore();
 const navStore = useNavigationStore();
 const layoutStore = useLayoutStore();
@@ -282,6 +295,16 @@ const { resettables, resetAll } = useResetManager();
 const modalsStore = useModalsStore();
 const isWelcomeLayout = computed((): boolean => {
   return layoutStore.currentLayout === "welcome";
+});
+const debugStore = useDebugStore();
+const titlebarHighlightStyle = computed(() => {
+  if (!debugStore.debugOptions.showTitlebarHighlight) return {};
+  const color = debugStore.debugOptions.titlebarHighlightColor || 'hsl(210, 100%, 50%)';
+  const opacity = typeof debugStore.debugOptions.titlebarHighlightOpacity === 'number' ? debugStore.debugOptions.titlebarHighlightOpacity : 0.25;
+  return {
+    backgroundColor: color,
+    opacity: String(opacity),
+  };
 });
 // Main Menu tooltip state - Updated to use tooltipManager
 // const mainMenuTooltipVisible = ref(false);
@@ -381,7 +404,13 @@ const showCenterTooltip = (text: string, dataName: string, event: MouseEvent) =>
   centerTooltipNameCandidate.value = dataName;
   const originElement = event.currentTarget as HTMLElement;
   tooltipManager.showTooltip(dataName, originElement);
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] showCenterTooltip', { text, dataName, originElement });
 };
+// Small wrappers to ensure proper typing on template event handlers
+const onNavToWelcomeMouseEnter = (event: MouseEvent) => showCenterTooltip('Return to the welcome screen', 'nav-to-welcome', event);
+const onNavToJobSetupMouseEnter = (event: MouseEvent) => showCenterTooltip('Add or remove jobs for archive creation.', 'nav-to-job-setup', event);
+const onNavToJobQueueMouseEnter = (event: MouseEvent) => showCenterTooltip('View summary of archives queued for creation.', 'nav-to-job-queue', event);
+const onNavToProgressMouseEnter = (event: MouseEvent) => showCenterTooltip('View archive creation progress.', 'nav-to-progress', event);
 const hideCenterTooltip = () => {
   // restore original title if we removed it earlier (but don't immediately hide UI)
   try {
@@ -399,6 +428,7 @@ const hideCenterTooltip = () => {
     /* ignore */
   }
   tooltipManager.hideTooltip();
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] hideCenterTooltip');
 };
 // Debug: force the Job Queue center tooltip to be visible and anchored to the
 // Job Queue button even when not hovered. This is for temporary debugging only.
@@ -476,9 +506,11 @@ const isMainMenuActive = computed(() => {
 const showMainMenuTooltip = (event: MouseEvent) => {
   const originElement = event.currentTarget as HTMLElement;
   tooltipManager.showTooltip('main-menu', originElement);
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] showMainMenuTooltip', { originElement });
 };
 const hideMainMenuTooltip = () => {
   tooltipManager.hideTooltip();
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] hideMainMenuTooltip');
 };
 
 // Dropdown opened event handler to hide associated tooltip immediately
@@ -493,6 +525,7 @@ watch(isMainMenuActive, (val) => {
 const setTheme = (theme: Theme): void => {
   themeStore.setTheme(theme);
   dropdownManager.closeAllDropdowns("Theme selected");
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] setTheme', theme);
 };
 const handleButtonTestClick = (): void => {
   const modalOptions: ModalOptions = {
@@ -513,6 +546,7 @@ const handleButtonTestClick = (): void => {
 const handleNavToWelcome = (): void => {
   userPreferencesStore.setSkipWelcomeScreen(false);
   layoutStore.showWelcomeLayout();
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] handleNavToWelcome');
 };
 const showResetConfirmation = (resetName: string, action: () => void | Promise<void>): void => {
   let formattedDescription: string;
@@ -617,6 +651,7 @@ const handleResetAll = (): void => {
 const handleExit = (): void => {
   dropdownManager.closeAllDropdowns("Exiting app");
   getCurrentWindow().close();
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] handleExit');
 };
 
 // Keyboard shortcuts for center navigation
@@ -665,6 +700,65 @@ const updateZoomIndicator = (val: number) => {
 };
 const resetGlobalZoom = () => {
   resetZoom();
+};
+
+const onTitleBarDblClick = async () => {
+  try {
+    const w = getCurrentWindow();
+    const maximized = await w.isMaximized();
+    if (maximized) await w.unmaximize();
+    else await w.maximize();
+    if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] dblclick toggle maximize', { maximized: !maximized });
+  } catch (e) {
+    if (debugStore.debugOptions.logTitleBarEvents) console.error('[TitleBar] dblclick toggle maximize error', e);
+  }
+};
+
+// Drag region handlers (only used when not using Decorum)
+let potentialDrag = false; // mouse down but not yet exceeded threshold
+let dragInitiated = false; // we've started a native drag
+let dragStartXLocal = 0;
+let dragStartYLocal = 0;
+const DRAG_THRESHOLD = 6; // pixels movement required to begin a drag
+
+const onDragRegionMouseDown = async (ev: MouseEvent) => {
+  potentialDrag = true;
+  dragInitiated = false;
+  dragStartXLocal = ev.clientX;
+  dragStartYLocal = ev.clientY;
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] drag-region mousedown (potential)', { x: ev.clientX, y: ev.clientY });
+};
+
+const onDragRegionMouseMove = async (ev: MouseEvent) => {
+  if (!potentialDrag || dragInitiated) return;
+  const dx = Math.abs(ev.clientX - dragStartXLocal);
+  const dy = Math.abs(ev.clientY - dragStartYLocal);
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] drag-region mousemove (potential)', { x: ev.clientX, y: ev.clientY, dist });
+  if (dist >= DRAG_THRESHOLD) {
+    dragInitiated = true;
+    potentialDrag = false;
+    if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] drag threshold exceeded, initiating drag', { dist });
+    try {
+      const w = getCurrentWindow();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anyW = w as any;
+      if (typeof anyW.startDragging === 'function') {
+        anyW.startDragging();
+        if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] invoked startDragging() on window');
+        return;
+      }
+    } catch (e) {
+      if (debugStore.debugOptions.logTitleBarEvents) console.warn('[TitleBar] startDragging() not available', e);
+    }
+  }
+};
+
+const onDragRegionMouseUp = (ev: MouseEvent) => {
+  // Clear any potential drag state; if dragInitiated was true, the OS handled movement
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] drag-region mouseup', { x: ev.clientX, y: ev.clientY, dragInitiated });
+  potentialDrag = false;
+  dragInitiated = false;
 };
 vueOnMounted(() => {
   window.addEventListener("app:global-zoom-changed", (ev: Event) => {

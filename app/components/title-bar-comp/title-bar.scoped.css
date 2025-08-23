@@ -129,6 +129,50 @@
   }
 }
 
+/* Visual overlay used by debug highlight */
+.titlebar-debug-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10000;
+}
+
+/* When the title-bar is hosted on body (no Decorum), position it fixed at the top */
+#title-bar.host-body {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: auto; /* allow interactions when hosted on body */
+}
+
+/* Make most of the title-bar draggable while keeping interactive controls clickable */
+#title-bar.host-body {
+  -webkit-app-region: drag; /* makes the element draggable in many webview hosts */
+}
+
+/* Prevent buttons and interactive areas from being draggable */
+#title-bar.host-body :deep(.custom-button),
+#title-bar.host-body :deep(.button),
+#title-bar.host-body :deep(.visual-style),
+#title-bar.host-body :deep(.custom-window-controls) {
+  -webkit-app-region: no-drag;
+}
+
+/* Explicit drag region element for body-hosted titlebar; must accept pointer events */
+.titlebar-drag-region {
+  position: absolute;
+  inset: 0; /* cover entire title bar */
+  z-index: 50; /* sit above some content but below debug overlay */
+  pointer-events: all; /* ensure it receives pointer events */
+  -webkit-app-region: drag;
+}
+
+/* Temporary visual highlight for the drag region when debug option is enabled */
+#title-bar.host-body.debug-drag-highlight {
+  outline: 2px dashed hsla(210, 100%, 50%, 0.5);
+}
+
 /* Zoom indicator container - <div class="titlebar-zoom-indicator"> */
 .titlebar-zoom-indicator {
   /* Zoom indicator sits in the middle column of the native toolbar grid.

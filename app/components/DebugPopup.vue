@@ -673,6 +673,21 @@
                         </label>
                         <label class="debug-option">
                           <USwitch
+                            :model-value="debugStore.debugOptions.logTitleBarEvents"
+                            @update:model-value="(value) => debugStore.updateDebugOption('logTitleBarEvents', value)"
+                          />
+                          <span>TitleBar events</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['logTitleBarEvents'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logTitleBarEvents', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
+                        <label class="debug-option">
+                          <USwitch
                             :model-value="debugStore.debugOptions.logTooltipOrphanedDetection"
                             @update:model-value="(value) => debugStore.updateDebugOption('logTooltipOrphanedDetection', value)"
                           />
@@ -831,6 +846,61 @@
                 </OverlayScrollbarsComponent>
               </div>
             </div>
+            
+            <!-- TitleBar Tab -->
+            <div v-if="activeTab === 'titlebar'" class="debug-tab-panel">
+              <div class="debug-general-content">
+                <OverlayScrollbarsComponent
+                  :options="{
+                    scrollbars: {
+                      visibility: 'auto',
+                      autoHide: 'move',
+                      autoHideSuspend: true,
+                      theme: currentTheme,
+                    },
+                  }"
+                  defer
+                  class="debug-scrollbar-with-gutters"
+                >
+                  <div class="debug-general-scrollable-content">
+                    <div class="debug-general-options">
+                      <div class="debug-option-group">
+                        <h3>TitleBar Debug</h3>
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.showTitlebarHighlight"
+                            @update:model-value="(value) => debugStore.updateDebugOption('showTitlebarHighlight', value)"
+                          />
+                          <span>Show drag-region highlight</span>
+                        </label>
+                        <!-- TitleBar logging moved to the Logging tab -->
+
+                        <div class="debug-opacity-control">
+                          <label class="debug-opacity-label">
+                            <span>Highlight opacity</span>
+                            <span class="debug-opacity-value">{{ Math.round((debugStore.debugOptions.titlebarHighlightOpacity || 0) * 100) }}%</span>
+                          </label>
+                          <USlider
+                            :model-value="debugStore.debugOptions.titlebarHighlightOpacity"
+                            :min="0"
+                            :max="1"
+                            :step="0.05"
+                            @update:model-value="(value) => debugStore.updateDebugOption('titlebarHighlightOpacity', value)"
+                          />
+                        </div>
+
+                        <div class="debug-opacity-control">
+                          <label class="debug-opacity-label">
+                            <span>Highlight color</span>
+                          </label>
+                          <input type="color" :value="colorToHex(debugStore.debugOptions.titlebarHighlightColor)" @input="(e) => updateTitlebarColor(e.target.value)" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </OverlayScrollbarsComponent>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -893,6 +963,12 @@ const tabs = [
     id: 'tooltips',
     label: 'InfoTooltips',
     icon: 'mdi:tooltip-text'
+  }
+  ,
+  {
+    id: 'titlebar',
+    label: 'TitleBar',
+    icon: 'mdi:window-maximize'
   }
 ];
 
@@ -1005,6 +1081,10 @@ const debugOptionTooltips = {
   logTooltipVisibilityChanges: {
     text: "Logs all tooltip visibility state changes including show/hide transitions.",
     example: "🔧 [InfoTooltip] Visibility changed: true/false"
+  },
+  logTitleBarEvents: {
+    text: "Logs TitleBar interactions such as tooltip shows, theme changes, nav clicks, and dblclick maximize toggles.",
+    example: "🔧 [TitleBar] dblclick toggle maximize"
   },
   logTooltipOrphanedDetection: {
     text: "Logs orphaned tooltip detection and cleanup operations.",
@@ -1444,6 +1524,36 @@ onMounted(() => {
   // Add global click handler to deactivate popup when clicking outside
   document.addEventListener('click', handleGlobalClick);
 });
+
+// Helpers for TitleBar debug tab
+const colorToHex = (colorStr: string) => {
+  // Accepts hsl(...) or hex; try to convert HSL to hex simply when necessary
+  if (!colorStr) return '#1976d2';
+  if (colorStr.startsWith('#')) return colorStr;
+  try {
+    // crude HSL -> HEX conversion for values like 'hsl(h, s%, l%)'
+    const m = colorStr.match(/hsl\((\d+),\s*(\d+)%?,\s*(\d+)%?\)/);
+    if (!m) return '#1976d2';
+    const h = Number(m[1]) / 360;
+    const s = Number(m[2]) / 100;
+    const l = Number(m[3]) / 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n: number) => {
+      const k = (n + h * 12) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  } catch (e) {
+    return '#1976d2';
+  }
+};
+
+const updateTitlebarColor = (hex: string) => {
+  // Convert hex to HSL-ish css string and update store
+  // Simple convert: use hex directly for CSS and store as hex for now
+  debugStore.updateDebugOption('titlebarHighlightColor', hex);
+};
 
 onUnmounted(() => {
   document.removeEventListener('mousemove', handleDrag);

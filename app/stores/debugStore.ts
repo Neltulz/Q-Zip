@@ -50,6 +50,12 @@ export interface DebugOptions {
   disableBackdropBlurOnDrag: boolean;
   // Interior elements opacity
   debugPopupInteriorOpacity: number;
+  // TitleBar debug options
+  showTitlebarHighlight: boolean;
+  titlebarHighlightColor: string;
+  titlebarHighlightOpacity: number;
+  // TitleBar event logging
+  logTitleBarEvents: boolean;
 }
 
 export interface DebugPosition {
@@ -202,6 +208,12 @@ export const useDebugStore = defineStore(
       disableBackdropBlurOnDrag: true,
       // Interior elements opacity
       debugPopupInteriorOpacity: 0.75,
+      // TitleBar debug options
+      showTitlebarHighlight: false,
+      titlebarHighlightColor: 'hsl(210, 100%, 50%)',
+      titlebarHighlightOpacity: 0.25,
+      // TitleBar event logging
+      logTitleBarEvents: false,
     });
 
     // Computed property to ensure store is properly initialized
