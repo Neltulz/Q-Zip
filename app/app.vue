@@ -3,8 +3,8 @@
   app.vue @preserve 
 -->
 <template>
+  <TitleBar />
   <div class="app-container">
-    <TitleBar />
     <ModalContainer />
     <NotificationContainer />
       <DebugPopup />
@@ -112,6 +112,19 @@ onBeforeMount((): void => {
   }
 });
 onMounted(() => {
+  // Ensure a dropdown container exists in the document body for teleports.
+  try {
+    if (typeof document !== 'undefined') {
+      let container = document.getElementById('dropdown-content-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'dropdown-content-container';
+        document.body.appendChild(container);
+      }
+    }
+  } catch (e) {
+    // ignore (SSR or restricted envs)
+  }
   uiStore.notifications = [];
   // Disable text selection globally by default (except form controls)
   enableSelectionLock();
@@ -220,6 +233,12 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
+}
+.app-root-dropdown-container {
+  /* Provide a base z-index for teleported dropdowns. Dropdowns themselves
+     still set z-index on `.dropdown-content`; this keeps a container-level
+     baseline that is below the tooltip container. */
+  z-index: 100000; /* must be lower than tooltip container (999999) */
 }
 .layout-fade-enter-active,
 .layout-fade-leave-active {

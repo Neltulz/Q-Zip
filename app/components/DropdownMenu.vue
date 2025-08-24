@@ -45,7 +45,7 @@
         <slot name="button-content" />
       </CustomButton>
     </template>
-    <teleport to="body">
+    <teleport :to="teleportTarget">
       <template v-if="hasSlotContent">
         <Transition
           name="dropdown-fade"
@@ -202,6 +202,18 @@ const customButtonStyles = computed(() => {
   const classes = new Set(props.buttonStyleClass ? props.buttonStyleClass.split(" ") : []);
   classes.add("options-btn");
   return Array.from(classes).filter(Boolean).join(" ");
+});
+// Teleport target logic: prefer a dedicated container when available, otherwise fall back to body.
+const teleportTarget = ref<string | HTMLElement>('body');
+onMounted(() => {
+  // Attempt to resolve the container element by selector first. This allows
+  // server-side rendering to avoid touching `document` until mounted.
+  try {
+    const el = document.querySelector('#dropdown-content-container') as HTMLElement | null;
+    if (el) teleportTarget.value = el;
+  } catch (e) {
+    // ignore
+  }
 });
 // Smart icon logic: use vertical ellipsis if no content, downward caret if there's content
 const smartLastIconName = computed(() => {
