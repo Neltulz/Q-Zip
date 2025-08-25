@@ -166,6 +166,22 @@
                             <Icon name="mdi:information" class="debug-info-icon" />
                           </div>
                         </label>
+                        <!-- Show Hotzones Switch -->
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.showHotzones"
+                            @update:model-value="(value) => debugStore.updateDebugOption('showHotzones', value)"
+                          />
+                          <span>Show Drag Hotzones</span>
+                          <div 
+                            :ref="(el) => infoIconRefs['showHotzones'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('showHotzones', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
                       </div>
 
                       <!-- Other General Options -->
@@ -531,6 +547,21 @@
                             :ref="(el) => infoIconRefs['logTraceEvents'] = el as HTMLElement"
                             class="debug-info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logTraceEvents', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-info-icon" />
+                          </div>
+                        </label>
+                        <label class="debug-option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.logDebugButtonPositions"
+                            @update:model-value="(value) => debugStore.updateDebugOption('logDebugButtonPositions', value)"
+                          />
+                          <span>Debug Button Positions</span>
+                          <div
+                            :ref="(el) => infoIconRefs['logDebugButtonPositions'] = el as HTMLElement"
+                            class="debug-info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('logDebugButtonPositions', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
                             <Icon name="mdi:information" class="debug-info-icon" />
@@ -908,6 +939,14 @@
     </Transition>
   </teleport>
 
+  <!-- Hotzone overlays (visible when debugStore.debugOptions.showHotzones) -->
+  <div v-if="debugStore.debugOptions.showHotzones">
+    <div :class="['debug-hotzone-overlay debug-hotzone-overlay--top', { 'debug-hotzone--active': debugStore.activeHotzoneEdge === 'top' }]" />
+    <div :class="['debug-hotzone-overlay debug-hotzone-overlay--bottom', { 'debug-hotzone--active': debugStore.activeHotzoneEdge === 'bottom' }]" />
+    <div :class="['debug-hotzone-overlay debug-hotzone-overlay--left', { 'debug-hotzone--active': debugStore.activeHotzoneEdge === 'left' }]" />
+    <div :class="['debug-hotzone-overlay debug-hotzone-overlay--right', { 'debug-hotzone--active': debugStore.activeHotzoneEdge === 'right' }]" />
+  </div>
+
   <!-- InfoTooltip components for debug options -->
   <InfoTooltip
     v-for="(tooltip, optionKey) in debugOptionTooltips"
@@ -1049,6 +1088,10 @@ const debugOptionTooltips = {
   logTraceEvents: {
     text: "Logs detailed trace events with stack traces for debugging complex issues.",
     example: "🔧 [ComponentName] Trace event with stack"
+  },
+  logDebugButtonPositions: {
+    text: "Logs mouse position and debug button position every 25ms during dragging for debugging button behavior.",
+    example: "🔧 Debug Button - Mouse: (123, 456) | Button: (100, 400) | Distance: 57px"
   },
   logMissingPropWarnings: {
     text: "Logs warnings when required props are missing from components.",

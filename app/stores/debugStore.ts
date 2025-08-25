@@ -28,6 +28,9 @@ export interface DebugOptions {
   logHoverEvents: boolean;
   logTooltipEvents: boolean;
   logTraceEvents: boolean;
+  logDebugButtonPositions: boolean;
+  // Visual helpers
+  showHotzones: boolean;
   // Special options
   decorumMessages: boolean;
   logFileTableActivation: boolean;
@@ -158,6 +161,13 @@ export const useDebugStore = defineStore(
       y: window.innerHeight - 34, // At bottom (34px = --min-tch-tgt)
     });
 
+    // Active hotzone edge (top|bottom|left|right) or null
+    const activeHotzoneEdge = ref<string | null>(null);
+
+    const setActiveHotzoneEdge = (edge: string | null) => {
+      activeHotzoneEdge.value = edge;
+    };
+
     // Active tab in debug popup - persists across hot reloads
     const activeDebugTab = ref('general');
 
@@ -186,6 +196,9 @@ export const useDebugStore = defineStore(
       logHoverEvents: true,
       logTooltipEvents: true,
       logTraceEvents: false,
+      logDebugButtonPositions: false,
+      // Visual helpers
+      showHotzones: false,
       // Special options
       decorumMessages: false,
       logFileTableActivation: false,
@@ -208,6 +221,8 @@ export const useDebugStore = defineStore(
       disableBackdropBlurOnDrag: true,
       // Interior elements opacity
       debugPopupInteriorOpacity: 0.75,
+      // Visual helpers
+      showHotzones: false,
       // TitleBar debug options
       showTitlebarHighlight: false,
       titlebarHighlightColor: 'hsl(210, 100%, 50%)',
@@ -327,6 +342,7 @@ export const useDebugStore = defineStore(
         logHoverEvents: true,
         logTooltipEvents: true,
         logTraceEvents: false,
+        logDebugButtonPositions: false,
         // Special options
         decorumMessages: false,
         logFileTableActivation: false,
@@ -520,6 +536,7 @@ export const useDebugStore = defineStore(
       debugPopupPosition,
       debugPopupDimensions,
       debugButtonPosition,
+      activeHotzoneEdge,
       activeDebugTab,
       debugOptions,
       isStoreInitialized,
@@ -535,6 +552,7 @@ export const useDebugStore = defineStore(
       updateActiveDebugTab,
       showDebugStatus,
       forceRefresh,
+      setActiveHotzoneEdge,
     };
 
     // Store is now fully initialized with persisted values

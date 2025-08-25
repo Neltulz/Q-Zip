@@ -656,3 +656,47 @@
   opacity: 0;
   transform: translateX(20px) scale(0.95);
 }
+
+/* Hotzone overlays for debugging (100px from each edge) */
+.debug-hotzone-overlay {
+  pointer-events: none;
+  position: fixed;
+  z-index: 9998; /* underneath the debug popup/button */
+}
+.debug-hotzone-overlay--top,
+.debug-hotzone-overlay--bottom,
+.debug-hotzone-overlay--left,
+.debug-hotzone-overlay--right {
+  background: rgba(63, 81, 181, 0.08); /* partial transparent background */
+  border: 2px solid rgba(63, 81, 181, 0.95); /* solid colored border */
+}
+.debug-hotzone-overlay--top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+}
+.debug-hotzone-overlay--bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+}
+.debug-hotzone-overlay--left {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 100px;
+}
+.debug-hotzone-overlay--right {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100px;
+}
+
+/* Active state for hotzone (green) */
+.debug-hotzone--active {
+  background: rgba(76, 175, 80, 0.12) !important; /* light green */
+  border-color: rgba(76, 175, 80, 0.98) !important; /* green border */
+}

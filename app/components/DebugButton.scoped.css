@@ -1,21 +1,69 @@
+/* Hotzone overlays for debugging (100px from each edge) */
+.debug-hotzone-overlay {
+  pointer-events: none;
+  position: fixed;
+  z-index: 9998; /* underneath the debug popup/button */
+}
+.debug-hotzone-overlay--top,
+.debug-hotzone-overlay--bottom,
+.debug-hotzone-overlay--left,
+.debug-hotzone-overlay--right {
+  background: rgba(63, 81, 181, 0.08); /* partial transparent background */
+  border: 2px solid rgba(63, 81, 181, 0.95); /* solid colored border */
+}
+.debug-hotzone-overlay--top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+}
+.debug-hotzone-overlay--bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+}
+.debug-hotzone-overlay--left {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 100px;
+}
+.debug-hotzone-overlay--right {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100px;
+}
+
+/* Active state for hotzone (green) */
+.debug-hotzone--active {
+  background: rgba(76, 175, 80, 0.12) !important; /* light green */
+  border-color: rgba(76, 175, 80, 0.98) !important; /* green border */
+}
+
 /* Debug button container - <div class="debug-button"> */
 .debug-button {
   align-items: center;
   background: transparent; /* Transparent background like Nuxt button */
   border: 2px solid var(--brdr-clr-lite); /* Light grey border like Nuxt button */
-  border-block-end: 0;
-  border-radius: 50% 50% 0 0;
+  border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow like Nuxt button */
   display: flex;
   height: var(--min-tch-tgt); /* --min-tch-tgt defined in global.css */
-  inset-block-end: 0; /* Logical property for bottom */
   inset-inline-start: 20px; /* Logical property for left */
   justify-content: center;
   position: fixed;
-  transition: all 0.2s ease;
+  /* Only transition visual properties to avoid lag when moving via left/top */
+  transition: background-color 0.18s ease, border-color 0.18s ease, border-radius 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+
+  /* Smooth visual transitions during JavaScript animation */
+  &.magnetizing {
+    transition: background-color 0.18s ease, border-color 0.18s ease, border-radius 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+  }
   user-select: none;
   width: var(--min-tch-tgt); /* --min-tch-tgt defined in global.css */
-  z-index: 9998;
+  z-index: 10001;
 
   /* Debug button hover state */
   &:hover {
@@ -26,7 +74,7 @@
       0 4px 12px rgba(0, 0, 0, 0.15),
       0 0 20px rgba(0, 123, 255, 0.4); /* Blue glow effect */
     cursor: pointer; /* Finger cursor on hover */
-    transform: scale(1.05) translateY(-8px); /* Scale up and move up 8px */
+    transform: scale(1.05); /* Scale up only; don't shift position */
   }
 
   /* Debug button active/dragging state */
@@ -40,4 +88,13 @@
     font-size: 24px;
     pointer-events: none; /* Don't block underlying controls */
   }
+}
+
+/* When attached to the bottom, remove bottom border and radii to look "glued" */
+.debug-button.attached-bottom {
+  border-bottom-width: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  /* Ensure it sits flush: use bottom logical property when attached */
+  bottom: 0;
 }
