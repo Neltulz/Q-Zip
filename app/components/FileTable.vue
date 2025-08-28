@@ -223,6 +223,16 @@ import LoadingAnim from "@/components/LoadingAnim.vue";
 // --- VIRTUAL SCROLLING CONSTANTS ---
 const ROW_HEIGHT = 35;
 const BUFFER_ROWS = 10;
+// --- HELPER FUNCTIONS ---
+// Helper function to blur external elements when FileTable becomes active
+const blurExternalElements = () => {
+  const activeElement = document.activeElement as HTMLElement;
+  if (activeElement && !fileTableCompRef.value?.contains(activeElement)) {
+    console.log('FileTable: Blurring external element:', activeElement.tagName);
+    activeElement.blur();
+  }
+};
+
 // --- MEMOIZATION HELPERS ---
 // Simple memoization utility for expensive computations
 const createMemoizedComputed = <T>(fn: () => T, deps: (() => any)[]) => {
@@ -564,6 +574,10 @@ const handleMarqueeMouseMove = (event: MouseEvent) => {
     }
     isMarqueeActive.value = true;
     isPossibleMarquee.value = false;
+
+    // Blur any currently focused element outside the FileTable
+    blurExternalElements();
+
     isActive.value = true;
     if (localSelectionBox.value) {
       localSelectionBox.value.style.display = "block";
@@ -1049,6 +1063,10 @@ const stopResize = () => {
 // });
 const toggleFileSelection = (path: string) => {
   if (!props.isSelectable) return;
+
+  // Blur any currently focused element outside the FileTable
+  blurExternalElements();
+
   isActive.value = true;
   const selectedIndex = selectedFiles.value.indexOf(path);
   const checkedIndex = checkedFiles.value.indexOf(path);
@@ -1170,6 +1188,10 @@ const handleRootClick = (event: MouseEvent) => {
     target: (event.target as HTMLElement)?.tagName,
     wasActive: isActive.value
   });
+
+  // Blur any currently focused element outside the FileTable
+  blurExternalElements();
+
   isActive.value = true;
   // If we recently ended a marquee drag, ignore this root click (it comes from the mouseup)
   if (skipRootClick.value) {
@@ -1197,6 +1219,10 @@ const handleRootClick = (event: MouseEvent) => {
 };
 const handleRootContextMenu = (event: MouseEvent) => {
   // Make the file table active when right-clicking anywhere in it
+
+  // Blur any currently focused element outside the FileTable
+  blurExternalElements();
+
   isActive.value = true;
   logFocus("FileTable", "Root context menu - activating file table", {
     jobId: props.jobId,
@@ -1332,6 +1358,10 @@ const handleDragStart = (event: DragEvent, path: string) => {
     );
     event.dataTransfer.effectAllowed = "copyMove";
   }
+
+  // Blur any currently focused element outside the FileTable
+  blurExternalElements();
+
   isActive.value = true;
   dragDropStore.startInternalDrag(pathsToDrag, null, props.jobId);
   logDragDropEvent("FileTable", `Native drag started for ${pathsToDrag.length} files from job ${props.jobId}.`);
@@ -1506,6 +1536,10 @@ const setFileMenuRef = (file: FileItem, el: any) => {
 const handleContextMenu = (file: FileItem, event: MouseEvent, preserveSelection: boolean) => {
   if (!isSelectableEnabled.value) return;
   // Make the file table active when right-clicking on any file
+
+  // Blur any currently focused element outside the FileTable
+  blurExternalElements();
+
   isActive.value = true;
   logFocus("FileTable", "Context menu - activating file table", {
     jobId: props.jobId,
