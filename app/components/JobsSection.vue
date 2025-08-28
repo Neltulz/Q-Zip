@@ -18,13 +18,22 @@
     }"
   >
     <JobSelectorArea />
-    <JobArea />
+    <JobArea
+      @files-added="$emit('files-added', $event)"
+      @folders-added="$emit('folders-added', $event)"
+    />
   </section>
 </template>
 <script setup lang="ts">
 import { useUiStore } from "@/stores/uiStore";
 import JobArea from "./JobArea.vue";
 import JobSelectorArea from "./JobSelectorArea.vue";
+
+const emit = defineEmits<{
+  "files-added": [paths: string[]];
+  "folders-added": [paths: string[]];
+}>();
+
 const uiStore = useUiStore();
 </script>
 <style scoped>

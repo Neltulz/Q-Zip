@@ -204,7 +204,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUpdate, reactive, onUnmounted, onMounted, onUpdated, nextTick } from "vue";
+import { ref, computed, watch, onBeforeUpdate, reactive, onUnmounted, onMounted, onUpdated, nextTick, readonly } from "vue";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
@@ -1682,6 +1682,7 @@ let globalMarqueeBlocker: HTMLElement | null = null;
 // Reference to the global click handler so it can be removed on unmount
 let globalClickHandler: ((e: MouseEvent) => void) | null = null;
 let globalOutsideClickHandler: ((e: MouseEvent) => void) | null = null;
+let handleFocusIn: ((e: FocusEvent) => void) | null = null;
 onMounted(() => {
   logLifecycle("FileTable", "Component has been mounted.");
   // Add global drag scroll listeners
@@ -1809,10 +1810,19 @@ onMounted(() => {
     if (skipRootClick.value || isMarqueeActive.value || wasMarqueeActive.value || isClosingContextMenu.value) return;
     const target = event.target as HTMLElement;
     const fileTableElement = fileTableCompRef.value;
+
+    // Debug: Log all outside clicks for debugging
+    console.log('FileTable: Outside click detected', {
+      target: target.tagName + (target.className ? '.' + target.className : ''),
+      isActive: isActive.value,
+      fileTableElement: !!fileTableElement,
+      containsTarget: fileTableElement ? fileTableElement.contains(target) : 'no-element'
+    });
+
     // Check if click is outside the file table component
     if (fileTableElement && !fileTableElement.contains(target)) {
       // Don't deactivate if clicking on toolbar or other file table related elements
-      const isFileTableRelated = target.closest(".file-table-toolbar") || 
+      const isFileTableRelated = target.closest(".file-table-toolbar") ||
                                 target.closest(".file-table-comp") ||
                                 target.closest(".job-content") ||
                                 target.closest(".dropdown-menu");
@@ -1824,13 +1834,30 @@ onMounted(() => {
       if (!isFileTableRelated) {
         logFocus("FileTable", "Outside click detected, deactivating file table", {
           jobId: props.jobId,
-          target: target.className
+          target: target.className || target.tagName
         });
         setActive(false);
       }
     }
   };
   window.addEventListener("click", globalOutsideClickHandler);
+
+  // Add focus event listener to deactivate when input fields get focus
+  handleFocusIn = (event: FocusEvent) => {
+    const target = event.target as HTMLElement;
+    // If an input, textarea, or select gets focus, deactivate FileTable
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+      console.log('FileTable: Input field focused, deactivating FileTable', {
+        target: target.tagName,
+        isActive: isActive.value
+      });
+      if (isActive.value) {
+        setActive(false);
+      }
+    }
+  };
+  window.addEventListener("focusin", handleFocusIn);
+
   // Listen for app-level outside clicks to deactivate job-content
   const outsideHandler = () => {
     logFocus("FileTable", "outsideHandler called", {
@@ -1862,6 +1889,7 @@ onUnmounted(() => {
     window.removeEventListener("click", globalOutsideClickHandler);
     globalOutsideClickHandler = null;
   }
+  window.removeEventListener("focusin", handleFocusIn);
   window.removeEventListener("app:clicked-outside-job-content", (() => {}) as EventListener);
   // Clean up force refresh timeout
   if (forceRefreshTimeout) {
@@ -2066,6 +2094,7 @@ defineExpose({
   toggleAll,
   selectedFiles,
   setActive,
+  isActive: readonly(isActive),
   isClosingContextMenu,
   handleRefreshFiles,
 });
@@ -2146,13 +2175,90 @@ const handleKeyboardAddFolder = async (): Promise<void> => {
   }
 };
 
+const handleSelectAll = (): void => {
+  if (sortedFiles.value.length === 0) return;
+
+  const allFilePaths = sortedFiles.value.map(file => file.path);
+
+  if (userPreferencesStore.checkboxMode) {
+    // In checkbox mode, check all files if not all are checked, otherwise uncheck all
+    if (allSelected.value) {
+      // Uncheck all files
+      checkedFiles.value = [];
+      selectedFiles.value = [];
+      logFocus("FileTable", "Select All: Unchecked all files", {
+        jobId: props.jobId,
+        fileCount: sortedFiles.value.length,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
+    } else {
+      // Check all files
+      checkedFiles.value = [...allFilePaths];
+      if (userPreferencesStore.autoCheckOnSelect) {
+        selectedFiles.value = [...allFilePaths];
+      }
+      logFocus("FileTable", "Select All: Checked all files", {
+        jobId: props.jobId,
+        fileCount: sortedFiles.value.length,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
+    }
+  } else {
+    // In normal mode, select all files if not all are selected, otherwise deselect all
+    if (allSelected.value) {
+      selectedFiles.value = [];
+      logFocus("FileTable", "Select All: Deselected all files", {
+        jobId: props.jobId,
+        fileCount: sortedFiles.value.length,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
+    } else {
+      selectedFiles.value = [...allFilePaths];
+      logFocus("FileTable", "Select All: Selected all files", {
+        jobId: props.jobId,
+        fileCount: sortedFiles.value.length,
+        checkboxMode: userPreferencesStore.checkboxMode,
+        autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+      });
+    }
+  }
+
+  // Update focus to first item when selecting all
+  if (selectedFiles.value.length > 0 || checkedFiles.value.length > 0) {
+    focusedRowIndex.value = 0;
+  }
+};
+
 // Handle keyboard navigation
 const handleKeyDown = (event: KeyboardEvent) => {
-  if (!isActive.value) return;
+  if (!isActive.value) {
+    // Debug: Log when CTRL+A is pressed but FileTable is not active
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+      console.log('FileTable: CTRL+A pressed but FileTable is not active');
+    }
+    return;
+  }
   
   // Handle toolbar shortcuts first (these work even with empty file list)
   if (event.ctrlKey || event.metaKey) {
     switch (event.key.toLowerCase()) {
+      case 'a':
+        // Only handle Ctrl+A if FileTable is active and has files
+        if (sortedFiles.value.length > 0) {
+          event.preventDefault();
+          event.stopPropagation();
+          logFocus("FileTable", "Ctrl+A: Selecting all files", {
+            jobId: props.jobId,
+            fileCount: sortedFiles.value.length,
+            checkboxMode: userPreferencesStore.checkboxMode,
+            autoCheckOnSelect: userPreferencesStore.autoCheckOnSelect
+          });
+          handleSelectAll();
+        }
+        return;
       case 'o':
         event.preventDefault();
         logFocus("FileTable", "Ctrl+O: Opening add files/folders dialog", {

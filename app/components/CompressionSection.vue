@@ -1,16 +1,16 @@
 <!-- eslint-disable vue/html-self-closing @preserve -->
-<!-- 
-  CompressionSectionNew.vue @preserve
+<!--
+  CompressionSection.vue @preserve
 -->
-<!-- components/CompressionSectionNew.vue @preserve -->
-<!-- 
-  CompressionSectionNew.vue @preserve
+<!-- components/CompressionSection.vue @preserve -->
+<!--
+  CompressionSection.vue @preserve
 -->
 <template>
-  <section id="compression-section" data-component-name="CompressionSectionNew">
-    <div class="tabs">
+  <section class="compression-section" data-component-name="CompressionSection">
+    <div class="compression-section__tabs">
       <CustomButton
-        :class="{ active: activeTab === 'global' }"
+        :class="['compression-section__tab-button', { 'compression-section__tab-button--active': activeTab === 'global' }]"
         button-style-class="trans-btn btn-dark can-become-active active-line-block-end"
         data-name="global-settings-btn"
         @click="activeTab = 'global'"
@@ -18,7 +18,7 @@
         Global Settings
       </CustomButton>
       <CustomButton
-        :class="{ active: activeTab === 'job' }"
+        :class="['compression-section__tab-button', { 'compression-section__tab-button--active': activeTab === 'job' }]"
         button-style-class="trans-btn btn-dark can-become-active active-line-block-end"
         data-name="job-specific-settings-btn"
         @click="activeTab = 'job'"
@@ -38,10 +38,60 @@
           theme: currentTheme,
         },
       }"
-      class="content"
+      class="compression-section__content"
     >
+      <!-- Output Location and Filename Inputs -->
+      <div class="compression-section__output-controls">
+        <div class="compression-section__output-controls-header">
+          <h3>Output Settings</h3>
+          <CustomButton
+            button-style-class="trans-btn btn-lite"
+            data-name="auto-determine-output-btn"
+            first-icon-name="mdi:auto-fix"
+            :first-icon-size="16"
+            @click="$emit('request-auto-determination')"
+            title="Auto-determine from current files"
+          >
+            Auto-Set
+          </CustomButton>
+        </div>
+        <div class="compression-section__output-location-input">
+          <label for="output-location">Output Location:</label>
+          <CustomInput
+            input-id="output-location"
+            input-type="text-area"
+            :model-value="outputLocation"
+            placeholder="Select output folder..."
+            @update:model-value="updateOutputLocation"
+          >
+            <template #buttons-end>
+              <CustomButton
+                button-style-class="trans-btn btn-lite"
+                data-name="browse-output-location-btn"
+                first-icon-name="mdi:folder"
+                :first-icon-size="20"
+                @click="browseTopLevelOutputFolder"
+              >
+                Browse
+              </CustomButton>
+            </template>
+          </CustomInput>
+        </div>
+        <div class="compression-section__output-filename-input">
+          <label for="output-filename">Output Filename:</label>
+          <CustomInput
+            input-id="output-filename"
+            input-type="input"
+            :model-value="outputFilename"
+            placeholder="Enter filename..."
+            @update:model-value="updateOutputFilename"
+          />
+        </div>
+      </div>
+
       <template v-if="activeTab === 'global'">
         <AccordionComp
+          class="compression-section__accordion"
           :button-names="globalButtonNames"
           :categories="categories"
           :columns="2"
@@ -53,15 +103,15 @@
           @transition-end="handleTransitionEnd"
         >
           <template #general>
-            <form class="settings-form" @submit.prevent>
-              <fieldset class="output-location">
+            <form class="compression-section__settings-form" @submit.prevent>
+              <fieldset class="compression-section__output-location">
                 <!-- MODIFIED: Use computed property `generalFields` for type safety -->
                 <template v-for="field in generalFields" :key="field.id">
                   <CustomFieldNew
                     v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'global')"
                     :data-field-name="field['data-field-name']"
                     :default-value="field.default"
-                    :extra-classes="[`${field.id}-field`]"
+                    :extra-classes="['compression-section__custom-field', `${field.id}-field`]"
                     :field-id="field.id"
                     :global-value="getDisplayValue(field.id, 'global')"
                     :input-type="field.type"
@@ -102,14 +152,14 @@
             </form>
           </template>
           <template #compression>
-            <form class="settings-form" @submit.prevent>
+            <form class="compression-section__settings-form" @submit.prevent>
               <!-- MODIFIED: Use computed property `compressFields` for type safety -->
               <template v-for="field in compressFields" :key="field.id">
                 <CustomFieldNew
                   v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'global')"
                   :data-field-name="field['data-field-name']"
                   :default-value="field.default"
-                  :extra-classes="[`${field.id}-field`]"
+                  :extra-classes="['compression-section__custom-field', `${field.id}-field`]"
                   :field-id="field.id"
                   :global-value="getDisplayValue(field.id, 'global')"
                   :input-type="field.type"
@@ -123,14 +173,14 @@
             </form>
           </template>
           <template #advanced>
-            <form class="settings-form" @submit.prevent>
+            <form class="compression-section__settings-form" @submit.prevent>
               <!-- MODIFIED: Use computed property `advancedFields` for type safety -->
               <template v-for="field in advancedFields" :key="field.id">
                 <CustomFieldNew
                   v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'global')"
                   :data-field-name="field['data-field-name']"
                   :default-value="field.default"
-                  :extra-classes="[`${field.id}-field`]"
+                  :extra-classes="['compression-section__custom-field', `${field.id}-field`]"
                   :field-id="field.id"
                   :global-value="getDisplayValue(field.id, 'global')"
                   :input-type="field.type"
@@ -144,14 +194,14 @@
             </form>
           </template>
           <template #encryption>
-            <form class="settings-form" @submit.prevent>
+            <form class="compression-section__settings-form" @submit.prevent>
               <!-- MODIFIED: Use computed property `encryptFields` for type safety -->
               <template v-for="field in encryptFields" :key="field.id">
                 <CustomFieldNew
                   v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'global')"
                   :data-field-name="field['data-field-name']"
                   :default-value="field.default"
-                  :extra-classes="[`${field.id}-field`]"
+                  :extra-classes="['compression-section__custom-field', `${field.id}-field`]"
                   :field-id="field.id"
                   :global-value="getDisplayValue(field.id, 'global')"
                   :input-type="field.type"
@@ -169,6 +219,7 @@
       <template v-else-if="activeTab === 'job'">
         <div v-if="selectedJob">
           <AccordionComp
+            class="compression-section__accordion"
             :button-names="jobButtonNames"
             :categories="categories"
             :columns="2"
@@ -180,8 +231,8 @@
             @transition-end="handleTransitionEnd"
           >
             <template #general>
-              <form class="settings-form" @submit.prevent>
-                <fieldset class="output-location">
+              <form class="compression-section__settings-form" @submit.prevent>
+                <fieldset class="compression-section__output-location">
                   <!-- MODIFIED: Use computed property `generalFields` for type safety -->
                   <template v-for="field in generalFields" :key="field.id">
                     <CustomFieldNew
@@ -189,7 +240,7 @@
                       :data-field-name="field['data-field-name']"
                       :default-value="field.default"
                       :disabled="getJobFieldDisabledState(field.id)"
-                      :extra-classes="[`${field.id}-field`]"
+                      :extra-classes="['compression-section__custom-field--job-specific', `${field.id}-field`]"
                       :field-id="field.id"
                       :global-value="getDisplayValue(field.id, 'global')"
                       :input-type="getJobFieldInputType(field.id, field.type)"
@@ -207,6 +258,7 @@
                         <LockButton
                           v-if="field.type === 'select' || field.id === 'parameters'"
                           :is-locked="getJobFieldLockedState(field.id)"
+                          class="compression-section__lock-btn"
                           @click="toggleLock(field.id)"
                         />
                       </template>
@@ -242,7 +294,7 @@
               </form>
             </template>
             <template #compression>
-              <form class="settings-form" @submit.prevent>
+              <form class="compression-section__settings-form" @submit.prevent>
                 <!-- MODIFIED: Use computed property `compressFields` for type safety -->
                 <template v-for="field in compressFields" :key="field.id">
                   <CustomFieldNew
@@ -250,7 +302,7 @@
                     :data-field-name="field['data-field-name']"
                     :default-value="field.default"
                     :disabled="getJobFieldDisabledState(field.id)"
-                    :extra-classes="[`${field.id}-field`]"
+                    :extra-classes="['compression-section__custom-field', `${field.id}-field`]"
                     :field-id="field.id"
                     :global-value="getDisplayValue(field.id, 'global')"
                     :input-type="getJobFieldInputType(field.id, field.type)"
@@ -268,6 +320,7 @@
                       <LockButton
                         v-if="field.type === 'select' || field.id === 'parameters'"
                         :is-locked="getJobFieldLockedState(field.id)"
+                        class="compression-section__lock-btn"
                         @click="toggleLock(field.id)"
                       />
                     </template>
@@ -276,7 +329,7 @@
               </form>
             </template>
             <template #advanced>
-              <form class="settings-form" @submit.prevent>
+              <form class="compression-section__settings-form" @submit.prevent>
                 <!-- MODIFIED: Use computed property `advancedFields` for type safety -->
                 <template v-for="field in advancedFields" :key="field.id">
                   <CustomFieldNew
@@ -284,7 +337,7 @@
                     :data-field-name="field['data-field-name']"
                     :default-value="field.default"
                     :disabled="getJobFieldDisabledState(field.id)"
-                    :extra-classes="[`${field.id}-field`]"
+                    :extra-classes="['compression-section__custom-field', `${field.id}-field`]"
                     :field-id="field.id"
                     :global-value="getDisplayValue(field.id, 'global')"
                     :input-type="getJobFieldInputType(field.id, field.type)"
@@ -302,6 +355,7 @@
                       <LockButton
                         v-if="field.type === 'select' || field.id === 'parameters'"
                         :is-locked="getJobFieldLockedState(field.id)"
+                        class="compression-section__lock-btn"
                         @click="toggleLock(field.id)"
                       />
                     </template>
@@ -310,32 +364,33 @@
               </form>
             </template>
             <template #encryption>
-              <form class="settings-form" @submit.prevent>
+              <form class="compression-section__settings-form" @submit.prevent>
                 <!-- MODIFIED: Use computed property `encryptFields` for type safety -->
-                <template v-for="field in encryptFields" :key="field.id">
-                  <CustomFieldNew
-                    v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'job')"
-                    :data-field-name="field['data-field-name']"
-                    :default-value="field.default"
-                    :disabled="getJobFieldDisabledState(field.id)"
-                    :extra-classes="[`${field.id}-field`]"
-                    :field-id="field.id"
-                    :global-value="getDisplayValue(field.id, 'global')"
-                    :input-type="getJobFieldInputType(field.id, field.type)"
-                    :is-job-settings="true"
-                    :is-locked="getJobFieldLockedState(field.id)"
-                    :model-value="getJobFieldModelValue(field.id)"
-                    :options="getJobFieldOptions(field.id, field.type, field.options)"
-                    :show-wrapper="true"
-                    :title="field.label"
-                    @reset-to-global="handleResetToGlobal"
-                    @unset-or-clear="handleJobUnsetOrClear"
-                    @update:model-value="updateSetting(field.id, $event, 'job')"
-                  >
+                              <template v-for="field in encryptFields" :key="field.id">
+                <CustomFieldNew
+                  v-if="!field.dependsOn || evaluateDependency(field.dependsOn, 'job')"
+                  :data-field-name="field['data-field-name']"
+                  :default-value="field.default"
+                  :disabled="getJobFieldDisabledState(field.id)"
+                  :extra-classes="['compression-section__custom-field', `${field.id}-field`]"
+                  :field-id="field.id"
+                  :global-value="getDisplayValue(field.id, 'global')"
+                  :input-type="getJobFieldInputType(field.id, field.type)"
+                  :is-job-settings="true"
+                  :is-locked="getJobFieldLockedState(field.id)"
+                  :model-value="getJobFieldModelValue(field.id)"
+                  :options="getJobFieldOptions(field.id, field.type, field.options)"
+                  :show-wrapper="true"
+                  :title="field.label"
+                  @reset-to-global="handleResetToGlobal"
+                  @unset-or-clear="handleJobUnsetOrClear"
+                  @update:model-value="updateSetting(field.id, $event, 'job')"
+                >
                     <template #before-input>
                       <LockButton
                         v-if="field.type === 'select'"
                         :is-locked="getJobFieldLockedState(field.id)"
+                        class="compression-section__lock-btn"
                         @click="toggleLock(field.id)"
                       />
                     </template>
@@ -365,6 +420,11 @@ import encryptConfigJson from "@/assets/config/encryptSettingsConfig.json";
 import { useDropdownManager } from "@/composables/dropdownManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logInteraction } from "@/utils/loggers";
+import CustomInput from "@/components/CustomInput.vue";
+
+const emit = defineEmits<{
+  "request-auto-determination": [];
+}>();
 // --- START: TYPE DEFINITIONS ---
 // These types ensure that the data from JSON config files matches the props
 // expected by child components, resolving TypeScript errors.
@@ -430,6 +490,9 @@ const dropdownManager = useDropdownManager();
 const activeTab = ref<"global" | "job">("global");
 const scrollbarRef = ref<ExtendedInstance | null>(null);
 const lockStates = ref<Record<string, boolean>>({});
+const outputLocation = ref<string>("");
+const outputFilename = ref<string>("");
+
 const selectedJob = computed(() => jobsStore.jobs.find((job: Job) => job.id === jobsStore.selectedJobId));
 const globalSettings = computed(() => jobsStore.globalSettings);
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
@@ -480,7 +543,7 @@ watch(
 const handleScroll = (): void => {
   dropdownManager.closeAllDropdowns();
   if (DEBUG && debugConfig.logUIEvents) {
-    logInteraction("CompressionSectionNew", "Scroll detected, closing all dropdowns.");
+    logInteraction("CompressionSection", "Scroll detected, closing all dropdowns.");
   }
 };
 const getActualDefaultValue = (key: string): string | number | boolean | undefined => {
@@ -576,6 +639,34 @@ const getOptions = (fieldId: string, context: "global" | "job"): { value: string
     default:
       return [];
   }
+};
+const updateOutputLocation = (value: string | number): void => {
+  outputLocation.value = String(value);
+};
+const updateOutputFilename = (value: string | number): void => {
+  outputFilename.value = String(value);
+};
+const browseTopLevelOutputFolder = async (): Promise<void> => {
+  try {
+    const selected: string | null = await open({
+      directory: true,
+      multiple: false,
+    });
+    if (selected && typeof selected === "string") {
+      outputLocation.value = selected;
+    }
+  } catch (error) {
+    console.error("Error selecting output folder:", error);
+  }
+};
+
+// Exposed methods for parent components to set output values
+const setOutputLocation = (location: string): void => {
+  outputLocation.value = location;
+};
+
+const setOutputFilename = (filename: string): void => {
+  outputFilename.value = filename;
 };
 const handleGlobalUnsetOrClear = (fieldId: string): void => {
   const defaultValue = getActualDefaultValue(fieldId);
@@ -699,12 +790,18 @@ const handleTransitionEnd = (): void => {
         contentElement.style.overflow = "";
         osInstance.update();
         if (DEBUG && debugConfig.logUIEvents) {
-          logInteraction("CompressionSectionNew", "OverlayScrollbars instance updated.");
+          logInteraction("CompressionSection", "OverlayScrollbars instance updated.");
         }
       }, 0);
     }
   }
 };
+
+// Expose methods for parent components
+defineExpose({
+  setOutputLocation,
+  setOutputFilename,
+});
 </script>
 <style scoped>
 @import "./compression-section-comp/compression-section.scoped.css";

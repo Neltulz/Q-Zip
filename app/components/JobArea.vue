@@ -79,6 +79,11 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, nextTick, watch } from "vue";
 import { useJobsStore, type Job } from "@/stores/jobsStore";
+
+const emit = defineEmits<{
+  "files-added": [paths: string[]];
+  "folders-added": [paths: string[]];
+}>();
 import { useModalsStore } from "@/stores/modalsStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
 import { useUiStore } from "@/stores/uiStore";
@@ -380,10 +385,23 @@ const showJobContextMenu = (event: MouseEvent) => {
 };
 const handleKeyDown = (event: KeyboardEvent) => {
   if (!activeJob.value || !fileTableRef.value) return;
+
+  // Only handle shortcuts if FileTable is active
+  const fileTableActive = fileTableRef.value.isActive;
+  if (!fileTableActive) {
+    // Debug: Log when CTRL+A is pressed but FileTable is not active
+    if ((event.ctrlKey || event.metaKey) && event.key === "a") {
+      console.log('JobArea: CTRL+A pressed but FileTable is not active');
+    }
+    return;
+  }
+
   const isShortcutKey = (event.ctrlKey || event.metaKey) && ["a", "c", "x", "v"].includes(event.key);
   if (isShortcutKey) {
     event.preventDefault();
+    event.stopPropagation();
   }
+
   if ((event.ctrlKey || event.metaKey) && event.key === "a") {
     fileTableRef.value.toggleAll();
   } else if ((event.ctrlKey || event.metaKey) && event.key === "c") {
@@ -686,6 +704,16 @@ const addItemsToJob = async (paths: string[]): Promise<void> => {
       const finalFileCount = activeJob.value?.files.length || 0;
       const totalOperationTime = performance.now() - operationStartTime;
       logUI("JobArea", `Final file count for job ${activeJob.value?.id}: ${finalFileCount} (was ${initialFileCount}). Total operation time: ${totalOperationTime.toFixed(2)}ms`);
+
+      // Emit events for auto-determination of output location/filename
+      if (finalFileCount > initialFileCount) {
+        // Determine if we're dealing with files or folders based on the input paths
+        // Since the store method handles both, we'll emit both events with the same paths
+        // The parent component will handle them appropriately
+        emit("files-added", paths);
+        emit("folders-added", paths);
+        logUI("JobArea", `Emitted file/folder addition events for auto-determination: ${paths.length} paths`);
+      }
     });
   } else {
     logUI("JobArea", "No active job available for adding files");

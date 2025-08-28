@@ -12,9 +12,16 @@
       <template #description>This is where you'll setup jobs for archival creation.</template>
     </PageHeader>
     <div ref="mainContent" class="main-content" :style="mainContentStyles">
-      <JobsSection ref="jobsSection" />
+      <JobsSection
+        ref="jobsSection"
+        @files-added="handleFilesAdded"
+        @folders-added="handleFoldersAdded"
+      />
       <div ref="resizeDivider" class="resize-divider" />
-      <CompressionSectionNew ref="compressSection" />
+      <CompressionSection
+        ref="compressSection"
+        @request-auto-determination="handleManualAutoDetermination"
+      />
     </div>
     <BottomButtons div-id="main-bottom-bg">
       <CustomButton
@@ -32,9 +39,31 @@
 import { computed, onMounted, onUnmounted, ref, type ComponentPublicInstance } from "vue";
 import { useUiStore } from "@/stores/uiStore";
 import { useNavigationStore } from "@/stores/navigationStore";
+import { useJobsStore } from "@/stores/jobsStore";
+import { basename, dirname } from "@tauri-apps/api/path";
+
+// Type-safe wrappers for Tauri path functions
+const safeDirname = async (path: string): Promise<string> => {
+  try {
+    const result = await dirname(path);
+    return typeof result === 'string' ? result : "";
+  } catch {
+    return "";
+  }
+};
+
+const safeBasename = async (path: string): Promise<string> => {
+  try {
+    const result = await basename(path);
+    return typeof result === 'string' ? result : "";
+  } catch {
+    return "";
+  }
+};
 // Store setup
 const uiStore = useUiStore();
 const navStore = useNavigationStore();
+const jobsStore = useJobsStore();
 // Refs for DOM elements and components
 const mainContent = ref<HTMLElement | null>(null);
 const jobsSection = ref<ComponentPublicInstance | null>(null);
@@ -99,6 +128,103 @@ const onMouseUp = (): void => {
   // Remove inline grid-template-columns to let CSS variables take effect
   if (mainContent.value) {
     mainContent.value.style.gridTemplateColumns = "";
+  }
+};
+
+// Auto-determination methods for output location and filename
+const determineOutputFromInput = async (inputPaths: string[]): Promise<{ location: string; filename: string }> => {
+  if (!inputPaths || inputPaths.length === 0) {
+    return { location: "", filename: "" };
+  }
+
+  // Use the first path to determine output location and filename
+  const firstPath = inputPaths[0];
+
+  try {
+    // Use safe wrappers to get path components
+    const parentDir = await safeDirname(firstPath) as string;
+    const baseName = await safeBasename(firstPath) as string;
+
+    // Ensure we have valid strings
+    if (!parentDir || !baseName) {
+      return { location: "", filename: "" };
+    }
+
+    // Check if it's a file (has extension) or folder
+    const hasExtension = baseName.includes('.') && baseName.lastIndexOf('.') > 0;
+
+    let outputLocation = parentDir;
+    let outputFilename = baseName;
+
+    if (hasExtension) {
+      // It's a file - remove extension for the archive name
+      const lastDotIndex = baseName.lastIndexOf('.');
+      outputFilename = baseName.substring(0, lastDotIndex);
+    }
+    // If it's a folder, use the folder name as-is for the archive name
+
+    return {
+      location: outputLocation,
+      filename: outputFilename
+    };
+  } catch (error) {
+    console.error("Error determining output from input:", error);
+    return { location: "", filename: "" };
+  }
+};
+
+const handleFilesAdded = async (filePaths: string[]): Promise<void> => {
+  if (!filePaths || filePaths.length === 0) return;
+
+  try {
+    const { location, filename } = await determineOutputFromInput(filePaths);
+
+    // Update CompressionSection if we have valid values
+    if (location && filename && compressSection.value) {
+      // Call the exposed method on CompressionSection
+      const compressSectionInstance = compressSection.value as any;
+      if (compressSectionInstance.setOutputLocation && compressSectionInstance.setOutputFilename) {
+        compressSectionInstance.setOutputLocation(location || "");
+        compressSectionInstance.setOutputFilename(filename || "");
+        console.log(`Auto-set output: location="${location}", filename="${filename}"`);
+      }
+    }
+  } catch (error) {
+    console.error("Error handling files added:", error);
+  }
+};
+
+const handleFoldersAdded = async (folderPaths: string[]): Promise<void> => {
+  // Use the same logic as files for folders
+  await handleFilesAdded(folderPaths);
+};
+
+const handleManualAutoDetermination = async (): Promise<void> => {
+  // Get the current active job's files to determine output from
+  const activeJob = jobsStore.jobs.find(job => job.id === jobsStore.selectedJobId);
+  if (!activeJob || activeJob.files.length === 0) {
+    console.log("No active job or files found for auto-determination");
+    return;
+  }
+
+  // Use the first file's path to determine output location and filename
+  const firstFile = activeJob.files[0];
+  if (firstFile && firstFile.path) {
+    try {
+      const { location, filename } = await determineOutputFromInput([firstFile.path]);
+
+      // Update CompressionSection if we have valid values
+      if (location && filename && compressSection.value) {
+        const compressSectionInstance = compressSection.value as any;
+        if (compressSectionInstance.setOutputLocation && compressSectionInstance.setOutputFilename) {
+          compressSectionInstance.setOutputLocation(location || "");
+          compressSectionInstance.setOutputFilename(filename || "");
+          console.log(`Manual auto-set output: location="${location}", filename="${filename}" from file "${firstFile.path}"`);
+        }
+      }
+    } catch (error) {
+      console.error("Error in manual auto-determination:", error);
+    }
   }
 };
 onMounted((): void => {

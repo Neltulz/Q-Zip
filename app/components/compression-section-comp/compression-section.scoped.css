@@ -1,7 +1,9 @@
-/* 
-  "components/compression-section-comp/compression-section.scoped.css" --for-- "components/CompressionSectionNew.vue" 
+/*
+  "components/compression-section-comp/compression-section.scoped.css" --for-- "components/CompressionSection.vue"
 */
-#compression-section {
+
+/* Block: Compression Section */
+.compression-section {
   background-color: var(--bg-clr-lite);
   border: 1px solid var(--brdr-clr);
   border-radius: var(--brdr-rad);
@@ -12,82 +14,179 @@
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
   overflow: clip;
-  .tabs {
-    border-block-end: 1px solid var(--brdr-clr-lite);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    &:deep(> .custom-button) {
-      --btn-border-radius: 0;
-      --btn-line-thickness: 2px;
-      --visual-style-inset: 0px;
-      cursor: pointer;
-      margin-block-end: -1px;
-      z-index: 10;
-      .visual-style {
-        border: none;
-        box-shadow: none;
-      }
-      &.active:not(:hover) {
-        .visual-style {
-          background-color: transparent;
-        }
-      }
-    }
-  }
-  .content {
-    padding-block-start: var(--pad-blok);
-    padding-inline: var(--pad-in);
-    .accordion {
-      display: grid;
-      grid-template-columns: 1fr;
-      &:deep(.accordion-item) {
-        container-name: accordion-item;
-        container-type: inline-size;
-      }
-    }
-    .settings-form {
-      display: grid;
-      row-gap: var(--pad-in);
-      .output-location {
-        border: 1px solid transparent;
-        padding: 0;
-        .custom-field-new {
-          &[data-field-context="job-specific"] {
-            .lock-and-input-wrapper {
-              align-items: center;
-              border: 1px solid hsl(0 0% 50%);
-              display: grid;
-              gap: var(--pad-in);
-              grid-template-columns: auto 1fr;
-              padding: 1rem;
-              .lock-btn {
-                block-size: 1.5rem;
-                inline-size: 1.5rem;
-              }
-              .input-assembly {
-                .input-wrapper-deep {
-                  &.input-type-input,
-                  &.input-type-select {
-                    .field-title {
-                      display: none;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    .settings-form:has(.custom-field-new[data-field-name$="-field"]) {
-      .custom-field-new {
-        margin-block-end: var(--pad-in);
-      }
-    }
-  }
 }
+
+/* Element: Tabs */
+.compression-section__tabs {
+  border-block-end: 1px solid var(--brdr-clr-lite);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Element: Tab Button (deep selector for custom-button) */
+.compression-section__tab-button {
+  --btn-border-radius: 0;
+  --btn-line-thickness: 2px;
+  --visual-style-inset: 0px;
+  cursor: pointer;
+  margin-block-end: -1px;
+  z-index: 10;
+}
+
+/* Modifier: Tab Button Visual Style */
+.compression-section__tab-button .visual-style {
+  border: none;
+  box-shadow: none;
+}
+
+/* Modifier: Active Tab Button (not hovering) */
+.compression-section__tab-button--active:not(:hover) .visual-style {
+  background-color: transparent;
+}
+
+/* Element: Content */
+.compression-section__content {
+  padding-block-start: var(--pad-blok);
+  padding-inline: var(--pad-in);
+}
+
+/* Element: Output Controls */
+.compression-section__output-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+/* Element: Output Controls Header */
+.compression-section__output-controls-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.compression-section__output-controls-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Element: Output Filename Input */
+.compression-section__output-filename-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Custom styling for textarea in output location */
+.compression-section__output-location-input :deep(.input-wrapper-deep.input-type-text-area .native-textarea) {
+  min-height: var(--min-tch-tgt);
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+/* Element: Output Input Label */
+.compression-section__output-location-input label,
+.compression-section__output-filename-input label {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+/* Element: Output Location Input Container */
+.compression-section__output-location-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Element: Accordion */
+.compression-section__accordion {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+/* Element: Accordion Item (deep selector) */
+.compression-section__accordion-item {
+  container-name: accordion-item;
+  container-type: inline-size;
+}
+
+/* Element: Settings Form */
+.compression-section__settings-form {
+  display: grid;
+  row-gap: var(--pad-in);
+}
+
+/* Element: Output Location */
+.compression-section__output-location {
+  border: 1px solid transparent;
+  padding: 0;
+}
+
+/* Element: Custom Field New (Job Specific) */
+.compression-section__custom-field--job-specific .lock-and-input-wrapper {
+  align-items: center;
+  border: 1px solid hsl(0 0% 50%);
+  display: grid;
+  gap: var(--pad-in);
+  grid-template-columns: auto 1fr;
+  padding: 1rem;
+}
+
+/* Element: Lock Button */
+.compression-section__lock-btn {
+  block-size: 1.5rem;
+  inline-size: 1.5rem;
+}
+
+/* Element: Input Assembly */
+.compression-section__input-assembly .input-wrapper-deep.input-type-input .field-title,
+.compression-section__input-assembly .input-wrapper-deep.input-type-select .field-title {
+  display: none;
+}
+
+/* Element: Custom Field with Field Name */
+.compression-section__custom-field[data-field-name$="-field"] {
+  margin-block-end: var(--pad-in);
+}
+
+/* Note: Custom field base styles can be added here if needed in the future */
+
+/* Element: Custom Field (Job Specific) */
+.compression-section__custom-field--job-specific .lock-and-input-wrapper {
+  align-items: center;
+  border: 1px solid hsl(0 0% 50%);
+  display: grid;
+  gap: var(--pad-in);
+  grid-template-columns: auto 1fr;
+  padding: 1rem;
+}
+
+/* Element: Lock Button */
+.compression-section__lock-btn {
+  block-size: 1.5rem;
+  inline-size: 1.5rem;
+}
+
+/* Element: Input Assembly */
+.compression-section__input-assembly .input-wrapper-deep.input-type-input .field-title,
+.compression-section__input-assembly .input-wrapper-deep.input-type-select .field-title {
+  display: none;
+}
+
+/* Responsive: Mobile */
 @media (width < 1024px) {
-  #compression-section {
+  .compression-section {
     border-inline-end: 0;
     border-radius: 0;
   }
