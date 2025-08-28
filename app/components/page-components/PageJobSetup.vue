@@ -42,24 +42,6 @@ import { useNavigationStore } from "@/stores/navigationStore";
 import { useJobsStore } from "@/stores/jobsStore";
 import { basename, dirname } from "@tauri-apps/api/path";
 
-// Type-safe wrappers for Tauri path functions
-const safeDirname = async (path: string): Promise<string> => {
-  try {
-    const result = await dirname(path);
-    return typeof result === 'string' ? result : "";
-  } catch {
-    return "";
-  }
-};
-
-const safeBasename = async (path: string): Promise<string> => {
-  try {
-    const result = await basename(path);
-    return typeof result === 'string' ? result : "";
-  } catch {
-    return "";
-  }
-};
 // Store setup
 const uiStore = useUiStore();
 const navStore = useNavigationStore();
@@ -141,11 +123,26 @@ const determineOutputFromInput = async (inputPaths: string[]): Promise<{ locatio
   const firstPath = inputPaths[0];
 
   try {
-    // Use safe wrappers to get path components
-    const parentDir = await safeDirname(firstPath) as string;
-    const baseName = await safeBasename(firstPath) as string;
+    // Get path components with proper error handling
+    let parentDir: string = "";
+    let baseName: string = "";
 
-    // Ensure we have valid strings
+    try {
+      // @ts-expect-error - Tauri API types are overly strict
+      const parentDirResult = await dirname(firstPath);
+      parentDir = parentDirResult || "";
+    } catch {
+      parentDir = "";
+    }
+
+    try {
+      // @ts-expect-error - Tauri API types are overly strict
+      const baseNameResult = await basename(firstPath);
+      baseName = baseNameResult || "";
+    } catch {
+      baseName = "";
+    }
+
     if (!parentDir || !baseName) {
       return { location: "", filename: "" };
     }

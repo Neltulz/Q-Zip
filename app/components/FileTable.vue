@@ -1166,6 +1166,10 @@ const clickRowByPath = (event: MouseEvent, path: string) => {
   isActive.value = true;
 };
 const handleRootClick = (event: MouseEvent) => {
+  console.log('FileTable: Root click detected, activating FileTable', {
+    target: (event.target as HTMLElement)?.tagName,
+    wasActive: isActive.value
+  });
   isActive.value = true;
   // If we recently ended a marquee drag, ignore this root click (it comes from the mouseup)
   if (skipRootClick.value) {
@@ -2234,10 +2238,19 @@ const handleSelectAll = (): void => {
 
 // Handle keyboard navigation
 const handleKeyDown = (event: KeyboardEvent) => {
+  // Debug: Log all keyboard events for CTRL+A
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+    console.log('FileTable: CTRL+A keydown event received', {
+      isActive: isActive.value,
+      target: (event.target as HTMLElement)?.tagName,
+      currentTarget: (event.currentTarget as HTMLElement)?.tagName
+    });
+  }
+
   if (!isActive.value) {
     // Debug: Log when CTRL+A is pressed but FileTable is not active
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-      console.log('FileTable: CTRL+A pressed but FileTable is not active');
+      console.log('FileTable: CTRL+A pressed but FileTable is not active - returning early');
     }
     return;
   }

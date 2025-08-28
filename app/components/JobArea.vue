@@ -386,25 +386,14 @@ const showJobContextMenu = (event: MouseEvent) => {
 const handleKeyDown = (event: KeyboardEvent) => {
   if (!activeJob.value || !fileTableRef.value) return;
 
-  // Only handle shortcuts if FileTable is active
-  const fileTableActive = fileTableRef.value.isActive;
-  if (!fileTableActive) {
-    // Debug: Log when CTRL+A is pressed but FileTable is not active
-    if ((event.ctrlKey || event.metaKey) && event.key === "a") {
-      console.log('JobArea: CTRL+A pressed but FileTable is not active');
-    }
-    return;
-  }
-
-  const isShortcutKey = (event.ctrlKey || event.metaKey) && ["a", "c", "x", "v"].includes(event.key);
+  // Only handle shortcuts that don't conflict with FileTable (no CTRL+A)
+  const isShortcutKey = (event.ctrlKey || event.metaKey) && ["c", "x", "v"].includes(event.key);
   if (isShortcutKey) {
     event.preventDefault();
     event.stopPropagation();
   }
 
-  if ((event.ctrlKey || event.metaKey) && event.key === "a") {
-    fileTableRef.value.toggleAll();
-  } else if ((event.ctrlKey || event.metaKey) && event.key === "c") {
+  if ((event.ctrlKey || event.metaKey) && event.key === "c") {
     if (selectedFilePaths.value.length > 0) {
       const filesToCopy: FileItem[] = selectedFilePaths.value
         .map((path) => activeJob.value?.files.find((file) => file.path === path))
