@@ -11,14 +11,14 @@
     :data-field-name="dataFieldName"
   >
     <template v-if="showWrapper">
-      <div class="lock-and-input-wrapper">
+      <div class="custom-field-new__lock-and-input-wrapper">
         <slot name="before-input" />
-        <div class="input-assembly">
-          <div v-if="$slots['buttons-start']" class="btns-wrapper-start">
+        <div class="custom-field-new__input-assembly">
+          <div v-if="$slots['buttons-start']" class="custom-field-new__btns-wrapper-start">
             <slot name="buttons-start" />
           </div>
-          <div :class="['input-wrapper-deep', inputTypeClass]">
-            <span v-if="title" :class="titleClasses" class="field-title">{{ title }}</span>
+          <div :class="['custom-field-new__input-wrapper', inputWrapperClass]">
+            <span v-if="title" :class="titleClasses" class="custom-field-new__field-title">{{ title }}</span>
             <template v-if="inputType === 'custom'">
               <slot name="custom-content" />
             </template>
@@ -29,7 +29,7 @@
                 :name="generatedId"
                 :disabled="disabled"
                 :value="modelValue"
-                class="native-select"
+                class="custom-field-new__native-select"
                 @change="handleChange"
                 @mousedown="handleMouseDown"
                 @mouseup="handleMouseUp"
@@ -44,9 +44,10 @@
                 :name="generatedId"
                 :autocomplete="autocomplete"
                 :disabled="disabled"
+                :placeholder="placeholder"
                 :type="type || 'text'"
                 :value="modelValue != null ? String(modelValue) : ''"
-                class="native-input"
+                class="custom-field-new__native-input"
                 @input="handleInput"
                 @mousedown="handleMouseDown"
                 @mouseup="handleMouseUp"
@@ -67,17 +68,18 @@
                 :id="generatedId"
                 :name="generatedId"
                 :disabled="disabled"
+                :placeholder="placeholder"
                 :value="modelValue != null ? String(modelValue) : ''"
-                class="native-textarea"
+                class="custom-field-new__native-textarea"
                 @input="handleInput"
                 @mousedown="handleMouseDown"
                 @mouseup="handleMouseUp"
               />
-              <div v-if="inputType === 'select'" class="select-text">
+              <div v-if="inputType === 'select'" class="custom-field-new__select-text">
                 <span>{{ selectedText }}</span>
               </div>
-              <div class="btns-and-chevron">
-                <div v-if="showResetOptions" class="reset-btn-wrapper">
+              <div class="custom-field-new__btns-and-chevron">
+                <div v-if="showResetOptions" class="custom-field-new__reset-btn-wrapper">
                   <DropdownMenu
                     v-if="!showSingleButton"
                     button-style-class="trans-btn"
@@ -153,13 +155,13 @@
                     />
                   </template>
                 </div>
-                <span v-if="inputType === 'select'" class="chevron">
+                <span v-if="inputType === 'select'" class="custom-field-new__chevron">
                   <Icon name="mdi:chevron-down" size="16" />
                 </span>
               </div>
             </template>
           </div>
-          <div v-if="$slots['buttons-end']" class="btns-wrapper-end">
+          <div v-if="$slots['buttons-end']" class="custom-field-new__btns-wrapper-end">
             <slot name="buttons-end" />
           </div>
         </div>
@@ -190,6 +192,7 @@ const props = withDefaults(
     isLocked?: boolean;
     modelValue?: string | number | boolean | undefined;
     options?: Option[];
+    placeholder?: string;
     showWrapper?: boolean;
     title?: string;
     titleClasses?: string | string[] | Record<string, boolean>;
@@ -208,6 +211,7 @@ const props = withDefaults(
     isLocked: false,
     modelValue: undefined,
     options: () => [],
+    placeholder: undefined,
     showWrapper: true,
     title: undefined,
     titleClasses: () => [],
@@ -231,20 +235,20 @@ const generatedId = computed(() => {
   return `${prefix}-${baseId}`;
 });
 const dropdownDataName = computed(() => `reset-options-for-${props.fieldId}`);
-const inputTypeClass = computed((): string => {
+const inputWrapperClass = computed((): string => {
   switch (props.inputType) {
     case "checkbox":
-      return "input-type-checkbox";
-    case "custom":
-      return "input-type-custom";
+      return "custom-field-new__input-wrapper--checkbox";
     case "input":
-      return "input-type-input";
+      return "custom-field-new__input-wrapper--input";
     case "select":
-      return "input-type-select";
+      return "custom-field-new__input-wrapper--select";
     case "text-area":
-      return "input-type-text-area";
+      return "custom-field-new__input-wrapper--text-area";
+    case "custom":
+      return "custom-field-new__input-wrapper--custom";
     default:
-      return "";
+      return "custom-field-new__input-wrapper--input";
   }
 });
 const modelValueStr = computed((): string => String(props.modelValue ?? ""));
@@ -332,4 +336,5 @@ onMounted((): void => {
 </script>
 <style scoped>
 @import "./custom-field-comp/custom-field.scoped.css";
+@import "./custom-input-comp/custom-input-comp.scoped.css";
 </style>

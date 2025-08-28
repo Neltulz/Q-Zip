@@ -1,0 +1,400 @@
+/*
+  "components/custom-input-comp/custom-input-comp.scoped.css" --for-- "components/CustomInput.vue"
+*/
+
+/* Block: Custom Input Component */
+.custom-input-comp {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  min-height: var(--min-tch-tgt);
+  border-radius: var(--brdr-rad-smal);
+  position: relative;
+  z-index: 0;
+}
+
+
+
+/* Element: Buttons Wrapper */
+.custom-input-comp__btns-wrapper {
+  align-items: stretch;
+  display: flex;
+}
+
+
+
+/* Element: Input Wrapper */
+.custom-input-comp__input-wrapper {
+  min-height: var(--min-tch-tgt);
+  overflow: hidden;
+  position: relative;
+  z-index: 100;
+}
+
+/* Modifier: Input Type Select */
+.custom-input-comp__input-wrapper--select {
+  --bg-alph: 0.5;
+  --bg-clr-dark: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.8), var(--bg-alph));
+  align-items: center;
+  background-color: var(--bg-clr-dark);
+  border: 1px solid var(--brdr-clr-lite);
+  border-radius: var(--brdr-rad-smal);
+  display: flex;
+}
+
+.custom-input-comp__input-wrapper--select .custom-input-comp__native-select {
+  cursor: pointer;
+  height: 100%;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  opacity: 0;
+  position: absolute;
+  width: 100%;
+  z-index: 1;
+}
+
+.custom-input-comp__input-wrapper--select .custom-input-comp__native-select:disabled {
+  cursor: not-allowed;
+}
+
+.custom-input-comp__input-wrapper--select .custom-input-comp__chevron {
+  inset-inline-end: 8px;
+  pointer-events: none;
+  position: absolute;
+}
+
+.custom-input-comp__input-wrapper--select .custom-input-comp__select-text {
+  flex: 1;
+  margin-inline-end: 24px;
+  overflow: hidden;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-inline: var(--pad-in);
+  color: var(--txt-clr-lite);
+  min-height: var(--min-tch-tgt);
+  align-items: center;
+  display: flex;
+}
+
+.custom-input-comp__input-wrapper--select .custom-input-comp__reset-btn-wrapper {
+  inset-inline-end: 24px;
+  position: absolute;
+  z-index: 2;
+}
+
+/* Modifier: Input Type Input */
+.custom-input-comp__input-wrapper--input {
+  --bg-alph: 0.5;
+  --bg-clr-dark: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.8), var(--bg-alph));
+  align-items: center;
+  background-color: var(--bg-clr-dark);
+  border: 1px solid var(--brdr-clr-lite);
+  border-radius: var(--brdr-rad-smal);
+  display: flex;
+}
+
+.custom-input-comp__input-wrapper--input .custom-input-comp__native-input {
+  background-color: transparent;
+  border: none;
+  color: inherit;
+  flex: 1;
+  outline: none;
+  width: 100%;
+}
+
+.custom-input-comp__input-wrapper--input .custom-input-comp__native-input:disabled {
+  cursor: not-allowed;
+}
+
+/* Modifier: Input Type Text Area */
+.custom-input-comp__input-wrapper--text-area {
+  --bg-alph: 0.5;
+  --bg-clr-dark: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.8), var(--bg-alph));
+  align-items: center;
+  background-color: var(--bg-clr-dark);
+  border: 1px solid var(--brdr-clr-lite);
+  border-radius: var(--brdr-rad-smal);
+  display: flex;
+}
+
+.custom-input-comp__input-wrapper--text-area .custom-input-comp__native-textarea {
+  background-color: transparent;
+  border: none;
+  color: inherit;
+  flex: 1;
+  outline: none;
+  width: 100%;
+  resize: vertical;
+  padding-block: var(--pad-blok);
+}
+
+.custom-input-comp__input-wrapper--text-area .custom-input-comp__native-textarea:disabled {
+  cursor: not-allowed;
+}
+
+/* Element: Reset Button Wrapper */
+.custom-input-comp__reset-btn-wrapper {
+  inset-inline-end: 0;
+  position: absolute;
+  z-index: 2;
+}
+
+/* State: Disabled Reset Button */
+.custom-input-comp__reset-btn-wrapper:has(.custom-input-comp__reset-btn:disabled) {
+  pointer-events: none;
+}
+
+/* Element: Native Elements (shared styles) */
+.custom-input-comp__native-input,
+.custom-input-comp__native-select,
+.custom-input-comp__native-textarea {
+  padding-inline: var(--pad-in);
+  padding-block: 0;
+}
+
+/* State: Focus */
+.custom-input-comp--focused .custom-input-comp__input-wrapper {
+  border-color: var(--blu-lite);
+  box-shadow: 0 0 0 2px hsla(210, 100%, 50%, 0.25);
+}
+
+/* Button Styles */
+.custom-input-comp__btns-wrapper .custom-input-comp__button,
+.custom-input-comp__btns-wrapper button {
+  background-color: var(--bg-clr-lite);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.custom-input-comp__btns-wrapper .custom-input-comp__button::after,
+.custom-input-comp__btns-wrapper button::after {
+  border-radius: 0;
+}
+
+/* Legacy CustomFieldNew Support - Start Wrapper Button Styles */
+.btns-wrapper-start :deep(.custom-button) {
+  --visual-style-inset: 0px;
+  --btn-border-radius: 0px;
+  border-end-end-radius: 0;
+  border-start-end-radius: 0;
+}
+
+.btns-wrapper-start :deep(.custom-button > .visual-style) {
+  border-end-end-radius: 0;
+  border-start-end-radius: 0;
+}
+
+/* Legacy CustomFieldNew Support - Start Wrapper - First Button */
+.btns-wrapper-start :deep(.custom-button:first-child) {
+  --btn-border-radius: var(--brdr-rad-smal);
+  border-end-start-radius: var(--brdr-rad-smal);
+  border-start-start-radius: var(--brdr-rad-smal);
+  border-end-end-radius: 0;
+  border-start-end-radius: 0;
+}
+
+.btns-wrapper-start :deep(.custom-button:first-child > .visual-style) {
+  border-end-start-radius: var(--brdr-rad-smal);
+  border-start-start-radius: var(--brdr-rad-smal);
+  border-end-end-radius: 0;
+  border-start-end-radius: 0;
+}
+
+/* Legacy CustomFieldNew Support - Start Wrapper - Subsequent Buttons */
+.btns-wrapper-start :deep(.custom-button:not(:first-child)) {
+  --btn-border-radius: 0px;
+  border-radius: 0;
+}
+
+.btns-wrapper-start :deep(.custom-button:not(:first-child) > .visual-style) {
+  border-radius: 0;
+}
+
+/* Legacy CustomFieldNew Support - End Wrapper Button Styles */
+.btns-wrapper-end :deep(.custom-button) {
+  --visual-style-inset: 0px;
+  --btn-border-radius: 0px;
+  border-end-start-radius: 0;
+  border-start-start-radius: 0;
+}
+
+.btns-wrapper-end :deep(.custom-button > .visual-style) {
+  border-end-start-radius: 0;
+  border-start-start-radius: 0;
+}
+
+/* Legacy CustomFieldNew Support - End Wrapper - Last Button */
+.btns-wrapper-end :deep(.custom-button:last-child) {
+  --btn-border-radius: var(--brdr-rad-smal);
+  border-end-end-radius: var(--brdr-rad-smal);
+  border-start-end-radius: var(--brdr-rad-smal);
+  border-end-start-radius: 0;
+  border-start-start-radius: 0;
+}
+
+.btns-wrapper-end :deep(.custom-button:last-child > .visual-style) {
+  border-end-end-radius: var(--brdr-rad-smal);
+  border-start-end-radius: var(--brdr-rad-smal);
+  border-end-start-radius: 0;
+  border-start-start-radius: 0;
+}
+
+/* Legacy CustomFieldNew Support - End Wrapper - Previous Buttons */
+.btns-wrapper-end :deep(.custom-button:not(:last-child)) {
+  --btn-border-radius: 0px;
+  border-radius: 0;
+}
+
+.btns-wrapper-end :deep(.custom-button:not(:last-child) > .visual-style) {
+  border-radius: 0;
+}
+
+/* BEM CustomInput Support - Start Wrapper Button Styles */
+.custom-input-comp__btns-wrapper--start :deep(.custom-button) {
+  --visual-style-inset: 0px;
+  --btn-border-radius: 0px;
+  border-end-end-radius: 0;
+  border-start-end-radius: 0;
+}
+
+.custom-input-comp__btns-wrapper--start :deep(.custom-button::after) {
+  border-end-end-radius: 0;
+  border-start-end-radius: 0;
+}
+
+/* BEM CustomInput Support - Start Wrapper - First Button */
+.custom-input-comp__btns-wrapper--start :deep(.custom-button:first-child) {
+  --btn-border-radius: var(--brdr-rad-smal);
+  border-end-start-radius: var(--brdr-rad-smal);
+  border-start-start-radius: var(--brdr-rad-smal);
+  border-end-end-radius: 0;
+  border-start-end-radius: 0;
+}
+
+.custom-input-comp__btns-wrapper--start :deep(.custom-button:first-child::after) {
+  border-end-start-radius: var(--brdr-rad-smal);
+  border-start-start-radius: var(--brdr-rad-smal);
+  border-end-end-radius: 0;
+  border-start-end-radius: 0;
+}
+
+/* BEM CustomInput Support - Start Wrapper - Subsequent Buttons */
+.custom-input-comp__btns-wrapper--start :deep(.custom-button:not(:first-child)) {
+  --btn-border-radius: 0px;
+  border-radius: 0;
+}
+
+.custom-input-comp__btns-wrapper--start :deep(.custom-button:not(:first-child)::after) {
+  border-radius: 0;
+}
+
+/* BEM CustomInput Support - End Wrapper Button Styles */
+.custom-input-comp__btns-wrapper--end :deep(.custom-button) {
+  --visual-style-inset: 0px;
+  --btn-border-radius: 0px;
+  border-end-start-radius: 0;
+  border-start-start-radius: 0;
+}
+
+.custom-input-comp__btns-wrapper--end :deep(.custom-button::after) {
+  border-end-start-radius: 0;
+  border-start-start-radius: 0;
+}
+
+/* BEM CustomInput Support - End Wrapper - Last Button */
+.custom-input-comp__btns-wrapper--end :deep(.custom-button:last-child) {
+  --btn-border-radius: var(--brdr-rad-smal);
+  border-end-end-radius: var(--brdr-rad-smal);
+  border-start-end-radius: var(--brdr-rad-smal);
+  border-end-start-radius: 0;
+  border-start-start-radius: 0;
+}
+
+.custom-input-comp__btns-wrapper--end :deep(.custom-button:last-child::after) {
+  border-end-end-radius: var(--brdr-rad-smal);
+  border-start-end-radius: var(--brdr-rad-smal);
+  border-end-start-radius: 0;
+  border-start-start-radius: 0;
+}
+
+/* BEM CustomInput Support - End Wrapper - Previous Buttons */
+.custom-input-comp__btns-wrapper--end :deep(.custom-button:not(:last-child)) {
+  --btn-border-radius: 0px;
+  border-radius: 0;
+}
+
+.custom-input-comp__btns-wrapper--end :deep(.custom-button:not(:last-child)::after) {
+  border-radius: 0;
+}
+
+/* Layout Modifiers */
+.custom-input-comp--has-start-btns {
+  grid-template-columns: auto 1fr;
+}
+
+.custom-input-comp--has-end-btns {
+  grid-template-columns: 1fr auto;
+}
+
+.custom-input-comp--has-both-btns {
+  grid-template-columns: auto 1fr auto;
+}
+
+/* Start Buttons Follow Modifier */
+.custom-input-comp--start-btns-follow .custom-input-comp__input-wrapper--select,
+.custom-input-comp--start-btns-follow .custom-input-comp__input-wrapper--input,
+.custom-input-comp--start-btns-follow .custom-input-comp__input-wrapper--text-area {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+/* End Buttons Follow Modifier */
+.custom-input-comp--end-btns-follow .custom-input-comp__input-wrapper--select,
+.custom-input-comp--end-btns-follow .custom-input-comp__input-wrapper--input,
+.custom-input-comp--end-btns-follow .custom-input-comp__input-wrapper--text-area {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+
+
+/* Reset Button Padding Adjustments */
+.custom-input-comp--has-reset-btn .custom-input-comp__input-wrapper--text-area .custom-input-comp__native-textarea {
+  padding-inline-end: var(--min-tch-tgt);
+}
+
+.custom-input-comp--has-reset-btn .custom-input-comp__input-wrapper--input .custom-input-comp__native-input {
+  padding-inline-end: var(--min-tch-tgt);
+}
+
+
+
+/* Reset Button Disabled State */
+.custom-input-comp__reset-btn-wrapper:has(.custom-input-comp__reset-btn:disabled) {
+  pointer-events: none;
+}
+
+/* Native Element Disabled States */
+.custom-input-comp__native-select:disabled {
+  cursor: not-allowed;
+}
+
+.custom-input-comp__native-input:disabled {
+  cursor: not-allowed;
+}
+
+.custom-input-comp__native-textarea:disabled {
+  cursor: not-allowed;
+}
+
+/* Spacing for adjacent elements */
+.custom-input-comp > *:not(:first-child) {
+  margin-inline-start: -1px;
+}
+
+/* Field with title padding adjustment (external context) */
+.field:has(> .field-title) .custom-input-comp__input-wrapper {
+  padding-block-start: 24px;
+}

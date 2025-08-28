@@ -54,59 +54,24 @@
 .compression-section__output-controls {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding: 16px;
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  gap: var(--pad-in);
+  min-height: auto;
+  padding: var(--pad-in);
+  background: var(--bg-clr-lite);
+  border-bottom: 1px solid var(--brdr-clr-lite);
 }
 
-/* Element: Output Controls Header */
-.compression-section__output-controls-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.compression-section__output-controls-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-/* Element: Output Filename Input */
-.compression-section__output-filename-input {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* Custom styling for CustomFieldNew components in output controls */
+.compression-section__output-controls :deep(.custom-field-new) {
+  margin-bottom: 0;
 }
 
 /* Custom styling for textarea in output location */
-.compression-section__output-location-input :deep(.input-wrapper-deep.input-type-text-area .native-textarea) {
+.compression-section__output-controls :deep(.input-wrapper-deep.input-type-text-area .native-textarea) {
   min-height: var(--min-tch-tgt);
   resize: vertical;
   font-family: inherit;
   line-height: 1.4;
-}
-
-/* Element: Output Input Label */
-.compression-section__output-location-input label,
-.compression-section__output-filename-input label {
-  font-weight: 500;
-  color: var(--text-primary);
-  font-size: 14px;
-}
-
-/* Element: Output Location Input Container */
-.compression-section__output-location-input {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 /* Element: Accordion */
@@ -125,12 +90,6 @@
 .compression-section__settings-form {
   display: grid;
   row-gap: var(--pad-in);
-}
-
-/* Element: Output Location */
-.compression-section__output-location {
-  border: 1px solid transparent;
-  padding: 0;
 }
 
 /* Element: Custom Field New (Job Specific) */

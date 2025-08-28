@@ -26,6 +26,65 @@
         Job Settings
       </CustomButton>
     </div>
+
+    <!-- Output Location and Filename Inputs -->
+    <div class="compression-section__output-controls">
+      <CustomFieldNew
+        field-id="output-location"
+        input-type="text-area"
+        :model-value="outputLocation"
+        title="Output Location"
+        placeholder="Select output folder..."
+        @update:model-value="updateOutputLocation"
+      >
+        <template #buttons-start>
+          <CustomButton
+            button-style-class="trans-btn btn-lite"
+            data-name="auto-determine-output-location-btn"
+            first-icon-name="mdi:auto-fix"
+            :first-icon-size="16"
+            @click="$emit('request-auto-determination')"
+            title="Auto-determine from current files"
+          >
+            Auto-Set
+          </CustomButton>
+        </template>
+        <template #buttons-end>
+          <CustomButton
+            button-style-class="trans-btn btn-lite"
+            data-name="browse-output-location-btn"
+            first-icon-name="mdi:folder"
+            :first-icon-size="20"
+            @click="browseTopLevelOutputFolder"
+          >
+            Browse
+          </CustomButton>
+        </template>
+      </CustomFieldNew>
+
+      <CustomFieldNew
+        field-id="output-filename"
+        input-type="input"
+        :model-value="outputFilename"
+        title="Output Filename"
+        placeholder="Enter filename..."
+        @update:model-value="updateOutputFilename"
+      >
+        <template #buttons-start>
+          <CustomButton
+            button-style-class="trans-btn btn-lite"
+            data-name="auto-determine-output-filename-btn"
+            first-icon-name="mdi:auto-fix"
+            :first-icon-size="16"
+            @click="$emit('request-auto-determination')"
+            title="Auto-determine from current files"
+          >
+            Auto-Set
+          </CustomButton>
+        </template>
+      </CustomFieldNew>
+    </div>
+
     <OverlayScrollbarsComponent
       ref="scrollbarRef"
       defer
@@ -40,54 +99,6 @@
       }"
       class="compression-section__content"
     >
-      <!-- Output Location and Filename Inputs -->
-      <div class="compression-section__output-controls">
-        <div class="compression-section__output-controls-header">
-          <h3>Output Settings</h3>
-          <CustomButton
-            button-style-class="trans-btn btn-lite"
-            data-name="auto-determine-output-btn"
-            first-icon-name="mdi:auto-fix"
-            :first-icon-size="16"
-            @click="$emit('request-auto-determination')"
-            title="Auto-determine from current files"
-          >
-            Auto-Set
-          </CustomButton>
-        </div>
-        <div class="compression-section__output-location-input">
-          <label for="output-location">Output Location:</label>
-          <CustomInput
-            input-id="output-location"
-            input-type="text-area"
-            :model-value="outputLocation"
-            placeholder="Select output folder..."
-            @update:model-value="updateOutputLocation"
-          >
-            <template #buttons-end>
-              <CustomButton
-                button-style-class="trans-btn btn-lite"
-                data-name="browse-output-location-btn"
-                first-icon-name="mdi:folder"
-                :first-icon-size="20"
-                @click="browseTopLevelOutputFolder"
-              >
-                Browse
-              </CustomButton>
-            </template>
-          </CustomInput>
-        </div>
-        <div class="compression-section__output-filename-input">
-          <label for="output-filename">Output Filename:</label>
-          <CustomInput
-            input-id="output-filename"
-            input-type="input"
-            :model-value="outputFilename"
-            placeholder="Enter filename..."
-            @update:model-value="updateOutputFilename"
-          />
-        </div>
-      </div>
 
       <template v-if="activeTab === 'global'">
         <AccordionComp
@@ -640,10 +651,10 @@ const getOptions = (fieldId: string, context: "global" | "job"): { value: string
       return [];
   }
 };
-const updateOutputLocation = (value: string | number): void => {
+const updateOutputLocation = (value: string | number | boolean): void => {
   outputLocation.value = String(value);
 };
-const updateOutputFilename = (value: string | number): void => {
+const updateOutputFilename = (value: string | number | boolean): void => {
   outputFilename.value = String(value);
 };
 const browseTopLevelOutputFolder = async (): Promise<void> => {
