@@ -24,46 +24,46 @@
           @blur="handlePopupBlur"
           tabindex="0"
         >
-              <div 
-          class="debug-popup-header"
+              <div
+          class="debug-popup__header"
           :style="headerStyle"
           @mousedown="startDrag"
         >
-        <h3 class="debug-popup-title">
-          <Icon name="mdi:bug" class="debug-icon" />
+        <h3 class="debug-popup__title">
+          <Icon name="mdi:bug" class="debug-popup__icon" />
           Debug Options
         </h3>
         <CustomButton
           button-style-class="trans-btn"
-          class="close-button"
+          class="debug-popup__close-button"
           data-name="close-debug-popup-btn"
           first-icon-name="mdi:close"
           :first-icon-size="16"
           @click="debugStore.toggleDebugPopup"
         />
       </div>
-      
-      <div class="debug-popup-content" :style="contentStyle">
-                  <div class="debug-tabs">
+
+      <div class="debug-popup__content" :style="contentStyle">
+                  <div class="debug-popup__tabs">
             <!-- Tab Navigation -->
-            <div class="debug-tab-nav" :style="tabNavStyle">
+            <div class="debug-popup__tab-nav" :style="tabNavStyle">
             <button
               v-for="tab in tabs"
               :key="tab.id"
-              class="debug-tab-button"
-              :class="{ active: activeTab === tab.id }"
+              class="debug-popup__tab-button"
+              :class="{ 'debug-popup__tab-button--active': activeTab === tab.id }"
               @click="activeTab = tab.id"
             >
-              <Icon :name="tab.icon" class="debug-tab-icon" />
-              <span class="debug-tab-text">{{ tab.label }}</span>
+              <Icon :name="tab.icon" class="debug-popup__tab-icon" />
+              <span class="debug-popup__tab-text">{{ tab.label }}</span>
             </button>
           </div>
-          
+
           <!-- Tab Content -->
-          <div class="debug-tab-content">
+          <div class="debug-popup__tab-content">
             <!-- General Tab -->
-            <div v-if="activeTab === 'general'" class="debug-tab-panel">
-              <div class="debug-general-content">
+            <div v-if="activeTab === 'general'" class="debug-popup__tab-panel">
+              <div class="debug-popup__general-content">
                 <OverlayScrollbarsComponent
                   :options="{
                     scrollbars: {
@@ -74,19 +74,19 @@
                     },
                   }"
                   defer
-                  class="debug-scrollbar-with-gutters"
+                  class="debug-popup__scrollbar--stretch"
                 >
-                  <div class="debug-general-scrollable-content">
-                    <div class="debug-general-options">
+                  <div class="debug-popup__general-scrollable-content">
+                    <div class="debug-popup__general-options">
                       <!-- Opacity Controls -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>Opacity Controls</h3>
-                        
+
                         <!-- Primary Opacity Slider -->
-                        <div class="debug-opacity-control">
-                          <label class="debug-opacity-label">
+                        <div class="debug-popup__opacity-control">
+                          <label class="debug-popup__opacity-label">
                             <span>Primary Opacity</span>
-                            <span class="debug-opacity-value">{{ Math.round(debugStore.debugOptions.debugPopupOpacity * 100) }}%</span>
+                            <span class="debug-popup__opacity-value">{{ Math.round(debugStore.debugOptions.debugPopupOpacity * 100) }}%</span>
                           </label>
                           <USlider
                             :model-value="debugStore.debugOptions.debugPopupOpacity"
@@ -98,10 +98,10 @@
                         </div>
 
                         <!-- Secondary Opacity Slider -->
-                        <div class="debug-opacity-control">
-                          <label class="debug-opacity-label">
+                        <div class="debug-popup__opacity-control">
+                          <label class="debug-popup__opacity-label">
                             <span>Secondary Opacity</span>
-                            <span class="debug-opacity-value">{{ Math.round(debugStore.debugOptions.debugPopupInteriorOpacity * 100) }}%</span>
+                            <span class="debug-popup__opacity-value">{{ Math.round(debugStore.debugOptions.debugPopupInteriorOpacity * 100) }}%</span>
                           </label>
                           <USlider
                             :model-value="debugStore.debugOptions.debugPopupInteriorOpacity"
@@ -113,10 +113,10 @@
                         </div>
 
                         <!-- Drag Opacity Slider -->
-                        <div class="debug-opacity-control">
-                          <label class="debug-opacity-label">
+                        <div class="debug-popup__opacity-control">
+                          <label class="debug-popup__opacity-label">
                             <span>Drag Opacity</span>
-                            <span class="debug-opacity-value">{{ Math.round(debugStore.debugOptions.debugPopupSecondaryOpacity * 100) }}%</span>
+                            <span class="debug-popup__opacity-value">{{ Math.round(debugStore.debugOptions.debugPopupSecondaryOpacity * 100) }}%</span>
                           </label>
                           <USlider
                             :model-value="debugStore.debugOptions.debugPopupSecondaryOpacity"
@@ -125,21 +125,30 @@
                             :step="0.05"
                             @update:model-value="(value) => debugStore.updateDebugOption('debugPopupSecondaryOpacity', value)"
                           />
-                          <div class="debug-opacity-preview">
+                          <div class="debug-popup__opacity-preview">
                             <span>Preview: {{ Math.round(debugStore.secondaryOpacity * 100) }}% while moving</span>
                           </div>
                         </div>
                       </div>
 
                       <!-- Backdrop Blur Controls -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>Backdrop Blur</h3>
                         
                         <!-- Backdrop Blur Slider -->
-                        <div class="debug-opacity-control">
-                          <label class="debug-opacity-label">
+                        <div class="debug-popup__opacity-control">
+                          <label class="debug-popup__opacity-label">
                             <span>Backdrop Blur</span>
-                            <span class="debug-opacity-value">{{ Math.round(debugStore.debugOptions.backdropBlur) }}px</span>
+                            <span class="debug-popup__opacity-value">{{ Math.round(debugStore.debugOptions.backdropBlur) }}px</span>
+                            <div
+                              :ref="(el) => infoIconRefs['debugButtonBackdropBlur'] = el as HTMLElement"
+                              class="debug-popup__info-icon-wrapper"
+                              title="Controls the backdrop blur intensity behind the debug button. Higher values create more blur effect."
+                              @mouseenter="(event) => handleInfoIconMouseEnter('debugButtonBackdropBlur', event)"
+                              @mouseleave="handleInfoIconMouseLeave"
+                            >
+                              <Icon name="mdi:information" class="debug-popup__info-icon" />
+                            </div>
                           </label>
                           <USlider
                             :model-value="debugStore.debugOptions.backdropBlur"
@@ -151,43 +160,28 @@
                         </div>
 
                         <!-- Disable Backdrop Blur During Drag Switch -->
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.disableBackdropBlurOnDrag"
                             @update:model-value="(value) => debugStore.updateDebugOption('disableBackdropBlurOnDrag', value)"
                           />
                           <span>Disable Blur During Drag</span>
-                          <div 
+                          <div
                             :ref="(el) => infoIconRefs['disableBackdropBlurOnDrag'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('disableBackdropBlurOnDrag', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <!-- Show Hotzones Switch -->
-                        <label class="debug-option">
-                          <USwitch
-                            :model-value="debugStore.debugOptions.showHotzones"
-                            @update:model-value="(value) => debugStore.updateDebugOption('showHotzones', value)"
-                          />
-                          <span>Show Drag Hotzones</span>
-                          <div 
-                            :ref="(el) => infoIconRefs['showHotzones'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
-                            @mouseenter="(event) => handleInfoIconMouseEnter('showHotzones', event)"
-                            @mouseleave="handleInfoIconMouseLeave"
-                          >
-                            <Icon name="mdi:information" class="debug-info-icon" />
-                          </div>
-                        </label>
+
                       </div>
 
                       <!-- Other General Options -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>Other Options</h3>
-                        <p class="debug-placeholder-text">Additional general options will be added here in the future</p>
+                        <p class="debug-popup__placeholder-text">Additional general options will be added here in the future</p>
                       </div>
                     </div>
                   </div>
@@ -196,10 +190,10 @@
             </div>
             
             <!-- Logging Tab -->
-            <div v-if="activeTab === 'logging'" class="debug-tab-panel" data-tab="logging">
-              <div class="debug-logging-content">
+            <div v-if="activeTab === 'logging'" class="debug-popup__tab-panel" data-tab="logging">
+              <div class="debug-popup__logging-content">
                 <!-- Enable/Disable All Buttons -->
-                <div class="debug-logging-header">
+                <div class="debug-popup__logging-header">
                   <CustomButton
                     btn-theme="primary"
                     button-style-class="trans-btn"
@@ -234,15 +228,15 @@
                   }"
                   defer
                   :events="{ scroll: handleScroll }"
-                  class="debug-scrollbar-with-gutters"
+                  class="debug-popup__scrollbar--stretch"
                 >
-                  <div class="debug-logging-scrollable-content">
+                  <div class="debug-popup__logging-scrollable-content">
                     <!-- Logging Options Grid -->
-                    <div class="debug-logging-options">
+                    <div class="debug-popup__logging-options">
                       <!-- Component Mounts -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>Component & Rendering</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logComponentMounts"
                             @update:model-value="(value) => debugStore.updateDebugOption('logComponentMounts', value)"
@@ -250,14 +244,14 @@
                           <span>Component Mounts</span>
                           <div 
                             :ref="(el) => infoIconRefs['logComponentMounts'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logComponentMounts', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logRefUpdates"
                             @update:model-value="(value) => debugStore.updateDebugOption('logRefUpdates', value)"
@@ -265,14 +259,14 @@
                           <span>Ref Updates</span>
                           <div 
                             :ref="(el) => infoIconRefs['logRefUpdates'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logRefUpdates', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logRenderingEvents"
                             @update:model-value="(value) => debugStore.updateDebugOption('logRenderingEvents', value)"
@@ -280,19 +274,19 @@
                           <span>Rendering Events</span>
                           <div 
                             :ref="(el) => infoIconRefs['logRenderingEvents'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logRenderingEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
                       </div>
 
                       <!-- User Interactions -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>User Interactions</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logClicksAndInputs"
                             @update:model-value="(value) => debugStore.updateDebugOption('logClicksAndInputs', value)"
@@ -300,14 +294,14 @@
                           <span>Clicks & Inputs</span>
                           <div 
                             :ref="(el) => infoIconRefs['logClicksAndInputs'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logClicksAndInputs', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logHoverEvents"
                             @update:model-value="(value) => debugStore.updateDebugOption('logHoverEvents', value)"
@@ -315,14 +309,14 @@
                           <span>Hover Events</span>
                           <div 
                             :ref="(el) => infoIconRefs['logHoverEvents'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logHoverEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logKeyboardEvents"
                             @update:model-value="(value) => debugStore.updateDebugOption('logKeyboardEvents', value)"
@@ -330,14 +324,14 @@
                           <span>Keyboard Events</span>
                           <div 
                             :ref="(el) => infoIconRefs['logKeyboardEvents'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logKeyboardEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logUIInteractivity"
                             @update:model-value="(value) => debugStore.updateDebugOption('logUIInteractivity', value)"
@@ -345,19 +339,19 @@
                           <span>UI Interactivity</span>
                           <div 
                             :ref="(el) => infoIconRefs['logUIInteractivity'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logUIInteractivity', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
                       </div>
 
                       <!-- UI Events -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>UI Events</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logUIEvents"
                             @update:model-value="(value) => debugStore.updateDebugOption('logUIEvents', value)"
@@ -365,14 +359,14 @@
                           <span>UI Events</span>
                           <div 
                             :ref="(el) => infoIconRefs['logUIEvents'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logUIEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logDropdownEvents"
                             @update:model-value="(value) => debugStore.updateDebugOption('logDropdownEvents', value)"
@@ -380,14 +374,14 @@
                           <span>Dropdown Events</span>
                           <div 
                             :ref="(el) => infoIconRefs['logDropdownEvents'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logDropdownEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logTooltipEvents"
                             @update:model-value="(value) => debugStore.updateDebugOption('logTooltipEvents', value)"
@@ -395,19 +389,19 @@
                           <span>Tooltip Events</span>
                           <div 
                             :ref="(el) => infoIconRefs['logTooltipEvents'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logTooltipEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
                       </div>
 
                       <!-- File Operations -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>File Operations</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logFileSelection"
                             @update:model-value="(value) => debugStore.updateDebugOption('logFileSelection', value)"
@@ -415,14 +409,14 @@
                           <span>File Selection</span>
                           <div 
                             :ref="(el) => infoIconRefs['logFileSelection'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logFileSelection', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logDragAndDrop"
                             @update:model-value="(value) => debugStore.updateDebugOption('logDragAndDrop', value)"
@@ -430,14 +424,14 @@
                           <span>Drag & Drop</span>
                           <div 
                             :ref="(el) => infoIconRefs['logDragAndDrop'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logDragAndDrop', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logDragDropFailsafe"
                             @update:model-value="(value) => debugStore.updateDebugOption('logDragDropFailsafe', value)"
@@ -445,19 +439,19 @@
                           <span>Drag & Drop Failsafe</span>
                           <div 
                             :ref="(el) => infoIconRefs['logDragDropFailsafe'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logDragDropFailsafe', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
                       </div>
 
                       <!-- Store & State -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>Store & State</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logStoreActions"
                             @update:model-value="(value) => debugStore.updateDebugOption('logStoreActions', value)"
@@ -465,14 +459,14 @@
                           <span>Store Actions</span>
                           <div 
                             :ref="(el) => infoIconRefs['logStoreActions'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logStoreActions', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logComposableManagerEvents"
                             @update:model-value="(value) => debugStore.updateDebugOption('logComposableManagerEvents', value)"
@@ -480,19 +474,19 @@
                           <span>Composable Manager Events</span>
                           <div 
                             :ref="(el) => infoIconRefs['logComposableManagerEvents'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logComposableManagerEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
                       </div>
 
                       <!-- System Events -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>System Events</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logLoadingEvents"
                             @update:model-value="(value) => debugStore.updateDebugOption('logLoadingEvents', value)"
@@ -500,14 +494,14 @@
                           <span>Loading Events</span>
                           <div 
                             :ref="(el) => infoIconRefs['logLoadingEvents'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logLoadingEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logDualProgress"
                             @update:model-value="(value) => debugStore.updateDebugOption('logDualProgress', value)"
@@ -515,14 +509,14 @@
                           <span>Dual Progress</span>
                           <div 
                             :ref="(el) => infoIconRefs['logDualProgress'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logDualProgress', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logNotifications"
                             @update:model-value="(value) => debugStore.updateDebugOption('logNotifications', value)"
@@ -530,14 +524,14 @@
                           <span>Notifications</span>
                           <div 
                             :ref="(el) => infoIconRefs['logNotifications'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logNotifications', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logTraceEvents"
                             @update:model-value="(value) => debugStore.updateDebugOption('logTraceEvents', value)"
@@ -545,14 +539,14 @@
                           <span>Trace Events</span>
                           <div 
                             :ref="(el) => infoIconRefs['logTraceEvents'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logTraceEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logDebugButtonPositions"
                             @update:model-value="(value) => debugStore.updateDebugOption('logDebugButtonPositions', value)"
@@ -560,19 +554,19 @@
                           <span>Debug Button Positions</span>
                           <div
                             :ref="(el) => infoIconRefs['logDebugButtonPositions'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logDebugButtonPositions', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
                       </div>
 
                       <!-- Warnings & Errors -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>Warnings & Errors</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logMissingPropWarnings"
                             @update:model-value="(value) => debugStore.updateDebugOption('logMissingPropWarnings', value)"
@@ -580,14 +574,14 @@
                           <span>Missing Prop Warnings</span>
                           <div 
                             :ref="(el) => infoIconRefs['logMissingPropWarnings'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logMissingPropWarnings', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logComponentAttributes"
                             @update:model-value="(value) => debugStore.updateDebugOption('logComponentAttributes', value)"
@@ -595,14 +589,14 @@
                           <span>Component Attributes</span>
                           <div 
                             :ref="(el) => infoIconRefs['logComponentAttributes'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logComponentAttributes', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logVueWarnings"
                             @update:model-value="(value) => debugStore.updateDebugOption('logVueWarnings', value)"
@@ -610,19 +604,19 @@
                           <span>Vue Warnings</span>
                           <div 
                             :ref="(el) => infoIconRefs['logVueWarnings'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logVueWarnings', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
                       </div>
 
                       <!-- Special Options -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>Special Options</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.decorumMessages"
                             @update:model-value="(value) => debugStore.updateDebugOption('decorumMessages', value)"
@@ -630,14 +624,14 @@
                           <span>Decorum Messages</span>
                           <div 
                             :ref="(el) => infoIconRefs['decorumMessages'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('decorumMessages', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logFileTableActivation"
                             @update:model-value="(value) => debugStore.updateDebugOption('logFileTableActivation', value)"
@@ -645,19 +639,19 @@
                           <span>FileTable Activation</span>
                           <div 
                             :ref="(el) => infoIconRefs['logFileTableActivation'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logFileTableActivation', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
                       </div>
 
                       <!-- Tooltip Debugging -->
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>Tooltip Debugging</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logTooltipCreation"
                             @update:model-value="(value) => debugStore.updateDebugOption('logTooltipCreation', value)"
@@ -665,14 +659,14 @@
                           <span>Tooltip Creation</span>
                           <div 
                             :ref="(el) => infoIconRefs['logTooltipCreation'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logTooltipCreation', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logTooltipTargetResolution"
                             @update:model-value="(value) => debugStore.updateDebugOption('logTooltipTargetResolution', value)"
@@ -680,14 +674,14 @@
                           <span>Tooltip Target Resolution</span>
                           <div 
                             :ref="(el) => infoIconRefs['logTooltipTargetResolution'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logTooltipTargetResolution', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logTooltipVisibilityChanges"
                             @update:model-value="(value) => debugStore.updateDebugOption('logTooltipVisibilityChanges', value)"
@@ -695,14 +689,14 @@
                           <span>Tooltip Visibility Changes</span>
                           <div 
                             :ref="(el) => infoIconRefs['logTooltipVisibilityChanges'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logTooltipVisibilityChanges', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logTitleBarEvents"
                             @update:model-value="(value) => debugStore.updateDebugOption('logTitleBarEvents', value)"
@@ -710,14 +704,14 @@
                           <span>TitleBar events</span>
                           <div 
                             :ref="(el) => infoIconRefs['logTitleBarEvents'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logTitleBarEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.logTooltipOrphanedDetection"
                             @update:model-value="(value) => debugStore.updateDebugOption('logTooltipOrphanedDetection', value)"
@@ -725,11 +719,11 @@
                           <span>Tooltip Orphaned Detection</span>
                           <div 
                             :ref="(el) => infoIconRefs['logTooltipOrphanedDetection'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('logTooltipOrphanedDetection', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
                       </div>
@@ -738,7 +732,7 @@
                 </OverlayScrollbarsComponent>
 
                 <!-- Bottom Action Buttons -->
-                <div class="debug-logging-actions">
+                <div class="debug-popup__logging-actions">
                   <div class="button-pair">
                     <CustomButton
                       btn-theme="info"
@@ -788,8 +782,8 @@
             </div>
             
             <!-- InfoTooltips Tab -->
-            <div v-if="activeTab === 'tooltips'" class="debug-tab-panel">
-              <div class="debug-tooltips-content">
+            <div v-if="activeTab === 'tooltips'" class="debug-popup__tab-panel">
+              <div class="debug-popup__tooltips-content">
                 <OverlayScrollbarsComponent
                   :options="{
                     scrollbars: {
@@ -800,13 +794,13 @@
                     },
                   }"
                   defer
-                  class="debug-scrollbar-with-gutters"
+                  class="debug-popup__scrollbar--stretch"
                 >
-                  <div class="debug-tooltips-scrollable-content">
-                    <div class="debug-tooltips-options">
-                      <div class="debug-option-group">
+                  <div class="debug-popup__tooltips-scrollable-content">
+                    <div class="debug-popup__tooltips-options">
+                      <div class="debug-popup__option-group">
                         <h3>Tooltip Behavior</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.preventTooltipClosing"
                             @update:model-value="(value) => debugStore.updateDebugOption('preventTooltipClosing', value)"
@@ -815,18 +809,18 @@
                           <HotKey :keys="['CTRL', 'ALT', 'SHIFT', 'T']" size="small" :show-icon="false" />
                           <div 
                             :ref="(el) => infoIconRefs['preventTooltipClosing'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('preventTooltipClosing', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
                       </div>
 
-                      <div class="debug-option-group">
+                      <div class="debug-popup__option-group">
                         <h3>Tooltip Debugging</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.disableDropdownPointerEvents"
                             @update:model-value="(value) => debugStore.updateDebugOption('disableDropdownPointerEvents', value)"
@@ -834,14 +828,14 @@
                           <span>Disable Dropdown Pointer Events</span>
                           <div 
                             :ref="(el) => infoIconRefs['disableDropdownPointerEvents'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('disableDropdownPointerEvents', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.increaseTooltipZIndex"
                             @update:model-value="(value) => debugStore.updateDebugOption('increaseTooltipZIndex', value)"
@@ -849,14 +843,14 @@
                           <span>Increase Tooltip Z-Index</span>
                           <div 
                             :ref="(el) => infoIconRefs['increaseTooltipZIndex'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('increaseTooltipZIndex', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.forceTooltipInteractive"
                             @update:model-value="(value) => debugStore.updateDebugOption('forceTooltipInteractive', value)"
@@ -864,11 +858,11 @@
                           <span>Force Tooltip Interactive</span>
                           <div 
                             :ref="(el) => infoIconRefs['forceTooltipInteractive'] = el as HTMLElement"
-                            class="debug-info-icon-wrapper"
+                            class="debug-popup__info-icon-wrapper"
                             @mouseenter="(event) => handleInfoIconMouseEnter('forceTooltipInteractive', event)"
                             @mouseleave="handleInfoIconMouseLeave"
                           >
-                            <Icon name="mdi:information" class="debug-info-icon" />
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
                           </div>
                         </label>
                       </div>
@@ -877,10 +871,11 @@
                 </OverlayScrollbarsComponent>
               </div>
             </div>
-            
-            <!-- TitleBar Tab -->
-            <div v-if="activeTab === 'titlebar'" class="debug-tab-panel">
-              <div class="debug-general-content">
+
+            <!-- DebugButton Tab -->
+            <div v-if="activeTab === 'debugbutton'" class="debug-tab-panel debug-popup__tab-panel--grid">
+              <div class="debug-popup__general-content">
+                <!-- Scrollable content area -->
                 <OverlayScrollbarsComponent
                   :options="{
                     scrollbars: {
@@ -891,13 +886,164 @@
                     },
                   }"
                   defer
-                  class="debug-scrollbar-with-gutters"
+                  class="debug-popup__scrollbar--stretch"
                 >
-                  <div class="debug-general-scrollable-content">
-                    <div class="debug-general-options">
-                      <div class="debug-option-group">
+                  <div class="debug-popup__general-scrollable-content">
+                    <div class="debug-popup__general-options">
+                      <!-- Button Size Controls -->
+                      <div class="debug-popup__option-group">
+                        <h3>Button Size</h3>
+
+                        <!-- Button Size Slider -->
+                        <div class="debug-popup__opacity-control">
+                          <label class="debug-popup__opacity-label">
+                            <span>Button Size</span>
+                            <span class="debug-popup__opacity-value">{{ debugStore.debugOptions.debugButtonSize ?? 34 }}px</span>
+                            <div
+                              :ref="(el) => infoIconRefs['debugButtonSize'] = el as HTMLElement"
+                              class="debug-popup__info-icon-wrapper"
+                              title="Controls the overall size of the debug button. Larger values make the button bigger and easier to click."
+                              @mouseenter="(event) => handleInfoIconMouseEnter('debugButtonSize', event)"
+                              @mouseleave="handleInfoIconMouseLeave"
+                            >
+                              <Icon name="mdi:information" class="debug-popup__info-icon" />
+                            </div>
+                          </label>
+                          <USlider
+                            :model-value="debugStore.debugOptions.debugButtonSize"
+                            :min="20"
+                            :max="60"
+                            :step="2"
+                            @update:model-value="(value) => debugStore.updateDebugOption('debugButtonSize', value)"
+                          />
+                        </div>
+
+                        <!-- Icon Size Slider -->
+                        <div class="debug-popup__opacity-control">
+                          <label class="debug-popup__opacity-label">
+                            <span>Icon Size</span>
+                            <span class="debug-popup__opacity-value">{{ debugStore.debugOptions.debugButtonIconSize ?? 20 }}px</span>
+                            <div
+                              :ref="(el) => infoIconRefs['debugButtonIconSize'] = el as HTMLElement"
+                              class="debug-popup__info-icon-wrapper"
+                              title="Controls the size of the icon inside the debug button. This is independent of the button size."
+                              @mouseenter="(event) => handleInfoIconMouseEnter('debugButtonIconSize', event)"
+                              @mouseleave="handleInfoIconMouseLeave"
+                            >
+                              <Icon name="mdi:information" class="debug-popup__info-icon" />
+                            </div>
+                          </label>
+                          <USlider
+                            :model-value="debugStore.debugOptions.debugButtonIconSize"
+                            :min="12"
+                            :max="32"
+                            :step="1"
+                            @update:model-value="(value) => debugStore.updateDebugOption('debugButtonIconSize', value)"
+                          />
+                        </div>
+                      </div>
+
+                      <!-- Visual Effects -->
+                      <div class="debug-popup__option-group">
+                        <h3>Visual Effects</h3>
+
+                        <!-- Backdrop Blur Slider -->
+                        <div class="debug-popup__opacity-control">
+                          <label class="debug-popup__opacity-label">
+                            <span>Backdrop Blur</span>
+                            <span class="debug-popup__opacity-value">{{ debugStore.debugOptions.debugButtonBackdropBlur ?? 0 }}px</span>
+                            <div
+                              :ref="(el) => infoIconRefs['debugButtonBackdropBlur'] = el as HTMLElement"
+                              class="debug-popup__info-icon-wrapper"
+                              title="Controls the backdrop blur intensity behind the debug button. Higher values create more blur effect."
+                              @mouseenter="(event) => handleInfoIconMouseEnter('debugButtonBackdropBlur', event)"
+                              @mouseleave="handleInfoIconMouseLeave"
+                            >
+                              <Icon name="mdi:information" class="debug-popup__info-icon" />
+                            </div>
+                          </label>
+                          <USlider
+                            :model-value="debugStore.debugOptions.debugButtonBackdropBlur"
+                            :min="0"
+                            :max="20"
+                            :step="1"
+                            @update:model-value="(value) => debugStore.updateDebugOption('debugButtonBackdropBlur', value)"
+                          />
+                        </div>
+
+                        <!-- Background & Border Colors Section -->
+                        <div class="debug-popup__colors-section">
+                          <h3 class="debug-popup__section-header">Background & Border Colors</h3>
+                          <div class="debug-popup__colors-grid">
+                            <!-- Background Color Picker -->
+                            <div class="debug-popup__color-item">
+                              <ColorPickerInput
+                                v-model="debugStore.debugOptions.debugButtonBackgroundColor"
+                                label="Background Color"
+                                title="Click to open color picker for the debug button background color and transparency."
+                                info-text="Controls the background color and transparency of the debug button."
+                                icon-name="mdi:palette"
+                                @info-mouse-enter="(event) => handleInfoIconMouseEnter('debugButtonBackgroundColor', event)"
+                                @info-mouse-leave="handleInfoIconMouseLeave"
+                              />
+                            </div>
+
+                            <!-- Border Color Picker -->
+                            <div class="debug-popup__color-item">
+                              <ColorPickerInput
+                                v-model="debugStore.debugOptions.debugButtonBorderColor"
+                                label="Border Color"
+                                title="Click to open color picker for the debug button border color and transparency."
+                                info-text="Controls the border color and transparency of the debug button."
+                                icon-name="mdi:palette"
+                                preview-mode="border"
+                                @info-mouse-enter="(event) => handleInfoIconMouseEnter('debugButtonBorderColor', event)"
+                                @info-mouse-leave="handleInfoIconMouseLeave"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </OverlayScrollbarsComponent>
+
+                <!-- Fixed reset button at bottom -->
+                <div class="debug-popup__tab-panel-footer">
+                  <CustomButton
+                    btn-theme="warning"
+                    button-style-class="trans-btn"
+                    data-name="reset-debug-button-options-btn"
+                    first-icon-name="mdi:restore"
+                    :first-icon-size="16"
+                    @click="resetDebugButtonOptions"
+                  >
+                    Reset DebugButton Options
+                  </CustomButton>
+                </div>
+              </div>
+            </div>
+
+            <!-- TitleBar Tab -->
+            <div v-if="activeTab === 'titlebar'" class="debug-popup__tab-panel">
+              <div class="debug-popup__general-content">
+                <OverlayScrollbarsComponent
+                  :options="{
+                    scrollbars: {
+                      visibility: 'auto',
+                      autoHide: 'move',
+                      autoHideSuspend: true,
+                      theme: currentTheme,
+                    },
+                  }"
+                  defer
+                  class="debug-popup__scrollbar--stretch"
+                >
+                  <div class="debug-popup__general-scrollable-content">
+                    <div class="debug-popup__general-options">
+                      <div class="debug-popup__option-group">
                         <h3>TitleBar Debug</h3>
-                        <label class="debug-option">
+                        <label class="debug-popup__option">
                           <USwitch
                             :model-value="debugStore.debugOptions.showTitlebarHighlight"
                             @update:model-value="(value) => debugStore.updateDebugOption('showTitlebarHighlight', value)"
@@ -906,10 +1052,10 @@
                         </label>
                         <!-- TitleBar logging moved to the Logging tab -->
 
-                        <div class="debug-opacity-control">
-                          <label class="debug-opacity-label">
+                        <div class="debug-popup__opacity-control">
+                          <label class="debug-popup__opacity-label">
                             <span>Highlight opacity</span>
-                            <span class="debug-opacity-value">{{ Math.round((debugStore.debugOptions.titlebarHighlightOpacity || 0) * 100) }}%</span>
+                            <span class="debug-popup__opacity-value">{{ Math.round((debugStore.debugOptions.titlebarHighlightOpacity || 0) * 100) }}%</span>
                           </label>
                           <USlider
                             :model-value="debugStore.debugOptions.titlebarHighlightOpacity"
@@ -920,11 +1066,11 @@
                           />
                         </div>
 
-                        <div class="debug-opacity-control">
-                          <label class="debug-opacity-label">
+                        <div class="debug-popup__opacity-control">
+                          <label class="debug-popup__opacity-label">
                             <span>Highlight color</span>
                           </label>
-                          <input type="color" :value="colorToHex(debugStore.debugOptions.titlebarHighlightColor)" @input="(e) => updateTitlebarColor(e.target.value)" />
+                          <input type="color" :value="colorToHex(debugStore.debugOptions.titlebarHighlightColor)" @input="(e) => updateTitlebarColor((e.target as HTMLInputElement)?.value || '')" />
                         </div>
                       </div>
                     </div>
@@ -939,13 +1085,7 @@
     </Transition>
   </teleport>
 
-  <!-- Hotzone overlays (visible when debugStore.debugOptions.showHotzones) -->
-  <div v-if="debugStore.debugOptions.showHotzones">
-    <div :class="['debug-hotzone-overlay debug-hotzone-overlay--top', { 'debug-hotzone--active': debugStore.activeHotzoneEdge === 'top' }]" />
-    <div :class="['debug-hotzone-overlay debug-hotzone-overlay--bottom', { 'debug-hotzone--active': debugStore.activeHotzoneEdge === 'bottom' }]" />
-    <div :class="['debug-hotzone-overlay debug-hotzone-overlay--left', { 'debug-hotzone--active': debugStore.activeHotzoneEdge === 'left' }]" />
-    <div :class="['debug-hotzone-overlay debug-hotzone-overlay--right', { 'debug-hotzone--active': debugStore.activeHotzoneEdge === 'right' }]" />
-  </div>
+
 
   <!-- InfoTooltip components for debug options -->
   <InfoTooltip
@@ -966,9 +1106,11 @@ import { useDebugStore } from "@/stores/debugStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useTooltipManager } from "@/composables/useTooltipManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
+import { logColorPicker } from "@/utils/loggers";
 import CustomButton from "./CustomButton.vue";
 import InfoTooltip from "./InfoTooltip.vue";
 import HotKey from "./HotKey.vue";
+import ColorPickerInput from "./ColorPickerInput.vue";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 
 // Initialize stores and composables
@@ -1002,8 +1144,12 @@ const tabs = [
     id: 'tooltips',
     label: 'InfoTooltips',
     icon: 'mdi:tooltip-text'
-  }
-  ,
+  },
+  {
+    id: 'debugbutton',
+    label: 'DebugButton',
+    icon: 'mdi:bug'
+  },
   {
     id: 'titlebar',
     label: 'TitleBar',
@@ -1164,6 +1310,26 @@ const debugOptionTooltips = {
   disableBackdropBlurOnDrag: {
     text: "Disables backdrop blur while dragging the debug popup window. This allows you to easily see what's behind the popup while moving it.",
     example: "Blur is temporarily disabled while moving the popup"
+  },
+  debugButtonSize: {
+    text: "Controls the overall size of the debug button. Larger values make the button bigger and easier to click.",
+    example: "40px creates a comfortably sized debug button"
+  },
+  debugButtonIconSize: {
+    text: "Controls the size of the icon inside the debug button. This is independent of the button size.",
+    example: "24px makes the bug icon clearly visible"
+  },
+  debugButtonBackdropBlur: {
+    text: "Controls the backdrop blur intensity behind the debug button. Higher values create more blur effect.",
+    example: "5px blur creates a subtle glass effect"
+  },
+  debugButtonBackgroundColor: {
+    text: "Controls the background color and transparency of the debug button.",
+    example: "hsla(0, 0%, 0%, 0.5) creates a semi-transparent black background"
+  },
+  debugButtonBorderColor: {
+    text: "Controls the border color and transparency of the debug button.",
+    example: "hsla(255, 255, 255, 0.8) creates a semi-transparent white border"
   }
 };
 
@@ -1178,6 +1344,149 @@ const dragStartPosition = ref({ x: 0, y: 0 });
 
 // Active state for the popup
 const isActive = ref(false);
+
+// Color Picker Debugging Functions
+const inspectColorPickerDOM = () => {
+  if (DEBUG && debugConfig.logTooltipEvents) {
+    // Find all color picker related elements
+    const colorPickerElements = [
+      ...document.querySelectorAll('[class*="color-picker"]'),
+      ...document.querySelectorAll('.color-picker'),
+      ...document.querySelectorAll('.color-picker-panel'),
+      ...document.querySelectorAll('.color-picker-overlay'),
+      ...document.querySelectorAll('.color-picker-dropdown'),
+      ...document.querySelectorAll('.color-picker-popup'),
+      // Sandbox elements (most important for z-index issues)
+      ...document.querySelectorAll('#nuxt-color-picker\\:sandbox'),
+      ...document.querySelectorAll('.CP-sandbox'),
+      ...document.querySelectorAll('[id*="color-picker"][id*="sandbox"]'),
+      ...document.querySelectorAll('[class*="color-picker"][class*="sandbox"]'),
+      ...document.querySelectorAll('[class*="CP"][class*="sandbox"]')
+    ];
+
+    logColorPicker('DebugPopup', `Found ${colorPickerElements.length} color picker elements`, colorPickerElements);
+
+    colorPickerElements.forEach((element, index) => {
+      const computedStyle = window.getComputedStyle(element);
+      const zIndex = computedStyle.zIndex;
+      const position = computedStyle.position;
+      const display = computedStyle.display;
+      const visibility = computedStyle.visibility;
+
+      logColorPicker('DebugPopup', `Element ${index + 1}:`, {
+        tagName: element.tagName,
+        className: element.className,
+        zIndex,
+        position,
+        display,
+        visibility,
+        boundingRect: element.getBoundingClientRect(),
+        element
+      });
+
+      // Add temporary visual debugging
+      if (element instanceof HTMLElement) {
+        element.style.border = '2px solid red !important';
+        element.style.backgroundColor = 'rgba(255, 0, 0, 0.1) !important';
+        setTimeout(() => {
+          element.style.border = '';
+          element.style.backgroundColor = '';
+        }, 3000);
+      }
+    });
+  }
+};
+
+const checkZIndexHierarchy = () => {
+  if (DEBUG && debugConfig.logTooltipEvents) {
+    const debugPopup = document.querySelector('.debug-popup');
+    const body = document.body;
+
+    if (debugPopup) {
+      const popupStyle = window.getComputedStyle(debugPopup);
+      logColorPicker('DebugPopup', 'DebugPopup z-index:', {
+        zIndex: popupStyle.zIndex,
+        position: popupStyle.position,
+        display: popupStyle.display
+      });
+    }
+
+    logColorPicker('DebugPopup', 'Body z-index check:', {
+      bodyZIndex: window.getComputedStyle(body).zIndex || 'auto',
+      bodyPosition: window.getComputedStyle(body).position
+    });
+  }
+};
+
+const handleColorPickerClick = (event: Event) => {
+  if (DEBUG && debugConfig.logTooltipEvents) {
+    const target = event.target as HTMLElement;
+    logColorPicker('DebugPopup', 'Color picker clicked:', {
+      target: target,
+      targetTagName: target?.tagName,
+      targetClassName: target?.className,
+      eventType: event.type,
+      timestamp: Date.now()
+    });
+
+    // Inspect DOM after a short delay to let the picker render
+    setTimeout(() => {
+      inspectColorPickerDOM();
+      checkZIndexHierarchy();
+    }, 100);
+  }
+};
+
+const addColorPickerDebugListeners = () => {
+  if (DEBUG && debugConfig.logTooltipEvents) {
+    // Add listeners to the color picker area
+    const colorPickerArea = document.querySelector('.debug-popup__border-color-section');
+    if (colorPickerArea) {
+      colorPickerArea.addEventListener('click', handleColorPickerClick, true);
+      logColorPicker('DebugPopup', 'Added color picker debug listeners');
+    }
+
+    // Also listen for any color picker elements that might be added dynamically
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLElement) {
+            if (node.classList.contains('color-picker') ||
+                node.classList.contains('color-picker-panel') ||
+                node.classList.contains('color-picker-overlay')) {
+              logColorPicker('DebugPopup', 'Color picker element added to DOM:', {
+                tagName: node.tagName,
+                className: node.className,
+                boundingRect: node.getBoundingClientRect()
+              });
+            }
+          }
+        });
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    // Store observer for cleanup
+    (window as any).__colorPickerObserver = observer;
+  }
+};
+
+const removeColorPickerDebugListeners = () => {
+  const colorPickerArea = document.querySelector('.debug-popup__border-color-section');
+  if (colorPickerArea) {
+    colorPickerArea.removeEventListener('click', handleColorPickerClick, true);
+  }
+
+  // Clean up observer
+  if ((window as any).__colorPickerObserver) {
+    (window as any).__colorPickerObserver.disconnect();
+    delete (window as any).__colorPickerObserver;
+  }
+};
 
 // Debug functions
 const checkAllLoggingOptions = () => {
@@ -1198,6 +1507,13 @@ const uncheckAllLoggingOptions = () => {
 
 const showDebugStatus = () => {
   debugStore.showDebugStatus();
+};
+
+const resetDebugButtonOptions = () => {
+  debugStore.updateDebugOption('debugButtonSize', 34);
+  debugStore.updateDebugOption('debugButtonIconSize', 20);
+  debugStore.updateDebugOption('debugButtonBackdropBlur', 5);
+  debugStore.updateDebugOption('debugButtonBackgroundColor', 'hsla(0, 0%, 0%, 0.5)');
 };
 
 // Tooltip event handlers
@@ -1560,12 +1876,15 @@ watch(() => debugStore.isDebugPopupVisible, (isVisible) => {
 onMounted(() => {
   // Add keyboard event listener for debug shortcuts
   window.addEventListener('keydown', handleKeyDown);
-  
+
   // Add mouse event listener to capture final dimensions after resize
   document.addEventListener('mouseup', handleMouseUp);
-  
+
   // Add global click handler to deactivate popup when clicking outside
   document.addEventListener('click', handleGlobalClick);
+
+  // Initialize color picker debugging
+  addColorPickerDebugListeners();
 });
 
 // Helpers for TitleBar debug tab
@@ -1598,21 +1917,258 @@ const updateTitlebarColor = (hex: string) => {
   debugStore.updateDebugOption('titlebarHighlightColor', hex);
 };
 
+// Legacy helper functions - kept for potential future use
+// These are no longer needed since we switched to Nuxt ColorPicker with alpha support
+/*
+const extractColorOnly = (colorString: string): string => {
+  // Extract just the color part from HSLA/RGBA, return as hex for color picker
+  try {
+    if (colorString.startsWith('hsla(')) {
+      // Parse HSLA: hsla(h, s%, l%, a)
+      const match = colorString.match(/hsla\((\d+),\s*(\d+)%?,\s*(\d+)%?,\s*[\d.]+\)/);
+      if (match && match[1] && match[2] && match[3]) {
+        const h = parseInt(match[1], 10);
+        const s = parseInt(match[2], 10);
+        const l = parseInt(match[3], 10);
+        return hslToHex(h, s, l);
+      }
+    } else if (colorString.startsWith('rgba(')) {
+      // Parse RGBA: rgba(r, g, b, a)
+      const match = colorString.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
+      if (match && match[1] && match[2] && match[3]) {
+        const r = parseInt(match[1], 10);
+        const g = parseInt(match[2], 10);
+        const b = parseInt(match[3], 10);
+        return rgbToHex(r, g, b);
+      }
+    }
+    // Fallback: try to parse as hex or return default
+    return colorString.startsWith('#') ? colorString : '#000000';
+  } catch (e) {
+    return '#000000';
+  }
+};
+
+const extractAlpha = (colorString: string): number => {
+  // Extract alpha value from HSLA/RGBA, return as 0-1
+  try {
+    if (colorString.startsWith('hsla(')) {
+      const match = colorString.match(/hsla\([^,]+,\s*[^,]+,\s*[^,]+,\s*([\d.]+)\)/);
+      return match && match[1] ? parseFloat(match[1]) : 0.5;
+    } else if (colorString.startsWith('rgba(')) {
+      const match = colorString.match(/rgba\([^,]+,\s*[^,]+,\s*[^,]+,\s*([\d.]+)\)/);
+      return match && match[1] ? parseFloat(match[1]) : 0.5;
+    }
+    return 0.5; // Default alpha
+  } catch (e) {
+    return 0.5;
+  }
+};
+*/
+
+const hslToHex = (h: number, s: number, l: number): string => {
+  // Convert HSL to hex
+  const sDecimal = s / 100;
+  const lDecimal = l / 100;
+
+  const c = (1 - Math.abs(2 * lDecimal - 1)) * sDecimal;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = lDecimal - c / 2;
+
+  let r = 0, g = 0, b = 0;
+
+  if (0 <= h && h < 60) {
+    r = c; g = x; b = 0;
+  } else if (60 <= h && h < 120) {
+    r = x; g = c; b = 0;
+  } else if (120 <= h && h < 180) {
+    r = 0; g = c; b = x;
+  } else if (180 <= h && h < 240) {
+    r = 0; g = x; b = c;
+  } else if (240 <= h && h < 300) {
+    r = x; g = 0; b = c;
+  } else if (300 <= h && h < 360) {
+    r = c; g = 0; b = x;
+  }
+
+  r = Math.round((r + m) * 255);
+  g = Math.round((g + m) * 255);
+  b = Math.round((b + m) * 255);
+
+  return rgbToHex(r, g, b);
+};
+
+const rgbToHex = (r: number, g: number, b: number): string => {
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
+// Helper functions for displaying multiple color formats
+// Helper function to parse HSL string
+const parseHsl = (hslString: string): { h: number; s: number; l: number; a: number } => {
+  const match = hslString.match(/hsla?\((\d+),\s*(\d+)%?,\s*(\d+)%?(?:,\s*([\d.]+))?\)/);
+  if (match && match[1] && match[2] && match[3]) {
+    return {
+      h: parseInt(match[1], 10),
+      s: parseInt(match[2], 10),
+      l: parseInt(match[3], 10),
+      a: match[4] ? parseFloat(match[4]) : 1
+    };
+  }
+  return { h: 0, s: 0, l: 0, a: 1 };
+};
+
+/*
+const hslToRgbString = (hslString: string): string => {
+  try {
+    const { h, s, l, a } = parseHsl(hslString);
+    const sDecimal = s / 100;
+    const lDecimal = l / 100;
+
+    const c = (1 - Math.abs(2 * lDecimal - 1)) * sDecimal;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = lDecimal - c / 2;
+
+    let r = 0, g = 0, b = 0;
+
+    if (0 <= h && h < 60) {
+      r = c; g = x; b = 0;
+    } else if (60 <= h && h < 120) {
+      r = x; g = c; b = 0;
+    } else if (120 <= h && h < 180) {
+      r = 0; g = c; b = x;
+    } else if (180 <= h && h < 240) {
+      r = 0; g = x; b = c;
+    } else if (240 <= h && h < 300) {
+      r = x; g = 0; b = c;
+    } else if (300 <= h && h < 360) {
+      r = c; g = 0; b = x;
+    }
+
+    r = Math.round((r + m) * 255);
+    g = Math.round((g + m) * 255);
+    b = Math.round((b + m) * 255);
+
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
+  } catch (e) {
+    return 'rgba(0, 0, 0, 0.5)';
+  }
+};
+*/
+
+/*
+const hslToHexString = (hslString: string): string => {
+  try {
+    const { h, s, l } = parseHsl(hslString);
+    return hslToHex(h, s, l);
+  } catch (e) {
+    return '#000000';
+  }
+};
+*/
+
+const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
+  // Remove # if present
+  hex = hex.replace('#', '');
+
+  // Handle both 3-digit and 6-digit hex
+  if (hex.length === 3) {
+    hex = hex.split('').map(c => c + c).join('');
+  }
+
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+
+  return { r, g, b };
+};
+
+/*
+const updateDebugButtonColor = (hexColor: string) => {
+  // Get current alpha from existing color
+  const currentColor = debugStore.debugOptions.debugButtonBackgroundColor ?? 'hsla(0, 0%, 0%, 0.5)';
+  const currentAlpha = extractAlpha(currentColor);
+
+  // Convert hex to HSLA
+  const rgb = hexToRgb(hexColor);
+  const hslaColor = `hsla(${rgbToHsl(rgb.r, rgb.g, rgb.b)}, ${currentAlpha})`;
+
+  debugStore.updateDebugOption('debugButtonBackgroundColor', hslaColor);
+};
+*/
+
+/*
+const updateDebugButtonAlpha = (alpha: number) => {
+  // Get current color part from existing color
+  const currentColor = debugStore.debugOptions.debugButtonBackgroundColor ?? 'hsla(0, 0%, 0%, 0.5)';
+  const colorOnly = extractColorOnly(currentColor);
+
+  // If current color is hex, convert to HSL first
+  let hslString = '0, 0%, 0%';
+  if (colorOnly.startsWith('#')) {
+    const rgb = hexToRgb(colorOnly);
+    hslString = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  } else if (currentColor.includes('hsla')) {
+    // Extract HSL part from existing HSLA
+    const match = currentColor.match(/hsla\(([^,]+),\s*([^,]+),\s*([^,]+),\s*[\d.]+\)/);
+    if (match) {
+      hslString = `${match[1]}, ${match[2]}, ${match[3]}`;
+    }
+  }
+
+  const hslaColor = `hsla(${hslString}, ${alpha})`;
+  debugStore.updateDebugOption('debugButtonBackgroundColor', hslaColor);
+};
+
+const updateDebugButtonColorFromText = (colorValue: string) => {
+  // For text input, validate and use the value directly
+  debugStore.updateDebugOption('debugButtonBackgroundColor', colorValue);
+};
+*/
+
+/*
+const rgbToHsl = (r: number, g: number, b: number): string => {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  return `${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%`;
+};
+*/
+
 onUnmounted(() => {
   document.removeEventListener('mousemove', handleDrag);
   document.removeEventListener('mouseup', stopDrag);
   document.removeEventListener('mouseup', handleMouseUp);
   document.removeEventListener('click', handleGlobalClick);
-  
+
   // Remove keyboard event listener
   window.removeEventListener('keydown', handleKeyDown);
-  
+
+  // Clean up color picker debug listeners
+  removeColorPickerDebugListeners();
+
   // Clean up the ResizeObserver
   if (resizeObserver) {
     resizeObserver.disconnect();
     resizeObserver = null;
   }
-  
+
   // Clean up the resize timeout
   if (resizeTimeout) {
     clearTimeout(resizeTimeout);
@@ -1622,5 +2178,12 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-@import "./DebugPopup.scoped.css";
+/* Import all DebugPopup CSS modules */
+@import "./debug-popup-comp/DebugPopup.base.css";
+@import "./debug-popup-comp/DebugPopup.header.css";
+@import "./debug-popup-comp/DebugPopup.navigation.css";
+@import "./debug-popup-comp/DebugPopup.content.css";
+@import "./debug-popup-comp/DebugPopup.controls.css";
+@import "./debug-popup-comp/DebugPopup.color.css";
+@import "./debug-popup-comp/DebugPopup.utilities.css";
 </style>

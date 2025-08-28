@@ -1,0 +1,23 @@
+/* DebugPopup CSS Modules Index */
+/* Import all DebugPopup CSS modules in the correct order */
+
+/* Core layout and structure */
+@import "./DebugPopup.base.css";
+
+/* Header section */
+@import "./DebugPopup.header.css";
+
+/* Navigation (tabs) */
+@import "./DebugPopup.navigation.css";
+
+/* Content areas (general, tooltips, logging) */
+@import "./DebugPopup.content.css";
+
+/* Form controls (options, switches, sliders) */
+@import "./DebugPopup.controls.css";
+
+/* Color picker controls */
+@import "./DebugPopup.color.css";
+
+/* Utilities (animations, transitions, hotzones) */
+@import "./DebugPopup.utilities.css";

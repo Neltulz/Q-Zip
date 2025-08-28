@@ -44,6 +44,7 @@ export default defineNuxtConfig({
     '@nuxt/test-utils',
     '@nuxt/ui',
     '@pinia/nuxt',
+    'nuxt-color-picker',
   ],
   fonts: {
     families: [

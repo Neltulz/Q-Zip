@@ -1,0 +1,58 @@
+/* DebugPopup Navigation Styles */
+/* Tab navigation and button styling */
+
+.debug-popup__tab-nav {
+  border-inline-end: 1px solid;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  margin-inline-end: 6px;
+  max-width: 110px;
+  min-width: 110px;
+  width: 110px;
+  transition: border-right-color 0.4s ease;
+}
+
+.debug-popup__tab-button {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-inline-end: 2px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 4px;
+  max-width: 100%;
+  padding-block: 6px;
+  padding-inline: 8px;
+  text-align: start;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.debug-popup__tab-button:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.debug-popup__tab-button--active {
+  background: var(--bg-secondary);
+  border-inline-end-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.debug-popup__tab-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.debug-popup__tab-text {
+  flex: 1;
+  font-size: 12px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

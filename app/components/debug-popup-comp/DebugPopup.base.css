@@ -1,0 +1,68 @@
+/* DebugPopup Base Styles */
+/* Main container and core layout */
+
+.debug-popup {
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  max-height: 80vh;
+  max-width: 800px;
+  min-height: 300px;
+  min-width: 320px;
+  overflow: hidden;
+  position: fixed;
+  resize: both;
+  transition: backdrop-filter 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  z-index: 9999;
+  backdrop-filter: blur(0px);
+}
+
+
+
+.debug-popup__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+  max-width: 100%;
+  padding: 4px;
+  transition: background-color 0.4s ease, opacity 0.4s ease;
+}
+
+.debug-popup__tabs {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  min-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.debug-popup__tab-content {
+  flex: 1;
+  min-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.debug-popup__tab-panel {
+  height: 100%;
+  min-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0;
+}
+
+.debug-popup__tab-panel--grid {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+}

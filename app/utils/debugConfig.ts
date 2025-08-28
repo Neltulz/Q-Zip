@@ -295,6 +295,78 @@ try {
     }
   };
 
+  // Add color picker debugging function to global scope
+  globalObj.__QZIP_DEBUG_COLOR_PICKER = () => {
+    console.log('%c🔍 Color Picker Debug Inspector', 'background: #9c27b0; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+
+    // Find all color picker related elements
+    const colorPickerElements = [
+      ...document.querySelectorAll('[class*="color-picker"]'),
+      ...document.querySelectorAll('.color-picker'),
+      ...document.querySelectorAll('.color-picker-panel'),
+      ...document.querySelectorAll('.color-picker-overlay'),
+      ...document.querySelectorAll('.color-picker-dropdown'),
+      ...document.querySelectorAll('.color-picker-popup'),
+      // Sandbox elements (most important for z-index issues)
+      ...document.querySelectorAll('#nuxt-color-picker\\:sandbox'),
+      ...document.querySelectorAll('.CP-sandbox'),
+      ...document.querySelectorAll('[id*="color-picker"][id*="sandbox"]'),
+      ...document.querySelectorAll('[class*="color-picker"][class*="sandbox"]'),
+      ...document.querySelectorAll('[class*="CP"][class*="sandbox"]')
+    ];
+
+    console.log(`%cFound ${colorPickerElements.length} color picker elements:`, 'background: #9c27b0; color: white; padding: 2px 4px; border-radius: 3px;');
+
+    // Check DebugPopup z-index
+    const debugPopup = document.querySelector('.debug-popup');
+    if (debugPopup) {
+      const popupStyle = window.getComputedStyle(debugPopup);
+      console.log('%c🔧 DebugPopup z-index:', 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;', {
+        zIndex: popupStyle.zIndex,
+        position: popupStyle.position,
+        display: popupStyle.display
+      });
+    }
+
+    colorPickerElements.forEach((element, index) => {
+      const computedStyle = window.getComputedStyle(element);
+      const zIndex = computedStyle.zIndex;
+      const position = computedStyle.position;
+      const display = computedStyle.display;
+      const visibility = computedStyle.visibility;
+
+      console.log(`%c🎨 Element ${index + 1}:`, 'background: #9c27b0; color: white; padding: 2px 4px; border-radius: 3px;', {
+        tagName: element.tagName,
+        className: element.className,
+        zIndex,
+        position,
+        display,
+        visibility,
+        boundingRect: element.getBoundingClientRect(),
+        element
+      });
+
+      // Add temporary visual debugging
+      if (element instanceof HTMLElement) {
+        element.style.border = '3px solid magenta !important';
+        element.style.backgroundColor = 'rgba(255, 0, 255, 0.2) !important';
+        element.style.boxShadow = '0 0 10px rgba(255, 0, 255, 0.8) !important';
+        setTimeout(() => {
+          element.style.border = '';
+          element.style.backgroundColor = '';
+          element.style.boxShadow = '';
+        }, 5000);
+      }
+    });
+
+    // Check if tooltip events logging is enabled
+    console.log('%c💡 Tip: Enable tooltip events logging to see automatic color picker debugging:', 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;');
+    console.log('  1. Open DebugPopup (Ctrl+Alt+Shift+D)');
+    console.log('  2. Go to Logging tab');
+    console.log('  3. Enable "Tooltip Events"');
+    console.log('  4. Click on the border color picker');
+  };
+
   // Add dimension management functions to global scope
   globalObj.__QZIP_DEBUG_RESET_DIMENSIONS = () => {
     try {
@@ -342,6 +414,7 @@ try {
   console.log('  __QZIP_DEBUG_FORCE_REFRESH() - Force refresh store state');
   console.log('  __QZIP_DEBUG_GET_DIMENSIONS() - Get debug popup position & dimensions');
   console.log('  __QZIP_DEBUG_RESET_DIMENSIONS() - Reset popup to default size');
+  console.log('  __QZIP_DEBUG_COLOR_PICKER()  - Inspect color picker z-index issues');
   console.log('  __QZIP_DEBUG_SET("decorumMessages", true) - Show DECORUM messages');
 
   // Note: Debug status will be shown by the debug store during initialization

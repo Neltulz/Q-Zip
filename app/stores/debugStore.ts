@@ -59,6 +59,12 @@ export interface DebugOptions {
   titlebarHighlightOpacity: number;
   // TitleBar event logging
   logTitleBarEvents: boolean;
+  // DebugButton visual options
+  debugButtonSize: number;
+  debugButtonIconSize: number;
+  debugButtonBackdropBlur: number;
+  debugButtonBackgroundColor: string; // CSS color value (hex, rgb, rgba, hsl, etc.)
+  debugButtonBorderColor: string; // CSS color value for debug button border
 }
 
 export interface DebugPosition {
@@ -229,6 +235,12 @@ export const useDebugStore = defineStore(
       titlebarHighlightOpacity: 0.25,
       // TitleBar event logging
       logTitleBarEvents: false,
+      // DebugButton visual options
+      debugButtonSize: 34,
+      debugButtonIconSize: 20,
+      debugButtonBackdropBlur: 5,
+      debugButtonBackgroundColor: 'hsla(0, 0%, 0%, 0.5)',
+      debugButtonBorderColor: 'hsla(210, 100%, 50%, 0.8)',
     });
 
     // Computed property to ensure store is properly initialized
@@ -365,6 +377,12 @@ export const useDebugStore = defineStore(
         disableBackdropBlurOnDrag: true,
         // Interior elements opacity
         debugPopupInteriorOpacity: 0.75,
+        // DebugButton visual options
+        debugButtonSize: 34,
+        debugButtonIconSize: 20,
+        debugButtonBackdropBlur: 5,
+        debugButtonBackgroundColor: 'hsla(0, 0%, 0%, 0.5)',
+        debugButtonBorderColor: 'hsla(210, 100%, 50%, 0.8)',
       };
 
       // Sync reset to debugConfig

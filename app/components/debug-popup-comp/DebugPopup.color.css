@@ -1,0 +1,258 @@
+/* DebugPopup Color Controls */
+/* Color picker and related components */
+
+.debug-popup__color-fieldset {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 0;
+  width: 100%;
+}
+
+.debug-popup__color-fieldset .debug-popup__color-fieldset-legend {
+  color: var(--accent-color);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 8px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.debug-popup__color-grid {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.debug-popup__color-grid-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.debug-popup__color-grid-column--picker {
+  width: 68px;
+  flex-shrink: 0;
+}
+
+.debug-popup__color-grid-column--text {
+  min-width: 120px;
+}
+
+.debug-popup__color-grid-column--alpha {
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.debug-popup__color-picker-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.debug-popup__color-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.debug-popup__color-format-displays {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-color);
+}
+
+.debug-popup__color-format-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.debug-popup__color-format-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 32px;
+}
+
+.debug-popup__color-format-value {
+  color: var(--accent-color);
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  user-select: all;
+  cursor: text;
+}
+
+.debug-popup__color-text-label {
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.debug-popup__alpha-controls-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.debug-popup__alpha-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.debug-popup__color-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.debug-popup__color-preview-row .debug-popup__color-preview-label {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.debug-popup__color-preview-box {
+  width: 48px;
+  height: 32px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* Border Color Picker styles moved to ColorPickerInput.vue */
+
+/* Background & Border Colors Section */
+.debug-popup__colors-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  width: 100%;
+}
+
+.debug-popup__colors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.debug-popup__color-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Background and Border Color Picker styles moved to ColorPickerInput.vue */
+
+/* Nuxt Color Picker Z-Index Override */
+/* Force color picker components to appear above DebugPopup */
+:deep(.color-picker) {
+  z-index: 10010 !important;
+  position: fixed !important;
+}
+
+:deep(.color-picker-panel) {
+  z-index: 10011 !important;
+  position: fixed !important;
+}
+
+:deep(.color-picker-overlay) {
+  z-index: 10010 !important;
+  position: fixed !important;
+}
+
+:deep(.color-picker-dropdown) {
+  z-index: 10011 !important;
+  position: fixed !important;
+}
+
+:deep(.color-picker-popup) {
+  z-index: 10011 !important;
+  position: fixed !important;
+}
+
+/* Additional specificity for color picker within DebugPopup context */
+.debug-popup :deep(.color-picker),
+.debug-popup :deep(.color-picker-panel),
+.debug-popup :deep(.color-picker-overlay),
+.debug-popup :deep(.color-picker-dropdown),
+.debug-popup :deep(.color-picker-popup) {
+  z-index: 10012 !important;
+  position: fixed !important;
+  /* Ensure color picker can escape any transform contexts */
+  transform: none !important;
+  will-change: auto !important;
+}
+
+.debug-popup__info-icon-wrapper--inline {
+  margin-left: 4px;
+}
+
+/* Info icon styles for color pickers moved to ColorPickerInput.vue */
+
+.debug-popup__color-input {
+  width: 56px;
+  height: 56px;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  cursor: pointer;
+  background: none;
+  padding: 0;
+}
+
+.debug-popup__color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.debug-popup__color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 8px;
+}
+
+.debug-popup__color-input::-moz-color-swatch {
+  border: none;
+  border-radius: 8px;
+}
+
+.debug-popup__color-text-input {
+  width: 100%;
+  height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.debug-popup__color-text-input:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -1px;
+}
+
+.debug-popup__color-text-input::placeholder {
+  color: var(--text-secondary);
+}

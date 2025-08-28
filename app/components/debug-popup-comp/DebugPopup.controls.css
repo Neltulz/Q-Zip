@@ -1,0 +1,130 @@
+/* DebugPopup Controls Styles */
+/* Form controls: options, switches, sliders */
+
+.debug-popup__tooltips-options,
+.debug-popup__general-options,
+.debug-popup__logging-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.debug-popup__option-group {
+  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-block-start: 6px;
+}
+
+.debug-popup__option-group:first-child {
+  margin-block-start: 0;
+}
+
+.debug-popup__option-group h3 {
+  color: var(--accent-color);
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.debug-popup__option {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 6px;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.debug-popup__option span {
+  color: var(--text-primary);
+  flex: 1;
+  font-size: 13px;
+}
+
+.debug-popup__info-icon-wrapper {
+  align-items: center;
+  color: var(--text-secondary);
+  cursor: help;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.debug-popup__info-icon-wrapper:hover {
+  color: var(--accent-color);
+  opacity: 1;
+}
+
+.debug-popup__info-icon {
+  font-size: 16px;
+}
+
+/* USwitch styling - simplified with :global since it's a third-party component */
+:deep(.u-switch) {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+  min-height: auto !important;
+  min-width: auto !important;
+  outline: none !important;
+  padding: 0 !important;
+  width: auto;
+}
+
+:deep(.u-switch-base) {
+  flex-shrink: 0;
+  order: 1;
+}
+
+:deep(.u-switch-wrapper) {
+  flex: 1;
+  order: 2;
+  text-align: start;
+}
+
+/* Opacity controls */
+.debug-popup__opacity-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.debug-popup__opacity-label {
+  align-items: center;
+  color: var(--text-primary);
+  display: flex;
+  font-size: 12px;
+  font-weight: 500;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.debug-popup__opacity-value {
+  color: var(--accent-color);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.debug-popup__opacity-preview {
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-style: italic;
+  margin-block-start: 1px;
+}
+
+/* Placeholder text */
+.debug-popup__placeholder-text {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-style: italic;
+  margin: 0;
+}

@@ -289,3 +289,15 @@ export const logDualProgress = (callerName: string, message: string, data?: unkn
     }
   }
 };
+
+// --- Logger for Color Picker Debugging ---
+const colorPickerStyle: string = `${baseStyle} background-color: #9c27b0;`; // Purple
+export const logColorPicker = (callerName: string, message: string, data?: unknown): void => {
+  if (DEBUG && debugConfig.logTooltipEvents) { // Using tooltip events flag for color picker debugging
+    if (data) {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, colorPickerStyle, data);
+    } else {
+      console.log(`%c${getTimestamp()} %c[${callerName}] %c${message}`, timestampStyle, callerStyle, colorPickerStyle);
+    }
+  }
+};

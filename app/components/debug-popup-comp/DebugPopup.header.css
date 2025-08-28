@@ -1,0 +1,36 @@
+/* DebugPopup Header Styles */
+/* Header section and title styling */
+
+.debug-popup__header {
+  align-items: center;
+  border-block-end: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  padding-block: 2px;
+  padding-inline: 8px;
+  position: relative;
+  user-select: none;
+  transition: background-color 0.4s ease, border-bottom-color 0.4s ease, opacity 0.4s ease;
+}
+
+.debug-popup__title {
+  align-items: center;
+  color: var(--text-primary);
+  display: flex;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 4px;
+  margin: 0;
+}
+
+.debug-popup__icon {
+  color: var(--accent-color);
+}
+
+.debug-popup__close-button {
+  flex-grow: 0;
+  flex-shrink: 0;
+  height: 24px;
+  min-width: 24px;
+  width: 24px;
+}

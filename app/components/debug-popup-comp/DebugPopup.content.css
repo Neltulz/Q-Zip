@@ -1,0 +1,120 @@
+/* DebugPopup Content Styles */
+/* Different content areas: general, tooltips, logging */
+
+.debug-popup__empty-content {
+  align-items: center;
+  color: var(--text-secondary);
+  display: flex;
+  font-style: italic;
+  height: 100%;
+  justify-content: center;
+  max-width: 100%;
+  text-align: center;
+}
+
+.debug-popup__empty-content p {
+  margin: 0;
+}
+
+.debug-popup__tooltips-content {
+  display: grid;
+  grid-template-rows: 1fr;
+  gap: 6px;
+  height: 100%;
+  min-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 6px;
+}
+
+.debug-popup__tooltips-scrollable-content {
+  flex: 1;
+  min-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding-block-end: 3px;
+  padding-inline: 6px;
+}
+
+.debug-popup__general-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.debug-popup__tab-panel-footer {
+  border-block-start: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+  padding-block-start: 8px;
+  padding-block-end: 4px;
+}
+
+.debug-popup__scrollbar--stretch {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.debug-popup__general-scrollable-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding-block-end: 3px;
+  padding-inline: 6px;
+}
+
+.debug-popup__logging-content {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 6px;
+  height: 100%;
+  min-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.debug-popup__logging-header {
+  border-block-end: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-start;
+  max-width: 100%;
+  padding-block-end: 3px;
+  overflow: hidden;
+}
+
+.debug-popup__logging-scrollable-content {
+  flex: 1;
+  min-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding-block-end: 3px;
+  padding-inline: 6px;
+}
+
+.debug-popup__logging-actions {
+  border-block-start: 1px solid var(--border-color);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  max-width: 100%;
+  padding-block-start: 3px;
+}
+
+.debug-popup__button-pair {
+  display: flex;
+  flex: 1;
+  min-width: 240px;
+}
+
+.debug-popup__logging-actions :deep(.custom-button) {
+  flex: 1;
+  min-width: 100px;
+  max-width: 100%;
+  height: auto;
+  min-height: 24px;
+  justify-content: center;
+  text-align: center;
+}

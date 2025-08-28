@@ -606,3 +606,10 @@ input[type="checkbox"].qzip-checkbox:focus {
   outline: 2px solid var(--accent-clr, hsl(211, 100%, 50%));
   outline-offset: 2px;
 }
+
+/* Nuxt ColorPicker Z-Index Override for DebugPopup */
+/* Ensure ColorPicker sandbox appears above DebugPopup */
+#nuxt-color-picker\:sandbox,
+.CP-sandbox {
+  z-index: 100000;
+}
