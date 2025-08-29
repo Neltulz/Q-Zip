@@ -9,6 +9,7 @@
     :class="['custom-field-new', extraClasses]"
     :data-field-context="isJobSettings ? 'job-specific' : 'global'"
     :data-field-name="dataFieldName"
+    :data-field-empty="isFieldEmpty"
   >
     <template v-if="showWrapper">
       <div class="custom-field-new__lock-and-input-wrapper">
@@ -254,6 +255,7 @@ const inputWrapperClass = computed((): string => {
 const modelValueStr = computed((): string => String(props.modelValue ?? ""));
 const globalValueStr = computed((): string => String(props.globalValue ?? ""));
 const defaultValueStr = computed((): string => String(props.defaultValue ?? ""));
+const isFieldEmpty = computed((): boolean => modelValueStr.value === "");
 const showResetOptions = computed((): boolean => {
   if (props.inputType === "custom") return false;
   if (props.isJobSettings) {

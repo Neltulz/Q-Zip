@@ -34,8 +34,8 @@
         input-type="text-area"
         :model-value="outputLocation"
         title="Output Location"
-        placeholder="Select output folder..."
         @update:model-value="updateOutputLocation"
+        @unset-or-clear="clearOutputLocation"
       >
         <template #buttons-start>
           <CustomButton
@@ -69,6 +69,7 @@
         title="Output Filename"
         placeholder="Enter filename..."
         @update:model-value="updateOutputFilename"
+        @unset-or-clear="clearOutputFilename"
       >
         <template #buttons-start>
           <CustomButton
@@ -659,8 +660,14 @@ const getOptions = (fieldId: string, context: "global" | "job"): { value: string
 const updateOutputLocation = (value: string | number | boolean): void => {
   outputLocation.value = String(value);
 };
+const clearOutputLocation = (_fieldId: string): void => {
+  outputLocation.value = "";
+};
 const updateOutputFilename = (value: string | number | boolean): void => {
   outputFilename.value = String(value);
+};
+const clearOutputFilename = (_fieldId: string): void => {
+  outputFilename.value = "";
 };
 const browseTopLevelOutputFolder = async (): Promise<void> => {
   try {
