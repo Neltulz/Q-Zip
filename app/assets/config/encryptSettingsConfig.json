@@ -6,6 +6,7 @@
         "id": "password",
         "type": "input",
         "label": "Password:",
+        "placeholder": "Enter password...",
         "default": "",
         "data-field-name": "password-field"
       },
@@ -22,8 +23,14 @@
         "type": "select",
         "label": "File Name Encryption:",
         "options": [
-          { "value": "use_encryption", "text": "Use Encryption" },
-          { "value": "no_encryption", "text": "No Encryption" }
+          {
+            "value": "use_encryption",
+            "text": "Use Encryption"
+          },
+          {
+            "value": "no_encryption",
+            "text": "No Encryption"
+          }
         ],
         "default": "use_encryption",
         "data-field-name": "file-name-encryption-field",

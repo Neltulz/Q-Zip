@@ -16,12 +16,13 @@
   justify-self: stretch;
   margin: 0;
   overflow: visible;
-  padding-block: 0.55em;
+  padding-block: 0.25em;
   padding-inline: 1em;
   position: relative;
   text-decoration: none;
   transition: all var(--btn-trans-dur-end) ease;
   z-index: 0;
+  min-height: var(--min-tch-tgt);
   
   /* .custom-button:has(> .button-content:empty) - Set exact sizing for icon-only buttons */
   &:has(> .button-content:empty) {

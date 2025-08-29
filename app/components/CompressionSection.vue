@@ -197,6 +197,7 @@
                   :input-type="field.type"
                   :model-value="getDisplayValue(field.id, 'global')"
                   :options="field.options ?? []"
+                  :placeholder="field.placeholder"
                   :title="field.label"
                   @unset-or-clear="handleGlobalUnsetOrClear"
                   @update:model-value="updateSetting(field.id, $event, 'global')"
@@ -218,6 +219,7 @@
                   :input-type="field.type"
                   :model-value="getDisplayValue(field.id, 'global')"
                   :options="field.options ?? getOptions(field.id, 'global')"
+                  :placeholder="field.placeholder"
                   :title="field.label"
                   @unset-or-clear="handleGlobalUnsetOrClear"
                   @update:model-value="updateSetting(field.id, $event, 'global')"
@@ -356,6 +358,7 @@
                     :is-locked="getJobFieldLockedState(field.id)"
                     :model-value="getJobFieldModelValue(field.id)"
                     :options="getJobFieldOptions(field.id, field.type, field.options)"
+                    :placeholder="field.placeholder"
                     :show-wrapper="true"
                     :title="field.label"
                     @reset-to-global="handleResetToGlobal"
@@ -391,6 +394,7 @@
                   :is-locked="getJobFieldLockedState(field.id)"
                   :model-value="getJobFieldModelValue(field.id)"
                   :options="getJobFieldOptions(field.id, field.type, field.options)"
+                  :placeholder="field.placeholder"
                   :show-wrapper="true"
                   :title="field.label"
                   @reset-to-global="handleResetToGlobal"
@@ -456,6 +460,7 @@ interface FieldConfig {
   default: string | number | boolean;
   "data-field-name": string;
   dependsOn?: FieldDependency;
+  placeholder?: string;
 }
 interface SettingsCategory {
   title: string;

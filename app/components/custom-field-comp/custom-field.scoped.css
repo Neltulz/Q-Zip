@@ -83,10 +83,14 @@
   font-weight: 600;
   height: var(--field-title-height);
   overflow: hidden;
+  padding-block-start: 0;
   padding-inline-start: var(--pad-in);
   pointer-events: none;
+  position: relative;
   text-overflow: ellipsis;
   text-transform: uppercase;
+  top: 0;
+  transition: all 200ms ease;
   white-space: nowrap;
   z-index: 100;
 }
@@ -95,9 +99,11 @@
 .custom-field-new__btns-and-chevron {
   align-items: center;
   display: flex;
-  grid-area: input-buttons;
+  height: 100%;
   justify-content: center;
-  position: relative;
+  position: absolute;
+  right: 0;
+  top: 0;
 }
 
 /* Element: Reset Button Wrapper */
@@ -110,6 +116,7 @@
   top: 50%;
   transform: translateY(-50%);
   z-index: 2;
+  height: var(--min-tch-tgt);
 }
 
 /* Reset Button Styles using :deep() */
@@ -136,6 +143,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 3;
 }
 
 /* Element: Select Text */
@@ -225,35 +233,62 @@
 .custom-field-new__input-wrapper--input {
   --bg-alph: 0.5;
   --bg-clr-dark: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.8), var(--bg-alph));
-  align-items: center;
   background-color: var(--bg-clr-dark);
   border: 1px solid var(--brdr-clr-lite);
   border-radius: var(--brdr-rad-smal);
-  display: grid;
-  grid-template-areas: "field-title input-buttons" "select-text input-buttons";
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto 1fr;
-  height: var(--min-tch-tgt);
+  min-height: var(--min-tch-tgt);
+  position: relative;
   z-index: 100;
 }
 
 .custom-field-new__input-wrapper--input .custom-field-new__field-title {
-  grid-area: field-title;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--txt-clr-darkr);
+  transition: all 200ms ease !important;
+  pointer-events: none;
+  padding-block: 0;
+  padding-inline-start: var(--pad-in);
+  text-transform: uppercase;
+  z-index: 10;
 }
 
 .custom-field-new__input-wrapper--input .custom-field-new__native-input {
-  grid-column: 1 / all;
-  grid-row: 1 / all;
-  height: 100%;
+  width: 100%;
+  padding-block: var(--pad-blok);
   padding-inline: var(--pad-in);
+  transition: all 200ms ease;
+  box-sizing: border-box;
 }
 
-.custom-field-new__input-wrapper--input:has(.custom-field-new__field-title) {
-  min-height: calc(var(--min-tch-tgt) + var(--field-title-height));
+.custom-field-new__input-wrapper--input .custom-field-new__native-input::placeholder {
+  opacity: 0;
+  color: transparent;
 }
 
-.custom-field-new__input-wrapper--input:has(.custom-field-new__field-title) .custom-field-new__native-input {
-  padding-block-start: var(--field-title-height);
+.custom-field-new__input-wrapper--input:focus-within .custom-field-new__field-title,
+.custom-field-new__input-wrapper--input:has(.custom-field-new__native-input:not(:placeholder-shown)) .custom-field-new__field-title {
+  height: 1em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  top: 5px;
+}
+
+.custom-field-new__input-wrapper--input:focus-within .custom-field-new__field-title {
+  color: var(--blu-lite);
+}
+
+.custom-field-new__input-wrapper--input:focus-within .custom-field-new__native-input,
+.custom-field-new__input-wrapper--input:has(.custom-field-new__native-input:not(:placeholder-shown)) .custom-field-new__native-input {
+  padding-block-start: 15px;
 }
 
 .custom-field-new__input-wrapper--input:has(.custom-field-new__reset-btn-wrapper .custom-button:not(:disabled)) .custom-field-new__native-input {
@@ -268,39 +303,75 @@
   background-color: var(--bg-clr-dark);
   border: 1px solid var(--brdr-clr-lite);
   border-radius: var(--brdr-rad-smal);
-  display: grid;
-  grid-template-areas: "field-title input-buttons" "select-text input-buttons";
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto 1fr;
-  height: var(--min-tch-tgt);
+  display: flex;
+  min-height: var(--min-tch-tgt);
+  position: relative;
   z-index: 100;
 }
 
 .custom-field-new__input-wrapper--select .custom-field-new__field-title {
-  grid-area: field-title;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding-inline-start: var(--pad-in);
+  padding-block-start: 2px;
 }
 
 .custom-field-new__input-wrapper--select .custom-field-new__native-select {
-  grid-column: 1 / all;
-  grid-row: 1 / all;
+  position: absolute;
+  inset: 0;
+  width: 100%;
   height: 100%;
-  padding-inline: var(--pad-in);
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
 }
 
 .custom-field-new__input-wrapper--select .custom-field-new__select-text {
-  grid-area: select-text;
+  flex: 1;
+  min-height: var(--min-tch-tgt);
+  padding-inline: var(--pad-in);
+  padding-inline-end: calc(var(--min-tch-tgt) + 8px);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--txt-clr-lite);
+  position: relative;
+  z-index: 1;
+}
+
+.custom-field-new__input-wrapper--select:has(.custom-field-new__field-title) .custom-field-new__select-text {
+  min-height: calc(var(--min-tch-tgt) - var(--field-title-height));
 }
 
 .custom-field-new__input-wrapper--select .custom-field-new__reset-btn-wrapper {
+  position: absolute;
   inset-inline-end: 24px;
-}
-
-.custom-field-new__input-wrapper--select:has(.custom-field-new__field-title) {
-  min-height: calc(var(--min-tch-tgt) + var(--field-title-height));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
 }
 
 .custom-field-new__input-wrapper--select:has(.custom-field-new__field-title) .custom-field-new__native-select {
+  top: var(--field-title-height);
+  height: calc(100% - var(--field-title-height));
+  min-height: calc(var(--min-tch-tgt) - var(--field-title-height));
+}
+
+.custom-field-new__input-wrapper--select:has(.custom-field-new__field-title) {
+  min-height: calc(var(--min-tch-tgt) + 10px);
+}
+
+.custom-field-new__input-wrapper--select:has(.custom-field-new__field-title) .custom-field-new__select-text {
   padding-block-start: var(--field-title-height);
+}
+
+.custom-field-new__input-wrapper--select:has(.custom-field-new__reset-btn-wrapper .custom-button:not(:disabled)) .custom-field-new__select-text {
+  padding-inline-end: calc(var(--min-tch-tgt) + 24px);
 }
 
 /* Modifier: Input Type Text Area */
@@ -317,8 +388,7 @@
   grid-template-rows: auto 1fr;
   height: var(--min-tch-tgt);
   z-index: 100;
-  max-height: calc(100vh - 500px);
-  min-height: calc(var(--pad-blok) * 2 + 1.2em * 2);
+  max-height: calc(100vh - 500px);;
   resize: vertical;
 }
 

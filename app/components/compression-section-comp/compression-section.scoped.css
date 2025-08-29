@@ -112,6 +112,7 @@
 .compression-section__input-assembly .input-wrapper-deep.input-type-input .field-title,
 .compression-section__input-assembly .input-wrapper-deep.input-type-select .field-title {
   display: none;
+  transition: all 200ms ease;
 }
 
 /* Element: Custom Field with Field Name */
@@ -141,6 +142,7 @@
 .compression-section__input-assembly .input-wrapper-deep.input-type-input .field-title,
 .compression-section__input-assembly .input-wrapper-deep.input-type-select .field-title {
   display: none;
+  transition: all 200ms ease;
 }
 
 /* Responsive: Mobile */
