@@ -320,7 +320,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--txt-clr-lite);
-  position: relative;
+  position: absolute;
+  bottom:  0;
   z-index: 1;
 }
 
