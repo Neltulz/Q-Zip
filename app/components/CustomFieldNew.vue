@@ -49,6 +49,7 @@
                 :autocomplete="autocomplete || (title?.toLowerCase().includes('filename') || title?.toLowerCase().includes('output') ? 'off' : autocomplete)"
                 :disabled="disabled"
                 :placeholder="placeholder"
+                :spellcheck="spellcheck"
                 :type="type || 'text'"
                 :value="modelValue != null ? String(modelValue) : ''"
                 class="custom-field-new__native-input"
@@ -76,6 +77,7 @@
                 :name="generatedId"
                 :disabled="disabled"
                 :placeholder="placeholder"
+                :spellcheck="spellcheck"
                 :value="modelValue != null ? String(modelValue) : ''"
                 autocomplete="off"
                 class="custom-field-new__native-textarea"
@@ -209,6 +211,7 @@ const props = withDefaults(
     options?: Option[];
     placeholder?: string;
     showWrapper?: boolean;
+    spellcheck?: boolean;
     title?: string;
     titleClasses?: string | string[] | Record<string, boolean>;
     type?: string;
@@ -228,6 +231,7 @@ const props = withDefaults(
     options: () => [],
     placeholder: undefined,
     showWrapper: true,
+    spellcheck: undefined,
     title: undefined,
     titleClasses: () => [],
     type: "text",

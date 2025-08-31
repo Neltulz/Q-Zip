@@ -27,6 +27,7 @@
         :type="type || 'text'"
         :autocomplete="autocomplete"
         :disabled="disabled"
+        :spellcheck="spellcheck"
         class="custom-input-comp__native-input"
         @input="handleInput"
       />
@@ -36,6 +37,7 @@
         :name="inputId"
         :value="modelValue"
         :disabled="disabled"
+        :spellcheck="spellcheck"
         class="custom-input-comp__native-textarea"
         @input="handleInput"
       />
@@ -70,6 +72,7 @@ const props = defineProps<{
   options?: Option[];
   canBeReset?: boolean;
   disabled?: boolean;
+  spellcheck?: boolean;
   type?: string; // For inputType="input", default "text"
   autocomplete?: string; // For inputType="input"
 }>();

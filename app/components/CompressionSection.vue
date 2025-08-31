@@ -33,6 +33,7 @@
         field-id="output-location"
         input-type="text-area"
         :model-value="outputLocation"
+        :spellcheck="false"
         title="Output Location"
         @update:model-value="updateOutputLocation"
         @unset-or-clear="clearOutputLocation"
@@ -66,6 +67,7 @@
         field-id="output-filename"
         input-type="input"
         :model-value="outputFilename"
+        :spellcheck="false"
         title="Output Filename"
         placeholder="Enter filename..."
         @update:model-value="updateOutputFilename"
@@ -116,7 +118,6 @@
         >
           <template #general>
             <form class="compression-section__settings-form" @submit.prevent>
-              <fieldset class="compression-section__output-location">
                 <!-- MODIFIED: Use computed property `generalFields` for type safety -->
                 <template v-for="field in generalFields" :key="field.id">
                   <CustomFieldNew
@@ -160,7 +161,6 @@
                     </template>
                   </CustomFieldNew>
                 </template>
-              </fieldset>
             </form>
           </template>
           <template #compression>
@@ -246,7 +246,6 @@
           >
             <template #general>
               <form class="compression-section__settings-form" @submit.prevent>
-                <fieldset class="compression-section__output-location">
                   <!-- MODIFIED: Use computed property `generalFields` for type safety -->
                   <template v-for="field in generalFields" :key="field.id">
                     <CustomFieldNew
@@ -304,7 +303,6 @@
                       </template>
                     </CustomFieldNew>
                   </template>
-                </fieldset>
               </form>
             </template>
             <template #compression>

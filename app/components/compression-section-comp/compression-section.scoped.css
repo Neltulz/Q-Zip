@@ -115,11 +115,6 @@
   transition: all 200ms ease;
 }
 
-/* Element: Custom Field with Field Name */
-.compression-section__custom-field[data-field-name$="-field"] {
-  margin-block-end: var(--pad-in);
-}
-
 /* Note: Custom field base styles can be added here if needed in the future */
 
 /* Element: Custom Field (Job Specific) */
