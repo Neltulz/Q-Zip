@@ -46,7 +46,6 @@
 /* Placeholder state - title acts as placeholder */
 .custom-field-new .field-title.field-title--placeholder {
   top: 50%;
-  inset-inline: 1px;
   transform: translateY(-50%);
   height: 100%;
   font-size: 1rem;
@@ -57,8 +56,6 @@
 
 /* Floating state - title moves above input */
 .custom-field-new .field-title.field-title--floating {
-  inset-block-start: 1px;
-  inset-inline: 1px;
   height: var(--field-title-shifted-height);
   font-size: 0.75rem;
   font-weight: 600;
@@ -154,19 +151,12 @@
   resize: vertical;
 }
 
-/* Reset button positioning (inside input) */
+/* Reset button positioning (inside input) - now handled by flexbox */
 .custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__reset-btn-wrapper {
-  position: absolute;
-  right: var(--pad-in);
-  top: 50%;
-  transform: translateY(-50%);
+  margin-right: 4px;
   z-index: 15;
 }
 
-/* Adjust input padding when reset button is present */
-.custom-field-new__input-wrapper.input-wrapper--has-floating-label:has(.custom-field-new__reset-btn-wrapper:not(:empty)) .custom-field-new__native-input,
-.custom-field-new__input-wrapper.input-wrapper--has-floating-label:has(.custom-field-new__reset-btn-wrapper:not(:empty)) .custom-field-new__native-textarea {
-  padding-right: calc(var(--pad-in) + var(--min-tch-tgt));
-}
+/* Reset button padding adjustment - now handled by flexbox layout */
 
 
