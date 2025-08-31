@@ -263,11 +263,12 @@ const {
 watch(() => props.modelValue, (newValue) => {
   updateContentState(newValue)
 
-  // If modelValue becomes empty externally, ensure input is blurred
+  // If modelValue becomes empty externally (not from user typing), ensure input is blurred
+  // Only blur if the input is not currently focused (meaning it was cleared externally)
   if (String(newValue || '').trim() === '') {
-    // Find the input element and blur it
+    // Find the input element and blur it only if it's not currently focused
     const inputElement = fieldRef.value?.querySelector('.custom-field-new__native-input, .custom-field-new__native-textarea, .custom-field-new__native-select') as HTMLElement
-    if (inputElement && document.activeElement === inputElement) {
+    if (inputElement && document.activeElement !== inputElement) {
       inputElement.blur()
     }
   }
@@ -358,11 +359,6 @@ const handleInput = (event: Event): void => {
   }
   emit("update:model-value", newValue);
   updateContentState(newValue); // Update floating label content state
-
-  // If input becomes empty while focused, blur it to trigger placeholder state
-  if (String(newValue).trim() === '' && document.activeElement === input) {
-    input.blur();
-  }
 
   logInteraction("CustomFieldNew", `INPUT: ${props.inputType} - "${props.title}" | Value: "${newValue}"`);
 };
