@@ -112,6 +112,21 @@
   color: transparent;
 }
 
+/* Adjust input border-radius when adjacent buttons are present */
+.custom-field-new__input-assembly:has(.custom-field-new__btns-wrapper-start:not(:empty)) .custom-field-new__input-wrapper .custom-field-new__native-input,
+.custom-field-new__input-assembly:has(.custom-field-new__btns-wrapper-start:not(:empty)) .custom-field-new__input-wrapper .custom-field-new__native-textarea,
+.custom-field-new__input-assembly:has(.custom-field-new__btns-wrapper-start:not(:empty)) .custom-field-new__input-wrapper .custom-field-new__native-select {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+.custom-field-new__input-assembly:has(.custom-field-new__btns-wrapper-end:not(:empty)) .custom-field-new__input-wrapper .custom-field-new__native-input,
+.custom-field-new__input-assembly:has(.custom-field-new__btns-wrapper-end:not(:empty)) .custom-field-new__input-wrapper .custom-field-new__native-textarea,
+.custom-field-new__input-assembly:has(.custom-field-new__btns-wrapper-end:not(:empty)) .custom-field-new__input-wrapper .custom-field-new__native-select {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
 /* Focus states */
 .custom-field-new__input-wrapper.input-wrapper--focused .custom-field-new__native-input,
 .custom-field-new__input-wrapper.input-wrapper--focused .custom-field-new__native-textarea,

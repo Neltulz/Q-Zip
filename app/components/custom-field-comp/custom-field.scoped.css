@@ -214,7 +214,6 @@
 .custom-field-new__input-wrapper--input {
   --bg-alph: 0.5;
   --bg-clr-dark: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.8), var(--bg-alph));
-  background-color: var(--bg-clr-dark);
   border: 1px solid var(--brdr-clr-lite);
   border-radius: var(--brdr-rad-smal);
   min-height: var(--min-tch-tgt);
@@ -282,7 +281,6 @@
   --bg-alph: 0.5;
   --bg-clr-dark: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.8), var(--bg-alph));
   align-items: center;
-  background-color: var(--bg-clr-dark);
   border: 1px solid var(--brdr-clr-lite);
   border-radius: var(--brdr-rad-smal);
   display: flex;
@@ -347,7 +345,6 @@
 .custom-field-new__input-wrapper--text-area {
   --bg-alph: 0.5;
   --bg-clr-dark: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.8), var(--bg-alph));
-  background-color: var(--bg-clr-dark);
   border: 1px solid var(--brdr-clr-lite);
   border-radius: var(--brdr-rad-smal);
   min-height: var(--min-tch-tgt);
