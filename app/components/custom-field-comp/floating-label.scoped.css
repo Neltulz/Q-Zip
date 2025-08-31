@@ -1,9 +1,19 @@
 /* Floating Label CSS - Simplified and Predictable */
 
+/* CSS Variables for floating label system */
+.custom-field-new__input-wrapper {
+  --field-title-shifted-height: 16px;
+}
+
 /* Base input wrapper with floating label support - only apply to floating label specific elements */
 .custom-field-new__input-wrapper.input-wrapper--has-floating-label {
   position: relative;
   min-height: var(--min-tch-tgt);
+}
+
+/* Ensure input assembly has enough height for floating labels */
+.custom-field-new__input-assembly:has(.custom-field-new__input-wrapper .custom-field-new__native-select) {
+  min-height: calc(var(--field-title-shifted-height) + var(--min-tch-tgt));
 }
 
 /* Field title (legend/placeholder) base styles */
@@ -15,40 +25,37 @@
   color: var(--txt-clr-darkr);
   text-transform: uppercase;
   pointer-events: none;
-  /* transition: all 200ms ease; */ /* Temporarily disabled for debugging */
+  transition: all 200ms ease;
   z-index: 10;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* Debug: Force visibility */
-  border: 2px solid red;
 }
 
 /* Placeholder state - title acts as placeholder */
 .custom-field-new .field-title.field-title--placeholder {
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  height: 100% !important;
-  font-size: 1rem !important;
-  font-weight: 400 !important;
-  color: var(--txt-clr-darkr) !important;
-  opacity: 0.7 !important;
-  background-color: rgba(255, 255, 0, 0.3) !important; /* Bright yellow for placeholder */
-  border: 3px solid yellow !important;
+  top: 50%;
+  inset-inline: 1px;
+  transform: translateY(-50%);
+  height: 100%;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--txt-clr-darkr);
+  opacity: 0.7;
 }
 
 /* Floating state - title moves above input */
 .custom-field-new .field-title.field-title--floating {
-  top: -2px !important;
-  height: 1em !important;
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  color: var(--blu-lite) !important;
-  background-color: var(--bg-clr) !important;
-  padding: 0 4px !important;
-  transform: translateY(0) !important;
-  background-color: rgba(0, 255, 0, 0.3) !important; /* Bright green for floating */
-  border: 3px solid lime !important;
+  inset-block-start: 1px;
+  inset-inline: 1px;
+  height: var(--field-title-shifted-height);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--blu-lite);
+  padding: 0 10px;
+  transform: translateY(0);
+  background-color: var(--bg-clr);
+  border-radius: 100px;
 }
 
 /* Focused state styling */
@@ -66,7 +73,7 @@
   border-radius: var(--brdr-rad-smal);
   background-color: var(--bg-clr);
   color: var(--txt-clr);
-  /* transition: all 200ms ease; */ /* Temporarily disabled for debugging */
+  transition: all 200ms ease;
   box-sizing: border-box;
 }
 
@@ -74,18 +81,28 @@
 .custom-field-new__input-wrapper.input-wrapper--label-floating .custom-field-new__native-input,
 .custom-field-new__input-wrapper.input-wrapper--label-floating .custom-field-new__native-textarea,
 .custom-field-new__input-wrapper.input-wrapper--label-floating .custom-field-new__native-select {
-  padding-top: calc(var(--pad-blok) + 16px);
+  padding-top: var(--field-title-shifted-height);
   padding-bottom: var(--pad-blok);
-  /* transition: none !important; */ /* Temporarily disabled for debugging */
 }
 
 /* Placeholder state input padding */
 .custom-field-new__input-wrapper.input-wrapper--label-placeholder .custom-field-new__native-input,
-.custom-field-new__input-wrapper.input-wrapper--label-placeholder .custom-field-new__native-textarea,
-.custom-field-new__input-wrapper.input-wrapper--label-placeholder .custom-field-new__native-select {
+.custom-field-new__input-wrapper.input-wrapper--label-placeholder .custom-field-new__native-textarea {
   padding-top: var(--pad-blok);
   padding-bottom: var(--pad-blok);
-  /* transition: none !important; */ /* Temporarily disabled for debugging */
+}
+
+/* Select elements never use placeholder state - always use floating padding */
+.custom-field-new__input-wrapper .custom-field-new__native-select {
+  padding-top: calc(var(--pad-blok) + 16px);
+  padding-bottom: var(--pad-blok);
+  /* Match text input total height: padding-top + content height + padding-bottom */
+  min-height: calc(var(--pad-blok) + 16px + var(--min-tch-tgt) + var(--pad-blok));
+}
+
+/* Ensure select wrapper also has enough height to match text inputs */
+.custom-field-new__input-wrapper--select {
+  min-height: calc(var(--pad-blok) + 16px + var(--min-tch-tgt) + var(--pad-blok));
 }
 
 /* Hide native placeholders when using floating labels */
@@ -115,7 +132,6 @@
 
 /* Textarea specific styles */
 .custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-textarea {
-  min-height: 80px;
   resize: vertical;
 }
 
@@ -134,20 +150,4 @@
   padding-right: calc(var(--pad-in) + var(--min-tch-tgt));
 }
 
-/* Debug helpers - temporarily enabled for debugging */
-.custom-field-new .field-title {
-  background-color: rgba(255, 0, 0, 0.1) !important;
-  border: 2px solid red !important;
-}
 
-.custom-field-new__input-wrapper.input-wrapper--label-floating {
-  background-color: rgba(0, 255, 0, 0.1) !important; /* Green = floating */
-}
-
-.custom-field-new__input-wrapper.input-wrapper--label-placeholder {
-  background-color: rgba(255, 255, 0, 0.1) !important; /* Yellow = placeholder */
-}
-
-.custom-field-new__input-wrapper.input-wrapper--focused {
-  background-color: rgba(0, 0, 255, 0.1) !important; /* Blue = focused */
-}

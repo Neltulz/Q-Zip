@@ -132,7 +132,6 @@
                         :first-icon-size="20"
                         @mouseup="
                           () => {
-                            console.log('Clear button clicked for field:', fieldId, 'current modelValue:', props.modelValue);
                             emit('unset-or-clear', fieldId);
                             close();
                           }
@@ -159,12 +158,7 @@
                       first-icon-name="mdi:close"
                       :first-icon-size="20"
                       :title="inputType === 'select' ? 'Unset to Original Default Setting' : 'Clear'"
-                      @mouseup="
-                        () => {
-                          console.log('Single clear button clicked for field:', fieldId, 'current modelValue:', props.modelValue);
-                          emit('unset-or-clear', fieldId);
-                        }
-                      "
+                      @mouseup="emit('unset-or-clear', fieldId)"
                     />
                   </template>
                 </div>
@@ -239,12 +233,6 @@ const emit = defineEmits<{
 const fieldRef = ref<HTMLElement | null>(null);
 
 // Initialize floating label composable
-console.log('CustomFieldNew Init:', {
-  modelValue: props.modelValue,
-  hasModelValue: props.modelValue !== undefined && props.modelValue !== null,
-  stringValue: String(props.modelValue || ''),
-  trimmedValue: String(props.modelValue || '').trim()
-})
 
 const {
   shouldFloat,
@@ -256,26 +244,12 @@ const {
 } = useFloatingLabel({
   modelValue: props.modelValue,
   placeholder: props.placeholder,
-  title: props.title
+  title: props.title,
+  inputType: props.inputType
 });
-
-// Watch for class changes (must be after destructuring)
-watch(labelClasses, (newClasses) => {
-  console.log('Label classes changed:', newClasses)
-}, { immediate: true })
-
-watch(wrapperClasses, (newClasses) => {
-  console.log('Wrapper classes changed:', newClasses)
-}, { immediate: true })
 
 // Watch for external modelValue changes (like from clear button)
 watch(() => props.modelValue, (newValue) => {
-  console.log('ModelValue changed externally:', {
-    newValue,
-    stringValue: String(newValue || ''),
-    trimmedValue: String(newValue || '').trim(),
-    isEmpty: String(newValue || '').trim() === ''
-  })
   updateContentState(newValue)
 
   // If modelValue becomes empty externally, ensure input is blurred
@@ -283,7 +257,6 @@ watch(() => props.modelValue, (newValue) => {
     // Find the input element and blur it
     const inputElement = fieldRef.value?.querySelector('.custom-field-new__native-input, .custom-field-new__native-textarea, .custom-field-new__native-select') as HTMLElement
     if (inputElement && document.activeElement === inputElement) {
-      console.log('Blurring input due to external empty value change')
       inputElement.blur()
     }
   }
@@ -377,7 +350,6 @@ const handleInput = (event: Event): void => {
 
   // If input becomes empty while focused, blur it to trigger placeholder state
   if (String(newValue).trim() === '' && document.activeElement === input) {
-    console.log('Input became empty while focused, blurring to trigger placeholder state');
     input.blur();
   }
 
@@ -390,11 +362,7 @@ const handleCheckboxChange = (event: Event): void => {
 };
 
 const onTransitionEnd = (event: TransitionEvent): void => {
-  console.log('Transition ended:', {
-    property: event.propertyName,
-    target: event.target,
-    currentClasses: (event.target as HTMLElement)?.className
-  });
+  // Transition completed - no action needed
 };
 const selectedText = computed((): string => {
   if (props.inputType !== "select") return "";
@@ -420,5 +388,5 @@ onMounted((): void => {
 </script>
 <style scoped>
 @import "./custom-field-comp/custom-field.scoped.css";
-@import "./custom-field-comp/floating-label.css";
+@import "./custom-field-comp/floating-label.scoped.css";
 </style>

@@ -5,6 +5,7 @@ export interface FloatingLabelConfig {
   modelValue?: string | number | boolean
   placeholder?: string
   title?: string
+  inputType?: string
 }
 
 export function useFloatingLabel(config: FloatingLabelConfig) {
@@ -17,12 +18,15 @@ export function useFloatingLabel(config: FloatingLabelConfig) {
   }
 
   // Check if label should be floating
-  // If has content: always float
-  // If empty: only float when focused
+  // For selects: always float (they typically always have a value)
+  // For other inputs: if has content: always float, if empty: only float when focused
   const shouldFloat = computed(() => {
     let result: boolean
 
-    if (hasContent.value) {
+    if (config.inputType === 'select') {
+      // Select elements always float their labels
+      result = true
+    } else if (hasContent.value) {
       // Has content: always float
       result = true
     } else if (isFocused.value) {
@@ -33,16 +37,7 @@ export function useFloatingLabel(config: FloatingLabelConfig) {
       result = false
     }
 
-    // Debug logging
-    const debugInfo = {
-      hasContent: hasContent.value,
-      isFocused: isFocused.value,
-      shouldFloat: result,
-      case: hasContent.value ? 'has-content' : (isFocused.value ? 'empty-focused' : 'empty-not-focused'),
-      classes: labelClasses.value,
-      timestamp: Date.now()
-    }
-    console.log('FloatingLabel Debug:', debugInfo)
+
 
     // Force CSS update by ensuring classes are applied
     return result
@@ -66,16 +61,10 @@ export function useFloatingLabel(config: FloatingLabelConfig) {
 
   // Handle focus events
   const handleFocus = () => {
-    console.log('Input focused - switching to floating state')
     isFocused.value = true
   }
 
   const handleBlur = () => {
-    console.log('Input blurred:', {
-      hasContent: hasContent.value,
-      wasFocused: isFocused.value,
-      shouldFloatAfterBlur: hasContent.value // will be true if has content, false if empty
-    })
     isFocused.value = false
   }
 

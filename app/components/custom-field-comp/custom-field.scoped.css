@@ -62,6 +62,7 @@
 
 .custom-field-new__input-wrapper {
   --field-title-height: 18px;
+  --field-title-shifted-height: 16px;
   min-height: var(--min-tch-tgt);
   overflow: hidden;
   position: relative;
@@ -337,9 +338,7 @@
   min-height: calc(var(--min-tch-tgt) + 10px);
 }
 
-.custom-field-new__input-wrapper--select:has(.custom-field-new__field-title) .custom-field-new__select-text {
-  padding-block-start: var(--field-title-height);
-}
+
 
 .custom-field-new__input-wrapper--select:has(.custom-field-new__reset-btn-wrapper .custom-button:not(:disabled)) .custom-field-new__select-text {
   padding-inline-end: calc(var(--min-tch-tgt) + 24px);
