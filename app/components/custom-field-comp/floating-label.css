@@ -1,0 +1,153 @@
+/* Floating Label CSS - Simplified and Predictable */
+
+/* Base input wrapper with floating label support - only apply to floating label specific elements */
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label {
+  position: relative;
+  min-height: var(--min-tch-tgt);
+}
+
+/* Field title (legend/placeholder) base styles */
+.field-title {
+  position: absolute;
+  left: var(--pad-in);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--txt-clr-darkr);
+  text-transform: uppercase;
+  pointer-events: none;
+  /* transition: all 200ms ease; */ /* Temporarily disabled for debugging */
+  z-index: 10;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Debug: Force visibility */
+  border: 2px solid red;
+}
+
+/* Placeholder state - title acts as placeholder */
+.custom-field-new .field-title.field-title--placeholder {
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  height: 100% !important;
+  font-size: 1rem !important;
+  font-weight: 400 !important;
+  color: var(--txt-clr-darkr) !important;
+  opacity: 0.7 !important;
+  background-color: rgba(255, 255, 0, 0.3) !important; /* Bright yellow for placeholder */
+  border: 3px solid yellow !important;
+}
+
+/* Floating state - title moves above input */
+.custom-field-new .field-title.field-title--floating {
+  top: -2px !important;
+  height: 1em !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: var(--blu-lite) !important;
+  background-color: var(--bg-clr) !important;
+  padding: 0 4px !important;
+  transform: translateY(0) !important;
+  background-color: rgba(0, 255, 0, 0.3) !important; /* Bright green for floating */
+  border: 3px solid lime !important;
+}
+
+/* Focused state styling */
+.field-title--focused {
+  color: var(--blu-lite);
+}
+
+/* Input base styles for floating label */
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-input,
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-textarea,
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-select {
+  width: 100%;
+  padding: var(--pad-blok) var(--pad-in);
+  border: 1px solid var(--brdr-clr-lite);
+  border-radius: var(--brdr-rad-smal);
+  background-color: var(--bg-clr);
+  color: var(--txt-clr);
+  /* transition: all 200ms ease; */ /* Temporarily disabled for debugging */
+  box-sizing: border-box;
+}
+
+/* Adjust input padding when label is floating */
+.custom-field-new__input-wrapper.input-wrapper--label-floating .custom-field-new__native-input,
+.custom-field-new__input-wrapper.input-wrapper--label-floating .custom-field-new__native-textarea,
+.custom-field-new__input-wrapper.input-wrapper--label-floating .custom-field-new__native-select {
+  padding-top: calc(var(--pad-blok) + 16px);
+  padding-bottom: var(--pad-blok);
+  /* transition: none !important; */ /* Temporarily disabled for debugging */
+}
+
+/* Placeholder state input padding */
+.custom-field-new__input-wrapper.input-wrapper--label-placeholder .custom-field-new__native-input,
+.custom-field-new__input-wrapper.input-wrapper--label-placeholder .custom-field-new__native-textarea,
+.custom-field-new__input-wrapper.input-wrapper--label-placeholder .custom-field-new__native-select {
+  padding-top: var(--pad-blok);
+  padding-bottom: var(--pad-blok);
+  /* transition: none !important; */ /* Temporarily disabled for debugging */
+}
+
+/* Hide native placeholders when using floating labels */
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-input::placeholder,
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-textarea::placeholder {
+  opacity: 0;
+  color: transparent;
+}
+
+/* Focus states */
+.custom-field-new__input-wrapper.input-wrapper--focused .custom-field-new__native-input,
+.custom-field-new__input-wrapper.input-wrapper--focused .custom-field-new__native-textarea,
+.custom-field-new__input-wrapper.input-wrapper--focused .custom-field-new__native-select {
+  border-color: var(--blu-lite);
+  box-shadow: 0 0 0 2px rgba(var(--blu-lite-rgb), 0.1);
+}
+
+/* Select specific styles */
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right var(--pad-in) center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: calc(var(--pad-in) + 24px);
+}
+
+/* Textarea specific styles */
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Reset button positioning (inside input) */
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__reset-btn-wrapper {
+  position: absolute;
+  right: var(--pad-in);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 15;
+}
+
+/* Adjust input padding when reset button is present */
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label:has(.custom-field-new__reset-btn-wrapper:not(:empty)) .custom-field-new__native-input,
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label:has(.custom-field-new__reset-btn-wrapper:not(:empty)) .custom-field-new__native-textarea {
+  padding-right: calc(var(--pad-in) + var(--min-tch-tgt));
+}
+
+/* Debug helpers - temporarily enabled for debugging */
+.custom-field-new .field-title {
+  background-color: rgba(255, 0, 0, 0.1) !important;
+  border: 2px solid red !important;
+}
+
+.custom-field-new__input-wrapper.input-wrapper--label-floating {
+  background-color: rgba(0, 255, 0, 0.1) !important; /* Green = floating */
+}
+
+.custom-field-new__input-wrapper.input-wrapper--label-placeholder {
+  background-color: rgba(255, 255, 0, 0.1) !important; /* Yellow = placeholder */
+}
+
+.custom-field-new__input-wrapper.input-wrapper--focused {
+  background-color: rgba(0, 0, 255, 0.1) !important; /* Blue = focused */
+}

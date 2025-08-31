@@ -18,8 +18,8 @@
           <div v-if="$slots['buttons-start']" class="custom-field-new__btns-wrapper-start">
             <slot name="buttons-start" />
           </div>
-          <div :class="['custom-field-new__input-wrapper', inputWrapperClass]">
-            <span v-if="title" :class="titleClasses" class="custom-field-new__field-title">{{ title }}</span>
+          <div :class="['custom-field-new__input-wrapper', inputWrapperClass, wrapperClasses]">
+            <span v-if="title" :class="['custom-field-new__field-title', 'field-title', labelClasses]" @transitionend="onTransitionEnd">{{ title }}</span>
             <template v-if="inputType === 'custom'">
               <slot name="custom-content" />
             </template>
@@ -32,6 +32,8 @@
                 :value="modelValue"
                 class="custom-field-new__native-select"
                 @change="handleChange"
+                @focus="handleFocus"
+                @blur="handleBlur"
                 @mousedown="handleMouseDown"
                 @mouseup="handleMouseUp"
               >
@@ -50,6 +52,8 @@
                 :value="modelValue != null ? String(modelValue) : ''"
                 class="custom-field-new__native-input"
                 @input="handleInput"
+                @focus="handleFocus"
+                @blur="handleBlur"
                 @mousedown="handleMouseDown"
                 @mouseup="handleMouseUp"
               />
@@ -73,6 +77,8 @@
                 :value="modelValue != null ? String(modelValue) : ''"
                 class="custom-field-new__native-textarea"
                 @input="handleInput"
+                @focus="handleFocus"
+                @blur="handleBlur"
                 @mousedown="handleMouseDown"
                 @mouseup="handleMouseUp"
               />
@@ -126,6 +132,7 @@
                         :first-icon-size="20"
                         @mouseup="
                           () => {
+                            console.log('Clear button clicked for field:', fieldId, 'current modelValue:', props.modelValue);
                             emit('unset-or-clear', fieldId);
                             close();
                           }
@@ -152,7 +159,12 @@
                       first-icon-name="mdi:close"
                       :first-icon-size="20"
                       :title="inputType === 'select' ? 'Unset to Original Default Setting' : 'Clear'"
-                      @mouseup="emit('unset-or-clear', fieldId)"
+                      @mouseup="
+                        () => {
+                          console.log('Single clear button clicked for field:', fieldId, 'current modelValue:', props.modelValue);
+                          emit('unset-or-clear', fieldId);
+                        }
+                      "
                     />
                   </template>
                 </div>
@@ -171,9 +183,10 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logButtonPress, logButtonRelease, logInteraction } from "@/utils/loggers";
+import { useFloatingLabel } from "@/composables/useFloatingLabel";
 interface Option {
   value: string | number;
   text: string;
@@ -224,6 +237,58 @@ const emit = defineEmits<{
   (e: "update:model-value", value: string | number | boolean): void;
 }>();
 const fieldRef = ref<HTMLElement | null>(null);
+
+// Initialize floating label composable
+console.log('CustomFieldNew Init:', {
+  modelValue: props.modelValue,
+  hasModelValue: props.modelValue !== undefined && props.modelValue !== null,
+  stringValue: String(props.modelValue || ''),
+  trimmedValue: String(props.modelValue || '').trim()
+})
+
+const {
+  shouldFloat,
+  labelClasses,
+  wrapperClasses,
+  handleFocus,
+  handleBlur,
+  updateContentState
+} = useFloatingLabel({
+  modelValue: props.modelValue,
+  placeholder: props.placeholder,
+  title: props.title
+});
+
+// Watch for class changes (must be after destructuring)
+watch(labelClasses, (newClasses) => {
+  console.log('Label classes changed:', newClasses)
+}, { immediate: true })
+
+watch(wrapperClasses, (newClasses) => {
+  console.log('Wrapper classes changed:', newClasses)
+}, { immediate: true })
+
+// Watch for external modelValue changes (like from clear button)
+watch(() => props.modelValue, (newValue) => {
+  console.log('ModelValue changed externally:', {
+    newValue,
+    stringValue: String(newValue || ''),
+    trimmedValue: String(newValue || '').trim(),
+    isEmpty: String(newValue || '').trim() === ''
+  })
+  updateContentState(newValue)
+
+  // If modelValue becomes empty externally, ensure input is blurred
+  if (String(newValue || '').trim() === '') {
+    // Find the input element and blur it
+    const inputElement = fieldRef.value?.querySelector('.custom-field-new__native-input, .custom-field-new__native-textarea, .custom-field-new__native-select') as HTMLElement
+    if (inputElement && document.activeElement === inputElement) {
+      console.log('Blurring input due to external empty value change')
+      inputElement.blur()
+    }
+  }
+}, { immediate: true })
+
 const generatedId = computed(() => {
   const baseId = props.title
     ? props.title
@@ -293,6 +358,7 @@ const handleChange = (event: Event): void => {
     const selectedOption = props.options?.find((opt) => opt.value.toString() === selectedValue);
     if (selectedOption) {
       emit("update:model-value", selectedOption.value);
+      updateContentState(selectedOption.value); // Update floating label content state
       logInteraction("CustomFieldNew", `CHANGE: ${props.inputType} - "${props.title}" | Value: "${selectedOption.value}"`);
     }
   }
@@ -307,12 +373,28 @@ const handleInput = (event: Event): void => {
     }
   }
   emit("update:model-value", newValue);
+  updateContentState(newValue); // Update floating label content state
+
+  // If input becomes empty while focused, blur it to trigger placeholder state
+  if (String(newValue).trim() === '' && document.activeElement === input) {
+    console.log('Input became empty while focused, blurring to trigger placeholder state');
+    input.blur();
+  }
+
   logInteraction("CustomFieldNew", `INPUT: ${props.inputType} - "${props.title}" | Value: "${newValue}"`);
 };
 const handleCheckboxChange = (event: Event): void => {
   const input = event.target as HTMLInputElement;
   emit("update:model-value", input.checked);
   logInteraction("CustomFieldNew", `CHANGE: ${props.inputType} - "${props.title}" | Checked: ${input.checked}`);
+};
+
+const onTransitionEnd = (event: TransitionEvent): void => {
+  console.log('Transition ended:', {
+    property: event.propertyName,
+    target: event.target,
+    currentClasses: (event.target as HTMLElement)?.className
+  });
 };
 const selectedText = computed((): string => {
   if (props.inputType !== "select") return "";
@@ -338,5 +420,5 @@ onMounted((): void => {
 </script>
 <style scoped>
 @import "./custom-field-comp/custom-field.scoped.css";
-@import "./custom-input-comp/custom-input-comp.scoped.css";
+@import "./custom-field-comp/floating-label.css";
 </style>
