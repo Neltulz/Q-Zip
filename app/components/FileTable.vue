@@ -1927,7 +1927,9 @@ onUnmounted(() => {
     window.removeEventListener("click", globalOutsideClickHandler);
     globalOutsideClickHandler = null;
   }
-  window.removeEventListener("focusin", handleFocusIn);
+  if (handleFocusIn) {
+    window.removeEventListener("focusin", handleFocusIn);
+  }
   window.removeEventListener("app:clicked-outside-job-content", (() => {}) as EventListener);
   // Clean up force refresh timeout
   if (forceRefreshTimeout) {
@@ -2287,6 +2289,24 @@ const handleKeyDown = (event: KeyboardEvent) => {
       console.log('FileTable: CTRL+A pressed but FileTable is not active - returning early');
     }
     return;
+  }
+
+  // Allow text inputs and textareas to handle their own cut/copy/paste operations
+  const activeElement = document.activeElement;
+  const isTextInput = activeElement && (
+    activeElement.tagName === 'INPUT' ||
+    activeElement.tagName === 'TEXTAREA' ||
+    activeElement.hasAttribute('contenteditable') ||
+    activeElement.closest('[contenteditable="true"]')
+  );
+
+  // If a text input is focused and this is a cut/copy/paste operation, let it handle the event
+  if (isTextInput && (event.ctrlKey || event.metaKey)) {
+    const key = event.key.toLowerCase();
+    if (key === 'x' || key === 'c' || key === 'v') {
+      // Allow default cut/copy/paste behavior for text inputs
+      return;
+    }
   }
   
   // Handle toolbar shortcuts first (these work even with empty file list)

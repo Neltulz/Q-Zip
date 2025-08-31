@@ -148,9 +148,14 @@
 
 /* Element: Native Elements (shared styles) */
 .custom-input-comp__native-input,
-.custom-input-comp__native-select,
 .custom-input-comp__native-textarea {
   padding-inline: var(--pad-in);
+  padding-block: 0;
+}
+
+/* Select elements have no padding */
+.custom-input-comp__native-select {
+  padding-inline: 0;
   padding-block: 0;
 }
 

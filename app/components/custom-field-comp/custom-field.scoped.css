@@ -101,7 +101,7 @@
   align-items: center;
   display: flex;
   justify-content: center;
-  margin-right: 4px;
+  margin-right: 2px;
   z-index: 2;
 }
 
@@ -125,15 +125,15 @@
 .custom-field-new__chevron {
   pointer-events: none;
   margin-left: 2px;
-  margin-right: 4px;
+  margin-right: 2px;
   z-index: 3;
 }
 
 .custom-field-new__select-text {
   align-items: center;
   color: var(--txt-clr-lite);
-  height: var(--min-tch-tgt);
-  line-height: var(--min-tch-tgt);
+  height: auto;
+  line-height: 1;
   overflow: hidden;
   padding-inline-start: var(--pad-in);
   pointer-events: none;
@@ -306,7 +306,7 @@
 
 .custom-field-new__input-wrapper--select .custom-field-new__select-text {
   flex: 1;
-  min-height: var(--min-tch-tgt);
+  min-height: 1.75em;
   padding-inline: var(--pad-in);
   padding-inline-end: calc(var(--min-tch-tgt) + 8px);
   display: flex;

@@ -12,7 +12,7 @@
   display: grid;
   grid-area: compression-section;
   grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto 1fr; /* .compression-section__tabs | .compression-section__output-controls | .compression-section__content */
   overflow: clip;
 }
 
@@ -20,7 +20,7 @@
 .compression-section__tabs {
   border-block-end: 1px solid var(--brdr-clr-lite);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr; /* data-name="global-settings-btn" | data-name="job-specific-settings-btn" */
 }
 
 /* Element: Tab Button (deep selector for custom-button) */
@@ -98,7 +98,7 @@
   border: 1px solid hsl(0 0% 50%);
   display: grid;
   gap: var(--pad-in);
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr; /* .lock-and-input-wrapper | [lock button] | [input field] */
   padding: 1rem;
 }
 
@@ -128,7 +128,7 @@
   border: 1px solid hsl(0 0% 50%);
   display: grid;
   gap: var(--pad-in);
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr; /* .lock-and-input-wrapper | .compression-section__custom-field--job-specific */
   padding: 1rem;
 }
 

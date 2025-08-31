@@ -17,7 +17,7 @@
 
 /* Ensure input wrapper has enough height when field-title is floating */
 .custom-field-new__input-wrapper.input-wrapper--label-floating {
-  min-height: calc(var(--field-title-shifted-height) + var(--min-tch-tgt));
+  min-height: calc(var(--field-title-shifted-height) + 1.75em);
 }
 
 /* Ensure input assembly has enough height for floating labels */
@@ -73,7 +73,6 @@
 
 /* Input base styles for floating label */
 .custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-input,
-.custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-textarea,
 .custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-select {
   position: absolute;
   top: 0;
@@ -88,12 +87,30 @@
   box-sizing: border-box;
 }
 
+/* Textarea does NOT use absolute positioning (for OverlayScrollbarsComponent compatibility) */
+.custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-textarea {
+  width: 100%;
+  height: 100%;
+  padding: var(--pad-blok) var(--pad-in);
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  color: var(--txt-clr);
+  box-sizing: border-box;
+}
+
 /* Adjust input padding when label is floating */
 .custom-field-new__input-wrapper.input-wrapper--label-floating .custom-field-new__native-input,
-.custom-field-new__input-wrapper.input-wrapper--label-floating .custom-field-new__native-textarea,
-.custom-field-new__input-wrapper.input-wrapper--label-floating .custom-field-new__native-select {
+.custom-field-new__input-wrapper.input-wrapper--label-floating .custom-field-new__native-textarea {
   padding-top: var(--field-title-shifted-height);
   padding-bottom: var(--pad-blok);
+  transition: padding 200ms ease;
+}
+
+/* Selects don't use floating padding */
+.custom-field-new__input-wrapper.input-wrapper--label-floating .custom-field-new__native-select {
+  padding-top: 0;
+  padding-bottom: 0;
   transition: padding 200ms ease;
 }
 
@@ -105,11 +122,11 @@
   transition: padding 200ms ease;
 }
 
-/* Select elements never use placeholder state - ensure consistent floating padding */
+/* Select elements never use placeholder state - no padding applied */
 .custom-field-new__input-wrapper .custom-field-new__native-select {
-  /* Selects always use floating padding since they don't have placeholder state */
-  padding-top: var(--field-title-shifted-height);
-  padding-bottom: var(--pad-blok);
+  /* Selects have no padding */
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /* Hide native placeholders when using floating labels */
@@ -146,14 +163,17 @@
   padding-right: calc(var(--pad-in) + 24px);
 }
 
-/* Textarea specific styles */
+/* Textarea specific styles - temporarily without OverlayScrollbarsComponent */
 .custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__native-textarea {
+  width: 100%;
+  height: 100%;
   resize: vertical;
+  overflow: auto;
 }
 
 /* Reset button positioning (inside input) - now handled by flexbox */
 .custom-field-new__input-wrapper.input-wrapper--has-floating-label .custom-field-new__reset-btn-wrapper {
-  margin-right: 4px;
+  margin-right: 2px;
   z-index: 15;
 }
 

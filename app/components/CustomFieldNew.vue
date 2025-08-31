@@ -30,6 +30,7 @@
                 :name="generatedId"
                 :disabled="disabled"
                 :value="modelValue"
+                autocomplete="off"
                 class="custom-field-new__native-select"
                 @change="handleChange"
                 @focus="handleFocus"
@@ -45,7 +46,7 @@
                 v-else-if="inputType === 'input'"
                 :id="generatedId"
                 :name="generatedId"
-                :autocomplete="autocomplete"
+                :autocomplete="autocomplete || (title?.toLowerCase().includes('filename') || title?.toLowerCase().includes('output') ? 'off' : autocomplete)"
                 :disabled="disabled"
                 :placeholder="placeholder"
                 :type="type || 'text'"
@@ -68,6 +69,7 @@
                 @mousedown="handleMouseDown"
                 @mouseup="handleMouseUp"
               />
+              <!-- Temporarily removed OverlayScrollbarsComponent to test clipboard functionality -->
               <textarea
                 v-else-if="inputType === 'text-area'"
                 :id="generatedId"
@@ -75,8 +77,12 @@
                 :disabled="disabled"
                 :placeholder="placeholder"
                 :value="modelValue != null ? String(modelValue) : ''"
+                autocomplete="off"
                 class="custom-field-new__native-textarea"
                 @input="handleInput"
+                @paste="handlePaste"
+                @copy="handleCopy"
+                @cut="handleCut"
                 @focus="handleFocus"
                 @blur="handleBlur"
                 @mousedown="handleMouseDown"
@@ -181,6 +187,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logButtonPress, logButtonRelease, logInteraction } from "@/utils/loggers";
 import { useFloatingLabel } from "@/composables/useFloatingLabel";
+// Temporarily removed OverlayScrollbarsComponent import
 interface Option {
   value: string | number;
   text: string;
@@ -363,6 +370,23 @@ const handleCheckboxChange = (event: Event): void => {
 
 const onTransitionEnd = (event: TransitionEvent): void => {
   // Transition completed - no action needed
+};
+
+const handlePaste = (event: ClipboardEvent): void => {
+  // Ensure paste events are properly handled
+  event.stopPropagation();
+  // The input event will handle the actual value update
+};
+
+const handleCopy = (event: ClipboardEvent): void => {
+  // Ensure copy events work properly
+  event.stopPropagation();
+};
+
+const handleCut = (event: ClipboardEvent): void => {
+  // Ensure cut events work properly
+  event.stopPropagation();
+  // The input event will handle the value update after cutting
 };
 const selectedText = computed((): string => {
   if (props.inputType !== "select") return "";
