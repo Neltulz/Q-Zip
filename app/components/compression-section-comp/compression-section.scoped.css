@@ -147,3 +147,30 @@
     border-radius: 0;
   }
 }
+
+/* Path length warning InfoCard positioning */
+.compression-section__path-warning {
+  padding: var(--pad-in);
+}
+
+/* Path warning help text styling */
+.compression-section__path-warning :deep(.path-warning-help) {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, hsla(0, 0%, 0%, 0.30), hsla(0, 0%, 0%, 0.30));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  font-size: 1em;
+  line-height: 1.5;
+  color: hsl(0, 0%, 80%);
+  
+}
+
+/* .compression-section__path-warning :deep(.path-warning-help code) {
+  background: var(--bg-clr-lite);
+  padding: 0.125rem 0.25rem;
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-size: 1em;
+  color: var(--txt-clr-accent);
+} */

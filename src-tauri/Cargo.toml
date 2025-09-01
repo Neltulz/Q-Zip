@@ -33,6 +33,10 @@ tauri-plugin-fs = "2.4.1"
 tauri-plugin-decorum = "1.1.1"     # This 3rd-party plugin seems fine, keeping its version
 tauri-plugin-dialog = "2.3.1"
 
+# Windows registry access for long paths detection
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
+
 # Add tauri-plugin-window-state with target configuration
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 # Updated to the latest stable version

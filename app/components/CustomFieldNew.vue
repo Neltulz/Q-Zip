@@ -379,13 +379,13 @@ const handlePaste = (event: ClipboardEvent): void => {
 };
 
 const handleCopy = (event: ClipboardEvent): void => {
-  // Ensure copy events work properly
-  event.stopPropagation();
+  // Allow default copy behavior
+  // Don't stop propagation to ensure browser clipboard works
 };
 
 const handleCut = (event: ClipboardEvent): void => {
-  // Ensure cut events work properly
-  event.stopPropagation();
+  // Allow default cut behavior
+  // Don't stop propagation to ensure browser clipboard works
   // The input event will handle the value update after cutting
 };
 const selectedText = computed((): string => {

@@ -65,6 +65,8 @@ export interface DebugOptions {
   debugButtonBackdropBlur: number;
   debugButtonBackgroundColor: string; // CSS color value (hex, rgb, rgba, hsl, etc.)
   debugButtonBorderColor: string; // CSS color value for debug button border
+  // Windows long paths detection
+  longPathsEnabled: boolean;
 }
 
 export interface DebugPosition {
@@ -241,6 +243,8 @@ export const useDebugStore = defineStore(
       debugButtonBackdropBlur: 5,
       debugButtonBackgroundColor: 'hsla(0, 0%, 0%, 0.5)',
       debugButtonBorderColor: 'hsla(210, 100%, 50%, 0.8)',
+      // Windows long paths detection (default to true for safety)
+      longPathsEnabled: true,
     });
 
     // Computed property to ensure store is properly initialized
@@ -383,6 +387,8 @@ export const useDebugStore = defineStore(
         debugButtonBackdropBlur: 5,
         debugButtonBackgroundColor: 'hsla(0, 0%, 0%, 0.5)',
         debugButtonBorderColor: 'hsla(210, 100%, 50%, 0.8)',
+        // Windows long paths detection (reset to true for safety)
+        longPathsEnabled: true,
       };
 
       // Sync reset to debugConfig

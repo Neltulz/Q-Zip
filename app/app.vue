@@ -127,7 +127,8 @@ onMounted(() => {
   }
   uiStore.notifications = [];
   // Disable text selection globally by default (except form controls)
-  enableSelectionLock();
+  // Temporarily disable to test clipboard operations
+  // enableSelectionLock();
   // Re-apply saved zoom factors on mount so refresh restores previous zooms
   try {
     setZoomFactor(getZoomFactor());

@@ -43,15 +43,15 @@ withDefaults(defineProps<Props>(), {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background: linear-gradient(135deg, hsla(220, 15%, 15%, 0.8), hsla(220, 15%, 12%, 0.9));
+  background: linear-gradient(135deg, hsla(220, 8%, 15%, 0.8), hsla(220, 8%, 12%, 0.9));
   border: 1px solid hsla(220, 15%, 25%, 0.6);
   border-radius: 8px;
   padding: 12px 16px;
   backdrop-filter: blur(8px);
-  box-shadow: 
+  box-shadow:
     0 2px 8px hsla(0, 0%, 0%, 0.3),
-    inset 0 1px 0 hsla(220, 15%, 30%, 0.4),
-    0 0 0 1px hsla(220, 15%, 20%, 0.2);
+    inset 0 1px 0 hsla(220, 8%, 30%, 0.4),
+    0 0 0 1px hsla(220, 8%, 20%, 0.2);
   position: relative;
   overflow: hidden;
 }
@@ -63,7 +63,7 @@ withDefaults(defineProps<Props>(), {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, hsla(220, 15%, 40%, 0.6), transparent);
+  background: linear-gradient(90deg, transparent, hsla(220, 8%, 40%, 0.6), transparent);
 }
 
 .info-card::after {
@@ -73,7 +73,7 @@ withDefaults(defineProps<Props>(), {
   left: 0;
   width: 3px;
   height: 100%;
-  background: linear-gradient(180deg, hsla(220, 80%, 60%, 0.8), hsla(220, 80%, 40%, 0.6));
+  background: linear-gradient(180deg, hsla(220, 25%, 60%, 0.8), hsla(220, 25%, 40%, 0.6));
   border-radius: 2px 0 0 2px;
 }
 
@@ -104,7 +104,7 @@ withDefaults(defineProps<Props>(), {
 }
 
 .info-card__header {
-  font-size: 12px;
+  font-size: 1em;
   font-weight: 700;
   color: hsla(220, 80%, 70%, 1);
   text-transform: uppercase;
@@ -113,18 +113,28 @@ withDefaults(defineProps<Props>(), {
 }
 
 .info-card__body {
-  font-size: 13px;
+  font-size: 1em;
   color: hsla(220, 15%, 85%, 1);
   line-height: 1.5;
 }
 
 /* Theme Variations */
+.info-card--primary {
+  background: linear-gradient(135deg, hsla(204, 12%, 18%, 0.8), hsla(204, 12%, 15%, 0.9));
+  border-color: hsla(204, 25%, 50%, 0.6);
+}
+
 .info-card--primary::after {
   background: linear-gradient(180deg, var(--blu-lite), hsla(204, 100%, 40%, 0.8));
 }
 
 .info-card--primary .info-card__header {
   color: var(--blu-lite);
+}
+
+.info-card--success {
+  background: linear-gradient(135deg, hsla(145, 10%, 18%, 0.8), hsla(145, 10%, 15%, 0.9));
+  border-color: hsla(145, 25%, 50%, 0.6);
 }
 
 .info-card--success::after {
@@ -135,6 +145,11 @@ withDefaults(defineProps<Props>(), {
   color: var(--success-clr);
 }
 
+.info-card--danger {
+  background: linear-gradient(135deg, hsla(0, 12%, 18%, 0.8), hsla(0, 12%, 15%, 0.9));
+  border-color: hsla(0, 25%, 50%, 0.6);
+}
+
 .info-card--danger::after {
   background: linear-gradient(180deg, var(--danger-clr), hsla(0, 65%, 35%, 0.8));
 }
@@ -143,12 +158,22 @@ withDefaults(defineProps<Props>(), {
   color: var(--danger-clr);
 }
 
+.info-card--warning {
+  background: linear-gradient(135deg, hsla(45, 15%, 18%, 0.8), hsla(45, 15%, 15%, 0.9));
+  border-color: hsla(45, 25%, 50%, 0.6);
+}
+
 .info-card--warning::after {
   background: linear-gradient(180deg, var(--warning-clr), hsla(45, 100%, 40%, 0.8));
 }
 
 .info-card--warning .info-card__header {
   color: var(--warning-clr);
+}
+
+.info-card--info {
+  background: linear-gradient(135deg, hsla(200, 12%, 18%, 0.8), hsla(200, 12%, 15%, 0.9));
+  border-color: hsla(200, 25%, 50%, 0.6);
 }
 
 .info-card--info::after {

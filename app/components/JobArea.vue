@@ -386,6 +386,25 @@ const showJobContextMenu = (event: MouseEvent) => {
 const handleKeyDown = (event: KeyboardEvent) => {
   if (!activeJob.value || !fileTableRef.value) return;
 
+  // Check if a text input is focused - if so, don't interfere with clipboard operations
+  const activeElement = document.activeElement;
+  const isTextInput = activeElement && (
+    activeElement.tagName === 'INPUT' ||
+    activeElement.tagName === 'TEXTAREA' ||
+    activeElement.hasAttribute('contenteditable') ||
+    activeElement.closest('[contenteditable="true"]')
+  );
+
+  // If a text input is focused, let the browser handle clipboard operations
+  if (isTextInput && (event.ctrlKey || event.metaKey) && ["c", "x", "v"].includes(event.key)) {
+    console.log('JobArea: Allowing clipboard operation in text input', {
+      key: event.key,
+      activeElement: activeElement?.tagName,
+      isTextInput
+    });
+    return;
+  }
+
   // Only handle shortcuts that don't conflict with FileTable (no CTRL+A)
   const isShortcutKey = (event.ctrlKey || event.metaKey) && ["c", "x", "v"].includes(event.key);
   if (isShortcutKey) {

@@ -29,6 +29,42 @@
 
     <!-- Output Location and Filename Inputs -->
     <div class="compression-section__output-controls">
+      <!-- Path Length Warning -->
+      <InfoCard
+        v-if="shouldShowPathWarningConsideringDebug"
+        :theme="pathWarningTheme"
+        class="compression-section__path-warning"
+      >
+        <template #icon>
+          <Icon name="mdi:alert" size="16" />
+        </template>
+        <template #header>
+          Path Length Warning
+        </template>
+        <template #default>
+          <div>
+            <p>{{ pathWarningMessage }}</p>
+            <p v-if="isWindows() && !longPathsEnabled && outputPathLength >= 260" class="path-warning-help">
+              <strong>To enable long paths on Windows:</strong><br>
+              1. Open Registry Editor (regedit)<br>
+              2. Navigate to: <code>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem</code><br>
+              3. Set <code>LongPathsEnabled</code> to <code>1</code> (DWORD)<br>
+              4. Restart your computer
+            </p>
+            <p v-if="isWindows() && longPathsEnabled && outputPathLength >= 260" class="path-warning-help">
+              <strong>Note:</strong> Long paths are enabled on your system, but this path is still approaching the theoretical maximum limit.
+            </p>
+            <p v-else-if="isLinux() && outputPathLength >= 4096" class="path-warning-help">
+              <strong>Note:</strong> Modern Linux systems typically support much longer paths than the traditional 4096 byte limit.
+              If you're experiencing issues, check your filesystem type and kernel version.
+            </p>
+            <p v-else-if="isMacOS() && outputPathLength >= 1024" class="path-warning-help">
+              <strong>Note:</strong> macOS with APFS filesystem supports longer paths than older HFS+ systems.
+              Consider using shorter, more descriptive names for better compatibility.
+            </p>
+          </div>
+        </template>
+      </InfoCard>
       <CustomFieldNew
         field-id="output-location"
         input-type="text-area"
@@ -434,7 +470,9 @@ import encryptConfigJson from "@/assets/config/encryptSettingsConfig.json";
 import { useDropdownManager } from "@/composables/dropdownManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logInteraction } from "@/utils/loggers";
+import { getPlatform, isWindows, isLinux, isMacOS, getCurrentPathLimit, checkLongPathsEnabled } from "@/utils/platformUtils";
 import CustomInput from "@/components/CustomInput.vue";
+import InfoCard from "@/components/InfoCard.vue";
 
 const emit = defineEmits<{
   "request-auto-determination": [];
@@ -535,6 +573,107 @@ const categoryIcons: Record<string, string> = {
   advanced: "mdi:brain",
   encryption: "mdi:lock",
 };
+
+// Reactive state for dynamic path limit detection
+const platform = getPlatform();
+const longPathsEnabled = ref(false);
+const currentPathLimit = ref(260); // Default fallback
+
+// Initialize path limit detection
+onMounted(async () => {
+  try {
+    if (isWindows()) {
+      longPathsEnabled.value = await checkLongPathsEnabled();
+    }
+    currentPathLimit.value = await getCurrentPathLimit();
+  } catch (error) {
+    console.warn('Failed to detect path limits:', error);
+    // Keep default values
+  }
+});
+
+// Path length warning computed properties
+const fullOutputPath = computed(() => {
+  const location = outputLocation.value || "";
+  const filename = outputFilename.value || "";
+  // Combine location and filename, ensuring proper path separator
+  if (location && filename) {
+    const separator = platform === 'windows' ? "\\" : "/";
+    return location.endsWith("\\") || location.endsWith("/")
+      ? location + filename
+      : location + separator + filename;
+  }
+  return location + filename;
+});
+
+const outputPathLength = computed(() => fullOutputPath.value.length);
+
+const shouldShowPathWarning = computed(() => outputPathLength.value >= currentPathLimit.value);
+
+const pathWarningTheme = computed((): "warning" | "danger" => {
+  const length = outputPathLength.value;
+  // Use a critical threshold based on platform
+  const criticalThreshold = platform === 'windows' ? 32767 : 65536;
+  return length >= criticalThreshold ? "danger" : "warning";
+});
+
+const pathWarningMessage = computed(() => {
+  const length = outputPathLength.value;
+  const platformName = platform === 'macos' ? 'macOS' : platform.charAt(0).toUpperCase() + platform.slice(1);
+
+  // Dynamic thresholds based on detected capabilities
+  const criticalThreshold = platform === 'windows' ? 32767 : 65536;
+  const extendedThreshold = currentPathLimit.value;
+
+  if (length >= criticalThreshold) {
+    if (isWindows()) {
+      return `Path length (${length.toLocaleString()} characters) exceeds ${platformName} theoretical maximum. File operations may fail. Please ensure long paths are enabled in Windows settings.`;
+    } else {
+      return `Path length (${length.toLocaleString()} characters) is extremely long and may cause issues on ${platformName}. Consider shortening the path.`;
+    }
+  } else if (length >= extendedThreshold) {
+    if (isWindows() && !longPathsEnabled.value) {
+      return `Path length (${length.toLocaleString()} characters) exceeds default ${platformName} limit of ${extendedThreshold} characters. Please enable long paths in Windows settings or shorten the path.`;
+    } else {
+      return `Path length (${length.toLocaleString()} characters) exceeds recommended ${platformName} limit of ${extendedThreshold} characters.`;
+    }
+  } else {
+    return `Path length (${length.toLocaleString()} characters) exceeds ${platformName} limit of ${extendedThreshold} characters.`;
+  }
+});
+
+// Get debug store reference
+let debugStore: ReturnType<typeof import('@/stores/debugStore').useDebugStore> | null = null;
+
+// Initialize debug store
+onMounted(async () => {
+  try {
+    const { useDebugStore } = await import('@/stores/debugStore');
+    debugStore = useDebugStore();
+  } catch (error) {
+    console.warn('Failed to initialize debug store for long paths:', error);
+  }
+});
+
+// Check if path warning should be shown
+const shouldShowPathWarningConsideringDebug = computed(() => {
+  const length = outputPathLength.value;
+  const extendedThreshold = currentPathLimit.value;
+
+  // Show warning if path is too long AND long paths are disabled
+  if (length >= extendedThreshold) {
+    // Check the single source of truth from debug store
+    if (debugStore && !debugStore.debugOptions.longPathsEnabled) {
+      console.log('Long paths disabled - showing warning');
+      return true;
+    }
+
+    console.log('Long paths enabled - no warning needed');
+    return false;
+  }
+
+  return false;
+});
 watch(
   selectedJob,
   (newJob) => {

@@ -2304,7 +2304,14 @@ const handleKeyDown = (event: KeyboardEvent) => {
   if (isTextInput && (event.ctrlKey || event.metaKey)) {
     const key = event.key.toLowerCase();
     if (key === 'x' || key === 'c' || key === 'v') {
+      console.log('FileTable: Allowing clipboard operation in text input', {
+        key,
+        activeElement: activeElement?.tagName,
+        isTextInput
+      });
       // Allow default cut/copy/paste behavior for text inputs
+      // Prevent other handlers from interfering
+      event.stopPropagation();
       return;
     }
   }
