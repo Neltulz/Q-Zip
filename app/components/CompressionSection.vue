@@ -80,8 +80,8 @@
             data-name="auto-determine-output-location-btn"
             first-icon-name="mdi:auto-fix"
             :first-icon-size="16"
-            @click="$emit('request-auto-determination')"
-            title="Auto-determine from current files"
+            @click="$emit('request-auto-location')"
+            title="Auto-determine output location from current files"
           >
             Auto-Set
           </CustomButton>
@@ -115,8 +115,8 @@
             data-name="auto-determine-output-filename-btn"
             first-icon-name="mdi:auto-fix"
             :first-icon-size="16"
-            @click="$emit('request-auto-determination')"
-            title="Auto-determine from current files"
+            @click="$emit('request-auto-filename')"
+            title="Auto-determine output filename from current files"
           >
             Auto-Set
           </CustomButton>
@@ -475,7 +475,8 @@ import CustomInput from "@/components/CustomInput.vue";
 import InfoCard from "@/components/InfoCard.vue";
 
 const emit = defineEmits<{
-  "request-auto-determination": [];
+  "request-auto-location": [];
+  "request-auto-filename": [];
 }>();
 // --- START: TYPE DEFINITIONS ---
 // These types ensure that the data from JSON config files matches the props
@@ -576,20 +577,25 @@ const categoryIcons: Record<string, string> = {
 
 // Reactive state for dynamic path limit detection
 const platform = getPlatform();
-const longPathsEnabled = ref(false);
-const currentPathLimit = ref(260); // Default fallback
 
-// Initialize path limit detection
-onMounted(async () => {
-  try {
-    if (isWindows()) {
-      longPathsEnabled.value = await checkLongPathsEnabled();
-    }
-    currentPathLimit.value = await getCurrentPathLimit();
-  } catch (error) {
-    console.warn('Failed to detect path limits:', error);
-    // Keep default values
+// Make current path limit reactive based on debug store
+const currentPathLimit = computed(() => {
+  if (debugStore.value) {
+    return getCurrentPathLimit(debugStore.value.debugOptions.longPathsEnabled);
   }
+  // Default fallback when debug store isn't ready
+  return platform === 'windows' ? 260 : 4096;
+});
+
+// Legacy longPathsEnabled ref for backwards compatibility (now reactive through debugStore)
+const longPathsEnabled = computed(() => {
+  return debugStore.value?.debugOptions.longPathsEnabled ?? true;
+});
+
+// Initialize path limit detection (minimal async work now)
+onMounted(async () => {
+  // Debug store is already being initialized above, no additional async work needed
+  // The computed properties will automatically update when debugStore becomes available
 });
 
 // Path length warning computed properties
@@ -632,7 +638,7 @@ const pathWarningMessage = computed(() => {
       return `Path length (${length.toLocaleString()} characters) is extremely long and may cause issues on ${platformName}. Consider shortening the path.`;
     }
   } else if (length >= extendedThreshold) {
-    if (isWindows() && !longPathsEnabled.value) {
+    if (isWindows() && !longPathsEnabled) {
       return `Path length (${length.toLocaleString()} characters) exceeds default ${platformName} limit of ${extendedThreshold} characters. Please enable long paths in Windows settings or shorten the path.`;
     } else {
       return `Path length (${length.toLocaleString()} characters) exceeds recommended ${platformName} limit of ${extendedThreshold} characters.`;
@@ -642,14 +648,14 @@ const pathWarningMessage = computed(() => {
   }
 });
 
-// Get debug store reference
-let debugStore: ReturnType<typeof import('@/stores/debugStore').useDebugStore> | null = null;
+// Get debug store reference - make it reactive
+const debugStore = ref<ReturnType<typeof import('@/stores/debugStore').useDebugStore> | null>(null);
 
 // Initialize debug store
 onMounted(async () => {
   try {
     const { useDebugStore } = await import('@/stores/debugStore');
-    debugStore = useDebugStore();
+    debugStore.value = useDebugStore();
   } catch (error) {
     console.warn('Failed to initialize debug store for long paths:', error);
   }
@@ -663,7 +669,7 @@ const shouldShowPathWarningConsideringDebug = computed(() => {
   // Show warning if path is too long AND long paths are disabled
   if (length >= extendedThreshold) {
     // Check the single source of truth from debug store
-    if (debugStore && !debugStore.debugOptions.longPathsEnabled) {
+    if (debugStore.value && !debugStore.value.debugOptions.longPathsEnabled) {
       console.log('Long paths disabled - showing warning');
       return true;
     }
@@ -735,6 +741,17 @@ const getFormattedGlobalValue = (key: string): string => {
     return `Use Global: ${valueStr === "" ? "None" : valueStr}`;
   }
 };
+const getCurrentArchiveFormat = (): string => {
+  return activeTab.value === "global"
+    ? globalSettings.value.archiveFormat
+    : selectedJob.value?.settings.archiveFormat ?? globalSettings.value.archiveFormat;
+};
+
+const getArchiveExtension = (format?: string): string => {
+  const archiveFormat = format || getCurrentArchiveFormat();
+  return compressConfig.compress.defaultExtensions[archiveFormat] || ".7z";
+};
+
 const getOptions = (fieldId: string, context: "global" | "job"): { value: string | number; text: string }[] => {
   const format: string =
     context === "global"
@@ -961,6 +978,8 @@ const handleTransitionEnd = (): void => {
 defineExpose({
   setOutputLocation,
   setOutputFilename,
+  getCurrentArchiveFormat,
+  getArchiveExtension,
 });
 </script>
 <style scoped>

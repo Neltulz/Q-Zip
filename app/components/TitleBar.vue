@@ -185,7 +185,7 @@
             @mouseenter="onNavToWelcomeMouseEnter"
             @mouseleave="hideCenterTooltip"
           />
-          <div class="btn-group">
+          <CustomButtonGroup>
             <CustomButton
               btn-theme="liter"
               button-style-class="trans-btn can-become-active active-line-block-end"
@@ -194,7 +194,6 @@
               first-icon-name="mdi:briefcase-outline"
               :first-icon-size="20"
               :class="{ active: navStore.activePage === 'JobSetup' }"
-              :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('JobSetup')"
               @mouseenter="onNavToJobSetupMouseEnter"
               @mouseleave="hideCenterTooltip"
@@ -210,7 +209,6 @@
               first-icon-name="mdi:view-list"
               :first-icon-size="20"
               :class="{ active: navStore.activePage === 'JobQueue' }"
-              :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('JobQueue')"
               @mouseenter="onNavToJobQueueMouseEnter"
               @mouseleave="hideCenterTooltip"
@@ -226,14 +224,13 @@
               first-icon-name="mdi:progress-clock"
               :first-icon-size="20"
               :class="{ active: navStore.activePage === 'Progress' }"
-              :disabled="isWelcomeLayout"
               @click="navStore.setActivePage('Progress')"
               @mouseenter="onNavToProgressMouseEnter"
               @mouseleave="hideCenterTooltip"
             >
               Progress
             </CustomButton>
-          </div>
+          </CustomButtonGroup>
         </div>
         <!-- Center nav tooltip (single instance used for all center buttons) -->
         <InfoTooltip
@@ -284,6 +281,7 @@ import type { ModalOptions } from "@/types/modal";
 import { shouldShowCustomWindowControls } from "@/utils/platformUtils";
 import { useDebugStore } from '@/stores/debugStore';
 import CustomWindowControls from "@/components/CustomWindowControls.vue";
+import CustomButtonGroup from "@/components/CustomButtonGroup.vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 const themeStore = useThemeStore();
 const navStore = useNavigationStore();

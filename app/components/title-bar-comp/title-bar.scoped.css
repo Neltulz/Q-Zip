@@ -83,46 +83,34 @@
         pointer-events: none;
       }
 
-      /* Button group container - <div class="btn-group"> */
-      .btn-group {
+      /* Custom button group within center nav */
+      :deep(.custom-button-group) {
         --btn-line-thickness: 2px;
-        display: flex;
-        padding-inline: 3px;
-        position: relative;
+        z-index: 100;
 
-        /* Background pseudo-element for button group */
-        &:before {
-          background-color: var(--bg-clr-liter);
-          border-radius: var(--brdr-rad-smalr);
-          content: "";
-          inset: 2px;
-          position: absolute;
-        }
+        /* Ensure proper button spacing in titlebar */
+        :deep(.custom-button) {
+          padding-inline: 1em;
+          min-width: auto;
+          z-index: 101;
 
-        /* Divider between buttons - <div class="divider"> */
-        .divider {
-          border-inline-start: 1px solid var(--brdr-clr-liter);
-          margin-block: 8px;
-          transition: opacity 500ms ease;
-          z-index: 100;
-        }
-
-        /* Custom buttons within group - <div class="custom-button"> */
-        .custom-button {
-          margin-inline: -3px;
-          padding-inline: 2em;
-
-          /* Hover state affects adjacent divider */
-          &:hover + .divider,
-          &.active + .divider {
-            opacity: 0;
+          /* Fix visual-style positioning for titlebar buttons */
+          :deep(.visual-style) {
+            inset: 0 !important;
           }
         }
 
-        /* Divider opacity when adjacent button is hovered/active */
-        .divider:has(+ .custom-button:hover),
-        .divider:has(+ .custom-button.active) {
-          opacity: 0;
+        :deep(.divider) {
+          z-index: 102;
+        }
+
+        /* Override the margin adjustments for titlebar */
+        :deep(.custom-button:first-child) {
+          margin-inline-start: -3px;
+        }
+
+        :deep(.custom-button:last-child) {
+          margin-inline-end: -3px;
         }
       }
     }

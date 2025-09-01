@@ -186,22 +186,37 @@
                         <div class="debug-popup__option-group">
                           <h4>Windows Long Paths Detection</h4>
                           <div class="debug-popup__option">
-                            <label class="debug-popup__option">
-                              <span>Override Detection:</span>
-                              <UDropdownMenu
-                                :items="windowsLongPathsItems"
-                                :content="{ align: 'start' }"
-                                :ui="{ content: 'w-56 z-[10000]' }"
-                                portal
+                            <CustomButtonGroup>
+                              <CustomButton
+                                btn-theme="liter"
+                                button-style-class="trans-btn can-become-active active-line-block-end"
+                                data-name="windows-long-paths-auto-detect-btn"
+                                :class="{ active: activeLongPathsMode === 'auto' }"
+                                @click="handleLongPathsModeChange('auto')"
                               >
-                                <CustomButton
-                                  button-style-class="trans-btn btn-lite"
-                                  data-name="windows-long-paths-override-btn"
-                                >
-                                  {{ getWindowsLongPathsOverrideText() }}
-                                </CustomButton>
-                              </UDropdownMenu>
-                            </label>
+                                Auto Detect
+                              </CustomButton>
+                              <div class="divider" />
+                              <CustomButton
+                                btn-theme="liter"
+                                button-style-class="trans-btn can-become-active active-line-block-end"
+                                data-name="windows-long-paths-force-long-btn"
+                                :class="{ active: activeLongPathsMode === 'force-long' }"
+                                @click="handleLongPathsModeChange('force-long')"
+                              >
+                                Force Long Paths
+                              </CustomButton>
+                              <div class="divider" />
+                              <CustomButton
+                                btn-theme="liter"
+                                button-style-class="trans-btn can-become-active active-line-block-end"
+                                data-name="windows-long-paths-force-short-btn"
+                                :class="{ active: activeLongPathsMode === 'force-short' }"
+                                @click="handleLongPathsModeChange('force-short')"
+                              >
+                                Force Short Paths
+                              </CustomButton>
+                            </CustomButtonGroup>
                             <div
                               :ref="(el) => infoIconRefs['windowsLongPathsOverride'] = el as HTMLElement"
                               class="debug-popup__info-icon-wrapper"
@@ -1139,6 +1154,7 @@ import { useTooltipManager } from "@/composables/useTooltipManager";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logColorPicker } from "@/utils/loggers";
 import CustomButton from "./CustomButton.vue";
+import CustomButtonGroup from "./CustomButtonGroup.vue";
 import InfoTooltip from "./InfoTooltip.vue";
 import HotKey from "./HotKey.vue";
 import ColorPickerInput from "./ColorPickerInput.vue";
@@ -1552,11 +1568,6 @@ const resetDebugButtonOptions = () => {
 };
 
 // Windows Long Paths Methods
-const getWindowsLongPathsOverrideText = (): string => {
-  const enabled = debugStore.debugOptions.longPathsEnabled;
-  return enabled ? 'Use Long Paths' : 'Long Paths Disabled';
-};
-
 const setLongPathsEnabled = (enabled: boolean) => {
   debugStore.updateDebugOption('longPathsEnabled', enabled);
   console.log(`%c🔧 Long paths ${enabled ? 'enabled' : 'disabled'}`, 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;');
@@ -1578,24 +1589,28 @@ const performAutoDetect = async () => {
   }
 };
 
-// Windows Long Paths Dropdown Items
-const windowsLongPathsItems = computed<DropdownMenuItem[]>(() => [
-  {
-    label: 'Auto Detect',
-    icon: 'i-lucide-settings',
-    onSelect: () => performAutoDetect(),
-  },
-  {
-    label: 'Use Long Paths',
-    icon: 'i-lucide-check-circle',
-    onSelect: () => setLongPathsEnabled(true),
-  },
-  {
-    label: 'Long Paths Disabled',
-    icon: 'i-lucide-x-circle',
-    onSelect: () => setLongPathsEnabled(false),
-  },
-]);
+// Track the last selected long paths mode
+const lastSelectedLongPathsMode = ref<'auto' | 'force-long' | 'force-short'>('auto');
+
+// Active long paths mode based on current state
+const activeLongPathsMode = computed<'auto' | 'force-long' | 'force-short'>(() => {
+  // Return the last selected mode, which includes 'auto'
+  return lastSelectedLongPathsMode.value;
+});
+
+// Handle long paths mode change
+const handleLongPathsModeChange = async (mode: 'auto' | 'force-long' | 'force-short') => {
+  // Update the last selected mode
+  lastSelectedLongPathsMode.value = mode;
+
+  if (mode === 'auto') {
+    await performAutoDetect();
+  } else if (mode === 'force-long') {
+    setLongPathsEnabled(true);
+  } else if (mode === 'force-short') {
+    setLongPathsEnabled(false);
+  }
+};
 
 // Tooltip event handlers
 const handleInfoIconMouseEnter = (optionKey: string, event?: MouseEvent) => {

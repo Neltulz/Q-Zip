@@ -51,7 +51,23 @@ export const checkLongPathsEnabled = async (): Promise<boolean> => {
 };
 
 // Get current path limit based on platform and long paths setting
-export const getCurrentPathLimit = async (): Promise<number> => {
+// Note: This function should be called reactively from components that have access to the debug store
+export const getCurrentPathLimit = (longPathsEnabled: boolean): number => {
+  const platform = getPlatform();
+
+  if (platform === 'windows') {
+    return longPathsEnabled ? 32767 : 260;
+  } else if (platform === 'linux') {
+    return 65536; // Modern Linux systems support much longer paths
+  } else if (platform === 'macos') {
+    return 4096; // macOS with APFS supports longer paths
+  } else {
+    return 4096; // Conservative fallback
+  }
+};
+
+// Legacy async version for backwards compatibility
+export const getCurrentPathLimitAsync = async (): Promise<number> => {
   const platform = getPlatform();
 
   if (platform === 'windows') {
@@ -60,12 +76,12 @@ export const getCurrentPathLimit = async (): Promise<number> => {
       const { useDebugStore } = await import('@/stores/debugStore');
       const debugStore = useDebugStore();
       const longPathsEnabled = debugStore.debugOptions.longPathsEnabled;
-      return longPathsEnabled ? 32767 : 260;
+      return getCurrentPathLimit(longPathsEnabled);
     } catch (error) {
       console.warn('Failed to check debug store for long paths, using registry check:', error);
       // Fallback to registry check
       const longPathsEnabled = await checkLongPathsEnabled();
-      return longPathsEnabled ? 32767 : 260;
+      return getCurrentPathLimit(longPathsEnabled);
     }
   } else if (platform === 'linux') {
     return 65536; // Modern Linux systems support much longer paths

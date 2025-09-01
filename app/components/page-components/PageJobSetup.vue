@@ -20,7 +20,8 @@
       <div ref="resizeDivider" class="resize-divider" />
       <CompressionSection
         ref="compressSection"
-        @request-auto-determination="handleManualAutoDetermination"
+        @request-auto-location="handleAutoLocation"
+        @request-auto-filename="handleAutoFilename"
       />
     </div>
     <BottomButtons div-id="main-bottom-bg">
@@ -181,9 +182,16 @@ const handleFilesAdded = async (filePaths: string[]): Promise<void> => {
       // Call the exposed method on CompressionSection
       const compressSectionInstance = compressSection.value as any;
       if (compressSectionInstance.setOutputLocation && compressSectionInstance.setOutputFilename) {
+        // Get the current archive format extension and add it to filename
+        let finalFilename = filename;
+        if (compressSectionInstance.getArchiveExtension) {
+          const extension = compressSectionInstance.getArchiveExtension();
+          finalFilename = filename + extension;
+        }
+
         compressSectionInstance.setOutputLocation(location || "");
-        compressSectionInstance.setOutputFilename(filename || "");
-        console.log(`Auto-set output: location="${location}", filename="${filename}"`);
+        compressSectionInstance.setOutputFilename(finalFilename || "");
+        console.log(`Auto-set output: location="${location}", filename="${finalFilename}"`);
       }
     }
   } catch (error) {
@@ -196,31 +204,68 @@ const handleFoldersAdded = async (folderPaths: string[]): Promise<void> => {
   await handleFilesAdded(folderPaths);
 };
 
-const handleManualAutoDetermination = async (): Promise<void> => {
-  // Get the current active job's files to determine output from
+const handleAutoLocation = async (): Promise<void> => {
+  // Get the current active job's files to determine output location from
   const activeJob = jobsStore.jobs.find(job => job.id === jobsStore.selectedJobId);
   if (!activeJob || activeJob.files.length === 0) {
-    console.log("No active job or files found for auto-determination");
+    console.log("No active job or files found for auto-location");
     return;
   }
 
-  // Use the first file's path to determine output location and filename
+  // Use the first file's path to determine output location
   const firstFile = activeJob.files[0];
   if (firstFile && firstFile.path) {
     try {
-      const { location, filename } = await determineOutputFromInput([firstFile.path]);
+      const { location } = await determineOutputFromInput([firstFile.path]);
 
-      // Update CompressionSection if we have valid values
-      if (location && filename && compressSection.value) {
+      // Update CompressionSection if we have valid location
+      if (location && compressSection.value) {
         const compressSectionInstance = compressSection.value as any;
-        if (compressSectionInstance.setOutputLocation && compressSectionInstance.setOutputFilename) {
-          compressSectionInstance.setOutputLocation(location || "");
-          compressSectionInstance.setOutputFilename(filename || "");
-          console.log(`Manual auto-set output: location="${location}", filename="${filename}" from file "${firstFile.path}"`);
+        if (compressSectionInstance.setOutputLocation) {
+          compressSectionInstance.setOutputLocation(location);
+          console.log(`Auto-set location: "${location}" from file "${firstFile.path}"`);
         }
       }
     } catch (error) {
-      console.error("Error in manual auto-determination:", error);
+      console.error("Error in auto-location:", error);
+    }
+  }
+};
+
+const handleAutoFilename = async (): Promise<void> => {
+  // Get the current active job's files to determine output filename from
+  const activeJob = jobsStore.jobs.find(job => job.id === jobsStore.selectedJobId);
+  if (!activeJob || activeJob.files.length === 0) {
+    console.log("No active job or files found for auto-filename");
+    return;
+  }
+
+  // Use the first file's path to determine output filename
+  const firstFile = activeJob.files[0];
+  if (firstFile && firstFile.path) {
+    try {
+      const { filename } = await determineOutputFromInput([firstFile.path]);
+
+      // Get the current archive format extension
+      let finalFilename = filename;
+      if (filename && compressSection.value) {
+        const compressSectionInstance = compressSection.value as any;
+        if (compressSectionInstance.getArchiveExtension) {
+          const extension = compressSectionInstance.getArchiveExtension();
+          finalFilename = filename + extension;
+        }
+      }
+
+      // Update CompressionSection if we have valid filename
+      if (finalFilename && compressSection.value) {
+        const compressSectionInstance = compressSection.value as any;
+        if (compressSectionInstance.setOutputFilename) {
+          compressSectionInstance.setOutputFilename(finalFilename);
+          console.log(`Auto-set filename: "${finalFilename}" from file "${firstFile.path}"`);
+        }
+      }
+    } catch (error) {
+      console.error("Error in auto-filename:", error);
     }
   }
 };
