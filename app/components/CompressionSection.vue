@@ -10,7 +10,10 @@
   <section class="compression-section" data-component-name="CompressionSection">
     <div class="compression-section__tabs">
       <CustomButton
-        :class="['compression-section__tab-button', { 'compression-section__tab-button--active': activeTab === 'global' }]"
+        :class="[
+          'compression-section__tab-button',
+          { 'compression-section__tab-button--active': activeTab === 'global', active: activeTab === 'global' }
+        ]"
         button-style-class="trans-btn btn-dark can-become-active active-line-block-end"
         data-name="global-settings-btn"
         @click="activeTab = 'global'"
@@ -18,7 +21,10 @@
         Global Settings
       </CustomButton>
       <CustomButton
-        :class="['compression-section__tab-button', { 'compression-section__tab-button--active': activeTab === 'job' }]"
+        :class="[
+          'compression-section__tab-button',
+          { 'compression-section__tab-button--active': activeTab === 'job', active: activeTab === 'job' }
+        ]"
         button-style-class="trans-btn btn-dark can-become-active active-line-block-end"
         data-name="job-specific-settings-btn"
         @click="activeTab = 'job'"
@@ -27,8 +33,8 @@
       </CustomButton>
     </div>
 
-    <!-- Output Location and Filename Inputs -->
-    <div class="compression-section__output-controls">
+    <!-- Output Location and Filename Inputs (moved to OutputControls.vue) -->
+    <div class="compression-section__output-controls" v-if="false">
       <!-- Path Length Warning -->
       <InfoCard
         v-if="shouldShowPathWarningConsideringDebug"
@@ -99,29 +105,9 @@
         </template>
       </CustomFieldNew>
 
-      <CustomFieldNew
-        field-id="output-filename"
-        input-type="input"
-        :model-value="outputFilename"
-        :spellcheck="false"
-        title="Output Filename"
-        placeholder="Enter filename..."
-        @update:model-value="updateOutputFilename"
-        @unset-or-clear="clearOutputFilename"
-      >
-        <template #buttons-start>
-          <CustomButton
-            button-style-class="trans-btn btn-lite"
-            data-name="auto-determine-output-filename-btn"
-            first-icon-name="mdi:auto-fix"
-            :first-icon-size="16"
-            @click="$emit('request-auto-filename')"
-            title="Auto-determine output filename from current files"
-          >
-            Auto-Set
-          </CustomButton>
-        </template>
-      </CustomFieldNew>
+      <!-- Read-only filename preview removed; handled by OutputControls.vue -->
+
+      <!-- Output filename input removed; handled by OutputControls.vue -->
     </div>
 
     <OverlayScrollbarsComponent
@@ -706,6 +692,16 @@ const handleScroll = (): void => {
     logInteraction("CompressionSection", "Scroll detected, closing all dropdowns.");
   }
 };
+// Switch to Job tab and focus the filename input
+const focusJobFilename = (): void => {
+  activeTab.value = "job";
+  // Wait for DOM update, then focus the job filename input
+  requestAnimationFrame(() => {
+    const el = document.getElementById("job-output-filename") as HTMLInputElement | null;
+    el?.focus();
+    el?.select?.();
+  });
+};
 const getActualDefaultValue = (key: string): string | number | boolean | undefined => {
   const allFields: FieldConfig[] = [
     ...generalFields.value, // MODIFIED: Use computed properties
@@ -984,4 +980,30 @@ defineExpose({
 </script>
 <style scoped>
 @import "./compression-section-comp/compression-section.scoped.css";
+/* Simple filename preview styles */
+.compression-section__filename-preview {
+  display: grid;
+  gap: 0.25rem;
+  padding-inline: var(--pad-in);
+  margin-block-start: 0.5rem;
+}
+.compression-section__filename-label {
+  color: var(--txt-clr-lite);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.compression-section__filename-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--pad-in);
+}
+.compression-section__filename-text {
+  color: var(--txt-clr);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>

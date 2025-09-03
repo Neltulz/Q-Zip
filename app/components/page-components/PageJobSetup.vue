@@ -18,11 +18,18 @@
         @folders-added="handleFoldersAdded"
       />
       <div ref="resizeDivider" class="resize-divider" />
-      <CompressionSection
-        ref="compressSection"
-        @request-auto-location="handleAutoLocation"
-        @request-auto-filename="handleAutoFilename"
-      />
+      <div class="right-pane">
+        <OutputControls
+          ref="outputControls"
+          @request-auto-location="handleAutoLocation"
+          @request-auto-filename="handleAutoFilename"
+        />
+        <CompressionSection
+          ref="compressSection"
+          @request-auto-location="handleAutoLocation"
+          @request-auto-filename="handleAutoFilename"
+        />
+      </div>
     </div>
     <BottomButtons div-id="main-bottom-bg">
       <CustomButton
@@ -42,6 +49,7 @@ import { useUiStore } from "@/stores/uiStore";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { useJobsStore } from "@/stores/jobsStore";
 import { basename, dirname } from "@tauri-apps/api/path";
+import OutputControls from "@/components/OutputControls.vue";
 
 // Store setup
 const uiStore = useUiStore();
@@ -51,6 +59,7 @@ const jobsStore = useJobsStore();
 const mainContent = ref<HTMLElement | null>(null);
 const jobsSection = ref<ComponentPublicInstance | null>(null);
 const compressSection = ref<ComponentPublicInstance | null>(null);
+const outputControls = ref<ComponentPublicInstance | null>(null);
 const resizeDivider = ref<HTMLElement | null>(null);
 // Reactive styles from store
 const mainContentStyles = computed(() => ({
@@ -292,6 +301,18 @@ onUnmounted((): void => {
     grid-template-columns: minmax(350px, var(--jobs-section-width)) 10px minmax(350px, var(--compress-section-width));
     grid-template-rows: 1fr;
   }
+  .right-pane {
+    display: grid;
+    grid-area: compression-section;
+    grid-template-rows: auto 1fr;
+    row-gap: var(--pad-in);
+  }
+
+  .right-pane > * {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
   .resize-divider {
     align-items: center;
     cursor: col-resize;

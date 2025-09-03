@@ -4,7 +4,7 @@
 
 /* Block: Compression Section */
 .compression-section {
-  background-color: var(--bg-clr-lite);
+  background-color: var(--btn-bg-activ-clr, var(--bg-clr-lite));
   border: 1px solid var(--brdr-clr);
   border-radius: var(--brdr-rad);
   container-name: compression-section;
@@ -39,9 +39,18 @@
   box-shadow: none;
 }
 
-/* Modifier: Active Tab Button (not hovering) */
-.compression-section__tab-button--active:not(:hover) .visual-style {
-  background-color: transparent;
+/* Modifier: Active Tab Button */
+.compression-section__tab-button--active .visual-style {
+  background-color: var(--btn-bg-activ-clr) !important;
+  border-top-left-radius: var(--brdr-rad);
+  border-top-right-radius: var(--brdr-rad);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Hide the active-state indicator line for these tab buttons */
+.compression-section__tab-button.can-become-active .visual-style::before {
+  display: none !important;
 }
 
 /* Element: Content */
