@@ -122,6 +122,7 @@ export const useModalsStore = defineStore(
       activeModals.value = [];
       modalData.value.clear();
     }
+
     return {
       activeModals: readonly(activeModals),
       openModal,
@@ -131,6 +132,8 @@ export const useModalsStore = defineStore(
     };
   },
   {
-    persist: true,
+    persist: {
+      pick: ['modalData'], // Only persist modalData, not activeModals
+    },
   },
 );

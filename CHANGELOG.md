@@ -2,7 +2,74 @@
 
 > **Note:** This changelog maintains only the most recent 20 versions for readability and performance. Older versions are archived when new versions are added.
 
-## Recent Changes
+## [0.1.24] - 2025-01-27T23:00:00Z
+
+### Fixed
+- **Disabled Button Tooltip Styling**: Fixed tooltip keyboard shortcuts to display in neutral colors when the associated button is disabled, indicating the shortcut is inaccessible
+- **Disabled Button Hover Effects**: Fixed issue where disabled buttons still showed hover background effects by adding proper `:not(:disabled):not(.disabled)` selectors to all hover states
+- **FileTableToolbar Disabled Button Hover**: Fixed hover effects on disabled buttons in FileTableToolbar (Remove Selected, Copy to, Move to) by adding specific CSS rules to prevent background color changes on hover
+- **Input Blur Handling**: Improved input blur handling in CustomFieldNew component for better user experience
+- **ESC Key Conflict**: Fixed issue where pressing ESC would close one dropdown but immediately open another dropdown from FileTableLoadingOverlay by preventing the cancel dropdown from opening when other dropdowns are present
+- **ESC Key Hierarchy**: Implemented proper ESC key behavior hierarchy:
+  - **Dropdowns open** → Close dropdowns (highest priority)
+  - **FileTableLoadingOverlay active** → Open/close cancel dialog
+  - **FileTable active** → Make FileTable inactive (default behavior)
+- **ESC Key Timing**: Added 10ms delay to prevent cancel dropdown from opening immediately after other dropdowns are closed
+
+### Added
+- **Windows Long Paths Detection**: Implemented automatic detection of Windows long paths support and enhanced path length warnings for better user guidance
+- **Path Length Warnings**: Added comprehensive path length validation with helpful warnings and instructions for enabling long paths on Windows
+- **Enhanced CompressionSection**: Significantly improved CompressionSection with:
+  - Global and Job-specific settings tabs
+  - Advanced output location and filename controls
+  - Path length validation and warnings
+  - Improved input components and layout
+  - Better auto-determination logic
+- **Enhanced CustomFieldNew Component**: Major improvements to CustomFieldNew including:
+  - Floating label functionality with smooth transitions
+  - Clear functionality for easy field clearing
+  - Spellcheck support for text inputs
+  - Improved input handling and validation
+  - Better layout and styling refinements
+  - Enhanced event handling and optimization
+- **FileTable Keyboard Shortcuts**: Added comprehensive keyboard shortcut support for FileTable toolbar actions:
+  - `Ctrl+O`: Direct shortcut for "Add Files" action
+  - `Ctrl+F`: Direct shortcut for "Add Folders" action
+  - `F5`: Refresh files list
+  - `Delete`: Remove selected files
+  - `Ctrl+Shift+C`: Copy selected files to another job (placeholder)
+  - `Ctrl+Shift+M`: Move selected files to another job (placeholder)
+  - `Ctrl+,`: Open file table settings (placeholder)
+- **Toolbar Button Shortcuts**: Added keyboard shortcut display to "Add File" (Ctrl+O) and "Add Folder" (Ctrl+F) buttons in the FileTableToolbar
+- **Enhanced Tooltips**: Updated "Add Files and Folders" dropdown tooltip to clearly show keyboard shortcuts with descriptive labels (Add Files: Ctrl+O | Add Folders: Ctrl+F)
+- **Keyboard Shortcut Keycap Styling**: Added modern keycap-style borders and backgrounds to keyboard shortcuts in tooltips with individual key styling and proper contrast. Enabled buttons show blue keycaps while disabled buttons show muted colors. Plus symbols are styled separately without keycap borders
+- **Job Reordering Keyboard Shortcuts**: Added keyboard shortcuts for moving jobs left/right:
+  - `Ctrl+Shift+Left`: Move currently selected job to the left
+  - `Ctrl+Shift+Right`: Move currently selected job to the right
+  - Added visual shortcut indicators to context menu buttons
+- **Enhanced Debug Options**: Integrated nuxt-color-picker and added comprehensive debug features:
+  - Color picker integration for theme customization
+  - Hotzone overlays for button positioning debugging
+  - Enhanced debug popup with better organization
+  - Debug logging improvements for FileTable and JobArea interactions
+- **External Element Blurring**: Added external element blurring functionality to FileTable interactions for better focus management
+- **Dropdown Container Management**: Implemented improved dropdown container management and enhanced teleport functionality
+
+### Changed
+- **CompressionSection Refactoring**: Major refactoring of CompressionSection and DebugPopup for improved auto-determination and UI enhancements
+- **CustomFieldNew Optimizations**: Cleaned up CustomFieldNew component by removing debug logs and optimizing event handling
+- **Debug Popup Improvements**: Enhanced debug popup with better tab organization and comprehensive logging controls
+- **FileTable Enhancements**: Improved FileTable and JobArea keyboard handling with enhanced debug logging
+- **Component Styling**: Updated multiple component styles for improved layout, border-radius adjustments, and visual consistency
+
+### Technical Details
+- **Component Architecture**: Enhanced component architecture with better separation of concerns and improved maintainability
+- **Performance Optimizations**: Implemented various performance optimizations including memoization and optimized rendering
+- **Error Handling**: Improved error handling throughout the application with better user feedback
+- **Accessibility**: Enhanced keyboard navigation and accessibility features across components
+- **Code Quality**: Cleaned up debug logs, optimized event handling, and improved code organization
+
+---
 
 ## [0.1.23] - 2025-01-27T23:00:00Z
 

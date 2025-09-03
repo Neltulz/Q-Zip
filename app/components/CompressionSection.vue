@@ -170,7 +170,7 @@
                     @unset-or-clear="handleGlobalUnsetOrClear"
                     @update:model-value="updateSetting(field.id, $event, 'global')"
                   >
-                    <template v-if="field.id === 'outputFolder'" #buttons-end>
+                    <div v-if="field.id === 'outputFolder'" class="buttons-end-slot">
                       <DropdownMenu
                         button-class="browse-btn"
                         button-style-class="trans-btn"
@@ -194,7 +194,7 @@
                           </CustomButton>
                         </template>
                       </DropdownMenu>
-                    </template>
+                    </div>
                   </CustomFieldNew>
                 </template>
             </form>
@@ -311,7 +311,7 @@
                           @click="toggleLock(field.id)"
                         />
                       </template>
-                      <template v-if="field.id === 'outputFolder'" #buttons-end>
+                      <div v-if="field.id === 'outputFolder'" class="buttons-end-slot">
                         <DropdownMenu
                           button-class="browse-btn"
                           button-style-class="trans-btn"
@@ -336,7 +336,7 @@
                             </CustomButton>
                           </template>
                         </DropdownMenu>
-                      </template>
+                      </div>
                     </CustomFieldNew>
                   </template>
               </form>

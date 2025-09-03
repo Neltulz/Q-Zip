@@ -228,12 +228,57 @@
                           </div>
                         </div>
                       </div>
+
+                      <!-- Vue Compilation Debugging -->
+                      <div class="debug-popup__option-group">
+                        <h3>Vue Compilation Debugging</h3>
+                        <div class="debug-popup__option">
+                          <CustomButton
+                            btn-theme="warning"
+                            button-style-class="trans-btn"
+                            data-name="vue-compilation-debug-btn"
+                            first-icon-name="mdi:vuejs"
+                            :first-icon-size="16"
+                            @click="runVueCompilationDebug"
+                          >
+                            Debug Vue Compilation
+                          </CustomButton>
+                          <div
+                            :ref="(el) => infoIconRefs['vueCompilationDebug'] = el as HTMLElement"
+                            class="debug-popup__info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('vueCompilationDebug', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
+                          </div>
+                        </div>
+                        <div class="debug-popup__option">
+                          <CustomButton
+                            btn-theme="danger"
+                            button-style-class="trans-btn"
+                            data-name="check-template-errors-btn"
+                            first-icon-name="mdi:alert-circle"
+                            :first-icon-size="16"
+                            @click="checkForTemplateErrors"
+                          >
+                            Check Template Errors
+                          </CustomButton>
+                          <div
+                            :ref="(el) => infoIconRefs['checkTemplateErrors'] = el as HTMLElement"
+                            class="debug-popup__info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('checkTemplateErrors', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </OverlayScrollbarsComponent>
               </div>
             </div>
-            
+
             <!-- Logging Tab -->
             <div v-if="activeTab === 'logging'" class="debug-popup__tab-panel" data-tab="logging">
               <div class="debug-popup__logging-content">
@@ -1381,6 +1426,14 @@ const debugOptionTooltips = {
   windowsLongPathsOverride: {
     text: "Control Windows long paths detection. 'Auto Detect' checks the registry to determine if long paths are enabled. 'Use Long Paths' tells the app long paths are enabled. 'Long Paths Disabled' tells the app long paths are disabled. This affects path length warnings.",
     example: "Use 'Auto Detect' for automatic registry checking, or manually set based on your system configuration"
+  },
+  vueCompilationDebug: {
+    text: "Runs a comprehensive Vue compilation debugging inspection. This checks for Vue components, template patterns that might cause compilation errors, and provides debugging tips.",
+    example: "Use when encountering 'codegen node is missing' errors"
+  },
+  checkTemplateErrors: {
+    text: "Scans the DOM for Vue template errors and problematic patterns. This helps identify components with nested template structures that might cause compilation issues.",
+    example: "Helps debug Vue compilation errors and template structure issues"
   }
 };
 
@@ -1610,6 +1663,46 @@ const handleLongPathsModeChange = async (mode: 'auto' | 'force-long' | 'force-sh
   } else if (mode === 'force-short') {
     setLongPathsEnabled(false);
   }
+};
+
+// Vue compilation debugging functions
+const runVueCompilationDebug = () => {
+  if ((window as any).__QZIP_DEBUG_VUE_COMPILATION) {
+    (window as any).__QZIP_DEBUG_VUE_COMPILATION();
+  } else {
+    console.warn('%c⚠️ Vue compilation debug function not available', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+  }
+};
+
+const checkForTemplateErrors = () => {
+  console.log('%c🔍 Checking for Vue template errors...', 'background: #f44336; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+
+  // Look for common problematic patterns
+  const problematicPatterns = [
+    { selector: 'template[v-if]', description: 'Template with v-if' },
+    { selector: 'template[v-for]', description: 'Template with v-for' },
+    { selector: 'template[v-if] template[v-if]', description: 'Nested templates with v-if' },
+    { selector: 'template[v-for] template[v-if]', description: 'Nested v-for + v-if templates' }
+  ];
+
+  problematicPatterns.forEach(pattern => {
+    const elements = document.querySelectorAll(pattern.selector);
+    if (elements.length > 0) {
+      console.warn(`%c⚠️ Found ${elements.length} ${pattern.description} elements:`, 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;', elements);
+      elements.forEach((element, index) => {
+        console.warn(`  ${index + 1}.`, element);
+      });
+    } else {
+      console.log(`%c✓ No ${pattern.description} elements found`, 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;');
+    }
+  });
+
+  // Check for Vue compilation errors in console
+  console.log('%c💡 Tips to fix "codegen node is missing":', 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;');
+  console.log('  1. Replace <template v-if> with <div v-if>');
+  console.log('  2. Check for nested templates with v-if/v-for');
+  console.log('  3. Ensure proper template structure');
+  console.log('  4. Clear browser cache and restart dev server');
 };
 
 // Tooltip event handlers

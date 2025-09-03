@@ -13,7 +13,7 @@
       @click="props.options?.closeOnClickOutside ? handleClose('cancel') : null"
     >
       <div class="modal-backdrop" />
-      <dialog ref="dialog" class="modal-dialog">
+      <dialog ref="dialog" class="modal-dialog" :style="modalDialogStyle">
         <div v-if="props.options" class="modal-content" @click.stop>
           <div class="modal-header">
             <div class="start-section">
@@ -38,7 +38,71 @@
             </div>
           </div>
           <div class="modal-body">
+            <!-- Check if left or right columns have content -->
+            <div v-if="hasLeftColumn || hasRightColumn" :class="['modal-columns', { 'has-right': hasRightColumn }]">
+              <!-- Left Column -->
+              <div v-if="hasLeftColumn" class="modal-column modal-column-left">
+                <OverlayScrollbarsComponent
+                  class="modal-column-scrollbar"
+                  defer
+                  :options="{
+                    scrollbars: {
+                      visibility: 'auto',
+                      autoHide: 'move',
+                      autoHideSuspend: true,
+                      theme: currentTheme,
+                    },
+                  }"
+                >
+                  <slot name="left-column" :modalsStore="modalsStore" :modalId="props.modalId" />
+                </OverlayScrollbarsComponent>
+              </div>
+
+              <!-- Main Column (always present) -->
+              <div class="modal-column modal-column-main">
+                <OverlayScrollbarsComponent
+                  class="modal-column-scrollbar"
+                  defer
+                  :options="{
+                    scrollbars: {
+                      visibility: 'auto',
+                      autoHide: 'move',
+                      autoHideSuspend: true,
+                      theme: currentTheme,
+                    },
+                  }"
+                >
+                  <!-- Render the description from props BEFORE the slot content -->
+                  <div v-if="descriptionContent.length > 0" class="modal-description">
+                    <p v-for="(line, index) in descriptionContent" :key="index" v-html="line" />
+                  </div>
+                  <!-- Provide modal store and ID to child components -->
+                  <slot name="body-content" :modalsStore="modalsStore" :modalId="props.modalId" />
+                </OverlayScrollbarsComponent>
+              </div>
+
+              <!-- Right Column -->
+              <div v-if="hasRightColumn" class="modal-column modal-column-right">
+                <OverlayScrollbarsComponent
+                  class="modal-column-scrollbar"
+                  defer
+                  :options="{
+                    scrollbars: {
+                      visibility: 'auto',
+                      autoHide: 'move',
+                      autoHideSuspend: true,
+                      theme: currentTheme,
+                    },
+                  }"
+                >
+                  <slot name="right-column" :modalsStore="modalsStore" :modalId="props.modalId" />
+                </OverlayScrollbarsComponent>
+              </div>
+            </div>
+
+            <!-- Single column layout (fallback when no left/right columns) -->
             <OverlayScrollbarsComponent
+              v-else
               class="modal-body-scrollbar"
               defer
               :options="{
@@ -50,14 +114,12 @@
                 },
               }"
             >
-              <!-- --- FIX START --- -->
               <!-- Render the description from props BEFORE the slot content -->
-              <template v-if="descriptionContent.length > 0">
+              <div v-if="descriptionContent.length > 0" class="modal-description">
                 <p v-for="(line, index) in descriptionContent" :key="index" v-html="line" />
-              </template>
+              </div>
               <!-- Provide modal store and ID to child components -->
               <slot name="body-content" :modalsStore="modalsStore" :modalId="props.modalId" />
-              <!-- --- FIX END --- -->
             </OverlayScrollbarsComponent>
           </div>
           <div
@@ -89,7 +151,7 @@
   </teleport>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, computed, watchEffect, watch } from "vue";
+import { ref, onMounted, computed, watchEffect, watch, useSlots } from "vue";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
 import { useThemeStore } from "@/stores/themeStore";
 import { useModalsStore } from "@/stores/modalsStore";
@@ -101,6 +163,11 @@ interface ModalOptions extends OriginalModalOptions {
   closeOnClickOutside?: boolean;
   closeOnEscape?: boolean;
   showCloseButton?: boolean;
+  // Sizing controls
+  widthMode?: "auto" | "fixed"; // default auto
+  heightMode?: "auto" | "fixed"; // default auto
+  fixedWidth?: string; // e.g., "75vw"
+  fixedHeight?: string; // e.g., "70vh"
 }
 // Correctly define props without destructuring to preserve reactivity
 const props = defineProps<{
@@ -128,6 +195,12 @@ const descriptionContent = computed((): readonly string[] => {
   }
   return desc; // At this point, desc must be `readonly string[]`
 });
+
+// Detect left/right column presence by whether the parent provided slots
+const slots = useSlots();
+const hasLeftColumn = computed(() => Boolean(slots["left-column"])) as unknown as { value: boolean };
+const hasRightColumn = computed(() => Boolean(slots["right-column"])) as unknown as { value: boolean };
+
 // Use watchEffect to safely manage the event listener's lifecycle
 watchEffect((onInvalidate) => {
   // Only add the listener if the modal is active and has options
@@ -191,6 +264,28 @@ const getDefaultButtonIcon = (action: string): string => {
       return "";
   }
 };
+
+// Width/height variables for dialog (use CSS vars so CSS can consume "auto" or concrete lengths)
+const dialogWidth = computed(() => {
+  const mode = props.options?.widthMode ?? "auto";
+  if (mode === "fixed") {
+    return props.options?.fixedWidth ?? "95vw";
+  }
+  return "auto";
+});
+
+const dialogHeight = computed(() => {
+  const mode = props.options?.heightMode ?? "auto";
+  if (mode === "fixed") {
+    return props.options?.fixedHeight ?? "70vh";
+  }
+  return "auto";
+});
+
+const modalDialogStyle = computed(() => ({
+  "--modal-max-width": dialogWidth.value,
+  "--modal-height": dialogHeight.value,
+} as Record<string, string>));
 </script>
 <style scoped>
 .modal-wrapper {
@@ -228,7 +323,10 @@ const getDefaultButtonIcon = (action: string): string => {
   display: none;
 }
 .modal-dialog {
-  --modal-max-width: 75vw;
+  --modal-max-width: 95vw;
+  --modal-left-width: 260px;
+  --modal-right-width: 260px;
+  --modal-height: 70vh;
   --modal-bg: var(--bg-clr-liter);
   --modal-brdr: var(--brdr-clr-dark);
   --modal-header-pad-in: calc(var(--pad-in) * 3);
@@ -245,7 +343,9 @@ const getDefaultButtonIcon = (action: string): string => {
   flex-direction: column;
   justify-self: center;
   max-height: 80vh;
+  height: var(--modal-height);
   max-width: var(--modal-max-width);
+  width: var(--modal-max-width);
   opacity: 0;
   overflow: visible;
   padding: 0;
@@ -286,6 +386,7 @@ const getDefaultButtonIcon = (action: string): string => {
   overflow: hidden;
   padding-block: var(--modal-header-pad-blok);
   padding-inline: var(--modal-header-pad-in);
+  border-bottom: 1px solid var(--modal-brdr);
   width: 100%;
 }
 .modal-header .start-section {
@@ -329,6 +430,16 @@ const getDefaultButtonIcon = (action: string): string => {
 .modal-body :deep(p:last-child) {
   margin-block-end: 0;
 }
+.modal-body :deep(li),
+.modal-body :deep(h1),
+.modal-body :deep(h2),
+.modal-body :deep(h3),
+.modal-body :deep(h4),
+.modal-body :deep(h5),
+.modal-body :deep(h6) {
+  max-width: 100%;
+  width: var(--ideal-char-reading-count);
+}
 .modal-body:deep(.two-column-grid) {
   display: grid;
   gap: 24px;
@@ -346,6 +457,94 @@ const getDefaultButtonIcon = (action: string): string => {
   margin-block-end: 8px;
   padding-block-end: 8px;
   text-align: center;
+}
+
+/* Multi-column layout styles */
+.modal-columns {
+  --modal-columns-gap: 1.5rem;
+  display: grid;
+  gap: var(--modal-columns-gap);
+  grid-template-columns: var(--modal-left-width) 1fr var(--modal-right-width);
+  height: 100%;
+}
+.modal-columns:not(.has-right) {
+  grid-template-columns: var(--modal-left-width) 1fr;
+}
+
+.modal-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.modal-column-left {
+  width: var(--modal-left-width);
+  max-width: var(--modal-left-width);
+}
+
+.modal-column-main {
+  width: 100%;
+  max-width: var(--modal-main-max-width, 100%);
+}
+
+.modal-column-right {
+  width: var(--modal-right-width);
+  max-width: var(--modal-right-width);
+}
+
+.modal-column-scrollbar {
+  flex: 1;
+  min-height: 0;
+  padding-block-end: calc(var(--modal-body-pad-blok) * 2);
+  padding-block-start: var(--modal-body-pad-blok);
+  padding-inline: var(--modal-body-pad-in);
+}
+
+.modal-description {
+  margin-bottom: 1rem;
+}
+
+.modal-description p {
+  margin-bottom: 0.5rem;
+}
+
+.modal-description p:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 1200px) {
+  .modal-column-left,
+  .modal-column-right {
+    flex: 0 0 200px;
+    max-width: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-columns {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .modal-column-left,
+  .modal-column-right,
+  .modal-column-main {
+    flex: none;
+    width: 100%;
+  }
+
+  .modal-column-left {
+    order: -1;
+  }
+
+  .modal-column-main {
+    order: 0;
+  }
+
+  .modal-column-right {
+    order: 1;
+  }
 }
 .modal-footer {
   background-color: var(--bg-clr-lite);

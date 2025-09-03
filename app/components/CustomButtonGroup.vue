@@ -34,13 +34,17 @@ import { computed } from "vue";
 const props = withDefaults(
   defineProps<{
     disabled?: boolean;
+    orientation?: 'horizontal' | 'vertical';
   }>(),
   {
     disabled: false,
+    orientation: 'horizontal',
   }
 );
 
 
+
+const isVertical = computed(() => props.orientation === 'vertical');
 
 // Expose the component for parent access if needed
 defineExpose({});
@@ -55,6 +59,7 @@ defineExpose({});
   position: relative;
   padding-inline: 0;
   width: 100%;
+  flex-direction: v-bind('isVertical ? "column" : "row"');
 }
 
 /* Background pseudo-element for button group - positioned behind buttons */
@@ -106,6 +111,15 @@ defineExpose({});
   flex: 1;
 }
 
+/* Vertical orientation button adjustments */
+.custom-button-group {
+  &[style*="column"] :deep(.custom-button) {
+    width: 100%;
+    padding-block: 0.75em;
+    min-width: auto;
+  }
+}
+
 /* Button content visibility */
 .custom-button-group :deep(.custom-button .button-content) {
   display: flex !important;
@@ -124,13 +138,26 @@ defineExpose({});
 
 /* Divider element between buttons - completely global for slotted content */
 :global(.divider) {
-  border-inline-start: 2px solid var(--brdr-clr-liter) !important;
-  height: 100% !important;
-  margin-block: 0 !important;
   position: relative !important;
   transition: opacity 500ms ease !important;
   z-index: 5 !important;
   opacity: 1 !important;
+  /* Horizontal orientation (default) */
+  border-inline-start: 2px solid var(--brdr-clr-liter) !important;
+  height: 100% !important;
+  margin-block: 0 !important;
+  width: auto !important;
+}
+
+/* Vertical orientation divider styling */
+.custom-button-group:has(:deep(.divider)) {
+  :global(.divider) {
+    border-block-start: 2px solid var(--brdr-clr-liter) !important;
+    border-inline-start: none !important;
+    width: 100% !important;
+    height: auto !important;
+    margin-inline: 0 !important;
+  }
 }
 
 /* Hide dividers adjacent to hovered/active buttons */

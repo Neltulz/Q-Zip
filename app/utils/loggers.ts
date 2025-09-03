@@ -254,6 +254,23 @@ export const logVueWarning = (callerName: string, message: string, data?: unknow
   }
 };
 
+// --- Logger for Vue Compilation Errors (specifically for codegen issues) ---
+const compilationErrorStyle: string = `${baseStyle} background-color: #f44336;`; // Red
+export const logVueCompilationError = (callerName: string, message: string, data?: unknown): void => {
+  // Always log compilation errors regardless of debug config
+  if (data) {
+    console.error(`%c${getTimestamp()} %c[${callerName}] %cVUE COMPILATION ERROR: ${message}`, timestampStyle, callerStyle, compilationErrorStyle, data);
+  } else {
+    console.error(`%c${getTimestamp()} %c[${callerName}] %cVUE COMPILATION ERROR: ${message}`, timestampStyle, callerStyle, compilationErrorStyle);
+  }
+
+  // Additional debugging for codegen node errors
+  if (message.includes('codegen node is missing')) {
+    console.error(`%c🔧 CODEGEN DEBUG: This usually indicates nested <template> elements with v-if/v-for directives`, 'background: #f44336; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+    console.error(`%c🔧 SOLUTION: Replace <template v-if> with <div v-if> in the problematic component`, 'background: #f44336; color: white; padding: 2px 4px; border-radius: 3px;');
+  }
+};
+
 // --- Logger for Hover Events ---
 const hoverStyle: string = `${baseStyle} background-color: #4caf50; color: white;`; // Green
 export const logHover = (callerName: string, message: string, data?: unknown): void => {

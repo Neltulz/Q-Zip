@@ -54,6 +54,10 @@ export const debugConfig: Record<string, boolean> = {
   logFileTableActivation: false, // Default to false to reduce noise
   // Special flag for trace events
   logTraceEvents: false, // Default to false to reduce noise
+  // Vue compilation debugging
+  logVueWarnings: false, // Disable Vue warnings (issue resolved)
+  logMissingPropWarnings: false, // Disable missing prop warnings
+  logComponentAttributes: false, // Disable component attribute logging
 };
 
 // Store the original values for reset functionality
@@ -295,6 +299,60 @@ try {
     }
   };
 
+  // Add Vue compilation debugging function to global scope
+  globalObj.__QZIP_DEBUG_VUE_COMPILATION = () => {
+    console.log('%c🔧 Vue Compilation Debug Inspector', 'background: #f44336; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+
+    // Check for common Vue compilation issues
+    const vueComponents = document.querySelectorAll('[data-component-name]');
+    console.log(`%cFound ${vueComponents.length} Vue components:`, 'background: #f44336; color: white; padding: 2px 4px; border-radius: 3px;');
+
+    vueComponents.forEach((component, index) => {
+      const componentName = component.getAttribute('data-component-name');
+      console.log(`%c${index + 1}. ${componentName}`, 'background: #f44336; color: white; padding: 2px 4px; border-radius: 3px;', {
+        element: component,
+        componentName,
+        tagName: component.tagName,
+        hasError: component.hasAttribute('data-error') || component.classList.contains('error'),
+        children: component.children.length
+      });
+    });
+
+    // Check for template compilation errors
+    console.log('%c🔍 Checking for Vue compilation patterns that might cause errors...', 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+
+    // Look for problematic template patterns
+    const templates = document.querySelectorAll('template');
+    const templateWithDirectives = Array.from(templates).filter(template => {
+      const content = template.innerHTML;
+      return content.includes('v-if') || content.includes('v-for') || content.includes('v-show');
+    });
+
+    console.log(`%cFound ${templateWithDirectives.length} templates with directives:`, 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;');
+
+    templateWithDirectives.forEach((template, index) => {
+      const content = template.innerHTML;
+      console.log(`%cTemplate ${index + 1}:`, 'background: #ff9800; color: black; padding: 2px 4px; border-radius: 3px;', {
+        template,
+        content: content.substring(0, 100) + (content.length > 100 ? '...' : ''),
+        hasNestedTemplate: content.includes('<template'),
+        hasVIf: content.includes('v-if'),
+        hasVFor: content.includes('v-for')
+      });
+    });
+
+    // Check Vue error boundary
+    if ((window as any).Vue && (window as any).Vue.config) {
+      console.log('%cVue config:', 'background: #2196f3; color: white; padding: 2px 4px; border-radius: 3px;', (window as any).Vue.config);
+    }
+
+    console.log('%c💡 Tips to fix "codegen node is missing":', 'background: #4caf50; color: white; padding: 2px 4px; border-radius: 3px;');
+    console.log('  1. Replace <template v-if> with <div v-if>');
+    console.log('  2. Check for nested templates with v-if/v-for');
+    console.log('  3. Ensure proper template structure');
+    console.log('  4. Use browser dev tools to inspect the DOM');
+  };
+
   // Add color picker debugging function to global scope
   globalObj.__QZIP_DEBUG_COLOR_PICKER = () => {
     console.log('%c🔍 Color Picker Debug Inspector', 'background: #9c27b0; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
@@ -415,6 +473,7 @@ try {
   console.log('  __QZIP_DEBUG_GET_DIMENSIONS() - Get debug popup position & dimensions');
   console.log('  __QZIP_DEBUG_RESET_DIMENSIONS() - Reset popup to default size');
   console.log('  __QZIP_DEBUG_COLOR_PICKER()  - Inspect color picker z-index issues');
+  console.log('  __QZIP_DEBUG_VUE_COMPILATION() - Debug Vue compilation errors');
   console.log('  __QZIP_DEBUG_SET("decorumMessages", true) - Show DECORUM messages');
 
   // Note: Debug status will be shown by the debug store during initialization

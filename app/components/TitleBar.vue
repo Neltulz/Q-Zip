@@ -137,6 +137,44 @@
                   </CustomButton>
                 </template>
               </DropdownMenu>
+              <DropdownMenu
+                :is-submenu="true"
+                btn-theme="liter"
+                button-style-class="trans-btn"
+                data-name="help-submenu-dropdown"
+                dropdown-data-name="help-submenu"
+                first-icon-name="mdi:help-circle"
+                :first-icon-size="20"
+                last-icon-name="mdi:chevron-right"
+                :last-icon-size="20"
+                placement="right-start"
+              >
+                <template #button-content>
+                  <span>Help</span>
+                </template>
+                <template #default="{ close }">
+                  <CustomButton
+                    btn-theme="liter"
+                    button-style-class="trans-btn"
+                    data-name="whats-new-btn"
+                    first-icon-name="mdi:new-box"
+                    :first-icon-size="20"
+                    @click="handleShowChangelog(close)"
+                  >
+                    What's New
+                  </CustomButton>
+                  <CustomButton
+                    btn-theme="liter"
+                    button-style-class="trans-btn"
+                    data-name="about-btn"
+                    first-icon-name="mdi:information"
+                    :first-icon-size="20"
+                    @click="handleShowAbout(close)"
+                  >
+                    About Q-Zip
+                  </CustomButton>
+                </template>
+              </DropdownMenu>
               <hr />
               <CustomButton
                 btn-theme="liter"
@@ -148,6 +186,17 @@
                 @mouseenter="scheduleSubmenuClosure"
               >
                 Button Test
+              </CustomButton>
+              <CustomButton
+                btn-theme="liter"
+                button-style-class="trans-btn"
+                data-name="multi-column-test-btn"
+                first-icon-name="mdi:view-column"
+                :first-icon-size="20"
+                @click="handleMultiColumnTest"
+                @mouseenter="scheduleSubmenuClosure"
+              >
+                Multi-Column Test
               </CustomButton>
               <hr />
               <CustomButton
@@ -650,6 +699,64 @@ const handleExit = (): void => {
   dropdownManager.closeAllDropdowns("Exiting app");
   getCurrentWindow().close();
   if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] handleExit');
+};
+
+const handleShowChangelog = (closeDropdown: () => void): void => {
+  const modalOptions: ModalOptions = {
+    title: "What's New in Q-Zip",
+    buttons: [
+      {
+        action: "close",
+        text: "Close",
+        styleClass: "bordered-btn",
+      },
+    ],
+    footerJustifyContent: "center",
+    closeOnClickOutside: true,
+    size: "large",
+  };
+  modalsStore.openModal("ChangelogModalContent", modalOptions);
+  closeDropdown();
+  dropdownManager.closeAllDropdowns("Opened changelog");
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] handleShowChangelog');
+};
+
+const handleShowAbout = (closeDropdown: () => void): void => {
+  const modalOptions: ModalOptions = {
+    title: "About Q-Zip",
+    buttons: [
+      {
+        action: "close",
+        text: "Close",
+        styleClass: "bordered-btn",
+      },
+    ],
+    footerJustifyContent: "center",
+    closeOnClickOutside: true,
+  };
+  modalsStore.openModal("AboutModalContent", modalOptions);
+  closeDropdown();
+  dropdownManager.closeAllDropdowns("Opened about");
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] handleShowAbout');
+};
+
+const handleMultiColumnTest = (): void => {
+  const modalOptions: ModalOptions = {
+    title: "Multi-Column Modal Demo",
+    buttons: [
+      {
+        action: "close",
+        text: "Close",
+        styleClass: "bordered-btn",
+      },
+    ],
+    footerJustifyContent: "center",
+    closeOnClickOutside: true,
+    size: "large",
+  };
+  modalsStore.openModal("TestMultiColumnModal", modalOptions);
+  dropdownManager.closeAllDropdowns("Opened multi-column test");
+  if (debugStore.debugOptions.logTitleBarEvents) console.log('[TitleBar] handleMultiColumnTest');
 };
 
 // Keyboard shortcuts for center navigation

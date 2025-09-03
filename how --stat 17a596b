@@ -1,0 +1,20 @@
+[33m2e2537a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdev[m[33m, [m[1;31morigin/dev[m[33m)[m chore: Update version number to v0.1.24 in TitleBar, Cargo.toml, and tauri.conf.json
+[33m17a596b[m refactor: Update CompressionSection and DebugPopup for improved auto-determination and UI enhancements
+[33mba5156b[m feat: Implement Windows long paths detection and enhance path length warnings
+[33m24afd2f[m fix: Improve input blur handling in CustomFieldNew component
+[33m63012d2[m style: Enhance input components with spellcheck support and clean up CSS
+[33m1c37c1a[m style: Update CustomFieldNew and related components for improved input handling and layout
+[33m5f8e07d[m style: Update CustomFieldNew CSS for improved layout and reset button handling
+[33m0500595[m style: Refine CustomFieldNew CSS for layout and transition enhancements
+[33maf62d72[m style: Update CustomFieldNew CSS for improved layout and border-radius adjustments
+[33m88ca6e5[m refactor: Clean up CustomFieldNew component by removing debug logs and optimizing event handling
+[33m389c367[m feat: Enhance CustomFieldNew with floating label functionality and input handling improvements
+[33mb477bfa[m feat: Enhance CompressionSection and CustomFieldNew with clear functionality and improved styling
+[33m64e8a97[m feat: Update advanced and encryption settings with placeholders and improved styling
+[33m7b11e5f[m feat: Enhance CompressionSection with output controls and improved input components
+[33me0b6dc5[m feat: Add external element blurring functionality to FileTable interactions
+[33m528c1be[m feat: Enhance FileTable and JobArea keyboard handling with debug logging
+[33mfa0f22a[m refactor: Remove CompressionSectionNew component and update related references
+[33m3f1df23[m feat: Integrate nuxt-color-picker and enhance debug options
+[33m40277a0[m feat: Add hotzone overlays and debug options for button positioning
+[33mf2e61b9[m feat: Implement dropdown container management and enhance teleport functionality
