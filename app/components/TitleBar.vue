@@ -714,6 +714,8 @@ const handleShowChangelog = (closeDropdown: () => void): void => {
     footerJustifyContent: "center",
     closeOnClickOutside: true,
     size: "large",
+    widthMode: "fixed",
+    fixedWidth: "85vw",
   };
   modalsStore.openModal("ChangelogModalContent", modalOptions);
   closeDropdown();
@@ -733,6 +735,11 @@ const handleShowAbout = (closeDropdown: () => void): void => {
     ],
     footerJustifyContent: "center",
     closeOnClickOutside: true,
+    // Use sticky absolute header with fade-in on scroll
+    stickyHeaderMode: 'absolute',
+    headerFadeInOnScroll: true,
+    headerFadeThresholdPx: 40,
+    headerTitleJustify: 'center',
   };
   modalsStore.openModal("AboutModalContent", modalOptions);
   closeDropdown();

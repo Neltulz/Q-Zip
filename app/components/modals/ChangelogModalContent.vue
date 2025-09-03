@@ -17,7 +17,7 @@
           :class="{ active: selected === '0.1.24' }"
           @click="emitSelected('0.1.24')"
           btn-theme="liter"
-          button-style-class="trans-btn can-become-active"
+          button-style-class="trans-btn can-become-active active-line-inline-end"
         >
           v0.1.24
         </CustomButton>
@@ -27,7 +27,7 @@
           :class="{ active: selected === '0.1.23' }"
           @click="emitSelected('0.1.23')"
           btn-theme="liter"
-          button-style-class="trans-btn can-become-active"
+          button-style-class="trans-btn can-become-active active-line-inline-end"
         >
           v0.1.23
         </CustomButton>
@@ -37,7 +37,7 @@
           :class="{ active: selected === 'all' }"
           @click="emitSelected('all')"
           btn-theme="liter"
-          button-style-class="trans-btn can-become-active"
+          button-style-class="trans-btn can-become-active active-line-inline-end"
         >
           All Versions
         </CustomButton>
@@ -45,7 +45,7 @@
     </div>
 
     <!-- Main column: changelog entries -->
-    <div v-else-if="props.section === 'main'" class="changelog-content-area">
+    <div v-else-if="props.section === 'main'">
       <ChangelogMainContent :selected-version="selected" />
     </div>
 

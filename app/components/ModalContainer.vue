@@ -22,6 +22,7 @@
         :modal-data-name="modal.component"
         :modal-id="modal.id"
         :options="getModalOptions(modal)"
+        :use-content-grid="shouldUseContentGrid(modal.component)"
       >
         <template v-if="isThreeSection(modal.component)" #left-column="{ modalsStore, modalId }">
           <component
@@ -130,16 +131,22 @@ const getModalOptions = (modal: any) => {
   if (modal.component === 'ChangelogModalContent') {
     return {
       ...modal.options,
-      widthMode: 'fixed',
+      widthMode: 'auto',
       heightMode: 'fixed',
-      fixedWidth: '95vw',
       fixedHeight: '70vh',
       // Provide a CSS var via style for main column cap
-      style: { '--modal-main-max-width': '1000px' },
+      style: {
+        // Make the main column much wider while respecting the dialog max-width
+        '--modal-main-max-width': '1600px',
+      },
     };
   }
   // Defaults for others
   return modal.options;
+};
+
+const shouldUseContentGrid = (componentName: string): boolean => {
+  return componentName === 'ChangelogModalContent' || componentName === 'AboutModalContent';
 };
 </script>
 <style scoped>

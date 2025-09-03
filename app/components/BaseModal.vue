@@ -15,8 +15,8 @@
       <div class="modal-backdrop" />
       <dialog ref="dialog" class="modal-dialog" :style="modalDialogStyle">
         <div v-if="props.options" class="modal-content" @click.stop>
-          <div class="modal-header">
-            <div class="start-section">
+          <div class="modal-header" :class="headerClasses">
+            <div class="header-main">
               <slot name="header-icon">
                 <Icon v-if="props.options.icon" :name="props.options.icon" size="24" />
                 <Icon v-else name="mdi:information-outline" size="24" />
@@ -24,17 +24,6 @@
               <slot name="header-title">
                 <h2 class="title">{{ props.options.title }}</h2>
               </slot>
-            </div>
-            <div class="end-section">
-              <slot name="end-buttons" />
-              <CustomButton
-                v-if="props.options.showCloseButton"
-                button-style-class="trans-btn"
-                data-name="modal-close-btn"
-                first-icon-name="mdi:close"
-                :first-icon-size="24"
-                @click="handleClose('cancel')"
-              />
             </div>
           </div>
           <div class="modal-body">
@@ -72,12 +61,14 @@
                     },
                   }"
                 >
-                  <!-- Render the description from props BEFORE the slot content -->
-                  <div v-if="descriptionContent.length > 0" class="modal-description">
-                    <p v-for="(line, index) in descriptionContent" :key="index" v-html="line" />
-                  </div>
-                  <!-- Provide modal store and ID to child components -->
-                  <slot name="body-content" :modalsStore="modalsStore" :modalId="props.modalId" />
+                  <component :is="props.useContentGrid ? ContentGrid : 'div'">
+                    <!-- Render the description from props BEFORE the slot content -->
+                    <div v-if="descriptionContent.length > 0" :class="['modal-description', props.useContentGrid ? 'grid-center' : '']">
+                      <p v-for="(line, index) in descriptionContent" :key="index" v-html="line" />
+                    </div>
+                    <!-- Provide modal store and ID to child components -->
+                    <slot name="body-content" :modalsStore="modalsStore" :modalId="props.modalId" />
+                  </component>
                 </OverlayScrollbarsComponent>
               </div>
 
@@ -114,12 +105,14 @@
                 },
               }"
             >
-              <!-- Render the description from props BEFORE the slot content -->
-              <div v-if="descriptionContent.length > 0" class="modal-description">
-                <p v-for="(line, index) in descriptionContent" :key="index" v-html="line" />
-              </div>
-              <!-- Provide modal store and ID to child components -->
-              <slot name="body-content" :modalsStore="modalsStore" :modalId="props.modalId" />
+              <component :is="props.useContentGrid ? ContentGrid : 'div'">
+                <!-- Render the description from props BEFORE the slot content -->
+                <div v-if="descriptionContent.length > 0" :class="['modal-description', props.useContentGrid ? 'grid-center' : '']">
+                  <p v-for="(line, index) in descriptionContent" :key="index" v-html="line" />
+                </div>
+                <!-- Provide modal store and ID to child components -->
+                <slot name="body-content" :modalsStore="modalsStore" :modalId="props.modalId" />
+              </component>
             </OverlayScrollbarsComponent>
           </div>
           <div
@@ -158,6 +151,7 @@ import { useModalsStore } from "@/stores/modalsStore";
 import { logLifecycle, logManagerAction } from "@/utils/loggers";
 import type { ModalOptions as OriginalModalOptions } from "@/types/modal";
 import CustomButton from "./CustomButton.vue";
+import ContentGrid from "./ContentGrid.vue";
 // Locally extend the global modal options type for component-specific props
 interface ModalOptions extends OriginalModalOptions {
   closeOnClickOutside?: boolean;
@@ -168,6 +162,13 @@ interface ModalOptions extends OriginalModalOptions {
   heightMode?: "auto" | "fixed"; // default auto
   fixedWidth?: string; // e.g., "75vw"
   fixedHeight?: string; // e.g., "70vh"
+  // Allow passing CSS variables or inline styles to the dialog element
+  style?: Record<string, string>;
+  // Header behavior
+  stickyHeaderMode?: 'normal' | 'absolute';
+  headerFadeInOnScroll?: boolean;
+  headerFadeThresholdPx?: number;
+  headerTitleJustify?: 'start' | 'center' | 'end';
 }
 // Correctly define props without destructuring to preserve reactivity
 const props = defineProps<{
@@ -175,6 +176,7 @@ const props = defineProps<{
   modalId: string;
   modalDataName?: string;
   isActive: boolean; // New prop passed by ModalContainer
+  useContentGrid?: boolean; // Wrap body content in ContentGrid when true
 }>();
 const themeStore = useThemeStore();
 const modalsStore = useModalsStore();
@@ -282,10 +284,60 @@ const dialogHeight = computed(() => {
   return "auto";
 });
 
-const modalDialogStyle = computed(() => ({
-  "--modal-max-width": dialogWidth.value,
-  "--modal-height": dialogHeight.value,
-} as Record<string, string>));
+const modalDialogStyle = computed(() => {
+  const styleVars: Record<string, string> = {
+    "--modal-height": dialogHeight.value,
+    "--modal-header-title-align": props.options?.headerTitleJustify === 'center'
+      ? 'center'
+      : props.options?.headerTitleJustify === 'end'
+        ? 'right'
+        : 'left',
+    "--modal-header-justify": props.options?.headerTitleJustify === 'center'
+      ? 'center'
+      : props.options?.headerTitleJustify === 'end'
+        ? 'flex-end'
+        : 'flex-start',
+  };
+  if (props.options?.widthMode === 'fixed') {
+    const w = props.options?.fixedWidth ?? '95vw';
+    styleVars["--modal-max-width-limit"] = w;
+    styleVars["--modal-width"] = w;
+  }
+  // Merge any inline style variables provided via modal options (scoped per modal)
+  if (props.options?.style) {
+    Object.assign(styleVars, props.options.style);
+  }
+  return styleVars;
+});
+
+// Header classes and scroll-reveal logic
+const headerShouldReveal = ref(false);
+const headerClasses = computed(() => ({
+  'is-absolute': props.options?.stickyHeaderMode === 'absolute',
+  'is-faded': props.options?.headerFadeInOnScroll && !headerShouldReveal.value,
+}));
+
+const onScrollCheckReveal = () => {
+  const threshold = props.options?.headerFadeThresholdPx ?? 40;
+  const viewport = dialog.value?.querySelector('.modal-column-main [data-overlayscrollbars-viewport]')
+    || dialog.value?.querySelector('.modal-body-scrollbar [data-overlayscrollbars-viewport]');
+  const scroller = viewport as HTMLElement | null;
+  const scrollTop = scroller?.scrollTop ?? 0;
+  headerShouldReveal.value = scrollTop >= threshold;
+};
+
+onMounted(() => {
+  if (props.options?.headerFadeInOnScroll || props.options?.stickyHeaderMode === 'absolute') {
+    setTimeout(() => {
+      const viewport = dialog.value?.querySelector('.modal-column-main [data-overlayscrollbars-viewport]')
+        || dialog.value?.querySelector('.modal-body-scrollbar [data-overlayscrollbars-viewport]');
+      if (viewport instanceof HTMLElement) {
+        viewport.addEventListener('scroll', onScrollCheckReveal, { passive: true });
+      }
+      onScrollCheckReveal();
+    }, 50);
+  }
+});
 </script>
 <style scoped>
 .modal-wrapper {
@@ -323,10 +375,12 @@ const modalDialogStyle = computed(() => ({
   display: none;
 }
 .modal-dialog {
-  --modal-max-width: 95vw;
+  --modal-max-width: 95vw; /* default cap */
+  --modal-max-width-limit: var(--modal-max-width);
   --modal-left-width: 260px;
   --modal-right-width: 260px;
   --modal-height: 70vh;
+  --modal-min-width: 35vw;
   --modal-bg: var(--bg-clr-liter);
   --modal-brdr: var(--brdr-clr-dark);
   --modal-header-pad-in: calc(var(--pad-in) * 3);
@@ -344,8 +398,9 @@ const modalDialogStyle = computed(() => ({
   justify-self: center;
   max-height: 80vh;
   height: var(--modal-height);
-  max-width: var(--modal-max-width);
-  width: var(--modal-max-width);
+  max-width: var(--modal-max-width-limit);
+  min-width: var(--modal-min-width);
+  width: var(--modal-width, auto);
   opacity: 0;
   overflow: visible;
   padding: 0;
@@ -382,38 +437,52 @@ const modalDialogStyle = computed(() => ({
   display: flex;
   gap: 12px;
   grid-area: modal-header;
-  justify-content: space-between;
+  justify-content: var(--modal-header-justify, space-between);
   overflow: hidden;
   padding-block: var(--modal-header-pad-blok);
   padding-inline: var(--modal-header-pad-in);
-  border-bottom: 1px solid var(--modal-brdr);
+  border-bottom: 1px solid var(--brdr-clr-liter);
+  background-color: var(--modal-bg);
   width: 100%;
 }
-.modal-header .start-section {
+.modal-header.is-absolute {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  border-bottom: 1px solid var(--brdr-clr-liter);
+  z-index: 3;
+  /* Match rounded corners of the modal container */
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+.modal-header.is-faded {
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.modal-header.is-absolute:not(.is-faded) {
+  opacity: 1;
+}
+.modal-header .header-main {
   align-items: center;
   display: flex;
   gap: 12px;
   max-width: 100%;
   overflow: hidden;
 }
-.modal-header .start-section .iconify {
+.modal-header .header-main .iconify {
   min-width: 16px;
-}
-.modal-header .end-section {
-  align-items: center;
-  display: flex;
-  gap: 8px;
 }
 .modal-header .title {
   flex-grow: 1;
   font-size: 1.5rem;
   font-weight: 600;
   min-width: 0;
+  text-align: var(--modal-header-title-align, left);
 }
 .modal-body {
   grid-area: modal-body;
   line-height: 1.5;
-  max-width: var(--modal-max-width);
+  width: auto;
   overflow: hidden;
 }
 .modal-body .modal-body-scrollbar {
@@ -424,21 +493,24 @@ const modalDialogStyle = computed(() => ({
 }
 .modal-body :deep(p) {
   margin-block-end: 1em;
-  max-width: 100%;
-  width: var(--ideal-char-reading-count);
+  max-width: var(--ideal-char-reading-count);
+  width: auto;
 }
 .modal-body :deep(p:last-child) {
   margin-block-end: 0;
 }
-.modal-body :deep(li),
+.modal-body :deep(li) {
+  max-width: var(--ideal-char-reading-count);
+  width: auto;
+}
+
 .modal-body :deep(h1),
 .modal-body :deep(h2),
 .modal-body :deep(h3),
 .modal-body :deep(h4),
 .modal-body :deep(h5),
 .modal-body :deep(h6) {
-  max-width: 100%;
-  width: var(--ideal-char-reading-count);
+  width: auto;
 }
 .modal-body:deep(.two-column-grid) {
   display: grid;
@@ -475,11 +547,30 @@ const modalDialogStyle = computed(() => ({
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: relative;
 }
 
 .modal-column-left {
   width: var(--modal-left-width);
   max-width: var(--modal-left-width);
+}
+
+.modal-column-left:after,
+.modal-column-right:before {
+  display: block;
+  content: "";
+  position: absolute;
+  inset-block: 20px;
+}
+
+.modal-column-left:after {
+  border-inline-end: 1px solid var(--brdr-clr-liter);
+  inset-inline-end: 0;
+}
+
+.modal-column-right:before {
+  border-inline-start: 1px solid var(--brdr-clr-liter);
+  inset-inline-start: 0;
 }
 
 .modal-column-main {
@@ -498,6 +589,9 @@ const modalDialogStyle = computed(() => ({
   padding-block-end: calc(var(--modal-body-pad-blok) * 2);
   padding-block-start: var(--modal-body-pad-blok);
   padding-inline: var(--modal-body-pad-in);
+  /* Center children with max-width content */
+  display: grid;
+  justify-items: center;
 }
 
 .modal-description {
