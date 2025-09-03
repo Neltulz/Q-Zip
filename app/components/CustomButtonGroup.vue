@@ -22,14 +22,20 @@
 <!-- #endregion -->
 <!-- #region template -->
 <template>
-  <div class="custom-button-group" :class="{ disabled }" data-component-name="CustomButtonGroup">
+  <div
+    ref="rootRef"
+    class="custom-button-group"
+    :class="{ disabled, 'is-vertical': isVertical }"
+    :data-orientation="isVertical ? 'vertical' : 'horizontal'"
+    data-component-name="CustomButtonGroup"
+  >
     <slot />
   </div>
 </template>
 
 <!-- #region script -->
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -45,6 +51,61 @@ const props = withDefaults(
 
 
 const isVertical = computed(() => props.orientation === 'vertical');
+
+// Dynamically insert divider elements between direct child buttons
+const rootRef = ref<HTMLElement | null>(null);
+let mo: MutationObserver | null = null;
+
+const syncDividers = () => {
+  const root = rootRef.value;
+  if (!root) return;
+
+  // Remove existing dividers (only those we manage)
+  Array.from(root.children)
+    .forEach((el) => {
+      if ((el as HTMLElement).classList?.contains('divider')) {
+        root.removeChild(el);
+      }
+    });
+
+  // Collect direct child buttons rendered by CustomButton
+  const buttons: HTMLElement[] = Array.from(root.children)
+    .filter((el): el is HTMLElement => el instanceof HTMLElement)
+    .filter((el) => el.classList.contains('custom-button'));
+
+  // Interleave dividers between buttons
+  for (let i = 0; i < buttons.length - 1; i += 1) {
+    const btn = buttons[i] as HTMLElement;
+    if (!btn) continue;
+    const divider = document.createElement('div');
+    divider.className = 'divider';
+    // Insert after the button
+    const next = btn.nextSibling;
+    if (next) root.insertBefore(divider, next);
+    else root.appendChild(divider);
+  }
+};
+
+onMounted(() => {
+  syncDividers();
+  mo = new MutationObserver(() => {
+    // Defer to end of tick to ensure DOM settled
+    nextTick().then(syncDividers);
+  });
+  mo.observe(rootRef.value as Node, { childList: true });
+});
+
+onBeforeUnmount(() => {
+  if (mo) {
+    mo.disconnect();
+    mo = null;
+  }
+});
+
+watch(isVertical, async () => {
+  await nextTick();
+  syncDividers();
+});
 
 // Expose the component for parent access if needed
 defineExpose({});
@@ -87,18 +148,8 @@ defineExpose({});
   z-index: 10001;
 }
 
-.debug-popup .custom-button-group .divider {
+.debug-popup .custom-button-group :deep(.divider) {
   z-index: 10002;
-}
-
-/* First button element - no left margin */
-.custom-button-group :deep(.custom-button:first-child) {
-  margin-inline-start: 2px;
-}
-
-/* Last button element - no right margin */
-.custom-button-group :deep(.custom-button:last-child) {
-  margin-inline-end: 2px;
 }
 
 /* Button element styling */
@@ -112,12 +163,10 @@ defineExpose({});
 }
 
 /* Vertical orientation button adjustments */
-.custom-button-group {
-  &[style*="column"] :deep(.custom-button) {
-    width: 100%;
-    padding-block: 0.75em;
-    min-width: auto;
-  }
+.custom-button-group.is-vertical :deep(.custom-button) {
+  width: 100%;
+  padding-block: 0.75em;
+  min-width: auto;
 }
 
 /* Button content visibility */
@@ -136,37 +185,46 @@ defineExpose({});
 
 
 
-/* Divider element between buttons - completely global for slotted content */
-:global(.divider) {
-  position: relative !important;
-  transition: opacity 500ms ease !important;
-  z-index: 5 !important;
-  opacity: 1 !important;
-  /* Horizontal orientation (default) */
-  border-inline-start: 2px solid var(--brdr-clr-liter) !important;
-  height: 100% !important;
-  margin-block: 0 !important;
-  width: auto !important;
+/* Divider element between buttons - scoped to this group (deep selector to catch dynamic nodes) */
+.custom-button-group :deep(.divider) {
+  position: relative;
+  transition: opacity 200ms ease;
+  z-index: 5;
+  opacity: 1;
+  /* Horizontal orientation (default): vertical line */
+  border-inline-start: 1px solid var(--brdr-clr-liter);
+  height: calc(100% - 10px); /* 5px inset top & bottom */
+  margin-block: 5px;
+  width: 0;
 }
 
-/* Vertical orientation divider styling */
-.custom-button-group:has(:deep(.divider)) {
-  :global(.divider) {
-    border-block-start: 2px solid var(--brdr-clr-liter) !important;
-    border-inline-start: none !important;
-    width: 100% !important;
-    height: auto !important;
-    margin-inline: 0 !important;
-  }
+/* Vertical orientation divider styling: horizontal line */
+.custom-button-group[data-orientation="vertical"] :deep(.divider) {
+  border-inline-start: none;
+  border-block-start: 1px solid var(--brdr-clr-liter);
+  height: 0;
+  width: calc(100% - 10px); /* 5px inset left/right */
+  margin-inline: 5px;
+  margin-block: 0;
 }
 
-/* Hide dividers adjacent to hovered/active buttons */
-:global(.custom-button:hover + .divider) {
-  opacity: 0 !important;
+/* Hide the divider immediately AFTER the active button */
+.custom-button-group :deep(.custom-button.active + .divider) {
+  opacity: 0;
 }
 
-:global(.custom-button.active + .divider) {
-  opacity: 0 !important;
+/* Hide the divider immediately BEFORE the active button using :has */
+.custom-button-group :deep(.divider:has(+ .custom-button.active)) {
+  opacity: 0;
+}
+
+/* Also hide adjacent dividers around the hovered button */
+.custom-button-group :deep(.custom-button:hover + .divider) {
+  opacity: 0;
+}
+
+.custom-button-group :deep(.divider:has(+ .custom-button:hover)) {
+  opacity: 0;
 }
 </style>
 <!-- #endregion -->

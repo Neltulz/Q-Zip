@@ -234,7 +234,7 @@
             @mouseenter="onNavToWelcomeMouseEnter"
             @mouseleave="hideCenterTooltip"
           />
-          <CustomButtonGroup>
+          <CustomButtonGroup orientation="horizontal">
             <CustomButton
               btn-theme="liter"
               button-style-class="trans-btn can-become-active active-line-block-end"
@@ -249,7 +249,7 @@
             >
               Job Setup
             </CustomButton>
-            <div class="divider" />
+            
             <CustomButton
               btn-theme="liter"
               button-style-class="trans-btn can-become-active active-line-block-end"
@@ -264,7 +264,7 @@
             >
               Job Queue
             </CustomButton>
-            <div class="divider" />
+            
             <CustomButton
               btn-theme="liter"
               button-style-class="trans-btn can-become-active active-line-block-end"

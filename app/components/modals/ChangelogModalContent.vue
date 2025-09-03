@@ -21,7 +21,7 @@
         >
           v0.1.24
         </CustomButton>
-        <div class="divider" />
+        
         <CustomButton
           data-name="changelog-version-0-1-23"
           :class="{ active: selected === '0.1.23' }"
@@ -31,7 +31,7 @@
         >
           v0.1.23
         </CustomButton>
-        <div class="divider" />
+        
         <CustomButton
           data-name="changelog-version-all"
           :class="{ active: selected === 'all' }"
