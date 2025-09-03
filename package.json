@@ -33,14 +33,14 @@
     "pinia-plugin-persistedstate": "^4.4.1",
     "tailwindcss": "^4.1.8",
     "vue": "^3.5.15",
-    "vue-router": "^4.5.1"
+    "vue-router": "^4.5.1",
+    "nuxt-color-picker": "^1.2.8"
   },
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
     "@tauri-apps/api": "^2.7.0",
     "@tauri-apps/cli": "^2.7.1",
     "@types/node": "^22.15.29",
-    "nuxt-color-picker": "^1.2.8",
     "typescript": "^5.8.3"
   }
 }

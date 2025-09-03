@@ -70,7 +70,6 @@
 </template>
 <script setup lang="ts">
 import CustomButton from "../CustomButton.vue";
-import { defineProps, defineEmits } from "vue";
 const props = defineProps({
   showCheckboxes: Boolean,
   allSelected: Boolean,

@@ -229,8 +229,6 @@ export const useDebugStore = defineStore(
       disableBackdropBlurOnDrag: true,
       // Interior elements opacity
       debugPopupInteriorOpacity: 0.75,
-      // Visual helpers
-      showHotzones: false,
       // TitleBar debug options
       showTitlebarHighlight: false,
       titlebarHighlightColor: 'hsl(210, 100%, 50%)',

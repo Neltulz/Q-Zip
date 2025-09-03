@@ -4,7 +4,7 @@
 
 /* Block: Compression Section */
 .compression-section {
-  background-color: var(--btn-bg-activ-clr, var(--bg-clr-lite));
+  background-color: var(--btn-bg-activ-clr-dark, var(--bg-clr-lite));
   border: 1px solid var(--brdr-clr);
   border-radius: var(--brdr-rad);
   container-name: compression-section;
@@ -18,6 +18,7 @@
 
 /* Element: Tabs */
 .compression-section__tabs {
+  background-color: var(--bg-clr-lite);
   border-block-end: 1px solid var(--brdr-clr-lite);
   display: grid;
   grid-template-columns: 1fr 1fr; /* data-name="global-settings-btn" | data-name="job-specific-settings-btn" */
@@ -34,23 +35,66 @@
 }
 
 /* Modifier: Tab Button Visual Style */
-.compression-section__tab-button .visual-style {
+.compression-section__tab-button :deep(.visual-style) {
   border: none;
   box-shadow: none;
+  border-top-left-radius: var(--brdr-rad);
+  border-top-right-radius: var(--brdr-rad);
+  border-bottom-left-radius: var(--btn-border-radius);
+  border-bottom-right-radius: var(--btn-border-radius);
+}
+
+/* Modifier: Inactive Tab Button */
+.compression-section__tab-button:not(.compression-section__tab-button--active) :deep(.visual-style) {
+  border-top-left-radius: var(--brdr-rad);
+  border-top-right-radius: var(--brdr-rad);
+  border-bottom-left-radius: var(--btn-border-radius);
+  border-bottom-right-radius: var(--btn-border-radius);
+}
+
+/* Sub-Modifier: Inactive Tab Button hover (tone down brightness) */
+.compression-section__tab-button:not(.compression-section__tab-button--active):hover[data-btn-theme="dark"] :deep(.visual-style) {
+  background-color: var(--btn-bg-hvr-clr-darkr);
+}
+.compression-section__tab-button:not(.compression-section__tab-button--active):hover[data-btn-theme="default"] :deep(.visual-style) {
+  background-color: var(--btn-bg-hvr-clr-dark);
 }
 
 /* Modifier: Active Tab Button */
-.compression-section__tab-button--active .visual-style {
-  background-color: var(--btn-bg-activ-clr) !important;
+.compression-section__tab-button.active[data-btn-theme="dark"] :deep(.visual-style),
+.compression-section__tab-button--active[data-btn-theme="dark"] :deep(.visual-style),
+.compression-section__tab-button.active[data-btn-theme="default"] :deep(.visual-style),
+.compression-section__tab-button--active[data-btn-theme="default"] :deep(.visual-style) {
+  background-color: var(--btn-bg-activ-clr-dark, var(--bg-clr-lite));
   border-top-left-radius: var(--brdr-rad);
   border-top-right-radius: var(--brdr-rad);
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
+  box-shadow: none;
+}
+
+/* Ensure the CustomButton internal variables resolve to the same color as the
+   section body, so hover/active states always match visually. */
+.compression-section__tab-button.active,
+.compression-section__tab-button--active {
+  --btn-bg-clr: var(--btn-bg-activ-clr-dark, var(--bg-clr-lite));
+  --btn-bg-hvr-clr: var(--btn-bg-activ-clr-dark, var(--bg-clr-lite));
+  --btn-bg-activ-clr: var(--btn-bg-activ-clr-dark, var(--bg-clr-lite));
+}
+
+/* Remove hover effect for active tab buttons */
+.compression-section__tab-button.active[data-btn-theme="dark"]:hover :deep(.visual-style),
+.compression-section__tab-button--active[data-btn-theme="dark"]:hover :deep(.visual-style),
+.compression-section__tab-button.active[data-btn-theme="default"]:hover :deep(.visual-style),
+.compression-section__tab-button--active[data-btn-theme="default"]:hover :deep(.visual-style) {
+  background-color: var(--btn-bg-activ-clr-dark, var(--bg-clr-lite));
+  border-color: inherit;
+  transition: none;
 }
 
 /* Hide the active-state indicator line for these tab buttons */
-.compression-section__tab-button.can-become-active .visual-style::before {
-  display: none !important;
+.compression-section__tab-button.can-become-active :deep(.visual-style::before) {
+  display: none;
 }
 
 /* Element: Content */
