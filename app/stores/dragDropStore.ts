@@ -16,13 +16,22 @@
  * dragDropStore.startInternalDrag(...);
  */
 import { defineStore } from "pinia";
-import { ref, type Ref } from "vue";
+import { ref, type Ref, computed } from "vue";
 import { logStoreAction } from "@/utils/loggers";
+import { useDebugStore } from "@/stores/debugStore";
 export const useDragDropStore = defineStore(
   "dragDrop",
   () => {
+    const debugStore = useDebugStore();
+
     // --- STATE ---
-    const isInternalDragActive: Ref<boolean> = ref(false);
+    const _isInternalDragActive: Ref<boolean> = ref(false);
+
+    // --- COMPUTED PROPERTIES ---
+    const isInternalDragActive = computed(() => {
+      // Return true if actually dragging OR if debug option is enabled
+      return _isInternalDragActive.value || debugStore.debugOptions.forceDragZonesVisible;
+    });
     const internalDraggedFiles: Ref<string[]> = ref([]);
     const internalDragOperation: Ref<"move" | "copy" | null> = ref(null);
     const internalDragSourceJobId: Ref<number | null> = ref(null);
@@ -34,7 +43,7 @@ export const useDragDropStore = defineStore(
     }
     function startInternalDrag(files: string[], operation: "move" | "copy" | null = null, sourceJobId: number): void {
       logStoreAction("dragDropStore", `Starting internal drag: ${files.length} files, operation: ${operation}, sourceJob: ${sourceJobId}`);
-      isInternalDragActive.value = true;
+      _isInternalDragActive.value = true;
       internalDraggedFiles.value = files;
       internalDragOperation.value = operation;
       internalDragSourceJobId.value = sourceJobId;
@@ -42,7 +51,7 @@ export const useDragDropStore = defineStore(
     }
     function endInternalDrag(): void {
       logStoreAction("dragDropStore", "Ending internal drag.");
-      isInternalDragActive.value = false;
+      _isInternalDragActive.value = false;
       internalDraggedFiles.value = [];
       internalDragOperation.value = null;
       internalDragSourceJobId.value = null;

@@ -40,6 +40,8 @@ export interface DebugOptions {
   logTooltipTargetResolution: boolean;
   logTooltipVisibilityChanges: boolean;
   logTooltipOrphanedDetection: boolean;
+  // Job selector debugging options
+  forceDragZonesVisible: boolean;
   // Opacity controls
   debugPopupOpacity: number;
   debugPopupSecondaryOpacity: number;
@@ -216,6 +218,8 @@ export const useDebugStore = defineStore(
       logTooltipTargetResolution: false,
       logTooltipVisibilityChanges: false,
       logTooltipOrphanedDetection: false,
+      // Job selector debugging options
+      forceDragZonesVisible: false,
       // Opacity controls
       debugPopupOpacity: 0.75,
       debugPopupSecondaryOpacity: 0.4,
@@ -366,6 +370,8 @@ export const useDebugStore = defineStore(
         logTooltipTargetResolution: false,
         logTooltipVisibilityChanges: false,
         logTooltipOrphanedDetection: false,
+        // Job selector debugging options
+        forceDragZonesVisible: false,
         // Opacity controls
         debugPopupOpacity: 0.75,
         debugPopupSecondaryOpacity: 0.4,

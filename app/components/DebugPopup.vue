@@ -1114,6 +1114,47 @@
               </div>
             </div>
 
+            <!-- Job Selectors Tab -->
+            <div v-if="activeTab === 'jobselectors'" class="debug-popup__tab-panel">
+              <div class="debug-popup__general-content">
+                <OverlayScrollbarsComponent
+                  :options="{
+                    scrollbars: {
+                      visibility: 'auto',
+                      autoHide: 'move',
+                      autoHideSuspend: true,
+                      theme: currentTheme,
+                    },
+                  }"
+                  defer
+                  class="debug-popup__scrollbar--stretch"
+                >
+                  <div class="debug-popup__general-scrollable-content">
+                    <div class="debug-popup__general-options">
+                      <div class="debug-popup__option-group">
+                        <h3>Drag Zone Debugging</h3>
+                        <label class="debug-popup__option">
+                          <USwitch
+                            :model-value="debugStore.debugOptions.forceDragZonesVisible"
+                            @update:model-value="(value) => debugStore.updateDebugOption('forceDragZonesVisible', value)"
+                          />
+                          <span>Force Drag Zones Visible</span>
+                          <div
+                            :ref="(el) => infoIconRefs['forceDragZonesVisible'] = el as HTMLElement"
+                            class="debug-popup__info-icon-wrapper"
+                            @mouseenter="(event) => handleInfoIconMouseEnter('forceDragZonesVisible', event)"
+                            @mouseleave="handleInfoIconMouseLeave"
+                          >
+                            <Icon name="mdi:information" class="debug-popup__info-icon" />
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </OverlayScrollbarsComponent>
+              </div>
+            </div>
+
             <!-- TitleBar Tab -->
             <div v-if="activeTab === 'titlebar'" class="debug-popup__tab-panel">
               <div class="debug-popup__general-content">
@@ -1241,6 +1282,11 @@ const tabs = [
     id: 'debugbutton',
     label: 'DebugButton',
     icon: 'mdi:bug'
+  },
+  {
+    id: 'jobselectors',
+    label: 'Job Selectors',
+    icon: 'mdi:view-grid'
   },
   {
     id: 'titlebar',
@@ -1434,6 +1480,10 @@ const debugOptionTooltips = {
   checkTemplateErrors: {
     text: "Scans the DOM for Vue template errors and problematic patterns. This helps identify components with nested template structures that might cause compilation issues.",
     example: "Helps debug Vue compilation errors and template structure issues"
+  },
+  forceDragZonesVisible: {
+    text: "Forces job selector drag zones to be permanently visible by simulating an internal drag operation. This makes it easier to debug drag zone positioning and styling without having to actually drag files.",
+    example: "Drag zones will remain visible even when not dragging files"
   }
 };
 

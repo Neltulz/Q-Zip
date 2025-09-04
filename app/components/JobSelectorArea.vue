@@ -35,7 +35,7 @@
             :class="{
               active: jobsStore.selectedJobId === job.id,
               'active-line-inline': jobsStore.selectedJobId === job.id,
-              'drop-target-hover': hoveredJobId === job.id && dragDropStore.isInternalDragActive,
+              'drop-target-hover': shouldShowDropTargetHover.value && hoveredJobId === job.id,
               [`has-notification-${jobNotificationStates.get(job.id)}`]: jobNotificationStates.has(job.id),
             }"
             button-style-class="trans-btn btn-darkr can-become-active"
@@ -311,7 +311,7 @@
           ref="addJobButtonRef"
           class="add-job-btn"
           :class="{
-            'drop-target-hover': hoveredJobId === 'new-job' && dragDropStore.isInternalDragActive,
+            'drop-target-hover': shouldShowDropTargetHover.value && hoveredJobId === 'new-job',
           }"
           button-style-class="trans-btn"
           data-name="add-job-btn"
@@ -450,6 +450,7 @@ import { useThemeStore } from "@/stores/themeStore";
 import { useUiStore, type NotificationType, type Notification } from "@/stores/uiStore";
 import { useModalsStore } from "@/stores/modalsStore";
 import { useDragDropStore } from "@/stores/dragDropStore";
+import { useDebugStore } from "@/stores/debugStore";
 import type { ModalOptions } from "@/types/modal";
 import DropdownMenu from "@/components/DropdownMenu.vue";
 import CustomButton from "./CustomButton.vue";
@@ -474,12 +475,22 @@ const jobsStore = useJobsStore();
 const uiStore = useUiStore();
 const modalsStore = useModalsStore();
 const dragDropStore = useDragDropStore();
+const debugStore = useDebugStore();
 const tooltipManager = useTooltipManager();
 const { closeAllDropdowns } = useDropdownManager();
 const currentTheme = computed(() => (themeStore.isEffectiveDark ? "os-theme-light" : "os-theme-dark"));
 const jobsList = computed(() => jobsStore.jobs);
 const hoveredJobId = ref<number | "new-job" | null>(null);
 const scrollComponentRef = ref<InstanceType<typeof OverlayScrollbarsComponent> | null>(null);
+
+// Computed property to safely determine if drop-target-hover should be applied
+const shouldShowDropTargetHover = computed(() => {
+  // Only show drop target hover if we're actually dragging AND have a valid hovered job
+  // AND the debug option is not forcing it visible
+  return dragDropStore.isInternalDragActive &&
+         !debugStore.debugOptions.forceDragZonesVisible &&
+         hoveredJobId.value !== null;
+});
 const jobButtonRefs = ref(new Map<number | "new-job", InstanceType<typeof CustomButton>>());
 const jobContextMenuRefs = ref(new Map<number, InstanceType<typeof DropdownMenu>>());
 const dragActionDropdownRefs = ref(new Map<number | "new-job", InstanceType<typeof DropdownMenu>>());
@@ -569,6 +580,27 @@ watch(
   },
   { deep: true }
 );
+// Watch for drag state changes to ensure hoveredJobId is properly managed
+watch(
+  () => dragDropStore.isInternalDragActive,
+  (isDragging) => {
+    // If we're not actually dragging OR debug option is forcing it, clear hoveredJobId
+    if (!isDragging || debugStore.debugOptions.forceDragZonesVisible) {
+      hoveredJobId.value = null;
+    }
+  }
+);
+
+// Also watch the debug option to clear hoveredJobId if it gets enabled
+watch(
+  () => debugStore.debugOptions.forceDragZonesVisible,
+  (forceVisible) => {
+    if (forceVisible) {
+      hoveredJobId.value = null;
+    }
+  }
+);
+
 watch(
   () => uiStore.pendingNotification,
   (notification: any) => {
@@ -995,23 +1027,29 @@ const onDrop = (targetJobId: number | null): void => {
   }
 };
 const handleJobTabDragOver = (event: DragEvent, targetIdentifier: number | "new-job") => {
-  if (dragDropStore.isInternalDragActive) {
+  if (dragDropStore.isInternalDragActive && !debugStore.debugOptions.forceDragZonesVisible) {
     event.preventDefault();
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = targetIdentifier === dragDropStore.internalDragSourceJobId ? "none" : "copy";
     }
-    if (hoveredJobId.value !== targetIdentifier) {
-      hoveredJobId.value = targetIdentifier;
-    }
+    // Only set hoveredJobId during actual drag operations (not debug mode)
+    hoveredJobId.value = targetIdentifier;
+  } else {
+    // If not actually dragging or in debug mode, ensure hoveredJobId is cleared
+    hoveredJobId.value = null;
   }
 };
 const handleJobTabDragLeave = (event: DragEvent) => {
-  if (dragDropStore.isInternalDragActive) {
+  if (dragDropStore.isInternalDragActive && !debugStore.debugOptions.forceDragZonesVisible) {
     const currentTarget = event.currentTarget as HTMLElement;
     const relatedTarget = event.relatedTarget as HTMLElement | null;
     if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+      // Only clear hoveredJobId during actual drag operations (not debug mode)
       hoveredJobId.value = null;
     }
+  } else {
+    // If not actually dragging or in debug mode, ensure hoveredJobId is cleared
+    hoveredJobId.value = null;
   }
 };
 const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job") => {
@@ -1145,29 +1183,33 @@ const handleJobMouseEnter = (jobId: number, event: MouseEvent): void => {
   tooltipManager.showTooltip('job-' + jobId, originElement);
 };
 const handleJobMouseLeave = (event?: MouseEvent): void => {
-  logHover("JobSelectorArea", `Job mouse leave`, { 
+  logHover("JobSelectorArea", `Job mouse leave`, {
     hasEvent: !!event,
     relatedTarget: event?.relatedTarget,
     currentTarget: event?.currentTarget,
     containsRelatedTarget: event ? (event.currentTarget as HTMLElement)?.contains(event.relatedTarget as HTMLElement) : false
   });
-  
+
+  // Always clear hoveredJobId on mouse leave to prevent any spurious drop-target-hover styling
+  // This is critical to prevent the outline flash
+  hoveredJobId.value = null;
+
   // If no event provided, hide the tooltip
   if (!event) {
     tooltipManager.hideTooltip();
     return;
   }
-  
+
   // Check if the mouse is moving to a child element within the same job selector button
   const relatedTarget = event.relatedTarget as HTMLElement | null;
   const currentTarget = event.currentTarget as HTMLElement;
-  
+
   // If the related target is still within the current job selector button, don't hide the tooltip
   if (relatedTarget && currentTarget.contains(relatedTarget)) {
     logHover("JobSelectorArea", `Not hiding tooltip - mouse still within job selector button`, { relatedTarget, currentTarget });
     return;
   }
-  
+
   logHover("JobSelectorArea", `Hiding tooltip - mouse left job selector button`, { relatedTarget, currentTarget });
   tooltipManager.hideTooltip();
 };
@@ -1176,21 +1218,25 @@ const handleAddJobMouseEnter = (event: MouseEvent): void => {
   tooltipManager.showTooltip('add-job', originElement);
 };
 const handleAddJobMouseLeave = (event?: MouseEvent): void => {
+  // Always clear hoveredJobId on mouse leave to prevent any spurious drop-target-hover styling
+  // This is critical to prevent the outline flash
+  hoveredJobId.value = null;
+
   // If no event provided, hide the tooltip
   if (!event) {
     tooltipManager.hideTooltip();
     return;
   }
-  
+
   // Check if the mouse is moving to a child element within the same button
   const relatedTarget = event.relatedTarget as HTMLElement | null;
   const currentTarget = event.currentTarget as HTMLElement;
-  
+
   // If the related target is still within the current button, don't hide the tooltip
   if (relatedTarget && currentTarget.contains(relatedTarget)) {
     return;
   }
-  
+
   tooltipManager.hideTooltip();
 };
 
@@ -1200,21 +1246,25 @@ const handleExtraOptionsMouseEnter = (event: MouseEvent): void => {
 };
 
 const handleExtraOptionsMouseLeave = (event?: MouseEvent): void => {
+  // Always clear hoveredJobId on mouse leave to prevent any spurious drop-target-hover styling
+  // This is critical to prevent the outline flash
+  hoveredJobId.value = null;
+
   // If no event provided, hide the tooltip
   if (!event) {
     tooltipManager.hideTooltip();
     return;
   }
-  
+
   // Check if the mouse is moving to a child element within the same button
   const relatedTarget = event.relatedTarget as HTMLElement | null;
   const currentTarget = event.currentTarget as HTMLElement;
-  
+
   // If the related target is still within the current button, don't hide the tooltip
   if (relatedTarget && currentTarget.contains(relatedTarget)) {
     return;
   }
-  
+
   tooltipManager.hideTooltip();
 };
 

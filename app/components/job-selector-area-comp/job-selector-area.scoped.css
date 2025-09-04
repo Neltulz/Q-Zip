@@ -1,11 +1,10 @@
 /* 
   components/job-selector-area-comp/job-selector-area.scoped.css 
 */
-/* Global override to fix outline transition */
+/* Base state - no outline at all */
 :global(.job-selector > .visual-style),
 :global(.add-job-btn > .visual-style) {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
+  transition: background-color 0.2s ease-in-out;
 }
 .job-selector-area {
   background-color: var(--bg-clr-dark);
@@ -56,6 +55,7 @@
   --btn-pad-blok: 0;
   --btn-pad-in: 0;
 }
+
 .remove-all-jobs-btn {
   --btn-pad-blok: 0;
   --btn-pad-in: 0;
@@ -63,6 +63,7 @@
 .job-selector-list {
   align-items: center;
   display: inline-flex;
+  gap: 4px;
   justify-content: flex-end;
   overflow-x: hidden;
   overflow-y: auto;
@@ -78,37 +79,28 @@
   position: relative;
   transition: opacity 0.2s ease-in-out;
 }
+
 .job-selector-list > :deep(button.job-selector.is-dragged) {
   opacity: 0.4;
 }
 /* --- Drag & Drop Hover Styles --- */
-/* Only show file operation hover styles when internal drag is active (file operations) */
+/* Keep visual styles invisible during drag operations to prevent background color changes */
 .job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector:not(.active) > .visual-style),
 .job-selector-area.internal-drag-active :deep(.add-job-btn .visual-style) {
-  opacity: 1 !important;
-  outline: 2px dashed hsla(0, 0%, 70%, 0.7);
+  opacity: 0 !important;
   box-shadow: none;
-  transition: all 0.2s ease-in-out;
-  /* Force bottom corners to be square for tab-like appearance */
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
+  /* Apply uniform border-radius to all corners */
+  border-radius: var(--brdr-rad-smalr) !important;
+  margin: 0 !important;
 }
-.job-selector-area.internal-drag-active
-  :deep(.job-selector-list button.job-selector.drop-target-hover:not(.active) > .visual-style),
-.job-selector-area.internal-drag-active :deep(.add-job-btn.drop-target-hover .visual-style) {
-  outline-color: hsla(204, 80%, 60%, 0.85);
-  outline-style: dashed;
-  /* Force bottom corners to be square for tab-like appearance */
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-}
+/* Keep active tab visual styles invisible during drag operations to prevent background color changes */
 .job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector.active.drop-target-hover > .visual-style) {
-  opacity: 1 !important;
-  outline-color: transparent;
+  opacity: 0 !important;
   box-shadow: none;
-  /* Force bottom corners to be square for tab-like appearance */
+  /* Maintain square bottom corners for active tab appearance */
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
+  margin: 0 !important;
 }
 /* Job tab reordering styles - only show when NOT in internal drag mode */
 .job-selector-area:not(.internal-drag-active) :deep(.job-selector-list button.job-selector.is-dragged) {
@@ -143,6 +135,8 @@
   pointer-events: none;
   transition: background-color 0.2s ease-in-out;
   opacity: 0;
+  border-radius: var(--brdr-rad-smalr);
+  margin: 0;
 }
 /* Left hotzone - only visible when dragging */
 .job-selector-area:not(.internal-drag-active) .job-selector-list > :deep(button.job-selector)::before {
@@ -174,6 +168,7 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   height: 100%;
   z-index: 5;
   pointer-events: none;
+  margin: 0;
 }
 .job-selector-line.hotzone-hover {
   background: hsla(204, 80%, 60%, 0.9);
@@ -184,13 +179,14 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   inline-size: 60px;
   min-height: 50px;
   background: rgba(255, 0, 0, 0.1);
-  border-radius: 4px;
+  border-radius: var(--brdr-rad);
   transition: background-color 0.2s ease-in-out;
   cursor: pointer;
   position: absolute;
   right: -68px;
   top: 0;
   z-index: 10;
+  margin: 0;
 }
 .end-list-hotzone:hover {
   background: rgba(255, 0, 0, 0.2);
@@ -200,13 +196,14 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   inline-size: 60px;
   min-height: 50px;
   background: rgba(255, 0, 0, 0.1);
-  border-radius: 4px;
+  border-radius: var(--brdr-rad);
   transition: background-color 0.2s ease-in-out;
   cursor: pointer;
   position: absolute;
   left: -68px;
   top: 0;
   z-index: 10;
+  margin: 0;
 }
 .begin-list-hotzone:hover {
   background: rgba(255, 0, 0, 0.2);
