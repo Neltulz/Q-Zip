@@ -12,235 +12,99 @@
   }
 }
 body {
-  --ideal-char-reading-count: 65ch;
-  --pad-blok: 6px;
-  --pad-in: 10px;
-  --brdr-rad: 8px;
-  --brdr-rad-big: 10px;
-  --brdr-rad-bigr: 12px;
-  --brdr-rad-smal: 6px;
-  --brdr-rad-smalr: 4px;
-  --min-tch-tgt: 34px;
-  --disabled-opacity: 0.25;
-  --bg-lum: 91%;
-  --bg-hue: 0;
-  --bg-sat: 0%;
-  --bg-alph: 1;
-  --bg-clr: hsla(var(--bg-hue), var(--bg-sat), var(--bg-lum), var(--bg-alph));
-  --bg-clr-dark: hsla(
-    var(--bg-hue),
-    var(--bg-sat),
-    calc(var(--bg-lum) + 1.8%),
-    var(--bg-alph)
-  );
-  --bg-clr-darkr: hsla(
-    var(--bg-hue),
-    var(--bg-sat),
-    calc(var(--bg-lum) + 3.6%),
-    var(--bg-alph)
-  );
-  --bg-clr-lite: hsla(
-    var(--bg-hue),
-    var(--bg-sat),
-    calc(var(--bg-lum) - 5.4%),
-    var(--bg-alph)
-  );
-  --bg-clr-liter: hsla(
-    var(--bg-hue),
-    var(--bg-sat),
-    calc(var(--bg-lum) - 9%),
-    var(--bg-alph)
-  );
-  --txt-lum: 35%;
-  --txt-hue: 0;
-  --txt-sat: 0%;
-  --txt-alph: 1;
-  --txt-clr: hsla(var(--txt-hue), var(--txt-sat), var(--txt-lum), var(--txt-alph));
-  --txt-clr-dark: hsla(
-    var(--txt-hue),
-    var(--txt-sat),
-    calc(var(--txt-lum) + 10%),
-    var(--txt-alph)
-  );
-  --txt-clr-darkr: hsla(
-    var(--txt-hue),
-    var(--txt-sat),
-    calc(var(--txt-lum) + 20%),
-    var(--txt-alph)
-  );
-  --txt-clr-lite: hsla(
-    var(--txt-hue),
-    var(--txt-sat),
-    calc(var(--txt-lum) - 10%),
-    var(--txt-alph)
-  );
-  --txt-clr-liter: hsla(
-    var(--txt-hue),
-    var(--txt-sat),
-    calc(var(--txt-lum) - 20%),
-    var(--txt-alph)
-  );
-  --brdr-lum: 82%;
-  --brdr-hue: 0;
-  --brdr-sat: 0%;
-  --brdr-alph: 1;
-  --brdr-clr: hsla(
-    var(--brdr-hue),
-    var(--brdr-sat),
-    var(--brdr-lum),
-    var(--brdr-alph)
-  );
-  --brdr-clr-dark: hsla(
-    var(--brdr-hue),
-    var(--brdr-sat),
-    calc(var(--brdr-lum) + 10%),
-    var(--brdr-alph)
-  );
-  --brdr-clr-darkr: hsla(
-    var(--brdr-hue),
-    var(--brdr-sat),
-    calc(var(--brdr-lum) + 20%),
-    var(--brdr-alph)
-  );
-  --brdr-clr-lite: hsla(
-    var(--brdr-hue),
-    var(--brdr-sat),
-    calc(var(--brdr-lum) - 10%),
-    var(--brdr-alph)
-  );
-  --brdr-clr-liter: hsla(
-    var(--brdr-hue),
-    var(--brdr-sat),
-    calc(var(--brdr-lum) - 20%),
-    var(--brdr-alph)
-  );
-  --blu-lite-lum: 40%;
-  --blu-hue: 204;
-  --blu-sat: 100%;
-  --blu-alph: 1;
-  --blu-lite: hsla(
-    var(--blu-hue),
-    var(--blu-sat),
-    var(--blu-lite-lum),
-    var(--blu-alph)
-  );
-  --blu-lite-trans: hsla(var(--blu-hue), var(--blu-sat), var(--blu-lite-lum), 0);
-  --success-lum: 40%;
-  --success-hue: 145;
-  --success-sat: 63%;
-  --success-alph: 1;
-  --success-clr: hsla(
-    var(--success-hue),
-    var(--success-sat),
-    var(--success-lum),
-    var(--success-alph)
-  );
+  --ideal-char-reading-count: 65ch; /* light theme */
+  --pad-blok: 6px; /* light theme */
+  --pad-in: 10px; /* light theme */
+  --brdr-rad: 8px; /* light theme */
+  --brdr-rad-big: 10px; /* light theme */
+  --brdr-rad-bigr: 12px; /* light theme */
+  --brdr-rad-smal: 6px; /* light theme */
+  --brdr-rad-smalr: 4px; /* light theme */
+  --min-tch-tgt: 34px; /* light theme */
+  --disabled-opacity: 0.25; /* light theme */
+  --bg-lum: 91%; /* light theme */
+  --bg-hue: 0; /* light theme */
+  --bg-sat: 0%; /* light theme */
+  --bg-alph: 1; /* light theme */
+  --bg-clr: hsla(var(--bg-hue), var(--bg-sat), var(--bg-lum), var(--bg-alph)); /* light theme */
+  --bg-clr-dark: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 1.018), var(--bg-alph)); /* light theme */
+  --bg-clr-darkr: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 1.036), var(--bg-alph)); /* light theme */
+  --bg-clr-darkest: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.9), var(--bg-alph)); /* light theme */
+  --bg-clr-lite: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.946), var(--bg-alph)); /* light theme */
+  --bg-clr-liter: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.91), var(--bg-alph)); /* light theme */
+  --bg-clr-litest: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.85), var(--bg-alph)); /* light theme */
+  --txt-lum: 35%; /* light theme */
+  --txt-hue: 0; /* light theme */
+  --txt-sat: 0%; /* light theme */
+  --txt-alph: 1; /* light theme */
+  --txt-clr: hsla(var(--txt-hue), var(--txt-sat), var(--txt-lum), var(--txt-alph)); /* light theme */
+  --txt-clr-dark: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 1.1), var(--txt-alph)); /* light theme */
+  --txt-clr-darkr: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 1.2), var(--txt-alph)); /* light theme */
+  --txt-clr-lite: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 0.9), var(--txt-alph)); /* light theme */
+  --txt-clr-liter: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 0.8), var(--txt-alph)); /* light theme */
+  --txt-clr-litest: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 0.7), var(--txt-alph)); /* light theme */
+  --brdr-lum: 82%; /* light theme */
+  --brdr-hue: 0; /* light theme */
+  --brdr-sat: 0%; /* light theme */
+  --brdr-alph: 1; /* light theme */
+  --brdr-clr: hsla(var(--brdr-hue), var(--brdr-sat), var(--brdr-lum), var(--brdr-alph)); /* light theme */
+  --brdr-clr-dark: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 1.1), var(--brdr-alph)); /* light theme */
+  --brdr-clr-darkr: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 1.2), var(--brdr-alph)); /* light theme */
+  --brdr-clr-lite: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 0.9), var(--brdr-alph)); /* light theme */
+  --brdr-clr-liter: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 0.8), var(--brdr-alph)); /* light theme */
+  --brdr-clr-litest: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 0.7), var(--brdr-alph)); /* light theme */
+  --blu-lite-lum: 40%; /* light theme */
+  --blu-hue: 204; /* light theme */
+  --blu-sat: 100%; /* light theme */
+  --blu-alph: 1; /* light theme */
+  --blu-lite: hsla(var(--blu-hue), var(--blu-sat), var(--blu-lite-lum), var(--blu-alph)); /* light theme */
+  --blu-lite-trans: hsla(var(--blu-hue), var(--blu-sat), var(--blu-lite-lum), 0); /* light theme */
+  --success-lum: 40%; /* light theme */
+  --success-hue: 145; /* light theme */
+  --success-sat: 63%; /* light theme */
+  --success-alph: 1; /* light theme */
+  --success-clr: hsla(var(--success-hue), var(--success-sat), var(--success-lum), var(--success-alph)); /* light theme */
   /* --- FIX START --- */
-  --warning-lum: 50%;
-  --warning-hue: 45;
-  --warning-sat: 100%;
-  --warning-alph: 1;
-  --warning-clr: hsla(
-    var(--warning-hue),
-    var(--warning-sat),
-    var(--warning-lum),
-    var(--warning-alph)
-  );
+  --warning-lum: 50%; /* light theme */
+  --warning-hue: 45; /* light theme */
+  --warning-sat: 100%; /* light theme */
+  --warning-alph: 1; /* light theme */
+  --warning-clr: hsla(var(--warning-hue), var(--warning-sat), var(--warning-lum), var(--warning-alph)); /* light theme */
   /* --- FIX END --- */
-  --danger-lum: 55%;
-  --danger-hue: 0;
-  --danger-sat: 65%;
-  --danger-alph: 1;
-  --danger-clr: hsla(
-    var(--danger-hue),
-    var(--danger-sat),
-    var(--danger-lum),
-    var(--danger-alph)
-  );
+  --danger-lum: 55%; /* light theme */
+  --danger-hue: 0; /* light theme */
+  --danger-sat: 65%; /* light theme */
+  --danger-alph: 1; /* light theme */
+  --danger-clr: hsla(var(--danger-hue), var(--danger-sat), var(--danger-lum), var(--danger-alph)); /* light theme */
   
   /* Semantic variable mappings for components */
-  --bg-primary: var(--bg-clr);
-  --bg-secondary: var(--bg-clr-lite);
-  --text-primary: var(--txt-clr);
-  --text-secondary: var(--txt-clr-darkr);
-  --border-color: var(--brdr-clr);
-  --accent-color: var(--blu-lite);
+  --bg-primary: var(--bg-clr); /* light theme */
+  --bg-secondary: var(--bg-clr-lite); /* light theme */
+  --text-primary: var(--txt-clr); /* light theme */
+  --text-secondary: var(--txt-clr-darkr); /* light theme */
+  --border-color: var(--brdr-clr); /* light theme */
+  --accent-color: var(--blu-lite); /* light theme */
+  
   @container style(--theme: dark) {
-    --bg-lum: 9%;
-    --bg-clr-dark: hsla(
-      var(--bg-hue),
-      var(--bg-sat),
-      calc(var(--bg-lum) * 0.8),
-      var(--bg-alph)
-    );
-    --bg-clr-darkr: hsla(
-      var(--bg-hue),
-      var(--bg-sat),
-      calc(var(--bg-lum) * 0.6),
-      var(--bg-alph)
-    );
-    --bg-clr-lite: hsla(
-      var(--bg-hue),
-      var(--bg-sat),
-      calc(var(--bg-lum) * 1.6),
-      var(--bg-alph)
-    );
-    --bg-clr-liter: hsla(
-      var(--bg-hue),
-      var(--bg-sat),
-      calc(var(--bg-lum) * 2),
-      var(--bg-alph)
-    );
-    --txt-lum: 65%;
-    --txt-clr-dark: hsla(
-      var(--txt-hue),
-      var(--txt-sat),
-      calc(var(--txt-lum) * 0.85),
-      var(--txt-alph)
-    );
-    --txt-clr-darkr: hsla(
-      var(--txt-hue),
-      var(--txt-sat),
-      calc(var(--txt-lum) * 0.7),
-      var(--txt-alph)
-    );
-    --txt-clr-lite: hsla(
-      var(--txt-hue),
-      var(--txt-sat),
-      calc(var(--txt-lum) * 1.15),
-      var(--txt-alph)
-    );
-    --txt-clr-liter: hsla(
-      var(--txt-hue),
-      var(--txt-sat),
-      calc(var(--txt-lum) * 1.3),
-      var(--txt-alph)
-    );
-    --brdr-lum: 18%;
-    --brdr-clr-dark: hsla(
-      var(--brdr-hue),
-      var(--brdr-sat),
-      calc(var(--brdr-lum) * 0.8),
-      var(--brdr-alph)
-    );
-    --brdr-clr-darkr: hsla(
-      var(--brdr-hue),
-      var(--brdr-sat),
-      calc(var(--brdr-lum) * 0.75),
-      var(--brdr-alph)
-    );
-    --brdr-clr-lite: hsla(
-      var(--brdr-hue),
-      var(--brdr-sat),
-      calc(var(--brdr-lum) * 1.25),
-      var(--brdr-alph)
-    );
-    --brdr-clr-liter: hsla(
-      var(--brdr-hue),
-      var(--brdr-sat),
-      calc(var(--brdr-lum) * 1.5),
-      var(--brdr-alph)
-    );
+    --bg-lum: 9%; /* default/dark theme */
+    --bg-clr-dark: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.8), var(--bg-alph)); /* default/dark theme */
+    --bg-clr-darkr: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.6), var(--bg-alph)); /* default/dark theme */
+    --bg-clr-darkest: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.5), var(--bg-alph)); /* default/dark theme */
+    --bg-clr-lite: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 1.6), var(--bg-alph)); /* default/dark theme */
+    --bg-clr-liter: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2), var(--bg-alph)); /* default/dark theme */
+    --bg-clr-litest: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.5), var(--bg-alph)); /* default/dark theme */
+    --txt-lum: 65%; /* default/dark theme */
+    --txt-clr-dark: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 0.85), var(--txt-alph)); /* default/dark theme */
+    --txt-clr-darkr: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 0.7), var(--txt-alph)); /* default/dark theme */
+    --txt-clr-lite: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 1.15), var(--txt-alph)); /* default/dark theme */
+    --txt-clr-liter: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 1.3), var(--txt-alph)); /* default/dark theme */
+    --txt-clr-litest: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 1.45), var(--txt-alph)); /* default/dark theme */
+    --brdr-lum: 18%; /* default/dark theme */
+    --brdr-clr-dark: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 0.8), var(--brdr-alph)); /* default/dark theme */
+    --brdr-clr-darkr: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 0.75), var(--brdr-alph)); /* default/dark theme */
+    --brdr-clr-lite: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 1.25), var(--brdr-alph)); /* default/dark theme */
+    --brdr-clr-liter: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 1.5), var(--brdr-alph)); /* default/dark theme */
+    --brdr-clr-litest: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 1.75), var(--brdr-alph)); /* default/dark theme */
   }
 }
 * {
@@ -275,8 +139,8 @@ body {
 }
 /* Apply app zoom via CSS variable set by `useZoom` composable. */
 :root {
-  --base-font-size: 14px;
-  --zoom: 1; /* single canonical zoom variable */
+  --base-font-size: 14px; /* universal */
+  --zoom: 1; /* universal - single canonical zoom variable */
 }
 /* Apply font-size scaling when zoom mode is 'font' and apply app-wide zoom using
    the browser `zoom` property which is layout-friendly in Chromium. */

@@ -16,14 +16,11 @@
         ref="jobsSection"
         @files-added="handleFilesAdded"
         @folders-added="handleFoldersAdded"
+        @request-auto-location="handleAutoLocation"
+        @request-auto-filename="handleAutoFilename"
       />
       <div ref="resizeDivider" class="resize-divider" />
       <div class="right-pane">
-        <OutputControls
-          ref="outputControls"
-          @request-auto-location="handleAutoLocation"
-          @request-auto-filename="handleAutoFilename"
-        />
         <CompressionSection
           ref="compressSection"
           @request-auto-location="handleAutoLocation"
@@ -49,7 +46,6 @@ import { useUiStore } from "@/stores/uiStore";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { useJobsStore } from "@/stores/jobsStore";
 import { basename, dirname } from "@tauri-apps/api/path";
-import OutputControls from "@/components/OutputControls.vue";
 
 // Store setup
 const uiStore = useUiStore();
@@ -59,7 +55,6 @@ const jobsStore = useJobsStore();
 const mainContent = ref<HTMLElement | null>(null);
 const jobsSection = ref<ComponentPublicInstance | null>(null);
 const compressSection = ref<ComponentPublicInstance | null>(null);
-const outputControls = ref<ComponentPublicInstance | null>(null);
 const resizeDivider = ref<HTMLElement | null>(null);
 // Reactive styles from store
 const mainContentStyles = computed(() => ({
@@ -304,8 +299,7 @@ onUnmounted((): void => {
   .right-pane {
     display: grid;
     grid-area: compression-section;
-    grid-template-rows: auto 1fr;
-    row-gap: var(--pad-in);
+    grid-template-rows: 1fr;
   }
 
   .right-pane > * {

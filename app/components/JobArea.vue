@@ -33,9 +33,6 @@
     </DropdownMenu>
     <transition name="job-fade">
       <div v-if="activeJob" :key="activeJob.id" ref="jobRef" class="job">
-        <div class="job-header">
-          <h2>Job {{ activeJob.id }}</h2>
-        </div>
         <div ref="jobContentRef" class="job-content" @contextmenu.prevent.stop="showJobContextMenu">
           <LoadingAnim 
             :visible="showLoading" 

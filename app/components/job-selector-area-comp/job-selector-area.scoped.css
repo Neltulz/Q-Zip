@@ -62,6 +62,7 @@
 .job-selector-list {
   align-items: center;
   display: inline-flex;
+  justify-content: flex-end;
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -69,7 +70,7 @@
   --btn-line-thickness: 2px;
   --line-orientation: horizontal;
   --line-position: end;
-  border-radius: var(--brdr-rad-smalr);
+  border-radius: var(--brdr-rad-smalr) var(--brdr-rad-smalr) 0 0;
   min-height: 50px;
   min-width: fit-content;
   padding: 0;
@@ -87,17 +88,26 @@
   outline: 2px dashed hsla(0, 0%, 70%, 0.7);
   box-shadow: none;
   transition: all 0.2s ease-in-out;
+  /* Force bottom corners to be square for tab-like appearance */
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
 }
 .job-selector-area.internal-drag-active
   :deep(.job-selector-list button.job-selector.drop-target-hover:not(.active) > .visual-style),
 .job-selector-area.internal-drag-active :deep(.add-job-btn.drop-target-hover .visual-style) {
   outline-color: hsla(204, 80%, 60%, 0.85);
   outline-style: dashed;
+  /* Force bottom corners to be square for tab-like appearance */
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
 }
 .job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector.active.drop-target-hover > .visual-style) {
   opacity: 1 !important;
   outline-color: transparent;
   box-shadow: none;
+  /* Force bottom corners to be square for tab-like appearance */
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
 }
 /* Job tab reordering styles - only show when NOT in internal drag mode */
 .job-selector-area:not(.internal-drag-active) :deep(.job-selector-list button.job-selector.is-dragged) {
@@ -208,12 +218,26 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
 .job-selector-list > :deep(button.job-selector:before) {
   --visual-style-inset: 8px;
 }
+
+/* Override visual-style inset to only affect top/left/right, not bottom */
+.job-selector-list > :deep(button.job-selector > .visual-style) {
+  inset-block-end: 0px;
+  inset-block-start: 8px;
+  inset-inline-end: 8px;
+  inset-inline-start: 8px;
+  /* Force bottom corners to be square for tab-like appearance */
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
 .job-selector-list > :deep(button.job-selector > .visual-style) {
   transform-origin: bottom;
 }
 .job-selector-list > :deep(button.job-selector.active > .visual-style) {
   background-color: var(--btn-bg-hvr-clr);
   border-color: var(--btn-bg-hvr-clr);
+  /* Force bottom corners to be square for tab-like appearance */
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
 }
 /* Vertical blue line indicator for active job selector buttons */
 .job-selector-list > :deep(button.job-selector.active > .visual-style::before),
@@ -246,7 +270,7 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   content: "";
   position: absolute;
   inset-block-start: 6px;
-  inset-block-end: 6px;
+  inset-block-end: 0px; /* Align with the new bottom inset of 0px */
   /* Align with the visual-style inset so the bar lines up correctly */
   inset-inline-start: var(--visual-style-inset, 8px);
   inline-size: var(--btn-line-thickness, 3px);

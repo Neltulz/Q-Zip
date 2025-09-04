@@ -18,6 +18,11 @@
     }"
   >
     <JobSelectorArea />
+    <OutputControls
+      ref="outputControls"
+      @request-auto-location="$emit('request-auto-location')"
+      @request-auto-filename="$emit('request-auto-filename')"
+    />
     <JobArea
       @files-added="$emit('files-added', $event)"
       @folders-added="$emit('folders-added', $event)"
@@ -28,10 +33,13 @@
 import { useUiStore } from "@/stores/uiStore";
 import JobArea from "./JobArea.vue";
 import JobSelectorArea from "./JobSelectorArea.vue";
+import OutputControls from "./OutputControls.vue";
 
 const emit = defineEmits<{
   "files-added": [paths: string[]];
   "folders-added": [paths: string[]];
+  "request-auto-location": [];
+  "request-auto-filename": [];
 }>();
 
 const uiStore = useUiStore();
@@ -52,7 +60,7 @@ const uiStore = useUiStore();
   display: grid;
   grid-area: jobs-section;
   grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto 1fr;
   overflow: hidden;
   @media (width < 1024px) {
     & {
@@ -73,8 +81,8 @@ const uiStore = useUiStore();
     border-color: var(--brdr-clr);
   }
   &.vertical-job-selector-list {
-    grid-template-columns: auto 1fr;
-    grid-template-rows: 1fr;
+    grid-template-columns: auto 1fr 1fr;
+    grid-template-rows: auto;
     &:deep(.job-selector-area) {
       border-block-end-width: 0;
       border-block-start-width: 0;

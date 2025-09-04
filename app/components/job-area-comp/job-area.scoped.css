@@ -30,28 +30,17 @@
   /* Standard job view container - <div class="job"> */
   .job {
     block-size: 100%;
-    display: grid;
-    grid-template-areas:
-      "header"
-      "content";
-    grid-template-rows: auto 1fr;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     z-index: 1;
-
-    /* Job header section - <div class="job-header"> */
-    .job-header {
-      border-block-end: 1px solid var(--brdr-clr);
-      flex-shrink: 0;
-      grid-area: header;
-      padding: 10px;
-    }
 
     /* Job content section - <div class="job-content"> */
     .job-content {
       display: flex;
       flex-direction: column;
       gap: 0;
-      grid-area: content;
+      flex: 1;
       overflow: hidden;
     }
   }

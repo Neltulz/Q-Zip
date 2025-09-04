@@ -156,8 +156,7 @@ defineExpose({
   display: grid;
   gap: var(--pad-blok);
   padding: var(--pad-in);
-  background: var(--bg-clr-lite);
-  border-radius: var(--brdr-rad);
+  background: var(--btn-bg-activ-clr-dark, var(--bg-clr-lite));
   border: 1px solid var(--brdr-clr);
 }
 </style>
