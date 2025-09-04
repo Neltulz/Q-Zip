@@ -20,150 +20,153 @@
   grid-template-rows: 1fr;
   overflow: hidden;
   position: relative;
+}
 
-  /* All direct children span full grid */
-  & > * {
-    grid-column: 1 / -1;
-    grid-row: 1 / -1;
+/* All direct children span full grid */
+.job-area > * {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+}
+
+/* Standard job view container - <div class="job-area__job"> */
+.job-area__job {
+  block-size: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Job content section - <div class="job-area__job-content"> */
+.job-area__job-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* External drag overlay - <div class="job-area__external-drag-overlay"> */
+.job-area__external-drag-overlay {
+  backdrop-filter: blur(10px);
+  background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.6), 0.8);
+  container-type: inline-size;
+  cursor: not-allowed;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  inset: 0;
+  padding: 0;
+  position: absolute;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 100;
+}
+
+/* Light theme background adjustment */
+@container style(--theme: light) {
+  .job-area__external-drag-overlay {
+    background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) + 3.6%), 0.8);
   }
+}
 
-  /* Standard job view container - <div class="job"> */
-  .job {
-    block-size: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    z-index: 1;
+/* Drop zones within overlay - <div class="job-area__external-drop-zone"> */
+.job-area__external-drop-zone {
+  align-items: center;
+  color: var(--txt-clr-liter);
+  cursor: copy;
+  display: flex;
+  flex-basis: 50%;
+  justify-content: center;
+  padding: 2cqw;
+  position: relative;
+  transition: opacity 0.2s ease-in-out;
+}
 
-    /* Job content section - <div class="job-content"> */
-    .job-content {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      flex: 1;
-      overflow: hidden;
-    }
-  }
+/* Drop zone visual container - <div class="job-area__drop-zone-visual"> */
+.job-area__drop-zone-visual {
+  align-items: center;
+  background-color: hsla(var(--bg-hue), var(--bg-sat), var(--bg-lum), 0.1);
+  block-size: 100%;
+  border: 2px dashed var(--brdr-clr-liter);
+  border-radius: var(--brdr-rad);
+  display: flex;
+  inline-size: 100%;
+  justify-content: center;
+  transform: scale(0.975);
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, opacity 0.2s ease-in-out, transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
 
-  /* External drag overlay - <div class="external-drag-overlay"> */
-  .external-drag-overlay {
-    backdrop-filter: blur(10px);
-    background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.6), 0.8);
-    container-type: inline-size;
-    cursor: not-allowed;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    inset: 0;
-    padding: 0;
-    position: absolute;
-    transition: opacity 0.2s ease-in-out;
-    z-index: 100;
+/* Drop zone content - <div class="job-area__drop-zone-content"> */
+.job-area__drop-zone-content {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  font-size: 1.5rem;
+  font-weight: bold;
+  gap: 16px;
+  justify-content: center;
+  transition: color 0.2s ease-in-out;
+}
 
-    /* Light theme background adjustment */
-    @container style(--theme: light) {
-      background-color: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) + 3.6%), 0.8);
-    }
+/* Hover and active states for drop zone */
+.job-area__external-drop-zone:hover .job-area__drop-zone-visual,
+.job-area__external-drop-zone.job-area__drop-target-active .job-area__drop-zone-visual {
+  animation: pulse-glow 4s infinite ease-in-out;
+  background-color: hsla(210, 100%, 50%, 0.25);
+  border-color: hsla(210, 100%, 75%, 0.8);
+  transform: scale(1);
+}
 
-    /* Drop zones within overlay - <div class="external-drop-zone"> */
-    .external-drop-zone {
-      align-items: center;
-      color: var(--txt-clr-liter);
-      cursor: copy;
-      display: flex;
-      flex-basis: 50%;
-      justify-content: center;
-      padding: 2cqw;
-      position: relative;
-      transition: opacity 0.2s ease-in-out;
+.job-area__external-drop-zone:hover .job-area__drop-zone-content,
+.job-area__external-drop-zone.job-area__drop-target-active .job-area__drop-zone-content {
+  color: hsl(0, 0%, 100%);
+}
 
-      /* Drop zone visual container - <div class="drop-zone-visual"> */
-      .drop-zone-visual {
-        align-items: center;
-        background-color: hsla(var(--bg-hue), var(--bg-sat), var(--bg-lum), 0.1);
-        block-size: 100%;
-        border: 2px dashed var(--brdr-clr-liter);
-        border-radius: var(--brdr-rad);
-        display: flex;
-        inline-size: 100%;
-        justify-content: center;
-        transform: scale(0.975);
-        transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, opacity 0.2s ease-in-out, transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      }
+/* Specific drop zone types */
+.job-area__external-drop-zone.job-area__new-job,
+.job-area__external-drop-zone.job-area__separate-jobs {
+  flex-basis: 25%;
+}
 
-      /* Drop zone content - <div class="drop-zone-content"> */
-      .drop-zone-content {
-        align-items: center;
-        display: flex;
-        flex-direction: column;
-        font-size: 1.5rem;
-        font-weight: bold;
-        gap: 16px;
-        justify-content: center;
-        transition: color 0.2s ease-in-out;
-      }
+.job-area__external-drop-zone.job-area__current-job {
+  flex-basis: 50%;
+}
 
-      /* Hover and active states for drop zone */
-      &:hover .drop-zone-visual,
-      &.drop-target-active .drop-zone-visual {
-        animation: pulse-glow 4s infinite ease-in-out;
-        background-color: hsla(210, 100%, 50%, 0.25);
-        border-color: hsla(210, 100%, 75%, 0.8);
-        transform: scale(1);
-      }
+/* Dim non-hovered drop zones when one is hovered */
+.job-area__external-drag-overlay:has(.job-area__external-drop-zone:hover) .job-area__external-drop-zone:not(:hover),
+.job-area__external-drag-overlay:has(.job-area__external-drop-zone.job-area__drop-target-active) .job-area__external-drop-zone:not(.job-area__drop-target-active) {
+  opacity: 0.5;
+}
 
-      &:hover .drop-zone-content,
-      &.drop-target-active .drop-zone-content {
-        color: hsl(0, 0%, 100%);
-      }
+.job-area__external-drag-overlay:has(.job-area__external-drop-zone:hover) .job-area__drop-zone-visual,
+.job-area__external-drag-overlay:has(.job-area__external-drop-zone.job-area__drop-target-active) .job-area__drop-zone-visual {
+  transform: scale(0.95);
+}
 
-      /* Specific drop zone types */
-      &.new-job,
-      &.separate-jobs {
-        flex-basis: 25%;
-      }
+/* Error state styling */
+.job-area__external-drop-zone.job-area__has-error {
+  border: 2px dashed hsla(0, 70%, 60%, 0.8);
+}
 
-      &.current-job {
-        flex-basis: 50%;
-      }
-    }
-
-    /* Dim non-hovered drop zones when one is hovered */
-    &:has(.external-drop-zone:hover) .external-drop-zone:not(:hover),
-    &:has(.external-drop-zone.drop-target-active) .external-drop-zone:not(.drop-target-active) {
-      opacity: 0.5;
-
-      .drop-zone-visual {
-        transform: scale(0.95);
-      }
-    }
-
-    /* Error state styling */
-    &.has-error {
-      border: 2px dashed hsla(0, 70%, 60%, 0.8);
-    }
-
-    /* Drop error message - <div class="drop-error-message"> */
-    .drop-error-message {
-      align-items: center;
-      background-color: hsla(0, 70%, 30%, 0.5);
-      block-size: 100%;
-      color: hsl(0, 100%, 85%);
-      display: flex;
-      flex-direction: column;
-      font-size: 1.5rem;
-      font-weight: bold;
-      gap: 16px;
-      inline-size: 100%;
-      inset: 0;
-      justify-content: center;
-      padding: 20px;
-      pointer-events: none; /* Don't block underlying controls */
-      position: absolute;
-      text-align: center;
-      z-index: 101;
-    }
-  }
+/* Drop error message - <div class="job-area__drop-error-message"> */
+.job-area__drop-error-message {
+  align-items: center;
+  background-color: hsla(0, 70%, 30%, 0.5);
+  block-size: 100%;
+  color: hsl(0, 100%, 85%);
+  display: flex;
+  flex-direction: column;
+  font-size: 1.5rem;
+  font-weight: bold;
+  gap: 16px;
+  inline-size: 100%;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  pointer-events: none; /* Don't block underlying controls */
+  position: absolute;
+  text-align: center;
+  z-index: 101;
 }
 
 /* Vue transition animations */

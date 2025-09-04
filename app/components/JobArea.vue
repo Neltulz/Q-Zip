@@ -32,8 +32,8 @@
       </template>
     </DropdownMenu>
     <transition name="job-fade">
-      <div v-if="activeJob" :key="activeJob.id" ref="jobRef" class="job">
-        <div ref="jobContentRef" class="job-content" @contextmenu.prevent.stop="showJobContextMenu">
+      <div v-if="activeJob" :key="activeJob.id" ref="jobRef" class="job-area__job">
+        <div ref="jobContentRef" class="job-area__job-content" @contextmenu.prevent.stop="showJobContextMenu">
           <LoadingAnim 
             :visible="showLoading" 
             :current-item="jobsStore.progressInfo.currentItem"
@@ -747,7 +747,7 @@ const handleRefreshFiles = () => {
 };
 </script>
 <style scoped>
-.job-content {
+.job-area__job-content {
   position: relative; /* Needed for the loading overlay */
   flex-grow: 1;
   display: flex;
