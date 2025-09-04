@@ -36,7 +36,10 @@
          @mouseleave="(event) => { handleMouseLeave(event); emit('mouseleave', event); }"
      @mouseenter="(event) => { handleMouseEnter(event); emit('mouseenter', event); }"
   >
-    <div ref="visualStyleRef" class="visual-style" />
+    <div ref="visualStyleRef" class="visual-style">
+      <!-- Drag zone overlay -->
+      <div v-if="props.dragZoneEnabled" class="drag-zone" :class="{ 'drag-zone-visible': dragZoneVisible }"></div>
+    </div>
     <div v-if="props.firstIconName" class="icon-placeholder first-icon" :style="firstIconPlaceholderStyle">
       <Icon :name="props.firstIconName" :size="String(props.firstIconSize ?? 20)" />
     </div>
@@ -59,12 +62,20 @@ import { computed, onMounted, ref, useAttrs, watch } from "vue";
 import { DEBUG, debugConfig } from "@/utils/debugConfig";
 import { logComponentAttributes, logVueWarning, logHover } from "@/utils/loggers";
 import HotKey from "@/components/HotKey.vue";
+import { useDragDropStore } from "@/stores/dragDropStore";
+import { useDebugStore } from "@/stores/debugStore";
 
 
 const attrs = useAttrs();
 const buttonRef = ref<HTMLElement | null>(null);
 const visualStyleRef = ref<HTMLElement | null>(null); // Ref for the visual style div
 const isPressed = ref(false); // Track if button is being pressed
+const dragZoneVisible = ref(false); // Track if drag zone should be visible
+
+// Drag and drop store for monitoring drag operations
+const dragDropStore = useDragDropStore();
+// Debug store for monitoring debug options
+const debugStore = useDebugStore();
 
 
 const props = withDefaults(
@@ -78,6 +89,7 @@ const props = withDefaults(
     lastIconName?: string;
     lastIconSize?: string | number;
     shortcutText?: string;
+    dragZoneEnabled?: boolean;
   }>(),
   {
     btnTheme: "default",
@@ -88,6 +100,7 @@ const props = withDefaults(
     lastIconName: "",
     lastIconSize: undefined,
     shortcutText: "",
+    dragZoneEnabled: false,
   }
 );
 
@@ -247,7 +260,7 @@ watch(() => attrs, (newAttrs, oldAttrs) => {
     const oldKeys = Object.keys(oldAttrs || {});
     const addedKeys = newKeys.filter(key => !oldKeys.includes(key));
     const removedKeys = oldKeys.filter(key => !newKeys.includes(key));
-    
+
     if (addedKeys.length > 0 || removedKeys.length > 0) {
       logComponentAttributes("CustomButton", `Attributes changed`, {
         dataName: props.dataName,
@@ -259,6 +272,22 @@ watch(() => attrs, (newAttrs, oldAttrs) => {
     }
   }
 }, { deep: true });
+
+// Watch for drag state changes to show/hide drag zone
+watch([() => dragDropStore.isInternalDragActive, () => debugStore.debugOptions.forceDragZonesVisible], ([isDragging, forceVisible]) => {
+  if (props.dragZoneEnabled) {
+    const shouldShow = isDragging || forceVisible;
+    dragZoneVisible.value = shouldShow;
+    if (DEBUG && debugConfig.logDragDropEvent) {
+      logComponentAttributes("CustomButton", `Drag zone ${shouldShow ? 'visible' : 'hidden'} for ${props.dataName}`, {
+        dataName: props.dataName,
+        isDragging,
+        forceVisible,
+        dragZoneEnabled: props.dragZoneEnabled
+      });
+    }
+  }
+});
 </script>
 <!-- #endregion -->
 <!-- #region styles -->

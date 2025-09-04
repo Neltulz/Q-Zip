@@ -155,7 +155,6 @@ defineExpose({
 .output-controls {
   display: grid;
   gap: var(--pad-blok);
-  padding: var(--pad-in);
 }
 </style>
 

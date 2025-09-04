@@ -85,8 +85,9 @@
 }
 /* --- Drag & Drop Hover Styles --- */
 /* Keep visual styles invisible during drag operations to prevent background color changes */
-.job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector:not(.active) > .visual-style),
-.job-selector-area.internal-drag-active :deep(.add-job-btn .visual-style) {
+/* But don't hide them when forcing drag zone visibility via debug option */
+.job-selector-area.internal-drag-active:not(.force-drag-zones-visible) :deep(.job-selector-list button.job-selector:not(.active) > .visual-style),
+.job-selector-area.internal-drag-active:not(.force-drag-zones-visible) :deep(.add-job-btn .visual-style) {
   opacity: 0 !important;
   box-shadow: none;
   /* Apply uniform border-radius to all corners */
@@ -94,12 +95,37 @@
   margin: 0 !important;
 }
 /* Keep active tab visual styles invisible during drag operations to prevent background color changes */
-.job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector.active.drop-target-hover > .visual-style) {
+/* Active tabs should NEVER show drag zones, even when forcing visibility */
+.job-selector-area.internal-drag-active :deep(.job-selector-list button.job-selector.active.drop-target-hover > .visual-style),
+.job-selector-area.force-drag-zones-visible :deep(.job-selector-list button.job-selector.active.drop-target-hover > .visual-style) {
   opacity: 0 !important;
   box-shadow: none;
   /* Maintain square bottom corners for active tab appearance */
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
+  margin: 0 !important;
+}
+
+/* Force drag zone visibility styles - show visual feedback when debug option is enabled */
+.job-selector-area.force-drag-zones-visible :deep(.job-selector-list button.job-selector:not(.active).drop-target-hover > .visual-style),
+.job-selector-area.force-drag-zones-visible :deep(.add-job-btn.drop-target-hover > .visual-style) {
+  opacity: 1 !important;
+  background-color: hsla(var(--accent-hsl), 0.2) !important;
+  border-color: hsla(var(--accent-hsl), 0.4) !important;
+  box-shadow: 0 0 8px hsla(var(--accent-hsl), 0.3) !important;
+  /* Apply uniform border-radius for drag zone appearance */
+  border-radius: var(--brdr-rad-smalr) !important;
+  margin: 0 !important;
+}
+
+/* Hover styles for inactive tabs and add job button - provide visual feedback on hover */
+.job-selector-area :deep(.job-selector-list button.job-selector:not(.active):hover > .visual-style),
+.job-selector-area :deep(.add-job-btn:hover > .visual-style) {
+  opacity: 1 !important;
+  background-color: var(--btn-bg-hvr-clr-dark) !important;
+  border-color: var(--btn-brdr-hvr-clr-dark) !important;
+  /* Apply uniform border-radius for hover appearance */
+  border-radius: var(--brdr-rad-smalr) !important;
   margin: 0 !important;
 }
 /* Job tab reordering styles - only show when NOT in internal drag mode */

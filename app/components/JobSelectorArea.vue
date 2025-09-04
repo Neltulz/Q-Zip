@@ -9,7 +9,10 @@
 <template>
   <nav
     class="job-selector-area"
-    :class="{ 'internal-drag-active': dragDropStore.isInternalDragActive }"
+    :class="{
+      'internal-drag-active': dragDropStore.isInternalDragActive,
+      'force-drag-zones-visible': debugStore.debugOptions.forceDragZonesVisible
+    }"
     data-component-name="JobSelectorArea"
   >
     <OverlayScrollbarsComponent
@@ -42,6 +45,7 @@
             :data-job-id="job.id"
             :data-name="'job-' + job.id"
             data-has-context-menu="true"
+            :drag-zone-enabled="true"
             @click="selectJob(job.id)"
             @contextmenu.prevent="showJobContextMenu($event, job.id)"
             @dragover.prevent="handleDragOver"
@@ -317,6 +321,7 @@
           data-name="add-job-btn"
           first-icon-name="mdi:add"
           :first-icon-size="24"
+          :drag-zone-enabled="true"
           @click="addJob"
           @dragover.prevent="handleJobTabDragOver($event, 'new-job')"
           @dragleave="handleJobTabDragLeave($event)"
@@ -485,10 +490,9 @@ const scrollComponentRef = ref<InstanceType<typeof OverlayScrollbarsComponent> |
 
 // Computed property to safely determine if drop-target-hover should be applied
 const shouldShowDropTargetHover = computed(() => {
-  // Only show drop target hover if we're actually dragging AND have a valid hovered job
-  // AND the debug option is not forcing it visible
-  return dragDropStore.isInternalDragActive &&
-         !debugStore.debugOptions.forceDragZonesVisible &&
+  // Show drop target hover if we're actually dragging OR forcing visibility via debug option
+  // AND have a valid hovered job
+  return (dragDropStore.isInternalDragActive || debugStore.debugOptions.forceDragZonesVisible) &&
          hoveredJobId.value !== null;
 });
 const jobButtonRefs = ref(new Map<number | "new-job", InstanceType<typeof CustomButton>>());
@@ -584,19 +588,22 @@ watch(
 watch(
   () => dragDropStore.isInternalDragActive,
   (isDragging) => {
-    // If we're not actually dragging OR debug option is forcing it, clear hoveredJobId
-    if (!isDragging || debugStore.debugOptions.forceDragZonesVisible) {
+    // Only clear hoveredJobId if we're not dragging AND not forcing visibility
+    // When forcing visibility, hoveredJobId should be managed by mouse events
+    if (!isDragging && !debugStore.debugOptions.forceDragZonesVisible) {
       hoveredJobId.value = null;
     }
   }
 );
 
-// Also watch the debug option to clear hoveredJobId if it gets enabled
+// Watch the debug option changes
 watch(
   () => debugStore.debugOptions.forceDragZonesVisible,
-  (forceVisible) => {
-    if (forceVisible) {
-      hoveredJobId.value = null;
+  (forceVisible, oldForceVisible) => {
+    // When debug option changes, we don't need to clear hoveredJobId
+    // The mouse enter/leave handlers will manage it appropriately
+    if (DEBUG && debugConfig.logUIInteractivity) {
+      logUI("JobSelectorArea", `forceDragZonesVisible changed: ${oldForceVisible} -> ${forceVisible}`);
     }
   }
 );
@@ -1027,30 +1034,26 @@ const onDrop = (targetJobId: number | null): void => {
   }
 };
 const handleJobTabDragOver = (event: DragEvent, targetIdentifier: number | "new-job") => {
-  if (dragDropStore.isInternalDragActive && !debugStore.debugOptions.forceDragZonesVisible) {
+  if (dragDropStore.isInternalDragActive) {
     event.preventDefault();
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = targetIdentifier === dragDropStore.internalDragSourceJobId ? "none" : "copy";
     }
-    // Only set hoveredJobId during actual drag operations (not debug mode)
+    // Set hoveredJobId during actual drag operations
     hoveredJobId.value = targetIdentifier;
-  } else {
-    // If not actually dragging or in debug mode, ensure hoveredJobId is cleared
-    hoveredJobId.value = null;
   }
+  // Note: When forcing visibility via debug option, hoveredJobId is managed by mouse enter/leave handlers
 };
 const handleJobTabDragLeave = (event: DragEvent) => {
-  if (dragDropStore.isInternalDragActive && !debugStore.debugOptions.forceDragZonesVisible) {
+  if (dragDropStore.isInternalDragActive) {
     const currentTarget = event.currentTarget as HTMLElement;
     const relatedTarget = event.relatedTarget as HTMLElement | null;
     if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
-      // Only clear hoveredJobId during actual drag operations (not debug mode)
+      // Clear hoveredJobId during actual drag operations
       hoveredJobId.value = null;
     }
-  } else {
-    // If not actually dragging or in debug mode, ensure hoveredJobId is cleared
-    hoveredJobId.value = null;
   }
+  // Note: When forcing visibility via debug option, hoveredJobId is managed by mouse enter/leave handlers
 };
 const handleJobTabDrop = (event: DragEvent, targetIdentifier: number | "new-job") => {
   event.preventDefault();
@@ -1181,6 +1184,11 @@ const handleJobMouseEnter = (jobId: number, event: MouseEvent): void => {
   logHover("JobSelectorArea", `Job mouse enter for job ${jobId}`, { jobId });
   const originElement = event.currentTarget as HTMLElement;
   tooltipManager.showTooltip('job-' + jobId, originElement);
+
+  // Set hoveredJobId for force visibility mode or when not dragging
+  if (debugStore.debugOptions.forceDragZonesVisible || !dragDropStore.isInternalDragActive) {
+    hoveredJobId.value = jobId;
+  }
 };
 const handleJobMouseLeave = (event?: MouseEvent): void => {
   logHover("JobSelectorArea", `Job mouse leave`, {
@@ -1216,6 +1224,11 @@ const handleJobMouseLeave = (event?: MouseEvent): void => {
 const handleAddJobMouseEnter = (event: MouseEvent): void => {
   const originElement = event.currentTarget as HTMLElement;
   tooltipManager.showTooltip('add-job', originElement);
+
+  // Set hoveredJobId for force visibility mode or when not dragging
+  if (debugStore.debugOptions.forceDragZonesVisible || !dragDropStore.isInternalDragActive) {
+    hoveredJobId.value = 'new-job';
+  }
 };
 const handleAddJobMouseLeave = (event?: MouseEvent): void => {
   // Always clear hoveredJobId on mouse leave to prevent any spurious drop-target-hover styling

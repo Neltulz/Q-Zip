@@ -801,3 +801,33 @@
     }
   }
 }
+/* --- DRAG ZONE STYLES --- */
+/* CSS Variables for drag zone customization */
+.custom-button {
+  --drag-zone-outline-width: 2px;
+  --drag-zone-offset: -2px;
+  --drag-zone-outline-color: lightgray;
+  --drag-zone-opacity: 0;
+  --drag-zone-transition: opacity 0.2s ease;
+}
+
+/* Drag zone overlay - <div class="drag-zone"> */
+.drag-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  outline: var(--drag-zone-outline-width) dashed var(--drag-zone-outline-color);
+  outline-offset: var(--drag-zone-offset);
+  pointer-events: none;
+  opacity: var(--drag-zone-opacity);
+  transition: var(--drag-zone-transition);
+  z-index: 10; /* Above visual-style but below potential tooltips */
+  background: transparent;
+}
+
+/* Visible drag zone state */
+.drag-zone.drag-zone-visible {
+  --drag-zone-opacity: 1;
+}
