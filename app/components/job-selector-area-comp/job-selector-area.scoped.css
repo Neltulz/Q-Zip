@@ -8,6 +8,7 @@
   outline-offset: 2px;
 }
 .job-selector-area {
+  background-color: var(--bg-clr-dark);
   display: grid;
   grid-column: 1;
   grid-row: 1;
@@ -219,12 +220,12 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   --visual-style-inset: 8px;
 }
 
-/* Override visual-style inset to only affect top/left/right, not bottom */
+/* Override visual-style inset to only affect top, not left/right/bottom */
 .job-selector-list > :deep(button.job-selector > .visual-style) {
   inset-block-end: 0px;
   inset-block-start: 8px;
-  inset-inline-end: 8px;
-  inset-inline-start: 8px;
+  inset-inline-end: 0px;
+  inset-inline-start: 0px;
   /* Force bottom corners to be square for tab-like appearance */
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
@@ -232,9 +233,9 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
 .job-selector-list > :deep(button.job-selector > .visual-style) {
   transform-origin: bottom;
 }
-.job-selector-list > :deep(button.job-selector.active > .visual-style) {
-  background-color: var(--btn-bg-hvr-clr);
-  border-color: var(--btn-bg-hvr-clr);
+.job-selector-list > :deep(button.job-selector.active[data-btn-theme="default"] > .visual-style) {
+  background-color: var(--btn-bg-activ-clr-dark, var(--bg-clr-lite)) !important;
+  border-color: var(--btn-bg-activ-clr-dark, var(--bg-clr-lite)) !important;
   /* Force bottom corners to be square for tab-like appearance */
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
@@ -304,8 +305,7 @@ body.is-job-reordering .job-selector-area:not(.internal-drag-active) .job-select
   grid-template-areas: "job-sel-icon job-sel-info job-sel-options";
   grid-template-columns: auto 1fr auto;
   grid-template-rows: auto;
-  padding-inline-end: var(--pad-in);
-  padding-inline-start: calc(var(--pad-in) * 1.5);
+  padding-inline: var(--pad-in);
 }
 .job-selector-list > :deep(button.job-selector > .button-content .job-sel-icon) {
   align-items: center;

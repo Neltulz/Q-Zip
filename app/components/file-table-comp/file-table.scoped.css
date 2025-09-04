@@ -14,6 +14,7 @@
   /* Allow per-component zoom via CSS variable --file-table-zoom-local (defaults to 1) */
   --file-table-zoom-local: 1;
 
+  background-color: var(--bg-clr-dark);
   block-size: 100%;
   display: flex;
   flex-direction: column;
@@ -39,13 +40,12 @@
 
 /* Active file table state - <div class="file-table-comp is-active"> */
 .file-table-comp.is-active {
-  box-shadow: 0 0 0 2px rgba(0, 150, 255, 0.15) inset;
-  outline: 3px solid rgba(0, 150, 255, 0.85); /* Temporary visual debug: make active file table very obvious */
 }
 
 /* Active file table visual select - <div class="file-table-visual-select"> */
 .file-table-comp.is-active .file-table-visual-select {
-  opacity: 0.5;
+  border-color: var(--blu-lite);
+  opacity: 1;
 }
 
 /* Scrolling state - <div class="file-table-comp is-scrolling"> */
@@ -280,15 +280,15 @@ body.is-resizing .table-header > div {
 
 /* Visual select indicator - <div class="file-table-visual-select"> */
 .file-table-visual-select {
-  border: 1px solid var(--blu-lite);
+  border: 1px solid var(--brdr-clr-lite);
   border-end-end-radius: 8px;
   border-end-start-radius: 8px;
   border-radius: 0;
   inset: 0;
-  opacity: 0;
+  opacity: 1;
   pointer-events: none; /* Don't block underlying controls */
   position: absolute;
-  transition: opacity 0.2s ease-in-out;
+  transition: border-color 0.2s ease-in-out;
   z-index: 2;
 }
 

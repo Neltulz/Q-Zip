@@ -18,7 +18,7 @@
 
 /* Element: Tabs */
 .compression-section__tabs {
-  background-color: var(--bg-clr-darkest);
+  background-color: var(--bg-clr-dark);
   border-block-end: 1px solid var(--brdr-clr-lite);
   display: grid;
   grid-template-columns: 1fr 1fr; /* data-name="global-settings-btn" | data-name="job-specific-settings-btn" */

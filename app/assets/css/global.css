@@ -86,25 +86,25 @@ body {
   --accent-color: var(--blu-lite); /* light theme */
   
   @container style(--theme: dark) {
-    --bg-lum: 9%; /* default/dark theme */
-    --bg-clr-dark: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.8), var(--bg-alph)); /* default/dark theme */
-    --bg-clr-darkr: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.6), var(--bg-alph)); /* default/dark theme */
-    --bg-clr-darkest: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.5), var(--bg-alph)); /* default/dark theme */
-    --bg-clr-lite: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 1.6), var(--bg-alph)); /* default/dark theme */
-    --bg-clr-liter: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2), var(--bg-alph)); /* default/dark theme */
-    --bg-clr-litest: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.5), var(--bg-alph)); /* default/dark theme */
-    --txt-lum: 65%; /* default/dark theme */
-    --txt-clr-dark: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 0.85), var(--txt-alph)); /* default/dark theme */
-    --txt-clr-darkr: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 0.7), var(--txt-alph)); /* default/dark theme */
-    --txt-clr-lite: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 1.15), var(--txt-alph)); /* default/dark theme */
-    --txt-clr-liter: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 1.3), var(--txt-alph)); /* default/dark theme */
-    --txt-clr-litest: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 1.45), var(--txt-alph)); /* default/dark theme */
-    --brdr-lum: 18%; /* default/dark theme */
-    --brdr-clr-dark: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 0.8), var(--brdr-alph)); /* default/dark theme */
-    --brdr-clr-darkr: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 0.75), var(--brdr-alph)); /* default/dark theme */
-    --brdr-clr-lite: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 1.25), var(--brdr-alph)); /* default/dark theme */
-    --brdr-clr-liter: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 1.5), var(--brdr-alph)); /* default/dark theme */
-    --brdr-clr-litest: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 1.75), var(--brdr-alph)); /* default/dark theme */
+    --bg-lum: 9%; /* dark theme */
+    --bg-clr-dark: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.8), var(--bg-alph)); /* dark theme */
+    --bg-clr-darkr: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.6), var(--bg-alph)); /* dark theme */
+    --bg-clr-darkest: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 0.5), var(--bg-alph)); /* dark theme */
+    --bg-clr-lite: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 1.6), var(--bg-alph)); /* dark theme */
+    --bg-clr-liter: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2), var(--bg-alph)); /* dark theme */
+    --bg-clr-litest: hsla(var(--bg-hue), var(--bg-sat), calc(var(--bg-lum) * 2.5), var(--bg-alph)); /* dark theme */
+    --txt-lum: 65%; /* dark theme */
+    --txt-clr-dark: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 0.85), var(--txt-alph)); /* dark theme */
+    --txt-clr-darkr: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 0.7), var(--txt-alph)); /* dark theme */
+    --txt-clr-lite: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 1.15), var(--txt-alph)); /* dark theme */
+    --txt-clr-liter: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 1.3), var(--txt-alph)); /* dark theme */
+    --txt-clr-litest: hsla(var(--txt-hue), var(--txt-sat), calc(var(--txt-lum) * 1.45), var(--txt-alph)); /* dark theme */
+    --brdr-lum: 18%; /* dark theme */
+    --brdr-clr-dark: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 0.8), var(--brdr-alph)); /* dark theme */
+    --brdr-clr-darkr: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 0.75), var(--brdr-alph)); /* dark theme */
+    --brdr-clr-lite: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 1.25), var(--brdr-alph)); /* dark theme */
+    --brdr-clr-liter: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 1.5), var(--brdr-alph)); /* dark theme */
+    --brdr-clr-litest: hsla(var(--brdr-hue), var(--brdr-sat), calc(var(--brdr-lum) * 1.75), var(--brdr-alph)); /* dark theme */
   }
 }
 * {
